@@ -1,6 +1,6 @@
 # README #
 
-AllenNLP extensions contains custom extensions for library [allenNLP: http://allennlp.org/]
+AllenNLP extensions contains custom extensions for library [allenNLP](http://allennlp.org/)
 
 ### Extensions
 
