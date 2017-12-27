@@ -1,5 +1,10 @@
 {
-  "format": {
+  "dataset_format": {
+    "type": "csv",
+    "delimiter": ","
+  },
+
+  "transformations": {
     "inputs": [
       "age",
       "job",

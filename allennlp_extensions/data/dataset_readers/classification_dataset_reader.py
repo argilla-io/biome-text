@@ -1,4 +1,4 @@
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Any, Callable
 
 import logging
 
@@ -18,45 +18,20 @@ from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 
-__name__ = "generic_classification_reader"
+__name__ = "classification_dataset_reader"
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-class CsvConfig(object):
+class _CsvConfig(object):
+    __DEFAULT_DELIMITER = ','
+
     def __init__(self, delimiter: str):
         self._delimiter = delimiter
 
     @classmethod
-    def from_params(cls, params: Params) -> 'CsvConfig':
-        delimiter = params.pop('delimiter')
-        return CsvConfig(delimiter)
-
-
-def _read_csv_file(config: CsvConfig):
-    def inner(input_file: str) -> Iterable[Dict]:
-        with open(input_file) as csvfile:
-            reader = csv.DictReader(csvfile, delimiter=config._delimiter)
-
-            for example in reader:
-                logger.info(example)
-                yield example
-
-    return inner
-
-
-def _read_json_file(input_file: str):
-    for line in tqdm.tqdm(input_file):
-        yield json.loads(line)
-
-
-FILE_FORMATTERS = {
-    'json': _read_json_file,
-    'csv': _read_csv_file
-}
-
-INPUTS_FIELD = 'inputs'
-GOLD_LABEL = 'gold_label'
-
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+    def from_params(cls, params: Params) -> '_CsvConfig':
+        delimiter = params.pop('delimiter', _CsvConfig.__DEFAULT_DELIMITER)
+        return _CsvConfig(delimiter)
 
 
 def _read_from_file(format_file: str) -> Dict:
@@ -64,20 +39,44 @@ def _read_from_file(format_file: str) -> Dict:
         return json.loads(format_config.read())
 
 
-class GenericClassificationReader(DatasetReader):
+def _configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
+    def is_json(format: Any) -> bool:
+        return not format or (type(format) is str and 'json' == str(format).lower())
+
+    def csv_file_reader(config: _CsvConfig):
+        def inner(input_file: str) -> Iterable[Dict]:
+            with open(input_file) as csv_file:
+                reader = csv.DictReader(csv_file, delimiter=config._delimiter)
+                for example in reader:
+                    yield example
+
+        return inner
+
+    def json_file_reader(input_file: str):
+        for line in tqdm.tqdm(input_file):
+            yield json.loads(line)
+
+    format = params.pop('dataset_format', None)
+    return json_file_reader if is_json(format) else csv_file_reader(_CsvConfig.from_params(format))
+
+
+@DatasetReader.register(__name__)
+class ClassificationDatasetReader(DatasetReader):
     __TOKENS_FIELD = 'tokens'
     __LABEL_FIELD = 'label'
+    __INPUTS_FIELD = 'inputs'
+    __GOLD_LABEL = 'gold_label'
 
     def __init__(self,
-                 file_formatter,  # TODO mark as function
-                 dataset_format: Dict,
+                 file_reader: Callable[[str], Iterable[Dict]],
+                 dataset_transformations: Dict,
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
 
         self._tokenizer = tokenizer or WordTokenizer()
-        self._dataset_format = dataset_format
-        self._file_formatter = file_formatter
-        self._token_indexers = token_indexers or {GenericClassificationReader.__TOKENS_FIELD: SingleIdTokenIndexer()}
+        self._dataset_transformations = dataset_transformations
+        self._file_reader = file_reader
+        self._token_indexers = token_indexers or {ClassificationDatasetReader.__TOKENS_FIELD: SingleIdTokenIndexer()}
 
     """
     Reads a file from a classification dataset.  This data is
@@ -85,17 +84,22 @@ class GenericClassificationReader(DatasetReader):
 
     Parameters
     ----------
+    file_reader: ``Callable[[str], Iterable[Dict]]``
+        Define a function to parse input dataset as a collection of dictionaries
+    dataset_transformations: ``Dict``
+        Define field for input and gold_label from dataset schema 
     tokenizer : ``Tokenizer``, optional (default=``WordTokenizer()``)
         We use this ``Tokenizer`` for both the premise and the hypothesis.  See :class:`Tokenizer`.
     token_indexers : ``Dict[str, TokenIndexer]``, optional (default=``{"tokens": SingleIdTokenIndexer()}``)
         We similarly use this for both the premise and the hypothesis.  See :class:`TokenIndexer`.
+        
     """
 
     def _input(self, example: Dict) -> str:
-        inputs_field = self._dataset_format[INPUTS_FIELD]
+        inputs_field = self._dataset_transformations[ClassificationDatasetReader.__INPUTS_FIELD]
         return inputs_field \
             if type(inputs_field) is str \
-            else  " ".join([example[input] for input in inputs_field])
+            else " ".join([example[input] for input in inputs_field])
 
     def _gold_label(self, example: Dict) -> str:
 
@@ -105,7 +109,7 @@ class GenericClassificationReader(DatasetReader):
         field_type = "field"
         field_mapping = "values_mapping"
 
-        gold_label_definition = self._dataset_format[GOLD_LABEL]
+        gold_label_definition = self._dataset_transformations[ClassificationDatasetReader.__GOLD_LABEL]
 
         return example[gold_label_definition] \
             if type(gold_label_definition) is str \
@@ -115,13 +119,12 @@ class GenericClassificationReader(DatasetReader):
     def read(self, file_path: str) -> Dataset:
         # if `file_path` is a URL, redirect to the cache
         file_path = cached_path(file_path)
-
         instances = []
 
         with open(file_path, 'r') as input_file:
             logger.info("Reading instances from dataset at: %s", file_path)
 
-            for example in self._file_formatter(file_path):
+            for example in self._file_reader(file_path):
                 input_text = self._input(example)
                 label = self._gold_label(example)
 
@@ -140,26 +143,26 @@ class GenericClassificationReader(DatasetReader):
         fields: Dict[str, Field] = {}
 
         input_tokens = self._tokenizer.tokenize(input_text)
-        fields[GenericClassificationReader.__TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
+        fields[ClassificationDatasetReader.__TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
 
         if label:
-            fields[GenericClassificationReader.__LABEL_FIELD] = LabelField(label)
+            fields[ClassificationDatasetReader.__LABEL_FIELD] = LabelField(label)
 
         return Instance(fields)
 
     @classmethod
-    def from_params(cls, params: Params) -> 'GenericClassificationReader':
+    def from_params(cls, params: Params) -> 'ClassificationDatasetReader':
 
-        dataset_format = params.pop('format', dict())
-        file_formatter = FILE_FORMATTERS['csv'](CsvConfig(delimiter=','))  # TODO calculate from input
+        file_reader = _configure_file_reader(params)
+        dataset_format = params.pop('transformations', dict())
 
         tokenizer = Tokenizer.from_params(params.pop('tokenizer', {}))
         token_indexers = TokenIndexer.dict_from_params(params.pop('token_indexers', {}))
 
         params.assert_empty(cls.__name__)
 
-        return GenericClassificationReader(
-            file_formatter=file_formatter,
-            dataset_format=dataset_format,
+        return ClassificationDatasetReader(
+            file_reader=file_reader,
+            dataset_transformations=dataset_format,
             tokenizer=tokenizer,
             token_indexers=token_indexers)
