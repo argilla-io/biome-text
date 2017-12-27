@@ -1,0 +1,16 @@
+{
+  "format": {
+    "inputs": [
+      "age",
+      "job",
+      "marital"
+    ],
+    "gold_label": {
+      "field": "housing",
+      "values_mapping": {
+        "yes": "OF_COURSE",
+        "no": "NOT_AT_ALL"
+      }
+    }
+  }
+}
