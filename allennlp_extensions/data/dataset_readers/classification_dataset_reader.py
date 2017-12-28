@@ -41,7 +41,12 @@ def _read_from_file(format_file: str) -> Dict:
 
 def _configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
     def is_json(format: Any) -> bool:
-        return not format or (type(format) is str and 'json' == str(format).lower())
+
+        format_type = 'json' if not format \
+            else str(format).lower() if type(format) is str \
+            else str(format['type']).lower()
+
+        return 'json' == format_type
 
     def csv_file_reader(config: _CsvConfig):
         def inner(input_file: str) -> Iterable[Dict]:
@@ -53,8 +58,11 @@ def _configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
         return inner
 
     def json_file_reader(input_file: str):
-        for line in tqdm.tqdm(input_file):
-            yield json.loads(line)
+        with open(input_file) as json_file:
+            for line in json_file:
+                example = json.loads(line)
+                logger.debug('Read %s', example)
+                yield example
 
     format = params.pop('dataset_format', None)
     return json_file_reader if is_json(format) else csv_file_reader(_CsvConfig.from_params(format))
@@ -62,8 +70,74 @@ def _configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
 
 @DatasetReader.register(__name__)
 class ClassificationDatasetReader(DatasetReader):
-    __TOKENS_FIELD = 'tokens'
-    __LABEL_FIELD = 'label'
+    """
+    Configuration examples
+    ---------------------
+
+    From jsonl files
+
+        {
+          "dataset_reader": {
+            "type": "classification_dataset_reader",
+            "dataset_format": "json",
+            "transformations": {
+              "inputs": [
+                "reviewText"
+              ],
+              "gold_label": {
+                "field": "overall",
+                "values_mapping": {
+                  "1": "NEGATIVE",
+                  "2": "NEGATIVE",
+                  "3": "NEUTRAL",
+                  "4": "POSITIVE",
+                  "5": "POSITIVE"
+                }
+              }
+            },
+            "token_indexers": {
+              "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+              }
+            }
+          }
+        }
+
+    From csv files:
+        {
+          "dataset_reader": {
+            "type": "classification_dataset_reader",
+            "dataset_format": {
+              "type": "csv",
+              "delimiter" : ","
+            },
+            "transformations": {
+              "inputs": [
+                "text"
+              ],
+              "gold_label": {
+                "field": "topic"
+              }
+            },
+            "tokenizer": {
+              "word_splitter": {
+                "language": "en_core_web_sm"
+              }
+            },
+            "token_indexers": {
+              "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+              }
+            }
+          }
+        }
+    """
+
+    _TOKENS_FIELD = 'tokens'
+    _LABEL_FIELD = 'label'
+
     __INPUTS_FIELD = 'inputs'
     __GOLD_LABEL = 'gold_label'
 
@@ -76,7 +150,7 @@ class ClassificationDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or WordTokenizer()
         self._dataset_transformations = dataset_transformations
         self._file_reader = file_reader
-        self._token_indexers = token_indexers or {ClassificationDatasetReader.__TOKENS_FIELD: SingleIdTokenIndexer()}
+        self._token_indexers = token_indexers or {ClassificationDatasetReader._TOKENS_FIELD: SingleIdTokenIndexer()}
 
     """
     Reads a file from a classification dataset.  This data is
@@ -92,7 +166,7 @@ class ClassificationDatasetReader(DatasetReader):
         We use this ``Tokenizer`` for both the premise and the hypothesis.  See :class:`Tokenizer`.
     token_indexers : ``Dict[str, TokenIndexer]``, optional (default=``{"tokens": SingleIdTokenIndexer()}``)
         We similarly use this for both the premise and the hypothesis.  See :class:`TokenIndexer`.
-        
+            
     """
 
     def _input(self, example: Dict) -> str:
@@ -111,9 +185,10 @@ class ClassificationDatasetReader(DatasetReader):
 
         gold_label_definition = self._dataset_transformations[ClassificationDatasetReader.__GOLD_LABEL]
 
-        return example[gold_label_definition] \
-            if type(gold_label_definition) is str \
-            else with_mapping(example[gold_label_definition[field_type]], gold_label_definition.get(field_mapping))
+        return str(example[gold_label_definition]
+                   if type(gold_label_definition) is str
+                   else with_mapping(example[gold_label_definition[field_type]],
+                                     gold_label_definition.get(field_mapping, None)))
 
     @overrides
     def read(self, file_path: str) -> Dataset:
@@ -128,6 +203,7 @@ class ClassificationDatasetReader(DatasetReader):
                 input_text = self._input(example)
                 label = self._gold_label(example)
 
+                logger.debug('Example:[%s];Input:[%s];Label:[%s]', example, input_text, label)
                 instances.append(self.text_to_instance(input_text, label))
 
         if not instances:
@@ -143,10 +219,10 @@ class ClassificationDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
 
         input_tokens = self._tokenizer.tokenize(input_text)
-        fields[ClassificationDatasetReader.__TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
+        fields[ClassificationDatasetReader._TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
 
         if label:
-            fields[ClassificationDatasetReader.__LABEL_FIELD] = LabelField(label)
+            fields[ClassificationDatasetReader._LABEL_FIELD] = LabelField(label)
 
         return Instance(fields)
 
@@ -154,7 +230,7 @@ class ClassificationDatasetReader(DatasetReader):
     def from_params(cls, params: Params) -> 'ClassificationDatasetReader':
 
         file_reader = _configure_file_reader(params)
-        dataset_format = params.pop('transformations', dict())
+        dataset_format = params.pop('transformations', dict()).as_dict()
 
         tokenizer = Tokenizer.from_params(params.pop('tokenizer', {}))
         token_indexers = TokenIndexer.dict_from_params(params.pop('token_indexers', {}))
