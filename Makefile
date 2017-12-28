@@ -1,5 +1,9 @@
+
 init:
 	@pip install -r requirements.install.txt
+
+spacy-es:
+	@python -m spacy download es_core_news_sm
 
 spacy:
 	@python -m spacy download en_core_web_sm
@@ -12,5 +16,3 @@ test: init-test
 
 install:
 	@python setup.py install
-
-
