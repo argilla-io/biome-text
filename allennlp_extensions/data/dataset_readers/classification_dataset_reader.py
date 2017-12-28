@@ -70,6 +70,71 @@ def _configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
 
 @DatasetReader.register(__name__)
 class ClassificationDatasetReader(DatasetReader):
+    """
+    Configuration examples
+    ---------------------
+
+    From jsonl files
+
+        {
+          "dataset_reader": {
+            "type": "classification_dataset_reader",
+            "dataset_format": "json",
+            "transformations": {
+              "inputs": [
+                "reviewText"
+              ],
+              "gold_label": {
+                "field": "overall",
+                "values_mapping": {
+                  "1": "NEGATIVE",
+                  "2": "NEGATIVE",
+                  "3": "NEUTRAL",
+                  "4": "POSITIVE",
+                  "5": "POSITIVE"
+                }
+              }
+            },
+            "token_indexers": {
+              "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+              }
+            }
+          }
+        }
+
+    From csv files:
+        {
+          "dataset_reader": {
+            "type": "classification_dataset_reader",
+            "dataset_format": {
+              "type": "csv",
+              "delimiter" : ","
+            },
+            "transformations": {
+              "inputs": [
+                "text"
+              ],
+              "gold_label": {
+                "field": "topic"
+              }
+            },
+            "tokenizer": {
+              "word_splitter": {
+                "language": "en_core_web_sm"
+              }
+            },
+            "token_indexers": {
+              "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+              }
+            }
+          }
+        }
+    """
+
     _TOKENS_FIELD = 'tokens'
     _LABEL_FIELD = 'label'
 
@@ -101,6 +166,7 @@ class ClassificationDatasetReader(DatasetReader):
         We use this ``Tokenizer`` for both the premise and the hypothesis.  See :class:`Tokenizer`.
     token_indexers : ``Dict[str, TokenIndexer]``, optional (default=``{"tokens": SingleIdTokenIndexer()}``)
         We similarly use this for both the premise and the hypothesis.  See :class:`TokenIndexer`.
+            
     """
 
     def _input(self, example: Dict) -> str:
