@@ -15,7 +15,11 @@ from allennlp_extensions.commands.publish import PublishModel
 __logger = logging.getLogger(__name__)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', level=logging.INFO)
+
+
+def configure_logging(enable_debug: bool = False):
+    level = logging.DEBUG if enable_debug else logging.INFO
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', level=level)
 
 
 def load_customs_components_from_file(subcommand: str):
@@ -53,6 +57,7 @@ def main(*kwargs) -> None:
     # pylint: disable=dangerous-default-value
 
     parser = argparse.ArgumentParser(description="Run AllenNLP", usage='%(prog)s [command]', prog=__name__)
+    parser.add_argument('-v', '--verbose', action='store_true', dest='enable_debug', default=False, help="Enables debug traces")
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
     subcommands = {
@@ -68,6 +73,7 @@ def main(*kwargs) -> None:
         subcommand.add_subparser(name, subparsers)
 
     args = parser.parse_args()
+    configure_logging(args.enable_debug)
 
     # If a subparser is triggered, it adds its work as `args.func`.
     # So if no such attribute has been added, no subparser was triggered,
