@@ -1,0 +1,1 @@
+from  allennlp_extensions.models.sequence_classifier import SequenceClassifier

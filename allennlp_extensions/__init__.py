@@ -1,1 +1,1 @@
-from allennlp_extensions import data
+from allennlp_extensions import data, models
