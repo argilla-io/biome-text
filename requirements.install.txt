@@ -1,6 +1,6 @@
 allennlp==0.3.0
 fire==0.1.2
-sanic==0.6.0
+sanic-cors==0.6.0
 
 redis==2.10.6
 confluent_kafka==0.11.0
