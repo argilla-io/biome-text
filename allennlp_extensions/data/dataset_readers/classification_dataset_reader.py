@@ -51,7 +51,10 @@ def _configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
     def csv_file_reader(config: _CsvConfig):
         def inner(input_file: str) -> Iterable[Dict]:
             with open(input_file) as csv_file:
-                reader = csv.DictReader(csv_file, delimiter=config._delimiter)
+                header = [h.strip()
+                          for h in csv_file.readline().split(config._delimiter)]
+                reader = csv.DictReader(
+                    csv_file, delimiter=config._delimiter, fieldnames=header, skipinitialspace=True)
                 for example in reader:
                     yield example
 
@@ -150,7 +153,8 @@ class ClassificationDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or WordTokenizer()
         self._dataset_transformations = dataset_transformations
         self._file_reader = file_reader
-        self._token_indexers = token_indexers or {ClassificationDatasetReader._TOKENS_FIELD: SingleIdTokenIndexer()}
+        self._token_indexers = token_indexers or {
+            ClassificationDatasetReader._TOKENS_FIELD: SingleIdTokenIndexer()}
 
     """
     Reads a file from a classification dataset.  This data is
@@ -165,7 +169,7 @@ class ClassificationDatasetReader(DatasetReader):
     tokenizer : ``Tokenizer``, optional (default=``WordTokenizer()``)
         We use this ``Tokenizer`` for both the premise and the hypothesis.  See :class:`Tokenizer`.
     token_indexers : ``Dict[str, TokenIndexer]``, optional (default=``{"tokens": SingleIdTokenIndexer()}``)
-        We similarly use this for both the premise and the hypothesis.  See :class:`TokenIndexer`.
+    See :class:`TokenIndexer`.
             
     """
 
@@ -178,12 +182,14 @@ class ClassificationDatasetReader(DatasetReader):
     def _gold_label(self, example: Dict) -> str:
 
         def with_mapping(value, mapping=None):
-            return mapping.get(value) if mapping else value
+            # Adding default value to value, enables partial mapping
+            return mapping.get(value, value) if mapping else value
 
         field_type = "field"
         field_mapping = "values_mapping"
 
-        gold_label_definition = self._dataset_transformations[ClassificationDatasetReader.__GOLD_LABEL]
+        gold_label_definition = self._dataset_transformations[
+            ClassificationDatasetReader.__GOLD_LABEL]
 
         return str(example[gold_label_definition]
                    if type(gold_label_definition) is str
@@ -203,7 +209,8 @@ class ClassificationDatasetReader(DatasetReader):
                 input_text = self._input(example)
                 label = self._gold_label(example)
 
-                logger.debug('Example:[%s];Input:[%s];Label:[%s]', example, input_text, label)
+                logger.debug(
+                    'Example:[%s];Input:[%s];Label:[%s]', example, input_text, label)
                 instances.append(self.text_to_instance(input_text, label))
 
         if not instances:
@@ -219,10 +226,12 @@ class ClassificationDatasetReader(DatasetReader):
         fields: Dict[str, Field] = {}
 
         input_tokens = self._tokenizer.tokenize(input_text)
-        fields[ClassificationDatasetReader._TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
+        fields[ClassificationDatasetReader._TOKENS_FIELD] = TextField(
+            input_tokens, self._token_indexers)
 
         if label:
-            fields[ClassificationDatasetReader._LABEL_FIELD] = LabelField(label)
+            fields[ClassificationDatasetReader._LABEL_FIELD] = LabelField(
+                label)
 
         return Instance(fields)
 
@@ -233,7 +242,8 @@ class ClassificationDatasetReader(DatasetReader):
         dataset_format = params.pop('transformations', dict()).as_dict()
 
         tokenizer = Tokenizer.from_params(params.pop('tokenizer', {}))
-        token_indexers = TokenIndexer.dict_from_params(params.pop('token_indexers', {}))
+        token_indexers = TokenIndexer.dict_from_params(
+            params.pop('token_indexers', {}))
 
         params.assert_empty(cls.__name__)
 
