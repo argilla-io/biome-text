@@ -18,6 +18,8 @@ from allennlp.data.instance import Instance
 from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 
+from allennlp_extensions.data.tokenizer.word_splitter import SpacyWordSplitter
+
 __name__ = "classification_dataset_reader"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -150,7 +152,7 @@ class ClassificationDatasetReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
 
-        self._tokenizer = tokenizer or WordTokenizer()
+        self._tokenizer = WordTokenizer(word_splitter=SpacyWordSplitter())
         self._dataset_transformations = dataset_transformations
         self._file_reader = file_reader
         self._token_indexers = token_indexers or {
