@@ -60,13 +60,15 @@ def main(*kwargs) -> None:
     parser.add_argument('-v', '--verbose', action='store_true', dest='enable_debug', default=False, help="Enables debug traces")
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
+    from allennlp_extensions.commands.describe import DescribeRegistrable
     subcommands = {
         # Default commands
         "train": Train(),
         'publish': PublishModel(),
-        "evaluate": Evaluate(),
+        'evaluate': Evaluate(),
         "rest": RestAPI(),
-        'kafka': KafkaPipelineCommand()
+        'kafka': KafkaPipelineCommand(),
+        'describe': DescribeRegistrable()
     }
 
     for name, subcommand in subcommands.items():
