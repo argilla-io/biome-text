@@ -146,6 +146,8 @@ class ClassificationDatasetReader(DatasetReader):
     __INPUTS_FIELD = 'inputs'
     __GOLD_LABEL = 'gold_label'
 
+    __MISSING_LABEL_DEFAULT = 'None'
+
     def __init__(self,
                  file_reader: Callable[[str], Iterable[Dict]],
                  dataset_transformations: Dict,
@@ -185,6 +187,9 @@ class ClassificationDatasetReader(DatasetReader):
 
         def with_mapping(value, mapping=None):
             # Adding default value to value, enables partial mapping
+            # Handling missing labels with a default value
+            if(value == ""):
+                value = ClassificationDatasetReader.__MISSING_LABEL_DEFAULT
             return mapping.get(value, value) if mapping else value
 
         field_type = "field"

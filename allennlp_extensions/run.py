@@ -6,12 +6,14 @@ from pydoc import locate
 from typing import Iterable
 
 import fire
-from allennlp.commands import Train, Evaluate
+from allennlp.commands import Evaluate
 
 from allennlp_extensions.commands.preprocess import Preprocess
 from allennlp_extensions.commands.restapi import RestAPI
 from allennlp_extensions.commands.kafka import KafkaPipelineCommand
 from allennlp_extensions.commands.publish import PublishModel
+
+from allennlp_extensions.commands.train import Train
 
 __logger = logging.getLogger(__name__)
 
@@ -73,6 +75,9 @@ def main(*kwargs) -> None:
         'describe': DescribeRegistrable()
     }
 
+    print('-------')
+    print('USING train')
+    print(Train)
     for name, subcommand in subcommands.items():
         subcommand.add_subparser(name, subparsers)
 

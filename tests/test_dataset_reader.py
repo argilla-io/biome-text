@@ -85,7 +85,7 @@ class DatasetReaderTest(unittest.TestCase):
         expected_length = 3
         expected_inputs = ['Colin', 'Revol', 'Roger', 'Dufils', 'Anne', 'Pierre', 'Jousseaume', 'Thierry']
         # 'None' is a custom partial mapping for missing labels
-        expected_labels = ['None', '11205 - Nurses: Private, Ho', 'person']
+        expected_labels = ['NOLABEL', '11205 - Nurses: Private, Ho', 'person']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
         with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigPartialMappingMissingLabel.json')) as json_file:
             params = json.loads(json_file.read())
