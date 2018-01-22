@@ -12,7 +12,7 @@ init-test:
 	@pip install -r requirements.test.txt
 	
 test: init-test
-	@nosetests tests
+	@nosetests --with-coverage --cover-package=allennlp_extensions -d tests
 
 install:
 	@python setup.py install

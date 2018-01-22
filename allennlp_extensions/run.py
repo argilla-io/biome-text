@@ -8,6 +8,7 @@ from typing import Iterable
 import fire
 from allennlp.commands import Train, Evaluate
 
+from allennlp_extensions.commands.preprocess import Preprocess
 from allennlp_extensions.commands.restapi import RestAPI
 from allennlp_extensions.commands.kafka import KafkaPipelineCommand
 from allennlp_extensions.commands.publish import PublishModel
@@ -63,6 +64,7 @@ def main(*kwargs) -> None:
     from allennlp_extensions.commands.describe import DescribeRegistrable
     subcommands = {
         # Default commands
+        "preprocess": Preprocess(),
         "train": Train(),
         'publish': PublishModel(),
         'evaluate': Evaluate(),
