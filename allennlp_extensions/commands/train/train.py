@@ -48,7 +48,7 @@ class Train(Subcommand):
         # pylint: disable=protected-access
         description = '''Train the specified model on the specified dataset.'''
         subparser = parser.add_parser(
-                name, description=description, help='Train a model')
+            name, description=description, help='Train a model')
         subparser.add_argument('param_path',
                                type=str,
                                help='path to parameter file describing the model to be trained')
@@ -81,10 +81,11 @@ def train_model_from_args(args: argparse.Namespace):
     """
     Just converts from an ``argparse.Namespace`` object to string paths.
     """
-    train_model_from_file(args.param_path, args.serialization_dir, args.overrides, args.datasets_path)
+    train_model_from_file(
+        args.param_path, args.serialization_dir, args.overrides, args.datasets_path)
 
 
-def train_model_from_file(parameter_filename: str, serialization_dir: str, overrides: str = "", datasets_path: str = None ) -> Model:
+def train_model_from_file(parameter_filename: str, serialization_dir: str, overrides: str = "", datasets_path: str = None) -> Model:
     """
     A wrapper around :func:`train_model` which loads the params from a file.
 
@@ -98,6 +99,106 @@ def train_model_from_file(parameter_filename: str, serialization_dir: str, overr
     # Load the experiment config from a file and pass it to ``train_model``.
     params = Params.from_file(parameter_filename, overrides)
     return train_model(params, serialization_dir, datasets_path)
+
+
+def build_datasets(params: Params, serialization_dir: str):
+    """
+    This function builds datasets from a dataset reader and paths definitions.
+
+    Parameters
+    ----------
+    params: Params, required.
+        A parameter object specifying an AllenNLP Experiment.
+    serialization_dir: str, required
+        The directory in which to save results and logs.
+    """
+    # Now we begin assembling the required parts for the Trainer.
+    dataset_reader = DatasetReader.from_params(params.pop('dataset_reader'))
+
+    train_data_path = params.pop('train_data_path')
+    logger.info("Reading training data from %s", train_data_path)
+    train_data = dataset_reader.read(train_data_path)
+
+    all_datasets: Dict[str, Dataset] = {"train": train_data}
+
+    validation_data_path = params.pop('validation_data_path', None)
+    if validation_data_path is not None:
+        logger.info("Reading validation data from %s", validation_data_path)
+        validation_data = dataset_reader.read(validation_data_path)
+        all_datasets["validation"] = validation_data
+    else:
+        validation_data = None
+
+    test_data_path = params.pop("test_data_path", None)
+    if test_data_path is not None:
+        logger.info("Reading test data from %s", test_data_path)
+        test_data = dataset_reader.read(test_data_path)
+        all_datasets["test"] = test_data
+    else:
+        test_data = None
+
+    datasets_for_vocab_creation = set(params.pop(
+        "datasets_for_vocab_creation", all_datasets))
+
+    for dataset in datasets_for_vocab_creation:
+        if dataset not in all_datasets:
+            raise ConfigurationError(
+                f"invalid 'dataset_for_vocab_creation' {dataset}")
+
+    logger.info("Creating a vocabulary using %s data.",
+                ", ".join(datasets_for_vocab_creation))
+    vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
+                                   Dataset([instance for key, dataset in all_datasets.items()
+                                            for instance in dataset.instances
+                                            if key in datasets_for_vocab_creation]))
+    vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
+    train_data.index_instances(vocab)
+    if validation_data:
+        validation_data.index_instances(vocab)
+
+    return train_data, validation_data, test_data, vocab
+
+
+def load_datasets_from_disk(datasets_path: str):
+    """
+    This function loads preprocessed datasets from a given path
+
+    Parameters
+    ----------
+    datasets_path: str, required
+        The directory in which the datasets are stored
+    """
+    vocab = Vocabulary.from_files(
+        os.path.join(datasets_path, "vocabulary"))
+
+    train_data = load_from_file(os.path.join(datasets_path, 'train.data'))
+
+    validation_data = load_from_file(
+        os.path.join(datasets_path, 'validation.data'))
+    # TODO: @frascuchon include logic here for test data, once this is added to preprocess command.
+    return train_data, validation_data, None, vocab
+
+
+def build_or_load_datasets(params: Params, serialization_dir: str, datasets_path: str):
+    """
+    This function builds from a definition or loads preprocessed datasets from a given path
+
+    Parameters
+    ----------
+    datasets_path: str, required
+        The directory in which the datasets are stored
+    params: Params, required.
+        A parameter object specifying an AllenNLP Experiment.
+    serialization_dir: str, required
+        The directory in which to save results and logs.
+    """
+    if datasets_path:
+        # Pop unused params if it exists to avoid allennlp.common.checks.ConfigurationError (check for extra 'unused' params)
+        for param_name in ['dataset_reader', 'vocabulary', 'train_data_path', 'validation_data_path']:
+            params.pop(param_name, {})
+        return load_datasets_from_disk(datasets_path)
+    else:
+        return build_datasets(params, serialization_dir)
 
 
 def train_model(params: Params, serialization_dir: str, datasets_path: str) -> Model:
@@ -121,66 +222,22 @@ def train_model(params: Params, serialization_dir: str, datasets_path: str) -> M
     prepare_environment(params)
 
     os.makedirs(serialization_dir, exist_ok=True)
-    sys.stdout = TeeLogger(os.path.join(serialization_dir, "stdout.log"), sys.stdout)  # type: ignore
-    sys.stderr = TeeLogger(os.path.join(serialization_dir, "stderr.log"), sys.stderr)  # type: ignore
-    handler = logging.FileHandler(os.path.join(serialization_dir, "python_logging.log"))
+    sys.stdout = TeeLogger(os.path.join(
+        serialization_dir, "stdout.log"), sys.stdout)  # type: ignore
+    sys.stderr = TeeLogger(os.path.join(
+        serialization_dir, "stderr.log"), sys.stderr)  # type: ignore
+    handler = logging.FileHandler(os.path.join(
+        serialization_dir, "python_logging.log"))
     handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s'))
+    handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(name)s - %(message)s'))
     logging.getLogger().addHandler(handler)
     serialization_params = deepcopy(params).as_dict(quiet=True)
+
     with open(os.path.join(serialization_dir, "model_params.json"), "w") as param_file:
         json.dump(serialization_params, param_file, indent=4)
 
-    if(not datasets_path):
-        # Now we begin assembling the required parts for the Trainer.
-        dataset_reader = DatasetReader.from_params(params.pop('dataset_reader'))
-
-        train_data_path = params.pop('train_data_path')
-        logger.info("Reading training data from %s", train_data_path)
-        train_data = dataset_reader.read(train_data_path)
-
-        all_datasets: Dict[str, Dataset] = {"train": train_data}
-
-        validation_data_path = params.pop('validation_data_path', None)
-        if validation_data_path is not None:
-            logger.info("Reading validation data from %s", validation_data_path)
-            validation_data = dataset_reader.read(validation_data_path)
-            all_datasets["validation"] = validation_data
-        else:
-            validation_data = None
-
-        test_data_path = params.pop("test_data_path", None)
-        if test_data_path is not None:
-            logger.info("Reading test data from %s", test_data_path)
-            test_data = dataset_reader.read(test_data_path)
-            all_datasets["test"] = test_data
-        else:
-            test_data = None
-
-        datasets_for_vocab_creation = set(params.pop("datasets_for_vocab_creation", all_datasets))
-
-        for dataset in datasets_for_vocab_creation:
-            if dataset not in all_datasets:
-                raise ConfigurationError(f"invalid 'dataset_for_vocab_creation' {dataset}")
-
-        logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
-        vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
-                                    Dataset([instance for key, dataset in all_datasets.items()
-                                                for instance in dataset.instances
-                                                if key in datasets_for_vocab_creation]))
-        vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
-        train_data.index_instances(vocab)
-        if validation_data:
-            validation_data.index_instances(vocab)
-    else:
-        # Pop unused params if it exists to avoid allennlp.common.checks.ConfigurationError (check for extra 'unused' params)
-        params.pop('dataset_reader')
-        params.pop("vocabulary", {})
-        params.pop('train_data_path')
-        params.pop('validation_data_path')
-        vocab = Vocabulary.from_files(os.path.join(datasets_path, "vocabulary"))
-        train_data = load_from_file(os.path.join(datasets_path, 'train.data'))
-        validation_data = load_from_file(os.path.join(datasets_path, 'validation.data'))
+    train_data, validation_data, test_data, vocab = build_or_load_datasets(params, serialization_dir, datasets_path)
 
     model = Model.from_params(vocab, params.pop('model'))
     iterator = DataIterator.from_params(params.pop("iterator"))
@@ -202,7 +259,8 @@ def train_model(params: Params, serialization_dir: str, datasets_path: str) -> M
 
     if test_data and evaluate_on_test:
         test_data.index_instances(vocab)
-        evaluate(model, test_data, iterator, cuda_device=trainer._cuda_device)  # pylint: disable=protected-access
+        evaluate(model, test_data, iterator,
+                 cuda_device=trainer._cuda_device)  # pylint: disable=protected-access
 
     elif test_data:
         logger.info("To evaluate on the test set after training, pass the "

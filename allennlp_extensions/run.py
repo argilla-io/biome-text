@@ -74,10 +74,7 @@ def main(*kwargs) -> None:
         'kafka': KafkaPipelineCommand(),
         'describe': DescribeRegistrable()
     }
-
-    print('-------')
-    print('USING train')
-    print(Train)
+    
     for name, subcommand in subcommands.items():
         subcommand.add_subparser(name, subparsers)
 

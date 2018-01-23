@@ -106,8 +106,10 @@ def preprocess(params: Params, serialization_dir: str):
 
     # TODO Ideally save_to_file and load_from_file should be defined for each object type. But for now, we keep as an util
     save_to_file(train_data, os.path.join(serialization_dir, "train.data"))
+    # TODO: what happens when validation data is None?
     save_to_file(validation_data, os.path.join(serialization_dir, "validation.data"))
-
+    # TODO: @frascuchon we need to handle test data as well.abs
+    
 
 def prepare_serialization_dir(params, serialization_dir):
     os.makedirs(serialization_dir, exist_ok=True)
