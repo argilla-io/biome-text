@@ -1,0 +1,27 @@
+{
+    "model": {
+        "type": "sequence_classifier",
+        "text_field_embedder": {
+            "tokens": {
+                "type": "embedding",
+                "embedding_dim": 10
+            }
+        },
+        "encoder": {
+            "type": "boe",
+            "embedding_dim":10
+        }
+    },
+    "iterator": {
+        "type": "bucket",
+        "batch_size": 1
+    },
+    "trainer": {
+        "optimizer": {
+            "type": "adam"
+        },
+        "num_epochs": 1,
+        "patience": 10,
+        "cuda_device": -1
+    }
+}
