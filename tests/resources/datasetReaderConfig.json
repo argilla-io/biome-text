@@ -1,0 +1,12 @@
+{
+  "dataset_format": {
+    "type": "csv",
+    "delimiter": ","
+  },
+  "transformations": {
+    "inputs": [
+      "age"
+    ],
+    "gold_label": "job"
+  }
+}

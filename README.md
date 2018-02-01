@@ -21,3 +21,6 @@ The allennlp models extension
 
 The allennlp shell command extensions
 
+* Rest API serve extension
+* Kafka topic listen extension
+

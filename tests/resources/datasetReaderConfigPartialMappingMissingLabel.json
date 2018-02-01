@@ -1,0 +1,17 @@
+{
+  "dataset_format": {
+    "type": "csv",
+    "delimiter": ";"
+  },
+  "transformations": {
+    "inputs": [
+      "name"
+    ],
+    "gold_label": {
+      "field": "category of institution",
+      "values_mapping": {
+        "None": "NOLABEL"
+      }
+    }
+  }
+}
