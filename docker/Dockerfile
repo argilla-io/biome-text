@@ -14,6 +14,6 @@ ENV LIBRARY_PATH /usr/local/lib
 ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/lib
 
 COPY . /src
-RUN pip install -r /src/requirements.txt \
-&&  pip install /src \
-&&  rm -rf /src
+WORKDIR /src
+
+RUN make init spacy install

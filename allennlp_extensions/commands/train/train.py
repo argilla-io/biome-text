@@ -58,19 +58,16 @@ class Train(Subcommand):
         serialization.add_argument('-s', '--serialization-dir',
                                    type=str,
                                    help='directory in which to save the model and its logs')
-        serialization.add_argument('--serialization_dir',
-                                   type=str,
-                                   help=argparse.SUPPRESS)
 
         subparser.add_argument('-o', '--overrides',
                                type=str,
                                default="",
                                help='a HOCON structure used to override the experiment configuration')
 
-        subparser.add_argument('-d', '--datasets_path',
+        subparser.add_argument('-d', '--vocab_path',
                                type=str,
                                default="",
-                               help='path to pre-processed datasets')
+                               help='path to pre-processed vocabulary')
 
         subparser.set_defaults(func=train_model_from_args)
 
@@ -81,12 +78,11 @@ def train_model_from_args(args: argparse.Namespace):
     """
     Just converts from an ``argparse.Namespace`` object to string paths.
     """
-    train_model_from_file(
-        args.param_path, args.serialization_dir, args.overrides, args.datasets_path)
+    train_model_from_file(args.param_path, args.serialization_dir, args.overrides, args.vocab_path)
 
 
 def train_model_from_file(parameter_filename: str, serialization_dir: str, overrides: str = "",
-                          datasets_path: str = None) -> Model:
+                          vocab_path: str = None) -> Model:
     """
     A wrapper around :func:`train_model` which loads the params from a file.
 
@@ -99,10 +95,10 @@ def train_model_from_file(parameter_filename: str, serialization_dir: str, overr
     """
     # Load the experiment config from a file and pass it to ``train_model``.
     params = Params.from_file(parameter_filename, overrides)
-    return train_model(params, serialization_dir, datasets_path)
+    return train_model(params, serialization_dir, vocab_path)
 
 
-def build_datasets(params: Params, serialization_dir: str):
+def build_datasets(params: Params):
     """
     This function builds datasets from a dataset reader and paths definitions.
 
@@ -138,23 +134,7 @@ def build_datasets(params: Params, serialization_dir: str):
     else:
         test_data = None
 
-    datasets_for_vocab_creation = set(params.pop(
-        "datasets_for_vocab_creation", all_datasets))
-
-    for dataset in datasets_for_vocab_creation:
-        if dataset not in all_datasets:
-            raise ConfigurationError(
-                f"invalid 'dataset_for_vocab_creation' {dataset}")
-
-    logger.info("Creating a vocabulary using %s data.",
-                ", ".join(datasets_for_vocab_creation))
-    vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
-                                   [instance for key, dataset in all_datasets.items()
-                                    for instance in dataset
-                                    if key in datasets_for_vocab_creation])
-    vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
-
-    return train_data, validation_data, test_data, vocab
+    return train_data, validation_data, test_data, all_datasets
 
 
 def load_datasets_from_disk(datasets_path: str):
@@ -177,29 +157,49 @@ def load_datasets_from_disk(datasets_path: str):
     return train_data, validation_data, None, vocab
 
 
-def build_or_load_datasets(params: Params, serialization_dir: str, datasets_path: str):
+def build_or_load_datasets(params: Params, serialization_dir: str, vocab_path: str):
     """
     This function builds from a definition or loads preprocessed datasets from a given path
 
     Parameters
     ----------
-    datasets_path: str, required
-        The directory in which the datasets are stored
+    vocab_path: str, required
+        The directory in which the vocabulary is stored
     params: Params, required.
         A parameter object specifying an AllenNLP Experiment.
     serialization_dir: str, required
         The directory in which to save results and logs.
     """
-    if datasets_path:
-        # Pop unused params if it exists to avoid allennlp.common.checks.ConfigurationError (check for extra 'unused' params)
-        for param_name in ['dataset_reader', 'vocabulary', 'train_data_path', 'validation_data_path']:
-            params.pop(param_name, {})
-        return load_datasets_from_disk(datasets_path)
+
+    train, validation, test, all_datasets = build_datasets(params)
+    if vocab_path:
+        vocab = Vocabulary.from_files(os.path.join(vocab_path, "vocabulary"))
     else:
-        return build_datasets(params, serialization_dir)
+        datasets_for_vocab_creation = set(params.pop(
+            "datasets_for_vocab_creation", all_datasets))
+
+        for dataset in datasets_for_vocab_creation:
+            if dataset not in all_datasets:
+                raise ConfigurationError(
+                    f"invalid 'dataset_for_vocab_creation' {dataset}")
+
+        logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
+        vocab = build_vocab(all_datasets, datasets_for_vocab_creation, params, serialization_dir)
+
+    return train, validation, test, vocab
 
 
-def train_model(params: Params, serialization_dir: str, datasets_path: str) -> Model:
+def build_vocab(all_datasets, datasets_for_vocab_creation, params, serialization_dir):
+    vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
+                                   [instance for key, dataset in all_datasets.items()
+                                    for instance in dataset
+                                    if key in datasets_for_vocab_creation])
+
+    vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
+    return vocab
+
+
+def train_model(params: Params, serialization_dir: str, vocab_path: str) -> Model:
     """
     This function can be used as an entry point to running models in AllenNLP
     directly from a JSON specification using a :class:`Driver`. Note that if
@@ -235,7 +235,7 @@ def train_model(params: Params, serialization_dir: str, datasets_path: str) -> M
     with open(os.path.join(serialization_dir, "model_params.json"), "w") as param_file:
         json.dump(serialization_params, param_file, indent=4)
 
-    train_data, validation_data, test_data, vocab = build_or_load_datasets(params, serialization_dir, datasets_path)
+    train_data, validation_data, test_data, vocab = build_or_load_datasets(params, serialization_dir, vocab_path)
 
     model = Model.from_params(vocab, params.pop('model'))
     iterator = DataIterator.from_params(params.pop("iterator"))

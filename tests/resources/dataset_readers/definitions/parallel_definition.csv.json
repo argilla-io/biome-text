@@ -1,0 +1,10 @@
+{
+  "dataset_format": "csv",
+
+  "transformations": {
+    "inputs": [
+      "age"
+    ],
+    "gold_label": "job"
+  }
+}

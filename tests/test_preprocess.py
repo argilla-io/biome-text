@@ -20,10 +20,6 @@ class DatasetReaderTest(unittest.TestCase):
 
         vocab = Vocabulary.from_files(os.path.join(output_dir, "vocabulary"))
 
-        train_dataset = dataset.load_from_file(os.path.join(output_dir, 'train.data'))
-        validation_dataset = dataset.load_from_file(os.path.join(output_dir, 'validation.data'))
-
-        self.assertNotEqual(1, len(list(train_dataset)))
-        self.assertNotEqual(1, len(list(validation_dataset)))
+        self.assertTrue(vocab.get_vocab_size("tokens") > 0)
 
         shutil.rmtree(output_dir)

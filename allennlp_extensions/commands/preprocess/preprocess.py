@@ -93,18 +93,18 @@ def preprocess(params: Params, serialization_dir: str):
     logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
 
     vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
-                                   [instance for key, dataset in all_datasets.items()
+                                   (instance for key, dataset in all_datasets.items()
                                     for instance in dataset
-                                    if key in datasets_for_vocab_creation])
+                                    if key in datasets_for_vocab_creation))
 
     vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
 
     # TODO save collection with pickle
 
     # TODO Ideally save_to_file and load_from_file should be defined for each object type. But for now, we keep as an util
-    save_to_file(list(train_data), os.path.join(serialization_dir, "train.data"))
+    #save_to_file(list(train_data), os.path.join(serialization_dir, "train.data"))
     # TODO: what happens when validation data is None?
-    save_to_file(list(validation_data), os.path.join(serialization_dir, "validation.data"))
+    #save_to_file(list(validation_data), os.path.join(serialization_dir, "validation.data"))
     # TODO: @frascuchon we need to handle test data as well.abs
 
 
