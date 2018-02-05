@@ -1,6 +1,9 @@
--allennlp==0.3.0
+#allennlp==0.3.0
+git+git://github.com/allenai/allennlp.git@7d2b63c#egg=allennlp_7d2b63c
+
 fire==0.1.2
 sanic-cors==0.6.0
+gevent==1.2.2
 
 redis==2.10.6
 confluent_kafka==0.11.0

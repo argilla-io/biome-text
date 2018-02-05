@@ -18,7 +18,7 @@ which to write the results.
     -s SERIALIZATION_DIR, --serialization-dir SERIALIZATION_DIR
                             directory in which to save the model and its logs
 """
-from typing import Dict
+from typing import Dict, Iterable
 import argparse
 import json
 import logging
@@ -32,7 +32,7 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
 from allennlp.common.tee_logger import TeeLogger
 from allennlp.common.util import prepare_environment
-from allennlp.data import Dataset, Vocabulary
+from allennlp.data import Vocabulary, Instance
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.iterators.data_iterator import DataIterator
 from allennlp.models.archival import archive_model
@@ -85,7 +85,8 @@ def train_model_from_args(args: argparse.Namespace):
         args.param_path, args.serialization_dir, args.overrides, args.datasets_path)
 
 
-def train_model_from_file(parameter_filename: str, serialization_dir: str, overrides: str = "", datasets_path: str = None) -> Model:
+def train_model_from_file(parameter_filename: str, serialization_dir: str, overrides: str = "",
+                          datasets_path: str = None) -> Model:
     """
     A wrapper around :func:`train_model` which loads the params from a file.
 
@@ -119,7 +120,7 @@ def build_datasets(params: Params, serialization_dir: str):
     logger.info("Reading training data from %s", train_data_path)
     train_data = dataset_reader.read(train_data_path)
 
-    all_datasets: Dict[str, Dataset] = {"train": train_data}
+    all_datasets: Dict[str, Iterable[Instance]] = {"train": train_data}
 
     validation_data_path = params.pop('validation_data_path', None)
     if validation_data_path is not None:
@@ -148,13 +149,10 @@ def build_datasets(params: Params, serialization_dir: str):
     logger.info("Creating a vocabulary using %s data.",
                 ", ".join(datasets_for_vocab_creation))
     vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
-                                   Dataset([instance for key, dataset in all_datasets.items()
-                                            for instance in dataset.instances
-                                            if key in datasets_for_vocab_creation]))
+                                   [instance for key, dataset in all_datasets.items()
+                                    for instance in dataset
+                                    if key in datasets_for_vocab_creation])
     vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
-    train_data.index_instances(vocab)
-    if validation_data:
-        validation_data.index_instances(vocab)
 
     return train_data, validation_data, test_data, vocab
 
@@ -223,9 +221,9 @@ def train_model(params: Params, serialization_dir: str, datasets_path: str) -> M
 
     os.makedirs(serialization_dir, exist_ok=True)
     sys.stdout = TeeLogger(os.path.join(
-        serialization_dir, "stdout.log"), sys.stdout)  # type: ignore
+        serialization_dir, "stdout.log"), sys.stdout, file_friendly_terminal_output=False)  # type: ignore
     sys.stderr = TeeLogger(os.path.join(
-        serialization_dir, "stderr.log"), sys.stderr)  # type: ignore
+        serialization_dir, "stderr.log"), sys.stderr, file_friendly_terminal_output=False)  # type: ignore
     handler = logging.FileHandler(os.path.join(
         serialization_dir, "python_logging.log"))
     handler.setLevel(logging.INFO)
@@ -242,6 +240,7 @@ def train_model(params: Params, serialization_dir: str, datasets_path: str) -> M
     model = Model.from_params(vocab, params.pop('model'))
     iterator = DataIterator.from_params(params.pop("iterator"))
 
+    iterator.index_with(vocab)
     trainer_params = params.pop("trainer")
     trainer = Trainer.from_params(model,
                                   serialization_dir,

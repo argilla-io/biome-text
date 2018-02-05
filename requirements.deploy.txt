@@ -1,3 +1,5 @@
-allennlp==0.3.0
+#allennlp==0.3.0
+git+git://github.com/allenai/allennlp.git@2d77a2d#egg=allennlp_2d77a2d
+
 fire==0.1.2
 sanic-cors==0.6.0
