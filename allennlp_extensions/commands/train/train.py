@@ -28,6 +28,7 @@ from copy import deepcopy
 
 from allennlp.commands.evaluate import evaluate
 from allennlp.commands.subcommand import Subcommand
+from allennlp.common import Tqdm
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
 from allennlp.common.tee_logger import TeeLogger
@@ -39,6 +40,8 @@ from allennlp.models.archival import archive_model
 from allennlp.models.model import Model
 from allennlp.training.trainer import Trainer
 from allennlp_extensions.data.dataset import load_from_file
+from allennlp.commands.train import create_serialization_dir
+from allennlp.models.archival import CONFIG_NAME
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -123,18 +126,14 @@ def build_datasets(params: Params):
         logger.info("Reading validation data from %s", validation_data_path)
         validation_data = dataset_reader.read(validation_data_path)
         all_datasets["validation"] = validation_data
-    else:
-        validation_data = None
 
     test_data_path = params.pop("test_data_path", None)
     if test_data_path is not None:
         logger.info("Reading test data from %s", test_data_path)
         test_data = dataset_reader.read(test_data_path)
         all_datasets["test"] = test_data
-    else:
-        test_data = None
 
-    return train_data, validation_data, test_data, all_datasets
+    return all_datasets
 
 
 def load_datasets_from_disk(datasets_path: str):
@@ -171,7 +170,7 @@ def build_or_load_datasets(params: Params, serialization_dir: str, vocab_path: s
         The directory in which to save results and logs.
     """
 
-    train, validation, test, all_datasets = build_datasets(params)
+    all_datasets = build_datasets(params)
     if vocab_path:
         vocab = Vocabulary.from_files(os.path.join(vocab_path, "vocabulary"))
     else:
@@ -186,7 +185,7 @@ def build_or_load_datasets(params: Params, serialization_dir: str, vocab_path: s
         logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
         vocab = build_vocab(all_datasets, datasets_for_vocab_creation, params, serialization_dir)
 
-    return train, validation, test, vocab
+    return all_datasets, vocab
 
 
 def build_vocab(all_datasets, datasets_for_vocab_creation, params, serialization_dir):
@@ -199,7 +198,7 @@ def build_vocab(all_datasets, datasets_for_vocab_creation, params, serialization
     return vocab
 
 
-def train_model(params: Params, serialization_dir: str, vocab_path: str) -> Model:
+def train_model(params: Params, serialization_dir: str, vocab_path: str, file_friendly_logging: bool = False) -> Model:
     """
     This function can be used as an entry point to running models in AllenNLP
     directly from a JSON specification using a :class:`Driver`. Note that if
@@ -218,29 +217,23 @@ def train_model(params: Params, serialization_dir: str, vocab_path: str) -> Mode
         The directory in which to save results and logs.
     """
     prepare_environment(params)
+    create_serialization_dir(params, serialization_dir)
+    prepare_logging(file_friendly_logging, serialization_dir)
 
-    os.makedirs(serialization_dir, exist_ok=True)
-    sys.stdout = TeeLogger(os.path.join(
-        serialization_dir, "stdout.log"), sys.stdout, file_friendly_terminal_output=False)  # type: ignore
-    sys.stderr = TeeLogger(os.path.join(
-        serialization_dir, "stderr.log"), sys.stderr, file_friendly_terminal_output=False)  # type: ignore
-    handler = logging.FileHandler(os.path.join(
-        serialization_dir, "python_logging.log"))
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(name)s - %(message)s'))
-    logging.getLogger().addHandler(handler)
     serialization_params = deepcopy(params).as_dict(quiet=True)
-
-    with open(os.path.join(serialization_dir, "model_params.json"), "w") as param_file:
+    with open(os.path.join(serialization_dir, CONFIG_NAME), "w") as param_file:
         json.dump(serialization_params, param_file, indent=4)
 
-    train_data, validation_data, test_data, vocab = build_or_load_datasets(params, serialization_dir, vocab_path)
+    all_datasets, vocab = build_or_load_datasets(params, serialization_dir, vocab_path)
 
     model = Model.from_params(vocab, params.pop('model'))
     iterator = DataIterator.from_params(params.pop("iterator"))
-
     iterator.index_with(vocab)
+
+    train_data = all_datasets['train']
+    validation_data = all_datasets.get('validation')
+    test_data = all_datasets.get('test')
+
     trainer_params = params.pop("trainer")
     trainer = Trainer.from_params(model,
                                   serialization_dir,
@@ -249,20 +242,40 @@ def train_model(params: Params, serialization_dir: str, vocab_path: str) -> Mode
                                   validation_data,
                                   trainer_params)
 
-    evaluate_on_test = params.pop("evaluate_on_test", False)
+    evaluate_on_test = params.pop_bool("evaluate_on_test", False)
     params.assert_empty('base train command')
-    trainer.train()
+    metrics = trainer.train()
 
     # Now tar up results
-    archive_model(serialization_dir)
+    archive_model(serialization_dir, files_to_archive=params.files_to_archive)
 
     if test_data and evaluate_on_test:
-        test_data.index_instances(vocab)
-        evaluate(model, test_data, iterator,
-                 cuda_device=trainer._cuda_device)  # pylint: disable=protected-access
+        test_metrics = evaluate(model, test_data, iterator,
+                                cuda_device=trainer._cuda_devices[0])  # pylint: disable=protected-access
+        for key, value in test_metrics.items():
+            metrics["test_" + key] = value
 
     elif test_data:
         logger.info("To evaluate on the test set after training, pass the "
                     "'evaluate_on_test' flag, or use the 'allennlp evaluate' command.")
 
+    metrics_json = json.dumps(metrics, indent=2)
+    with open(os.path.join(serialization_dir, "metrics.json"), "w") as metrics_file:
+        metrics_file.write(metrics_json)
+    logger.info("Metrics: %s", metrics_json)
+
     return model
+
+
+def prepare_logging(file_friendly_logging, serialization_dir):
+    Tqdm.set_slower_interval(file_friendly_logging)
+    sys.stdout = TeeLogger(os.path.join(serialization_dir, "stdout.log"),  # type: ignore
+                           sys.stdout,
+                           file_friendly_logging)
+    sys.stderr = TeeLogger(os.path.join(serialization_dir, "stderr.log"),  # type: ignore
+                           sys.stderr,
+                           file_friendly_logging)
+    handler = logging.FileHandler(os.path.join(serialization_dir, "python_logging.log"))
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s'))
+    logging.getLogger().addHandler(handler)

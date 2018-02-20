@@ -83,7 +83,7 @@ class ParallelDatasetReader(ClassificationDatasetReader):
 
         logger.info("Reading instances from dataset at: %s", file_path)
         partitions = self.read_json_dataset(file_path) if is_json(self._ds_format) else self.read_csv_dataset(file_path)
-        logger.info("Intances read")
+        logger.info("Finished reading instances")
 
         for partition in partitions:
             for example in partition:

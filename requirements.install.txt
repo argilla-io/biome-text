@@ -3,7 +3,7 @@ dask[complete]==0.17.0
 tensorboard==1.0.0a6
 
 #allennlp==0.3.0
-git+git://github.com/allenai/allennlp.git@937dfc1#egg=allennlp_937dfc1
+git+git://github.com/allenai/allennlp.git@5756ff6#egg=allennlp_5756ff6
 
 fire==0.1.2
 sanic-cors==0.6.0
