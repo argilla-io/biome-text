@@ -1,9 +1,17 @@
--allennlp==0.3.0
+cachey==0.1.1
+dask[complete]==0.17.0
+tensorboard==1.0.0a6
+
+#allennlp==0.3.0
+git+git://github.com/allenai/allennlp.git@5756ff6#egg=allennlp_5756ff6
+
 fire==0.1.2
 sanic-cors==0.6.0
+gevent==1.2.2
 
 redis==2.10.6
-confluent_kafka==0.11.0
+# TODO solve librdkafka dependency first
+# confluent_kafka==0.11.0
 boto3==1.5.6
 
 

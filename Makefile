@@ -1,6 +1,6 @@
 
 init:
-	@pip install -r requirements.install.txt
+	@pip install -r requirements.install.txt --upgrade
 
 spacy-es:
 	@python -m spacy download es_core_news_sm

@@ -14,17 +14,12 @@ DEFINITION = os.path.join(TEST_RESOURCES, 'resources/definitions/preprocess/simp
 
 class DatasetReaderTest(unittest.TestCase):
     def test_load_generated_datasets_OK(self):
-
         output_dir = tempfile.mkdtemp()
 
         preprocess_from_file(DEFINITION, output_dir)
 
         vocab = Vocabulary.from_files(os.path.join(output_dir, "vocabulary"))
 
-        train_dataset = dataset.load_from_file(os.path.join(output_dir, 'train.data'))
-        validation_dataset = dataset.load_from_file(os.path.join(output_dir, 'validation.data'))
-
-        self.assertNotEqual(0, train_dataset.instances)
-        self.assertNotEqual(0, validation_dataset.instances)
+        self.assertTrue(vocab.get_vocab_size("tokens") > 0)
 
         shutil.rmtree(output_dir)

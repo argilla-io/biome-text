@@ -8,9 +8,15 @@ from typing import Iterable, Dict
 logger = logging.getLogger(__name__)
 
 try:
-    import confluent_kafka as kafka
+    import confluent_kafka.KafkaError as _KafkaError
+    import confluent_kafka.Consumer as KafkaConsumer
+    import confluent_kafka.Producter as KafkaProducer
+
+
 except Exception:
     logger.warning("confluent_kafka not found")
+    import builtins as KafkaProducer
+    import builtins as KafkaConsumer
 
 
 class KafkaPipelineProcess(Process):
@@ -58,7 +64,7 @@ class KafkaPipelineProcess(Process):
                 if not msg.error():
                     self.handle_message(msg, producer)
 
-                elif msg.error().code() != kafka.KafkaError._PARTITION_EOF:
+                elif msg.error().code() != _KafkaError._PARTITION_EOF:
                     logger.error(msg.error())
                     self.stop()
 
@@ -84,22 +90,22 @@ class KafkaPipelineProcess(Process):
                 logger.error(e)
 
     def _create_consumer(self):
-        return kafka.Consumer({
+        return KafkaConsumer({
             'bootstrap.servers': self.__boostrap_servers,
             'group.id': self.group,
             'default.topic.config': {'auto.offset.reset': 'smallest'}
         })
 
-    def _close_producer(self, producer: kafka.Producer):
+    def _close_producer(self, producer: KafkaProducer):
         producer.flush()
         logger.info('producer closed')
 
-    def _close_consumer(self, consumer: kafka.Consumer):
+    def _close_consumer(self, consumer: KafkaConsumer):
         consumer.close()
         logger.info('consumer closed')
 
     def get_topics(self) -> Iterable[str]:
         return self._topics_from
 
-    def _create_producer(self) -> kafka.Producer:
-        return kafka.Producer({'bootstrap.servers': self.__boostrap_servers})
+    def _create_producer(self) -> KafkaProducer:
+        return KafkaProducer({'bootstrap.servers': self.__boostrap_servers})

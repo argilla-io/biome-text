@@ -1,6 +1,6 @@
 {
   "dataset_reader": {
-    "type": "classification_dataset_reader",
+    "type": "parallel_dataset_reader",
     "dataset_format": "json",
     "transformations": {
       "inputs": [

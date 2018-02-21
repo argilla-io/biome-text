@@ -114,8 +114,9 @@ class DatasetReaderTest(unittest.TestCase):
         def check_label_field(labelField: LabelField, expected_labels: Iterable):
             self.assertTrue(labelField.label in expected_labels, msg="expected [%s] in labels" % labelField.label)
 
-        self.assertEqual(expected_length, len(dataset.instances))
-        for example in dataset.instances:
+        lInstances = list(dataset)
+        self.assertEqual(expected_length, len(lInstances))
+        for example in lInstances:
             self.assertTrue(ClassificationDatasetReader._TOKENS_FIELD in example.fields)
             self.assertTrue(ClassificationDatasetReader._LABEL_FIELD in example.fields)
             check_text_field(example.fields[ClassificationDatasetReader._TOKENS_FIELD], expected_inputs)
@@ -127,7 +128,7 @@ class DatasetReaderTest(unittest.TestCase):
             reader = ClassificationDatasetReader.from_params(params=Params(params))
 
             dataset = reader.read(JSON_PATH)
-            for example in dataset.instances:
+            for example in dataset:
                 print(example.__dict__)
 
 
