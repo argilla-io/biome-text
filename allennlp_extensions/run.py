@@ -6,7 +6,7 @@ from pydoc import locate
 from typing import Iterable
 
 import fire
-from allennlp.commands import Evaluate
+from allennlp.commands import Evaluate, MakeVocab
 
 from allennlp_extensions.commands.preprocess import Preprocess
 from allennlp_extensions.commands.restapi import RestAPI
@@ -67,6 +67,7 @@ def main(*kwargs) -> None:
     subcommands = {
         # Default commands
         "preprocess": Preprocess(),
+        "make-vocab": MakeVocab(),
         "train": Train(),
         'publish': PublishModel(),
         'evaluate': Evaluate(),

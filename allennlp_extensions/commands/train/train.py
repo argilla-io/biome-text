@@ -173,6 +173,8 @@ def build_or_load_datasets(params: Params, serialization_dir: str, vocab_path: s
     all_datasets = build_datasets(params)
     if vocab_path:
         vocab = Vocabulary.from_files(os.path.join(vocab_path, "vocabulary"))
+        # We need to store the vocab in the serialization dir to avoid issues when archiving the models after train/eval
+        vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
     else:
         datasets_for_vocab_creation = set(params.pop(
             "datasets_for_vocab_creation", all_datasets))
