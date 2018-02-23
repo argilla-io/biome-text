@@ -16,3 +16,5 @@ test: init-test
 
 install:
 	@python setup.py install
+install-dev:
+	@python setup.py develop

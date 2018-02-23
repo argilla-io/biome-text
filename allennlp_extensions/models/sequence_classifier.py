@@ -15,7 +15,7 @@ from allennlp.models.model import Model
 from allennlp.modules import Seq2VecEncoder
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,8 @@ class SequenceClassifier(Model):
                                      "respectively.".format(text_field_embedder.get_output_dim(),
                                                             encoder.get_input_dim()))
         self._accuracy = CategoricalAccuracy()
+        self.metrics = {label: F1Measure(index) for index, label
+            in self.vocab.get_index_to_token_vocabulary("labels").items()}
         self._loss = torch.nn.CrossEntropyLoss()
 
         initializer(self)
@@ -109,6 +111,8 @@ class SequenceClassifier(Model):
             loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss
             self._accuracy(logits, label.squeeze(-1))
+            for name, metric in self.metrics.items():
+                metric(logits, label.squeeze(-1))
 
         return output_dict
 
@@ -136,9 +140,27 @@ class SequenceClassifier(Model):
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        return {
-            'accuracy': self._accuracy.get_metric(reset)
-        }
+        all_metrics = {}
+
+        total_f1 = 0.0
+        total_precision = 0.0
+        total_recall = 0.0
+        for metric_name, metric in self.metrics.items():
+            precision, recall, f1 = metric.get_metric(reset) # pylint: disable=invalid-name
+            total_f1 += f1
+            total_precision += precision
+            total_recall += recall
+            all_metrics[metric_name + "_f1"] = f1
+            all_metrics[metric_name + "_precision"] = precision
+            all_metrics[metric_name + "_recall"] = recall
+
+        num_metrics = len(self.metrics)
+        all_metrics["average_f1"] = total_f1 / num_metrics
+        all_metrics["average_precision"] = total_precision / num_metrics
+        all_metrics["average_recall"] = total_recall / num_metrics
+        all_metrics['accuracy'] = self._accuracy.get_metric(reset)
+       
+        return all_metrics
 
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceClassifier':
