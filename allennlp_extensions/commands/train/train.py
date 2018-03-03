@@ -40,7 +40,6 @@ from allennlp.models.archival import archive_model
 from allennlp.models.model import Model
 from allennlp.training.trainer import Trainer
 from allennlp_extensions.data.dataset import load_from_file
-from allennlp.commands.train import create_serialization_dir
 from allennlp.models.archival import CONFIG_NAME
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -198,6 +197,22 @@ def build_vocab(all_datasets, datasets_for_vocab_creation, params, serialization
 
     vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
     return vocab
+
+
+# TODO bring logic from allennlp.train
+def create_serialization_dir(params: Params, serialization_dir: str):
+    os.makedirs(serialization_dir, exist_ok=True)
+    sys.stdout = TeeLogger(os.path.join(serialization_dir, "stdout.log"),  # type: ignore
+                           sys.stdout, file_friendly_terminal_output=False)
+    sys.stderr = TeeLogger(os.path.join(serialization_dir, "stderr.log"),  # type: ignore
+                           sys.stderr, file_friendly_terminal_output=False)
+    handler = logging.FileHandler(os.path.join(serialization_dir, "python_logging.log"))
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s'))
+    logging.getLogger().addHandler(handler)
+    serialization_params = deepcopy(params).as_dict(quiet=True)
+    with open(os.path.join(serialization_dir, CONFIG_NAME), "w") as param_file:
+        json.dump(serialization_params, param_file, indent=4)
 
 
 def train_model(params: Params, serialization_dir: str, vocab_path: str, file_friendly_logging: bool = False) -> Model:

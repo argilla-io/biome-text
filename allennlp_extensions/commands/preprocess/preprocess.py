@@ -1,21 +1,16 @@
 import argparse
 import json
 import logging
-
 import os
-
 import sys
 from copy import deepcopy
+from typing import Dict, Iterable
 
-import dill
-import torch
 from allennlp.commands import Subcommand
 from allennlp.common import Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.tee_logger import TeeLogger
-from allennlp.data import DatasetReader, Vocabulary, DataIterator, Instance
-from typing import Dict, Iterable
-from allennlp_extensions.data.dataset import save_to_file
+from allennlp.data import DatasetReader, Vocabulary, Instance
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -124,3 +119,6 @@ def prepare_serialization_dir(params, serialization_dir):
 
     with open(os.path.join(serialization_dir, "preprocess.json"), "w") as param_file:
         json.dump(serialization_params, param_file, indent=4)
+
+
+
