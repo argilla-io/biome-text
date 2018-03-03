@@ -2,6 +2,9 @@ cachey==0.1.1
 dask[complete]==0.17.0
 tensorboard==1.0.0a6
 
+# This fix spacy error with msgpack-pyton 0.5.5
+msgpack-python==0.5.4
+
 allennlp==0.4.0
 #git+git://github.com/allenai/allennlp.git@5756ff6#egg=allennlp_5756ff6
 

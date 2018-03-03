@@ -29,6 +29,7 @@ class ParallelDatasetReader(ClassificationDatasetReader):
     def __init__(self,
                  ds_format: Any,
                  dataset_transformations: Dict,
+                 storage_options: Dict[str, str],
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
 
@@ -48,6 +49,7 @@ class ParallelDatasetReader(ClassificationDatasetReader):
             cache = Cache(cache_size)
             cache.register()
 
+        self._storage_options = storage_options
         self._reader_block_size = block_size
         self._ds_format = 'json' if is_json(ds_format) else CsvConfig.from_params(ds_format)
 
@@ -55,7 +57,8 @@ class ParallelDatasetReader(ClassificationDatasetReader):
         dataframe = dd.read_csv(path,
                                 blocksize=self._reader_block_size,
                                 assume_missing=True,
-                                sep=self._ds_format._delimiter)
+                                sep=self._ds_format._delimiter,
+                                storage_options=self._storage_options)
         columns = dataframe.columns  # csv meta data
         return [dataframe
                     .persist()
@@ -96,6 +99,7 @@ class ParallelDatasetReader(ClassificationDatasetReader):
         cache_size = params.pop('cache_size', 1e9)  # Default 1GB
 
         dataset_format = params.pop('transformations', dict()).as_dict()
+        storage_options = params.pop('connection', dict()).as_dict()
 
         tokenizer = Tokenizer.from_params(params.pop('tokenizer', {}))
         token_indexers = TokenIndexer.dict_from_params(
@@ -104,5 +108,8 @@ class ParallelDatasetReader(ClassificationDatasetReader):
         format = params.pop('dataset_format', None)
 
         params.assert_empty(cls.__name__)
-        return ParallelDatasetReader(format, dataset_format, tokenizer, token_indexers,
+        return ParallelDatasetReader(format,
+                                     dataset_format,
+                                     storage_options,
+                                     tokenizer, token_indexers,
                                      block_size=block_size, cache_size=cache_size)
