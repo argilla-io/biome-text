@@ -60,7 +60,7 @@ class SequenceClassifier(Model):
                                                             encoder.get_input_dim()))
         self._accuracy = CategoricalAccuracy()
         self.metrics = {label: F1Measure(index) for index, label
-            in self.vocab.get_index_to_token_vocabulary("labels").items()}
+                        in self.vocab.get_index_to_token_vocabulary("labels").items()}
         self._loss = torch.nn.CrossEntropyLoss()
 
         initializer(self)
@@ -116,7 +116,6 @@ class SequenceClassifier(Model):
 
         return output_dict
 
-
     @overrides
     def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
@@ -146,7 +145,7 @@ class SequenceClassifier(Model):
         total_precision = 0.0
         total_recall = 0.0
         for metric_name, metric in self.metrics.items():
-            precision, recall, f1 = metric.get_metric(reset) # pylint: disable=invalid-name
+            precision, recall, f1 = metric.get_metric(reset)  # pylint: disable=invalid-name
             total_f1 += f1
             total_precision += precision
             total_recall += recall
@@ -159,7 +158,7 @@ class SequenceClassifier(Model):
         all_metrics["average_precision"] = total_precision / num_metrics
         all_metrics["average_recall"] = total_recall / num_metrics
         all_metrics['accuracy'] = self._accuracy.get_metric(reset)
-       
+
         return all_metrics
 
     @classmethod

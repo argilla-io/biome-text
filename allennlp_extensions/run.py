@@ -6,8 +6,9 @@ from pydoc import locate
 from typing import Iterable
 
 import fire
-from allennlp.commands import Evaluate, MakeVocab
+from allennlp.commands import MakeVocab
 
+from allennlp_extensions.commands import Evaluate
 from allennlp_extensions.commands.preprocess import Preprocess
 from allennlp_extensions.commands.restapi import RestAPI
 from allennlp_extensions.commands.kafka import KafkaPipelineCommand
@@ -60,7 +61,8 @@ def main(*kwargs) -> None:
     # pylint: disable=dangerous-default-value
 
     parser = argparse.ArgumentParser(description="Run AllenNLP", usage='%(prog)s [command]', prog=__name__)
-    parser.add_argument('-v', '--verbose', action='store_true', dest='enable_debug', default=False, help="Enables debug traces")
+    parser.add_argument('-v', '--verbose', action='store_true', dest='enable_debug', default=False,
+                        help="Enables debug traces")
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
     from allennlp_extensions.commands.describe import DescribeRegistrable
@@ -75,7 +77,7 @@ def main(*kwargs) -> None:
         'kafka': KafkaPipelineCommand(),
         'describe': DescribeRegistrable()
     }
-    
+
     for name, subcommand in subcommands.items():
         subcommand.add_subparser(name, subparsers)
 
