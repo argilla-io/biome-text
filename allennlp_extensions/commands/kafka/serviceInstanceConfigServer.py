@@ -8,8 +8,8 @@ from typing import Dict
 logger = logging.getLogger(__name__)
 
 try:
-    import redis.ConnectionPool as ConnectionPool
-    import redis.StrictRedis as StrictRedis
+    import redis.ConnectionPool as ConnectionPool  # pylint: disable=import-error
+    import redis.StrictRedis as StrictRedis  # pylint: disable=import-error
 except Exception:
     logger.warning('Redis not found')
 

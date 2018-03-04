@@ -1,6 +1,7 @@
 
 init:
 	@pip install -r requirements.install.txt --upgrade
+	@pip install pylint
 
 spacy-es:
 	@python -m spacy download es_core_news_sm
@@ -10,11 +11,16 @@ spacy:
 
 init-test:
 	@pip install -r requirements.test.txt
-	
-test: init-test
+
+test: init-test build
 	@nosetests --with-coverage --cover-package=allennlp_extensions -d tests
 
-install:
+.PHONY: build
+build:
+	@pylint allennlp_extensions -E
+
+install: build
 	@python setup.py install
-install-dev:
+
+install-dev: build
 	@python setup.py develop
