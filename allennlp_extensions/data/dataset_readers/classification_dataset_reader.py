@@ -1,174 +1,80 @@
-import csv
 import json
 import logging
-from typing import Dict, Iterable, Callable, Tuple
+from typing import Iterable, Dict, Any
 
+import dask.bag as db
+import dask.dataframe as dd
 from allennlp.common import Params
-from allennlp.common.file_utils import cached_path
-from allennlp.data.dataset_readers.dataset_reader import DatasetReader
-from allennlp.data.fields import Field, TextField, LabelField
-from allennlp.data.instance import Instance
-from allennlp.data.token_indexers import SingleIdTokenIndexer, TokenIndexer
-from allennlp.data.tokenizers import Tokenizer, WordTokenizer
+from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer, Field
+from allennlp.data.fields import TextField, LabelField
+from allennlp.data.token_indexers import SingleIdTokenIndexer
+from allennlp.data.tokenizers import WordTokenizer
+from dask.bag import Bag
 from overrides import overrides
 
-from allennlp_extensions.data.dataset_readers.reader_utils import CsvConfig, ds_format, is_json
+from allennlp_extensions.data.dataset_readers.reader_utils import is_json
+from allennlp_extensions.data.dataset_readers.classification_instance_preparator import ClassificationInstancePreparator
+from allennlp_extensions.data.dataset_readers.reader_utils import CsvConfig
 from allennlp_extensions.data.tokenizer.word_splitter import SpacyWordSplitter
 
 __name__ = "classification_dataset_reader"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
+TOKENS_FIELD = 'tokens'
+LABEL_FIELD = 'label'
+
 
 @DatasetReader.register(__name__)
 class ClassificationDatasetReader(DatasetReader):
-    """
-    Configuration examples
-    ---------------------
-
-    From jsonl files
-fi
-        {
-          "dataset_reader": {
-            "type": "classification_dataset_reader",
-            "dataset_format": "json",
-            "transformations": {
-              "inputs": [
-                "reviewText"
-              ],
-              "gold_label": {
-                "field": "overall",
-                "values_mapping": {
-                  "1": "NEGATIVE",
-                  "2": "NEGATIVE",
-                  "3": "NEUTRAL",
-                  "4": "POSITIVE",
-                  "5": "POSITIVE"
-                }
-              }
-            },
-            "token_indexers": {
-              "tokens": {
-                "type": "single_id",
-                "lowercase_tokens": true
-              }
-            }
-          }
-        }
-
-    From csv files:
-        {
-          "dataset_reader": {
-            "type": "classification_dataset_reader",
-            "dataset_format": {
-              "type": "csv",
-              "delimiter" : ","
-            },
-            "transformations": {
-              "inputs": [
-                "text"
-              ],
-              "gold_label": {
-                "field": "topic"
-              }
-            },
-            "tokenizer": {
-              "word_splitter": {
-                "language": "en_core_web_sm"
-              }
-            },
-            "token_indexers": {
-              "tokens": {
-                "type": "single_id",
-                "lowercase_tokens": true
-              }
-            }
-          }
-        }
-    """
-
-    _TOKENS_FIELD = 'tokens'
-    _LABEL_FIELD = 'label'
-
-    __INPUTS_FIELD = 'inputs'
-    __GOLD_LABEL = 'gold_label'
-
-    __MISSING_LABEL_DEFAULT = 'None'
-
     def __init__(self,
-                 file_reader: Callable[[str], Iterable[Dict]],
+                 ds_format: Any,
                  dataset_transformations: Dict,
-                 tokenizer: Tokenizer = None,
-                 token_indexers: Dict[str, TokenIndexer] = None) -> None:
+                 storage_options: Dict[str, str],
+                 token_indexers: Dict[str, TokenIndexer] = None,
+
+                 block_size: int = 10e6,
+                 cache_size: int = None,
+                 ) -> None:
 
         super(ClassificationDatasetReader, self).__init__(lazy=True)
 
         self._tokenizer = WordTokenizer(word_splitter=SpacyWordSplitter())
-        self._dataset_transformations = dataset_transformations
-        self._file_reader = file_reader
-        self._token_indexers = token_indexers or {
-            ClassificationDatasetReader._TOKENS_FIELD: SingleIdTokenIndexer()}
+        self._token_indexers = token_indexers or {TOKENS_FIELD: SingleIdTokenIndexer()}
+        self._instance_preparator = ClassificationInstancePreparator(dataset_transformations)
 
-    """
-    Reads a file from a classification dataset.  This data is
-    formatted as csv. We convert these keys into fields named "label", "premise" and "hypothesis".
+        from dask.cache import Cache
 
-    Parameters
-    ----------
-    file_reader: ``Callable[[str], Iterable[Dict]]``
-        Define a function to parse input dataset as a collection of dictionaries
-    dataset_transformations: ``Dict``
-        Define field for input and gold_label from dataset schema 
-    tokenizer : ``Tokenizer``, optional (default=``WordTokenizer()``)
-        We use this ``Tokenizer`` for both the premise and the hypothesis.  See :class:`Tokenizer`.
-    token_indexers : ``Dict[str, TokenIndexer]``, optional (default=``{"tokens": SingleIdTokenIndexer()}``)
-    See :class:`TokenIndexer`.
-            
-    """
+        if cache_size:
+            cache = Cache(cache_size)
+            cache.register()
 
-    def _input(self, example: Dict) -> str:
-        inputs_field = self._dataset_transformations[ClassificationDatasetReader.__INPUTS_FIELD]
-        return inputs_field \
-            if type(inputs_field) is str \
-            else " ".join([str(example[input]) for input in inputs_field])
+        self._storage_options = storage_options
+        self._reader_block_size = block_size
+        self._ds_format = 'json' if is_json(ds_format) else CsvConfig.from_params(ds_format)
 
-    def _gold_label(self, example: Dict) -> str:
+    def read_csv_dataset(self, path: str) -> Iterable[Bag]:
+        dataframe = dd.read_csv(path,
+                                blocksize=self._reader_block_size,
+                                assume_missing=True,
+                                sep=self._ds_format._delimiter,
+                                storage_options=self._storage_options)
+        columns = [column.strip() for column in  dataframe.columns]  # csv meta data
+        return [dataframe
+                    .persist()
+                    .to_bag(index=False)
+                    .map(lambda row: dict(zip(columns, row)))
+                    .persist()]
 
-        def with_mapping(value, mapping=None):
-            # Adding default value to value, enables partial mapping
-            # Handling missing labels with a default value
-            if value == "":
-                value = ClassificationDatasetReader.__MISSING_LABEL_DEFAULT
-            return mapping.get(value, value) if mapping else value
+    def read_json_dataset(self, path: str) -> Iterable[Bag]:
+        return [db.read_text(path, blocksize=self._reader_block_size)
+                    .persist()
+                    .map(json.loads)
+                    .persist()]
 
-        field_type = "field"
-        field_mapping = "values_mapping"
-
-        gold_label_definition = self._dataset_transformations[
-            ClassificationDatasetReader.__GOLD_LABEL]
-
-        return str(example[gold_label_definition]
-                   if type(gold_label_definition) is str
-                   else with_mapping(example[gold_label_definition[field_type]],
-                                     gold_label_definition.get(field_mapping, None)))
-
-    def read_info(self, example: Dict) -> Tuple[str, str]:
-        input_text = self._input(example)
-        label = self._gold_label(example)
-
-        return input_text, label
-
-    @overrides
-    def _read(self, file_path: str) -> Iterable[Instance]:
-        # if `file_path` is a URL, redirect to the cache
-        file_path = cached_path(file_path)
-
-        with open(file_path, 'r') as input_file:
-            logger.info("Reading instances from dataset at: %s", file_path)
-
-            for example in self._file_reader(file_path):
-                input_text, label = self.read_info(example)
-                logger.debug('Example:[%s];Input:[%s];Label:[%s]', example, input_text, label)
-                yield self.text_to_instance(input_text, label)
+    def process_example(self, example: Dict) -> Instance:
+        input_text, label = self._instance_preparator.read_info(example)
+        logger.debug('Example:[%s];Input:[%s];Label:[%s]', example, input_text, label)
+        return self.text_to_instance(input_text, label)
 
     @overrides
     def text_to_instance(self,  # type: ignore
@@ -178,55 +84,48 @@ fi
         fields: Dict[str, Field] = {}
 
         input_tokens = self._tokenizer.tokenize(input_text)
-        fields[ClassificationDatasetReader._TOKENS_FIELD] = TextField(
-            input_tokens, self._token_indexers)
+        fields[TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
 
         if label:
-            fields[ClassificationDatasetReader._LABEL_FIELD] = LabelField(
-                label)
+            fields[LABEL_FIELD] = LabelField(label)
 
         return Instance(fields)
+
+    @overrides
+    def _read(self, file_path: str) -> Iterable[Instance]:
+        # if `file_path` is a URL, redirect to the cache
+
+        logger.info("Reading instances from dataset at: %s", file_path)
+        partitions = self.read_json_dataset(file_path) if is_json(self._ds_format) else self.read_csv_dataset(file_path)
+        logger.info("Finished reading instances")
+
+        for partition in partitions:
+            for example in partition:
+                yield self.process_example(example)
 
     @classmethod
     def from_params(cls, params: Params) -> 'ClassificationDatasetReader':
 
-        file_reader = cls.configure_file_reader(params)
-        dataset_format = params.pop('transformations', dict()).as_dict()
+        block_size = params.pop('block_size', 10e6)  # Deafault 10MB
+        cache_size = params.pop('cache_size', 1e9)  # Default 1GB
+
+        ds_transformations = params.pop('transformations', dict()).as_dict()
+        storage_options = params.pop('connection', dict()).as_dict()
 
         tokenizer = Tokenizer.from_params(params.pop('tokenizer', {}))
         token_indexers = TokenIndexer.dict_from_params(
             params.pop('token_indexers', {}))
 
+        ds_format = params.pop('dataset_format', None)
+
         params.assert_empty(cls.__name__)
+        return ClassificationDatasetReader(ds_format,
+                                           ds_transformations,
+                                           storage_options,
+                                           token_indexers,
+                                           block_size=block_size, cache_size=cache_size)
 
-        return ClassificationDatasetReader(
-            file_reader=file_reader,
-            dataset_transformations=dataset_format,
-            tokenizer=tokenizer,
-            token_indexers=token_indexers)
 
-    @staticmethod
-    def configure_file_reader(params: Params) -> Callable[[str], Iterable[Dict]]:
-        def csv_file_reader(config: CsvConfig):
-            def inner(input_file: str) -> Iterable[Dict]:
-                with open(input_file) as csv_file:
-                    header = [h.strip()
-                              for h in csv_file.readline().split(config._delimiter)]
-                    reader = csv.DictReader(csv_file,
-                                            delimiter=config._delimiter,
-                                            fieldnames=header,
-                                            skipinitialspace=True)
-                    for example in reader:
-                        yield example
-
-            return inner
-
-        def json_file_reader(input_file: str):
-            with open(input_file) as json_file:
-                for line in json_file:
-                    example = json.loads(line)
-                    logger.debug('Read %s', example)
-                    yield example
-
-        format = ds_format(params)
-        return json_file_reader if is_json(format) else csv_file_reader(CsvConfig.from_params(format))
+@DatasetReader.register("parallel_dataset_reader")
+class ParallelDatasetReader(ClassificationDatasetReader):
+    """Just for backward compatibility"""

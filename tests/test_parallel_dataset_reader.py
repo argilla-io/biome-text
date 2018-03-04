@@ -1,14 +1,14 @@
 import json
-import unittest
 import os
+import unittest
+from typing import Iterable
 
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
-from typing import Iterable
 
-from allennlp_extensions.data.dataset_readers import ClassificationDatasetReader
-from allennlp_extensions.data.dataset_readers.parallel_dataset_reader import ParallelDatasetReader
+from allennlp_extensions.data.dataset_readers.classification_dataset_reader import ParallelDatasetReader, \
+    TOKENS_FIELD, LABEL_FIELD
 from tests.test_context import TEST_RESOURCES
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
@@ -59,7 +59,7 @@ class ParallelDatasetReaderTest(unittest.TestCase):
         materializedInstances = list(dataset)
         self.assertEqual(expected_length, len(materializedInstances))
         for example in materializedInstances:
-            self.assertTrue(ClassificationDatasetReader._TOKENS_FIELD in example.fields)
-            self.assertTrue(ClassificationDatasetReader._LABEL_FIELD in example.fields)
-            check_text_field(example.fields[ClassificationDatasetReader._TOKENS_FIELD], expected_inputs)
-            check_label_field(example.fields[ClassificationDatasetReader._LABEL_FIELD], expected_labels)
+            self.assertTrue(TOKENS_FIELD in example.fields)
+            self.assertTrue(LABEL_FIELD in example.fields)
+            check_text_field(example.fields[TOKENS_FIELD], expected_inputs)
+            check_label_field(example.fields[LABEL_FIELD], expected_labels)
