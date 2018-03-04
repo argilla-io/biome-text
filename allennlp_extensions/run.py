@@ -8,7 +8,7 @@ from typing import Iterable
 import fire
 from allennlp.commands import MakeVocab
 
-from allennlp_extensions.commands import Evaluate
+from allennlp.commands import Evaluate
 from allennlp_extensions.commands.preprocess import Preprocess
 from allennlp_extensions.commands.restapi import RestAPI
 from allennlp_extensions.commands.kafka import KafkaPipelineCommand
