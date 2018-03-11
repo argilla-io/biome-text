@@ -9,9 +9,7 @@
     ],
     "gold_label": {
       "field": "organisation name",
-      "values_mapping": {
-        "": "None"
-      }
+      "use_missing_label" : "None"
     }
   }
 }

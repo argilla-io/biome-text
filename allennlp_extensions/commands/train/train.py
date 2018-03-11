@@ -285,7 +285,7 @@ def train_model(params: Params, serialization_dir: str, vocab_path: str, file_fr
 
 
 def prepare_logging(file_friendly_logging, serialization_dir):
-    Tqdm.set_slower_interval(file_friendly_logging)
+    Tqdm.set_default_mininterval(file_friendly_logging)
     sys.stdout = TeeLogger(os.path.join(serialization_dir, "stdout.log"),  # type: ignore
                            sys.stdout,
                            file_friendly_logging)

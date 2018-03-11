@@ -7,7 +7,8 @@ from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 from typing import Iterable
 
-from allennlp_extensions.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
+from allennlp_extensions.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader, \
+    TOKENS_FIELD, LABEL_FIELD
 
 from tests.test_context import TEST_RESOURCES
 
@@ -19,11 +20,11 @@ class DatasetReaderTest(unittest.TestCase):
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name('classification_dataset_reader')
         self.assertEquals(ClassificationDatasetReader, dataset_reader)
-    
+
     def test_read_input_csv(self):
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
+        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
         json_config = os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfig.json')
         with open(json_config) as json_file:
@@ -35,10 +36,12 @@ class DatasetReaderTest(unittest.TestCase):
 
     def test_reader_csv_with_mappings(self):
         expected_length = 9
-        expected_inputs = ['44', 'blue', '-', 'collar', 'married', '53', 'technician', 'married', '39', 'services',
-                          'married',
-                          '55', 'retired', 'married', '37', 'married', '36', 'admin', 'married', '28', 'management',
-                          'single', '30', 'management', 'divorced', '39', 'divorced', '.']
+        expected_inputs = ['44.0', 'blue', '-', 'collar', 'married', '53.0', 'technician', 'married', '39.0',
+                           'services',
+                           'married',
+                           '55.0', 'retired', 'married', '37.0', 'married', '36.0', 'admin', 'married', '28.0',
+                           'management',
+                           'single', '30.0', 'management', 'divorced', '39.0', 'divorced', '.']
 
         with open(os.path.join(TEST_RESOURCES, 'resources/readerWithMappings.json')) as json_file:
             params = json.loads(json_file.read())
@@ -49,14 +52,14 @@ class DatasetReaderTest(unittest.TestCase):
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
         expected_length = 3
-        expected_inputs = ['1', '2', '3']
+        expected_inputs = ['1.0', '2.0', '3.0']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
         with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigMultiwordTrailing.json')) as json_file:
             params = json.loads(json_file.read())
             reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(local_data_path)
 
-            self._check_dataset(dataset, expected_length, expected_inputs, ['1', '2', '3'])
+            self._check_dataset(dataset, expected_length, expected_inputs, ['1.0', '2.0', '3.0'])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
@@ -85,9 +88,10 @@ class DatasetReaderTest(unittest.TestCase):
         expected_length = 3
         expected_inputs = ['Colin', 'Revol', 'Roger', 'Dufils', 'Anne', 'Pierre', 'Jousseaume', 'Thierry']
         # 'None' is a custom partial mapping for missing labels
-        expected_labels = ['NOLABEL', '11205 - Nurses: Private, Ho', 'person']
+        expected_labels = ['11205 - Nurses: Private, Ho', 'person', 'NOLABEL']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
-        with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigPartialMappingMissingLabel.json')) as json_file:
+        with open(os.path.join(TEST_RESOURCES,
+                               'resources/datasetReaderConfigPartialMappingMissingLabel.json')) as json_file:
             params = json.loads(json_file.read())
             reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(local_data_path)
@@ -97,7 +101,8 @@ class DatasetReaderTest(unittest.TestCase):
     def test_reader_csv_uk_data(self):
         expected_length = 9
         expected_inputs = None
-        expected_labels = ['None ', 'None', 'None', 'Assembly Rooms Edinburgh ', 'Fortress Technology (europe) Ltd ', 'None', 'None', 'Scott David ', 'None', 'Corby Borough Council ']
+        expected_labels = ['None ', 'None', 'None', 'Assembly Rooms Edinburgh', 'Fortress Technology (europe) Ltd',
+                           'None', 'None', 'Scott David', '  ', 'None', 'Corby Borough Council']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/uk_customer_data_10.csv')
         with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigUK.json')) as json_file:
             params = json.loads(json_file.read())
@@ -105,11 +110,12 @@ class DatasetReaderTest(unittest.TestCase):
             dataset = reader.read(local_data_path)
 
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+
     def _check_dataset(self, dataset, expected_length: int, expected_inputs: Iterable, expected_labels: Iterable):
         def check_text_field(textField: TextField, expected_inputs: Iterable):
             if expected_inputs:
                 [self.assertTrue(token.text in expected_inputs, msg="expected [%s] in input" % token.text) for token in
-                textField.tokens]
+                 textField.tokens]
 
         def check_label_field(labelField: LabelField, expected_labels: Iterable):
             self.assertTrue(labelField.label in expected_labels, msg="expected [%s] in labels" % labelField.label)
@@ -117,10 +123,10 @@ class DatasetReaderTest(unittest.TestCase):
         lInstances = list(dataset)
         self.assertEqual(expected_length, len(lInstances))
         for example in lInstances:
-            self.assertTrue(ClassificationDatasetReader._TOKENS_FIELD in example.fields)
-            self.assertTrue(ClassificationDatasetReader._LABEL_FIELD in example.fields)
-            check_text_field(example.fields[ClassificationDatasetReader._TOKENS_FIELD], expected_inputs)
-            check_label_field(example.fields[ClassificationDatasetReader._LABEL_FIELD], expected_labels)
+            self.assertTrue(TOKENS_FIELD in example.fields)
+            self.assertTrue(LABEL_FIELD in example.fields)
+            check_text_field(example.fields[TOKENS_FIELD], expected_inputs)
+            check_label_field(example.fields[LABEL_FIELD], expected_labels)
 
     def test_read_json(self):
         with open(os.path.join(TEST_RESOURCES, 'resources/readerFromJson.json')) as json_file:
