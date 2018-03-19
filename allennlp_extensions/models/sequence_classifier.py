@@ -135,6 +135,7 @@ class SequenceClassifier(Model):
         argmax_i = numpy.argmax(all_predictions)
         label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
         output_dict['max_label'] = label
+        
         return output_dict
 
     @overrides
