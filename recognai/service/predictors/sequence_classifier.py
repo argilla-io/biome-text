@@ -7,7 +7,7 @@ from allennlp.service.predictors import Predictor
 from overrides import overrides
 from typing import Tuple
 
-from allennlp_extensions.data.dataset_readers import ClassificationDatasetReader
+from recognai.data.dataset_readers import ClassificationDatasetReader
 
 
 @Predictor.register('sequence-classifier')

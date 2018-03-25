@@ -5,9 +5,9 @@ import unittest
 
 from allennlp.data import Vocabulary
 
-from allennlp_extensions.commands.preprocess.preprocess import preprocess_from_file
-from allennlp_extensions.commands.train.train import train_model_from_file
-from allennlp_extensions.data import dataset
+from recognai.commands.preprocess.preprocess import preprocess_from_file
+from recognai.commands.train.train import train_model_from_file
+from recognai.data import dataset
 from tests.test_context import TEST_RESOURCES
 
 DEFINITION_PREPROCESS = os.path.join(TEST_RESOURCES, 'resources/definitions/preprocess/simple.json')

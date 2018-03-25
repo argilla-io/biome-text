@@ -9,12 +9,12 @@ import fire
 from allennlp.commands import MakeVocab
 
 from allennlp.commands import Evaluate
-from allennlp_extensions.commands.preprocess import Preprocess
-from allennlp_extensions.commands.restapi import RestAPI
-from allennlp_extensions.commands.kafka import KafkaPipelineCommand
-from allennlp_extensions.commands.publish import PublishModel
+from recognai.commands.preprocess import Preprocess
+from recognai.commands.restapi import RestAPI
+from recognai.commands.kafka import KafkaPipelineCommand
+from recognai.commands.publish import PublishModel
 
-from allennlp_extensions.commands.train import Train
+from recognai.commands.train import Train
 
 __logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ def main(*kwargs) -> None:
                         help="Enables debug traces")
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
-    from allennlp_extensions.commands.describe import DescribeRegistrable
+    from recognai.commands.describe import DescribeRegistrable
     subcommands = {
         # Default commands
         "preprocess": Preprocess(),

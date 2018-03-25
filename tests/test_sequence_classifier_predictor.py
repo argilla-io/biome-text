@@ -4,7 +4,7 @@ import unittest
 from allennlp.models import load_archive
 from allennlp.service.predictors import Predictor
 
-from allennlp_extensions.service.predictors import SequenceClassifierPredictor
+from recognai.service.predictors import SequenceClassifierPredictor
 from tests.test_context import TEST_RESOURCES
 
 MODEL_PATH = os.path.join(TEST_RESOURCES, 'resources/models/model.tar.gz')
@@ -23,7 +23,9 @@ class SequenceClassifierPredictorTest(unittest.TestCase):
         result = predictor.predict_json(inputs)
 
         label = result.get("probabilities_by_class")
-        assert label in ['business', 'person']
+        
+        assert 'person' in label
+        assert 'business' in label
 
         class_probabilities = result.get("class_probabilities")
         assert class_probabilities is not None

@@ -2,7 +2,7 @@ import argparse
 
 from allennlp.commands import Subcommand
 
-from allennlp_extensions.commands.restapi import server_sanic
+from recognai.commands.restapi import server_sanic
 
 
 class RestAPI(Subcommand):

@@ -1,0 +1,1 @@
+from  recognai.models.sequence_classifier import SequenceClassifier
