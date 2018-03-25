@@ -8,7 +8,7 @@ from allennlp.service.predictors import Predictor
 
 from .kafkaPipelineProcess import KafkaPipelineProcess
 from .serviceInstanceConfigServer import ServiceInstanceConfigServer, RedisClient
-from allennlp_extensions.commands.utils import yaml_to_dict
+from recognai.commands.utils import yaml_to_dict
 
 _logger = logging.getLogger(__name__)
 

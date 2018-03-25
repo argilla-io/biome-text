@@ -4,7 +4,7 @@
 import os
 from setuptools import setup, find_packages
 
-NAME = 'allennlp_extensions'
+NAME = 'recognai'
 
 here = os.path.abspath(os.path.dirname(__file__))
 

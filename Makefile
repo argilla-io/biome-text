@@ -13,11 +13,11 @@ init-test:
 	@pip install -r requirements.test.txt
 
 test: init-test build
-	@nosetests --with-coverage --cover-package=allennlp_extensions -d tests
+	@nosetests --with-coverage --cover-package=recognai -d tests
 
 .PHONY: build
 build:
-	@pylint allennlp_extensions -E
+	@pylint recognai -E
 
 install: build
 	@python setup.py install

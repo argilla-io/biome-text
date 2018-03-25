@@ -39,7 +39,7 @@ from allennlp.data.iterators.data_iterator import DataIterator
 from allennlp.models.archival import archive_model
 from allennlp.models.model import Model
 from allennlp.training.trainer import Trainer
-from allennlp_extensions.data.dataset import load_from_file
+from recognai.data.dataset import load_from_file
 from allennlp.models.archival import CONFIG_NAME
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name

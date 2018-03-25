@@ -7,7 +7,7 @@ from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 from typing import Iterable
 
-from allennlp_extensions.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader, \
+from recognai.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader, \
     TOKENS_FIELD, LABEL_FIELD
 
 from tests.test_context import TEST_RESOURCES

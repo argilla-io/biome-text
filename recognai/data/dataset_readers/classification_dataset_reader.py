@@ -12,10 +12,10 @@ from allennlp.data.tokenizers import WordTokenizer
 from dask.bag import Bag
 from overrides import overrides
 
-from allennlp_extensions.data.dataset_readers.reader_utils import is_json
-from allennlp_extensions.data.dataset_readers.classification_instance_preparator import ClassificationInstancePreparator
-from allennlp_extensions.data.dataset_readers.reader_utils import CsvConfig
-from allennlp_extensions.data.tokenizer.word_splitter import SpacyWordSplitter
+from recognai.data.dataset_readers.reader_utils import is_json
+from recognai.data.dataset_readers.classification_instance_preparator import ClassificationInstancePreparator
+from recognai.data.dataset_readers.reader_utils import CsvConfig
+from recognai.data.tokenizer.word_splitter import SpacyWordSplitter
 
 __name__ = "classification_dataset_reader"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
