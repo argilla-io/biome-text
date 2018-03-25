@@ -126,16 +126,20 @@ class SequenceClassifier(Model):
         if not isinstance(all_predictions, numpy.ndarray):
             all_predictions = all_predictions.data.numpy()
 
-        output_map_probs = {}
-        for i, prob in enumerate(all_predictions[0]):
-            label_key = self.vocab.get_token_from_index(i, namespace="labels")
-            output_map_probs[label_key] = prob
-        output_dict['probabilities_by_class'] = output_map_probs
+        output_map_probs = []
+        max_labels = []
+        for i, probs in enumerate(all_predictions):
+            argmax_i = numpy.argmax(probs)
+            label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
+            max_labels.append(label)
 
-        argmax_i = numpy.argmax(all_predictions)
-        label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
-        output_dict['max_label'] = label
-        
+            output_map_probs.append({})
+            for j, prob in enumerate(probs):
+                label_key = self.vocab.get_token_from_index(j, namespace="labels")
+                output_map_probs[i][label_key] = prob
+
+        output_dict['probabilities_by_class'] = output_map_probs
+        output_dict['max_label'] = max_labels
         return output_dict
 
     @overrides
