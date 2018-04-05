@@ -241,7 +241,20 @@ def train_model(params: Params, serialization_dir: str, vocab_path: str, file_fr
     with open(os.path.join(serialization_dir, CONFIG_NAME), "w") as param_file:
         json.dump(serialization_params, param_file, indent=4)
 
-    all_datasets, vocab = build_or_load_datasets(params, serialization_dir, vocab_path)
+    #all_datasets, vocab = build_or_load_datasets(params, serialization_dir, vocab_path)
+    all_datasets = datasets_from_params(params)
+    datasets_for_vocab_creation = set(params.pop("datasets_for_vocab_creation", all_datasets))
+
+    for dataset in datasets_for_vocab_creation:
+        if dataset not in all_datasets:
+            raise ConfigurationError(f"invalid 'dataset_for_vocab_creation' {dataset}")
+
+    logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
+    vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
+                                   (instance for key, dataset in all_datasets.items()
+                                    for instance in dataset
+                                    if key in datasets_for_vocab_creation))
+    vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
 
     model = Model.from_params(vocab, params.pop('model'))
     iterator = DataIterator.from_params(params.pop("iterator"))
@@ -283,6 +296,37 @@ def train_model(params: Params, serialization_dir: str, vocab_path: str, file_fr
 
     return model
 
+def datasets_from_params(params: Params) -> Dict[str, Iterable[Instance]]:
+    """
+    Load all the datasets specified by the config.
+    """
+    dataset_reader = DatasetReader.from_params(params.pop('dataset_reader'))
+    validation_dataset_reader_params = params.pop("validation_dataset_reader", None)
+
+    validation_and_test_dataset_reader: DatasetReader = dataset_reader
+    if validation_dataset_reader_params is not None:
+        logger.info("Using a separate dataset reader to load validation and test data.")
+        validation_and_test_dataset_reader = DatasetReader.from_params(validation_dataset_reader_params)
+
+    train_data_path = params.pop('train_data_path')
+    logger.info("Reading training data from %s", train_data_path)
+    train_data = dataset_reader.read(train_data_path)
+
+    datasets: Dict[str, Iterable[Instance]] = {"train": train_data}
+
+    validation_data_path = params.pop('validation_data_path', None)
+    if validation_data_path is not None:
+        logger.info("Reading validation data from %s", validation_data_path)
+        validation_data = validation_and_test_dataset_reader.read(validation_data_path)
+        datasets["validation"] = validation_data
+
+    test_data_path = params.pop("test_data_path", None)
+    if test_data_path is not None:
+        logger.info("Reading test data from %s", test_data_path)
+        test_data = validation_and_test_dataset_reader.read(test_data_path)
+        datasets["test"] = test_data
+
+    return datasets
 
 def prepare_logging(file_friendly_logging, serialization_dir):
     Tqdm.set_default_mininterval(file_friendly_logging)
