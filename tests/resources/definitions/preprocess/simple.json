@@ -3,11 +3,11 @@
     "type": "parallel_dataset_reader",
     "dataset_format": "json",
     "transformations": {
-      "inputs": [
+      "tokens": [
         "reviewText"
       ],
-      "gold_label": {
-        "field": "overall"
+      "target": {
+        "gold_label": "overall"
       }
     },
     "token_indexers": {

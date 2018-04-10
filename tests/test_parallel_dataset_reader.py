@@ -7,14 +7,14 @@ from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
-from recognai.data.dataset_readers.classification_dataset_reader import ParallelDatasetReader, \
-    TOKENS_FIELD, LABEL_FIELD
+from recognai.data.dataset_readers.classification_dataset_reader import ParallelDatasetReader
 from tests.test_context import TEST_RESOURCES
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
 JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
 DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions')
 
+TOKENS_FIELD = 'tokens'
 
 class ParallelDatasetReaderTest(unittest.TestCase):
 
@@ -60,6 +60,6 @@ class ParallelDatasetReaderTest(unittest.TestCase):
         self.assertEqual(expected_length, len(materializedInstances))
         for example in materializedInstances:
             self.assertTrue(TOKENS_FIELD in example.fields)
-            self.assertTrue(LABEL_FIELD in example.fields)
+            self.assertTrue("gold_label" in example.fields)
             check_text_field(example.fields[TOKENS_FIELD], expected_inputs)
-            check_label_field(example.fields[LABEL_FIELD], expected_labels)
+            check_label_field(example.fields["gold_label"], expected_labels)

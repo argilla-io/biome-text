@@ -20,10 +20,6 @@ from recognai.data.tokenizer.word_splitter import SpacyWordSplitter
 __name__ = "classification_dataset_reader"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
-TOKENS_FIELD = 'tokens'
-LABEL_FIELD = 'label'
-
-
 @DatasetReader.register(__name__)
 class ClassificationDatasetReader(DatasetReader):
     def __init__(self,
@@ -31,15 +27,14 @@ class ClassificationDatasetReader(DatasetReader):
                  dataset_transformations: Dict,
                  storage_options: Dict[str, str],
                  token_indexers: Dict[str, TokenIndexer] = None,
-
                  block_size: int = 10e6,
-                 cache_size: int = None,
+                 cache_size: int = None
                  ) -> None:
 
         super(ClassificationDatasetReader, self).__init__(lazy=True)
 
         self._tokenizer = WordTokenizer(word_splitter=SpacyWordSplitter())
-        self._token_indexers = token_indexers or {TOKENS_FIELD: SingleIdTokenIndexer()}
+        self._token_indexers = token_indexers
         self._instance_preparator = ClassificationInstancePreparator(dataset_transformations)
 
         from dask.cache import Cache
@@ -72,29 +67,27 @@ class ClassificationDatasetReader(DatasetReader):
                     .persist()]
 
     def process_example(self, example: Dict) -> Instance:
-        input_text, label = self._instance_preparator.read_info(example)
-        logger.debug('Example:[%s];Input:[%s];Label:[%s]', example, input_text, label)
-        return self.text_to_instance(input_text, label)
+        example = self._instance_preparator.read_info(example)
+        logger.debug('Example:[%s]', example)
+        return self.text_to_instance(example)
 
-    @overrides
     def text_to_instance(self,  # type: ignore
-                         input_text: str,
-                         label: str = None) -> Instance:
+                         example: Dict) -> Instance:
         # pylint: disable=arguments-differ
         fields: Dict[str, Field] = {}
+        
+        gold_label_id = self._instance_preparator.get_gold_label_id()
 
-        input_tokens = self._tokenizer.tokenize(input_text)
-        fields[TOKENS_FIELD] = TextField(input_tokens, self._token_indexers)
-
-        if label:
-            fields[LABEL_FIELD] = LabelField(label)
-
+        for field, value in example.items():
+            if field == gold_label_id:
+                fields[gold_label_id] =  LabelField(value)
+            else:
+                input_tokens = self._tokenizer.tokenize(value)
+                fields[field] = TextField(input_tokens, self._token_indexers)
         return Instance(fields)
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        # if `file_path` is a URL, redirect to the cache
-
         logger.info("Reading instances from dataset at: %s", file_path)
         partitions = self.read_json_dataset(file_path) if is_json(self._ds_format) else self.read_csv_dataset(file_path)
         logger.info("Finished reading instances")

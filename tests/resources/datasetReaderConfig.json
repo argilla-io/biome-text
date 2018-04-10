@@ -4,7 +4,7 @@
     "delimiter": ","
   },
   "transformations": {
-    "inputs": [
+    "tokens": [
       "age"
     ],
     "gold_label": "job"

@@ -2,7 +2,7 @@
   "dataset_format": "json",
 
   "transformations": {
-    "inputs": [
+    "tokens": [
       "reviewText"
     ],
     "gold_label": {
