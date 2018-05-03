@@ -44,5 +44,4 @@ class ClassificationInstancePreparator(object):
     def read_info(self, example: Dict) -> Tuple[str, str]:
         input_text = self._input(example)
         label = self._gold_label(example)
-
         return input_text, label
