@@ -1,4 +1,10 @@
-
+NAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	platform=linux-amd64
+endif
+ifeq ($(UNAME_S),Darwin)
+	platform=darwin-amd64
+endif
 init:
 	@pip install -r requirements.install.txt --upgrade
 	@pip install pylint
@@ -16,10 +22,10 @@ test: init-test build
 	@nosetests --with-coverage --cover-package=recognai -d tests
 
 .PHONY: build
-build:
+build: 
 	@pylint recognai -E
 
-install: build
+install: test
 	@python setup.py install
 
 install-dev: build
