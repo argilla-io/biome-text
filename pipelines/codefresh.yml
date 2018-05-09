@@ -13,8 +13,4 @@ steps:
     title: Pushing to Docker Registry
     type: push
     candidate: '${{BuildingDockerImage}}'
-    tag: '${{CF_SHORT_REVISION}}'
-    when:
-      branch:
-        only:
-          - /^feature.*/i
+    tag: '${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}'
