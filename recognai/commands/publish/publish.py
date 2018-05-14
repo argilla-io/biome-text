@@ -20,8 +20,8 @@ AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 class PublishModel(Subcommand):
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
         # pylint: disable=protected-access
-        description = '''Run the web service, which provides an HTTP Rest API.'''
-        subparser = parser.add_parser(name, description=description, help='Run the web service.')
+        description = '''Uploads the configuration model (as tar.gz file) to a s3 bucket.'''
+        subparser = parser.add_parser(name, description=description, help='Publish model binaries & config to a S3 bucket')
 
         subparser.add_argument('--model-name', type=str, required=True)
         subparser.add_argument('--model-location', type=str, required=True)
