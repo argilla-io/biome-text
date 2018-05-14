@@ -6,14 +6,12 @@ from pydoc import locate
 from typing import Iterable
 
 import fire
+from allennlp.commands import Evaluate
 from allennlp.commands import MakeVocab
 
-from allennlp.commands import Evaluate
 from recognai.commands.preprocess import Preprocess
-from recognai.commands.restapi import RestAPI
-from recognai.commands.kafka import KafkaPipelineCommand
 from recognai.commands.publish import PublishModel
-
+from recognai.commands.restapi import RestAPI
 from recognai.commands.train import Train
 
 __logger = logging.getLogger(__name__)
@@ -60,7 +58,7 @@ def main(*kwargs) -> None:
     """
     # pylint: disable=dangerous-default-value
 
-    parser = argparse.ArgumentParser(description="Run AllenNLP", usage='%(prog)s [command]', prog=__name__)
+    parser = argparse.ArgumentParser(description="Run RecognAI", usage='%(prog)s [command]', prog=__name__)
     parser.add_argument('-v', '--verbose', action='store_true', dest='enable_debug', default=False,
                         help="Enables debug traces")
     subparsers = parser.add_subparsers(title='Commands', metavar='')
@@ -74,7 +72,7 @@ def main(*kwargs) -> None:
         'publish': PublishModel(),
         'evaluate': Evaluate(),
         "rest": RestAPI(),
-        'kafka': KafkaPipelineCommand(),
+        #'kafka': KafkaPipelineCommand(),
         'describe': DescribeRegistrable()
     }
 
