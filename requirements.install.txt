@@ -1,5 +1,6 @@
 cachey==0.1.1
 dask[complete]==0.17.0
+s3fs==0.1.5
 tensorboard==1.0.0a6
 
 # This fix spacy error with msgpack-pyton 0.5.5
