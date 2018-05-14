@@ -7,10 +7,4 @@ steps:
     image_name: core/models-mg
     working_directory: ./
     dockerfile: docker/Dockerfile
-    tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
-
-  PushingToDockerRegistry:
-    title: Pushing to Docker Registry
-    type: push
-    candidate: '${{BuildingDockerImage}}'
     tag: '${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}'
