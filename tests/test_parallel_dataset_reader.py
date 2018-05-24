@@ -6,9 +6,11 @@ from typing import Iterable
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
+from distributed import LocalCluster
 
 from recognai.data.dataset_readers.classification_dataset_reader import ParallelDatasetReader
 from tests.test_context import TEST_RESOURCES
+from tests.test_support import DaskSupportTest
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
 JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
@@ -16,8 +18,7 @@ DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/defin
 
 TOKENS_FIELD = 'tokens'
 
-class ParallelDatasetReaderTest(unittest.TestCase):
-
+class ParallelDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name('parallel_dataset_reader')
         self.assertEquals(ParallelDatasetReader, dataset_reader)
@@ -32,7 +33,10 @@ class ParallelDatasetReaderTest(unittest.TestCase):
             params = json.loads(json_file.read())
             reader = ParallelDatasetReader.from_params(params=Params(params))
 
-            dataset = reader.read(CSV_PATH)
+            dataset = reader.read({
+                "path": CSV_PATH,
+                "format": "csv"
+            })
 
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 

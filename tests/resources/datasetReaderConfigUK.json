@@ -7,8 +7,8 @@
     "tokens": [
       "name"
     ],
-    "gold_label": {
-      "field": "organisation name",
+    "target": {
+      "gold_label": "organisation name",
       "use_missing_label" : "None"
     }
   }

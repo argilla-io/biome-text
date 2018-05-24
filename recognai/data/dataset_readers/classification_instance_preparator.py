@@ -11,7 +11,7 @@ DEFAULT_MISSING_LABEL = 'None'
 class ClassificationInstancePreparator(object):
     def __init__(self, dataset_transformations: Dict):
         transformations = (dataset_transformations or {}).copy()
-        gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, None)
+        gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, {})
 
         self._value_mappings = gold_label_definition.pop(VALUE_MAPPING_FIELD, None)
         self._use_missing_label = gold_label_definition.pop(USE_MISSING_LABEL_FIELD, None)

@@ -7,6 +7,9 @@
     "tokens": [
       "age"
     ],
-    "gold_label": "job"
+    "target": {
+      "gold_label": "job"
+    }
+
   }
 }

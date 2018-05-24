@@ -8,11 +8,13 @@ from allennlp.data import Vocabulary
 from recognai.commands.preprocess.preprocess import preprocess_from_file
 from recognai.data import dataset
 from tests.test_context import TEST_RESOURCES
+from tests.test_support import DaskSupportTest
 
 DEFINITION = os.path.join(TEST_RESOURCES, 'resources/definitions/preprocess/simple.json')
 
 
-class DatasetReaderTest(unittest.TestCase):
+class DatasetReaderTest(DaskSupportTest):
+    @unittest.skip
     def test_load_generated_datasets_OK(self):
         output_dir = tempfile.mkdtemp()
 

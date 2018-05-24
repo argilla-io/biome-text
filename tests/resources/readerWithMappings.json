@@ -10,8 +10,8 @@
       "job",
       "marital"
     ],
-    "gold_label": {
-      "field": "housing",
+    "target": {
+      "gold_label": "housing",
       "values_mapping": {
         "yes": "OF_COURSE",
         "no": "NOT_AT_ALL"

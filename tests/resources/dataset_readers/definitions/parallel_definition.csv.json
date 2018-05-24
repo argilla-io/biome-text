@@ -8,10 +8,5 @@
     "target": {
       "gold_label": "job"
     }
-  },
-
-  "connection" : {
-    "host" : "theHost",
-    "port" : "8000"
   }
 }

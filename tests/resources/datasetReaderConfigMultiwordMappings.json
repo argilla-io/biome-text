@@ -7,8 +7,8 @@
     "tokens": [
       "name"
     ],
-    "gold_label": {
-      "field": "category of institution"
+    "target": {
+      "gold_label": "category of institution"
     }
   }
 }
