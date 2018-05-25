@@ -1,0 +1,100 @@
+record1_ID,matching_id,duplicate_info,record1_country,record1_gender,record1_firstname,record1_lastname,record1_street,record1_housenumber,record1_zipcode,record1_city,record2_duplicate_info,record2_country,record2_gender,record2_firstname,record2_lastname,record2_street,record2_housenumber,record2_zipcode,record2_city,target
+1-0,1,0,DE,Herr,Ingo,Boelke,Dorfstr.,62,25767,Arkebek,6,F1,Herr,Ingo,Voelke,Dorfstr.,62,25767,Arkebek,not_duplicate
+1-0,1,0,DE,Herr,Ingo,Boelke,Dorfstr.,62,25767,Arkebek,2,d2,Herr,Ingoo,Boeelke,Dorfstr.,26,25767,Arkebek,duplicate
+1-0,1,0,DE,Herr,Ingo,Boelke,Dorfstr.,62,25767,Arkebek,3,d3,Herr,Ingo Georg,Bloekel,Dorfstr.,62,25767,Arkebek,duplicate
+5-0,5,0,DE,Herr,Thomas,Hauner,Stiefelgasse,66,6537,"Kelbra, Kyffhäuser",1,d1,Herr,Thomsa,Hanuer,Stiefelgasse,66,6537,"Kelbra, Kyffhäuser",duplicate
+5-0,5,0,DE,Herr,Thomas,Hauner,Stiefelgasse,66,6537,"Kelbra, Kyffhäuser",2,d2,Herr,Thomaas,Haunerr,Stiefelgasse,66,6537,"Kelbra, Kyffhäuser",duplicate
+6-0,6,0,DE,Herr,Alfred,Lüpken,Hollfelder Weg,62,91347,Aufseß,1,d1,Herr,Aflred,Lüpken,Hollfelder Weg,62,91347,Aufseß,duplicate
+6-0,6,0,DE,Herr,Alfred,Lüpken,Hollfelder Weg,62,91347,Aufseß,2,d2,Herr,Alffred,Lüpken,Hollfelder Weg,26,91347,Aufseß,duplicate
+7-0,7,0,DE,Herr,Christoph,Teusch,Klingenberger Str.,51,74080,"Heilbronn, Neckar",4,F2,Herr,Christoph Wolfgang,Tesch-Wichmann,Klingenberger Str.,53,74080,"Heilbronn, Neckar",not_duplicate
+7-0,7,0,DE,Herr,Christoph,Teusch,Klingenberger Str.,51,74080,"Heilbronn, Neckar",3,d3,Herr,C. Steffen,Tecushc,Klingenberger Str.,51,74080,"Heilbronn, Neckar",duplicate
+8-0,8,0,DE,Frau,Sofie,Paulus,Im Breiten Feld,36,77948,"Friesenheim, Baden",4,F2,Frau,Sfoia,Paulussen-Thomas,Im Breiten Feld,39,77948,"Friesenheim, Baden",not_duplicate
+9-0,9,0,DE,Frau,Harma,Hentze,Wasserreihe,56,25813,"Husum, Nordsee",2,d2,Frau,Harrma,Hentzee,Wasserreihe,65,25813,"Husum, Nordsee",duplicate
+10-0,10,0,DE,Herr,Norbert,Wojtas,Zu den Wiesen,18,18273,Güstrow,2,d2,Herr,Norberrt,Wojttas,Zu den Wiesen,81,18273,Güstrow,duplicate
+12-0,12,0,DE,,Werner,Lovasz,Feuerseeweg,21,73574,Iggingen,4,F2,,Wernre,Lovasz-Schaust,Feuerseeweg,21 a,73574,Iggingen,not_duplicate
+12-0,12,0,DE,,Werner,Lovasz,Feuerseeweg,21,73574,Iggingen,2,d2,,Wernerr,Lovaszz,Feuerseeweg,12,73574,Iggingen,duplicate
+14-0,14,0,DE,Herr,Josef,Daub,St.-Vinzenz-Str.,79,36041,Fulda,1,d1,Herr,Joesf,Dabu,St.-Vinzenz-Str.,79,36041,Fulda,duplicate
+14-0,14,0,DE,Herr,Josef,Daub,St.-Vinzenz-Str.,79,36041,Fulda,2,d2,Herr,Joseef,Daubb,St.-Vinzenz-Str.,97,36041,Fulda,duplicate
+16-0,16,0,DE,Frau,Ecke,Hanten,Am Weiher,52,4523,Pegau,5,F3,Frau,Gebecke,Hasnen,Am Weiher,52,4523,Pegau,not_duplicate
+16-0,16,0,DE,Frau,Ecke,Hanten,Am Weiher,52,4523,Pegau,2,d2,Frau,Eckke,Hannten,Am Weiher,25,4523,Pegau,duplicate
+17-0,17,0,DE,Frau,Bäbel,Kullak,Weststr.,50,8626,"Adorf, Vogtland",5,F3,Frau,bärbel,Kulalk,Weststr.,50,8626,"Adorf, Vogtland",not_duplicate
+17-0,17,0,DE,Frau,Bäbel,Kullak,Weststr.,50,8626,"Adorf, Vogtland",1,d1,Frau,Bäbel,Kullak,Weststr.,50,8626,"Adorf, Vogtland",duplicate
+17-0,17,0,DE,Frau,Bäbel,Kullak,Weststr.,50,8626,"Adorf, Vogtland",2,d2,Frau,Dr. Walter Bäbel,Kulllak,Weststr.,05,8626,"Adorf, Vogtland",duplicate
+18-0,18,0,DE,,Dieter,Bruner,Dahlienweg,73,26624,Südbrookmerland,5,F3,,Dieter,Bruedr,Dahlienweg,73,26624,Südbrookmerland,not_duplicate
+19-0,19,0,DE,Herr,Muhamet,Nacken,Am Burgholz,50,99891,"Tabarz, Thüringer Wald",3,d3,Herr,Muhamet,Naeckne,Am Burgholz,50,99891,"Tabarz, Thüringer Wald",duplicate
+23-0,23,0,DE,Herr,Guido,Reiher,Isselburger Str.,63,46459,Rees,5,F3,Herr,Guido Nektarios,Rieher,Isselburger Str.,63,46459,Rees,not_duplicate
+25-0,25,0,DE,Herr,Andreas,Kloß,Grömitzer Weg,31,22147,Hamburg,6,F1,Herr,Andreas,Klos,Grömitzer Weg,32,22147,Hamburg,not_duplicate
+25-0,25,0,DE,Herr,Andreas,Kloß,Grömitzer Weg,31,22147,Hamburg,5,F3,Herr,Andreas Hans,Klaß,Grömitzer Weg,31,22147,Hamburg,not_duplicate
+26-0,26,0,DE,Frau,Nesa,Muckel,Am Krausen Bäumchen,43,45136,"Essen, Ruhr",6,F1,Frau,Nesa,Meckel,Am Krausen Bäumchen,44,45136,"Essen, Ruhr",not_duplicate
+26-0,26,0,DE,Frau,Nesa,Muckel,Am Krausen Bäumchen,43,45136,"Essen, Ruhr",1,d1,Frau,Neas,Mucekl,Am Krausen Bäumchen,43,45136,"Essen, Ruhr",duplicate
+27-0,27,0,DE,,Torsten,De,Dianastr.,64,83043,Bad Aibling,6,F1,,Torsten,Denk,Dianastr.,64,83043,Bad Aibling,not_duplicate
+27-0,27,0,DE,,Torsten,De,Dianastr.,64,83043,Bad Aibling,3,d3,,Torsten,De,Dianastr.,64,83043,Bad Aibling,duplicate
+29-0,29,0,DE,,Alois,Gieger,Schieferstr.,56,65620,"Waldbrunn, Westerwald",6,F1,,Alois,Greger,Schieferstr.,57,65620,"Waldbrunn, Westerwald",not_duplicate
+29-0,29,0,DE,,Alois,Gieger,Schieferstr.,56,65620,"Waldbrunn, Westerwald",2,d2,,Aloiss,Giegeer,Schieferstr.,65,65620,"Waldbrunn, Westerwald",duplicate
+30-0,30,0,DE,Frau,Irene,Brünig,Gabelberg,27,74389,Cleebronn,6,F1,Frau,Irene,Brünin,Gabelberg,28b,74389,Cleebronn,not_duplicate
+30-0,30,0,DE,Frau,Irene,Brünig,Gabelberg,27,74389,Cleebronn,4,F2,Frau,Eerne,Brünig-Gregorek,Gabelberg,27 a,74389,Cleebronn,not_duplicate
+32-0,32,0,DE,Herr,Horst,Rudde,Lichtenberger Str.,70,64405,"Fischbachtal, Odenwald",1,d1,Herr,Horts,Rdude,Lichtenberger Str.,70,64405,"Fischbachtal, Odenwald",duplicate
+33-0,33,0,DE,,Horst,Gerich,Hauptstr.,52,1814,Reinhardtsdorf bei Bad Schandau,5,F3,,Horst,Geirck,Hauptstr.,52,1814,Reinhardtsdorf bei Bad Schandau,not_duplicate
+33-0,33,0,DE,,Horst,Gerich,Hauptstr.,52,1814,Reinhardtsdorf bei Bad Schandau,3,d3,,Horst Markus,Gerich,Hauptstr.,52,1814,Reinhardtsdorf bei Bad Schandau,duplicate
+34-0,34,0,DE,Herr,Friedrich,Gräf,Danziger Str.,62,73760,Ostfildern,4,F2,Herr,Freidrich Roland,Gräff-Pechtold,Danziger Str.,62,73760,Ostfildern,not_duplicate
+34-0,34,0,DE,Herr,Friedrich,Gräf,Danziger Str.,62,73760,Ostfildern,1,d1,Herr,Friedrihc,Gräf,Danziger Str.,62,73760,Ostfildern,duplicate
+34-0,34,0,DE,Herr,Friedrich,Gräf,Danziger Str.,62,73760,Ostfildern,2,d2,Herr,Friedricch,Gräf,Danziger Str.,26,73760,Ostfildern,duplicate
+34-0,34,0,DE,Herr,Friedrich,Gräf,Danziger Str.,62,73760,Ostfildern,3,d3,Herr,Friedrich Peter,Gräf,Danziger Str.,62,73760,Ostfildern,duplicate
+35-0,35,0,DE,Herr,Walter,Hodel,Obermühlenweg,27,63505,Langenselbold,6,F1,Herr,Walter,Hotel,Obermühlenweg,28,63505,Langenselbold,not_duplicate
+35-0,35,0,DE,Herr,Walter,Hodel,Obermühlenweg,27,63505,Langenselbold,1,d1,Herr,Watler,Hoedl,Obermühlenweg,27,63505,Langenselbold,duplicate
+35-0,35,0,DE,Herr,Walter,Hodel,Obermühlenweg,27,63505,Langenselbold,2,d2,Herr,Walterr,Hoddel,Obermühlenweg,72,63505,Langenselbold,duplicate
+36-0,36,0,DE,,Gerhard,Rahn,August-Scherer-Str.,28,76456,Kuppenheim,5,F3,,Gerhard,Jhan,August-Scherer-Str.,28,76456,Kuppenheim,not_duplicate
+37-0,37,0,DE,Herr,Werner,Kult,Rotbuchenweg,70,13403,Berlin,4,F2,Herr,Werner Wilil,Kuls-Raitz,Rotbuchenweg,72,13403,Berlin,not_duplicate
+37-0,37,0,DE,Herr,Werner,Kult,Rotbuchenweg,70,13403,Berlin,2,d2,Herr,Wernerr,Kultt,Rotbuchenweg,07,13403,Berlin,duplicate
+38-0,38,0,DE,Herr,Olaf,Wahle,Mittelstr.,61,99706,"Sondershausen, Thüringen",6,F1,Herr,Olaf,Vahle,Mittelstr.,62,99706,"Sondershausen, Thüringen",not_duplicate
+38-0,38,0,DE,Herr,Olaf,Wahle,Mittelstr.,61,99706,"Sondershausen, Thüringen",4,F2,Herr,Oalf Christian,Bahle-Rohde,Mittelstr.,61 a,99706,"Sondershausen, Thüringen",not_duplicate
+38-0,38,0,DE,Herr,Olaf,Wahle,Mittelstr.,61,99706,"Sondershausen, Thüringen",1,d1,Herr,Olfa,Wahel,Mittelstr.,61,99706,"Sondershausen, Thüringen",duplicate
+39-0,39,0,DE,,Ewald,Leitz,Reuteweg,40,74426,Bühlerzell,2,d2,,Ewaldd,Leiitz,Reuteweg,04,74426,Bühlerzell,duplicate
+40-0,40,0,DE,Herr,Herbert,Heck,Herrnstr.,28,90763,"Fürth, Bayern",4,F2,Herr,Herbert Wolfgang,Heckel-Bucksch,Herrnstr.,28 a,90763,"Fürth, Bayern",not_duplicate
+41-0,41,0,DE,,Karl,Bilic,Glemsstr.,22,70469,Stuttgart,4,F2,,Kral,Milic-Adolph,Glemsstr.,22 a,70469,Stuttgart,not_duplicate
+41-0,41,0,DE,,Karl,Bilic,Glemsstr.,22,70469,Stuttgart,2,d2,,Karll,Bilicc,Glemsstr.,22,70469,Stuttgart,duplicate
+41-0,41,0,DE,,Karl,Bilic,Glemsstr.,22,70469,Stuttgart,3,d3,,Bilic,Karl,Glemsstr.,22,70469,Stuttgart,duplicate
+42-0,42,0,DE,,Jürgen,Lepp,Herner Str.,38,44791,Bochum,1,d1,,Jüregn,Lpep,Herner Str.,38,44791,Bochum,duplicate
+42-0,42,0,DE,,Jürgen,Lepp,Herner Str.,38,44791,Bochum,2,d2,,Dr. Matthias Jürgen,Leppp,Herner Str.,83,44791,Bochum,duplicate
+43-0,43,0,DE,Frau,medine,Oberth,Kiesgrubenweg,20,86316,"Friedberg, Bayern",6,F1,Frau,medine,Berth,Kiesgrubenweg,20b,86316,"Friedberg, Bayern",not_duplicate
+43-0,43,0,DE,Frau,medine,Oberth,Kiesgrubenweg,20,86316,"Friedberg, Bayern",5,F3,Frau,Edine,Betrh,Kiesgrubenweg,20,86316,"Friedberg, Bayern",not_duplicate
+43-0,43,0,DE,Frau,medine,Oberth,Kiesgrubenweg,20,86316,"Friedberg, Bayern",2,d2,Frau,medinne,Oberrth,Kiesgrubenweg,02,86316,"Friedberg, Bayern",duplicate
+45-0,45,0,DE,,Konrad,Huch,Dr.-Rudolf-Kellermann-Str.,59,35315,"Homberg, Ohm",6,F1,,Konrad,Auch,Dr.-Rudolf-Kellermann-Str.,59,35315,"Homberg, Ohm",not_duplicate
+46-0,46,0,DE,,Marko,Dieng,Beverfördering,36,59071,"Hamm, Westfalen",1,d1,,Marok,Dineg,Beverfördering,36,59071,"Hamm, Westfalen",duplicate
+46-0,46,0,DE,,Marko,Dieng,Beverfördering,36,59071,"Hamm, Westfalen",3,d3,,Marko Hans-Joachim,Dniegn,Beverfördering,36,59071,"Hamm, Westfalen",duplicate
+47-0,47,0,DE,,Thomas,Endert,Poststr.,75,66649,"Oberthal, Saar",1,d1,,Thoams,Ednert,Poststr.,75,66649,"Oberthal, Saar",duplicate
+48-0,48,0,DE,,Josef,Körbel,Antoniterstr.,51,47551,Bedburg-Hau,4,F2,,Josfe,Körbel-Uttendorfer,Antoniterstr.,53,47551,Bedburg-Hau,not_duplicate
+48-0,48,0,DE,,Josef,Körbel,Antoniterstr.,51,47551,Bedburg-Hau,5,F3,,Josef,Körble,Antoniterstr.,51,47551,Bedburg-Hau,not_duplicate
+48-0,48,0,DE,,Josef,Körbel,Antoniterstr.,51,47551,Bedburg-Hau,2,d2,,Joseff,Körbell,Antoniterstr.,15,47551,Bedburg-Hau,duplicate
+49-0,49,0,DE,,Achim,Reuter,Bergstr.,57,55469,Pleizenhausen,4,F2,,Achmi,Heuter-Matesic Curo,Bergstr.,57 a,55469,Pleizenhausen,not_duplicate
+51-0,51,0,DE,,Michael,Egbers,Bahnhofstr.,53,42551,Velbert,6,F1,,Michael,Ebbers,Bahnhofstr.,54,42551,Velbert,not_duplicate
+51-0,51,0,DE,,Michael,Egbers,Bahnhofstr.,53,42551,Velbert,4,F2,,Mihcael,Ebbers-Siegmund,Bahnhofstr.,53,42551,Velbert,not_duplicate
+51-0,51,0,DE,,Michael,Egbers,Bahnhofstr.,53,42551,Velbert,5,F3,,Michael,Ebrers,Bahnhofstr.,53,42551,Velbert,not_duplicate
+51-0,51,0,DE,,Michael,Egbers,Bahnhofstr.,53,42551,Velbert,3,d3,,Egbers,Miachela,Bahnhofstr.,53,42551,Velbert,duplicate
+52-0,52,0,DE,Herr,Theo,Wolske,Auf dem Brink,15,28844,Weyhe bei Bremen,6,F1,Herr,Theo,Wilske,Auf dem Brink,15,28844,Weyhe bei Bremen,not_duplicate
+52-0,52,0,DE,Herr,Theo,Wolske,Auf dem Brink,15,28844,Weyhe bei Bremen,2,d2,Herr,Theoo,Wollske,Auf dem Brink,51,28844,Weyhe bei Bremen,duplicate
+52-0,52,0,DE,Herr,Theo,Wolske,Auf dem Brink,15,28844,Weyhe bei Bremen,3,d3,Herr,Theo Johann,Wolske,Auf dem Brink,15,28844,Weyhe bei Bremen,duplicate
+53-0,53,0,DE,Herr,Dieter,Fuß,Im Wietel,26,44625,"Herne, Westfalen",4,F2,Herr,Dieter Johann,Buß-Huber,Im Wietel,26 a,44625,"Herne, Westfalen",not_duplicate
+53-0,53,0,DE,Herr,Dieter,Fuß,Im Wietel,26,44625,"Herne, Westfalen",5,F3,Herr,Dieter Ekkehard,Rhefuß,Im Wietel,26,44625,"Herne, Westfalen",not_duplicate
+53-0,53,0,DE,Herr,Dieter,Fuß,Im Wietel,26,44625,"Herne, Westfalen",3,d3,Herr,Dieter Wolfgang,Fuß,Im Wietel,26,44625,"Herne, Westfalen",duplicate
+55-0,55,0,DE,,Lothar,Ehmer,Spiekstr.,15,49637,Menslage,4,F2,,Lotahr,Braehmer-Paschleben,Spiekstr.,18,49637,Menslage,not_duplicate
+55-0,55,0,DE,,Lothar,Ehmer,Spiekstr.,15,49637,Menslage,1,d1,,Lohtar,Emher,Spiekstr.,15,49637,Menslage,duplicate
+56-0,56,0,DE,,Hermann,Schaak,Heinrichstr.,71,49413,Dinklage,2,d2,,H.,Schaaak,Heinrichstr.,17,49413,Dinklage,duplicate
+57-0,57,0,DE,,Berthold,Wölfer,Heinrich-Heine-Str.,61,1723,Wilsdruff,6,F1,,Berthold,Wölwer,Heinrich-Heine-Str.,62,1723,Wilsdruff,not_duplicate
+57-0,57,0,DE,,Berthold,Wölfer,Heinrich-Heine-Str.,61,1723,Wilsdruff,1,d1,,Betrhold,Wölfer,Heinrich-Heine-Str.,61,1723,Wilsdruff,duplicate
+60-0,60,0,DE,,Carsten,Weitz,Auf den Stieden,37,35094,Lahntal,5,F3,,Carsten,Betiz,Auf den Stieden,37,35094,Lahntal,not_duplicate
+61-0,61,0,DE,,Horst,Willmer,Schubertstr.,50,45478,Mülheim an der Ruhr,4,F2,,Hosrt,Willmeroth-Bothe,Schubertstr.,50,45478,Mülheim an der Ruhr,not_duplicate
+62-0,62,0,DE,,Maik,Murat,Wittelsbacherstr.,29,91126,Schwabach,1,d1,,Miak,Muart,Wittelsbacherstr.,29,91126,Schwabach,duplicate
+62-0,62,0,DE,,Maik,Murat,Wittelsbacherstr.,29,91126,Schwabach,3,d3,,Murat,Miak,Wittelsbacherstraße 29,29,91126,Schwabach,duplicate
+63-0,63,0,DE,Frau,Karina,Heinze,Brunnenstr.,23,6268,Querfurt,6,F1,Frau,Karina,Heinke,Brunnenstr.,23,6268,Querfurt,not_duplicate
+64-0,64,0,DE,Herr,Peter,Anar,Bornholzstr.,47,59581,Warstein,1,d1,Herr,Peetr,Anra,Bornholzstr.,47,59581,Warstein,duplicate
+66-0,66,0,DE,,Josef,Lenz,Kaindlstr.,41,70569,Stuttgart,2,d2,,Joseef,Lenzz,Kaindlstr.,14,70569,Stuttgart,duplicate
+67-0,67,0,DE,Frau,Olga,Reder,Deutschherrenstr.,39,53177,Bonn,5,F3,Frau,Volga,Weedr,Deutschherrenstr.,39,53177,Bonn,not_duplicate
+67-0,67,0,DE,Frau,Olga,Reder,Deutschherrenstr.,39,53177,Bonn,1,d1,Frau,Olag,Reedr,Deutschherrenstr.,39,53177,Bonn,duplicate
+67-0,67,0,DE,Frau,Olga,Reder,Deutschherrenstr.,39,53177,Bonn,2,d2,Frau,Olgaa,Redder,Deutschherrenstr.,93,53177,Bonn,duplicate
+67-0,67,0,DE,Frau,Olga,Reder,Deutschherrenstr.,39,53177,Bonn,3,d3,Frau,Reder,Olga,Deutschherrenstr.,39,53177,Bonn,duplicate
+68-0,68,0,DE,Herr,Heinz,Demir,Moorweg,57,22880,Wedel,2,d2,Herr,Heinzz,Demmir,Moorweg,75,22880,Wedel,duplicate
+69-0,69,0,DE,,Heinz,Zeman,Kleebusch,43,49545,Tecklenburg,4,F2,,Hienz,Zaman-Schaake,Kleebusch,46,49545,Tecklenburg,not_duplicate
+69-0,69,0,DE,,Heinz,Zeman,Kleebusch,43,49545,Tecklenburg,1,d1,,Heizn,Zemna,Kleebusch,43,49545,Tecklenburg,duplicate
+69-0,69,0,DE,,Heinz,Zeman,Kleebusch,43,49545,Tecklenburg,2,d2,,Heinnz,Zemann,Kleebusch,34,49545,Tecklenburg,duplicate
+70-0,70,0,DE,Frau,Nadin,Widl,Kastanienweg,15,53177,Bonn,6,F1,Frau,Nadin,Widler,Kastanienweg,15,53177,Bonn,not_duplicate

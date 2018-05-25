@@ -2,10 +2,12 @@
   "dataset_format": "csv",
 
   "transformations": {
-    "inputs": [
+    "tokens": [
       "age"
     ],
-    "gold_label": "job"
+    "target": {
+      "gold_label": "job"
+    }
   },
 
   "connection" : {

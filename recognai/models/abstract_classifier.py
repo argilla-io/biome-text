@@ -17,55 +17,30 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
-from recognai.models import AbstractClassifier
-
 logger = logging.getLogger(__name__)
 
 
-@Model.register("sequence_classifier")
-class SequenceClassifier(AbstractClassifier):
+@Model.register("abstract_classifier")
+class AbstractClassifier(Model):
     """
-    This ``SequenceClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
+    This ``AbstractClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
     Parameters
     ----------
     vocab : ``Vocabulary``, required
         A Vocabulary, required in order to compute sizes for input/output projections.
-    text_field_embedder : ``TextFieldEmbedder``, required
-        Used to embed the ``tokens`` ``TextField`` we get as input to the model.
-    encoder : ``Seq2VecEncoder``
-        The encoder  that we will use in between embedding tokens
-        and predicting output tags.
-    initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
-        Used to initialize the model parameters.
     regularizer : ``RegularizerApplicator``, optional (default=``None``)
     """
 
     def __init__(self, vocab: Vocabulary,
-                 text_field_embedder: TextFieldEmbedder,
-                 encoder: Seq2VecEncoder,
-                 initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
-        super(SequenceClassifier, self).__init__(vocab, regularizer)
+        super(AbstractClassifier, self).__init__(vocab, regularizer)
 
-        self.text_field_embedder = text_field_embedder
-        self.num_classes = self.vocab.get_vocab_size("labels")
-        self.encoder = encoder
-        self.projection_layer = Linear(self.encoder.get_output_dim(),
-                                       self.num_classes)
-
-        if text_field_embedder.get_output_dim() != encoder.get_input_dim():
-            raise ConfigurationError("The output dimension of the text_field_embedder must match the "
-                                     "input dimension of the sequence encoder. Found {} and {}, "
-                                     "respectively.".format(text_field_embedder.get_output_dim(),
-                                                            encoder.get_input_dim()))
         self._accuracy = CategoricalAccuracy()
         self.metrics = {label: F1Measure(index) for index, label
                         in self.vocab.get_index_to_token_vocabulary("labels").items()}
         self._loss = torch.nn.CrossEntropyLoss()
-
-        initializer(self)
 
     @overrides
     def forward(self,  # type: ignore
@@ -84,9 +59,9 @@ class SequenceClassifier(AbstractClassifier):
             sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
             which knows how to combine different word representations into a single vector per
             token in your input.
-        gold_label : torch.LongTensor, optional (default = None)
-            A torch tensor representing the sequence of integer gold class label of shape
-            ``(batch_size, num_classes)``.
+        tags : torch.LongTensor, optional (default = None)
+            A torch tensor representing the sequence of integer gold class labels of shape
+            ``(batch_size, num_tokens)``.
 
         Returns
         -------
@@ -101,7 +76,9 @@ class SequenceClassifier(AbstractClassifier):
             A scalar loss to be optimised.
 
         """
-        encoded_text = self.encode_tokens(tokens)
+        embedded_text_input = self.text_field_embedder(tokens)
+        mask = get_text_field_mask(tokens)
+        encoded_text = self.encoder(embedded_text_input, mask)
         logits = self.projection_layer(encoded_text)
 
         class_probabilities = F.softmax(logits)
@@ -116,28 +93,69 @@ class SequenceClassifier(AbstractClassifier):
 
         return output_dict
 
-    def encode_tokens(self, tokens):
-        embedded_text_input = self.text_field_embedder(tokens)
-        mask = get_text_field_mask(tokens)
-        encoded_text = self.encoder(embedded_text_input, mask)
-        return encoded_text
+    @overrides
+    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """
+        Does a simple position-wise argmax over each token, converts indices to string labels, and
+        adds a ``"tags"`` key to the dictionary with the result.
+        """
+        all_predictions = output_dict['class_probabilities']
+        if not isinstance(all_predictions, numpy.ndarray):
+            all_predictions = all_predictions.data.numpy()
+
+        output_map_probs = []
+        max_labels = []
+        for i, probs in enumerate(all_predictions):
+            argmax_i = numpy.argmax(probs)
+            label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
+            max_labels.append(label)
+
+            output_map_probs.append({})
+            for j, prob in enumerate(probs):
+                label_key = self.vocab.get_token_from_index(j, namespace="labels")
+                output_map_probs[i][label_key] = prob
+
+        output_dict['probabilities_by_class'] = output_map_probs
+        output_dict['max_label'] = max_labels
+        return output_dict
+
+    @overrides
+    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
+        all_metrics = {}
+
+        total_f1 = 0.0
+        total_precision = 0.0
+        total_recall = 0.0
+        for metric_name, metric in self.metrics.items():
+            precision, recall, f1 = metric.get_metric(reset)  # pylint: disable=invalid-name
+            total_f1 += f1
+            total_precision += precision
+            total_recall += recall
+            all_metrics[metric_name + "_f1"] = f1
+            all_metrics[metric_name + "_precision"] = precision
+            all_metrics[metric_name + "_recall"] = recall
+
+        num_metrics = len(self.metrics)
+        all_metrics["average_f1"] = total_f1 / num_metrics
+        all_metrics["average_precision"] = total_precision / num_metrics
+        all_metrics["average_recall"] = total_recall / num_metrics
+        all_metrics['accuracy'] = self._accuracy.get_metric(reset)
+
+        return all_metrics
 
     @classmethod
-    def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceClassifier':
+    def from_params(cls, vocab: Vocabulary, params: Params) -> 'AbstractClassifier':
         embedder_params = params.pop("text_field_embedder")
-        text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
+        # text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
 
-        encoder_params = params.pop("encoder", None)
-        if encoder_params is not None:
-            encoder = Seq2VecEncoder.from_params(encoder_params)
-        else:
-            encoder = None
+        # encoder_params = params.pop("encoder", None)
+        # if encoder_params is not None:
+        #     encoder = Seq2VecEncoder.from_params(encoder_params)
+        # else:
+        #     encoder = None
 
-        initializer = InitializerApplicator.from_params(params.pop('initializer', []))
+        # initializer = InitializerApplicator.from_params(params.pop('initializer', []))
         regularizer = RegularizerApplicator.from_params(params.pop('regularizer', []))
 
         return cls(vocab=vocab,
-                   text_field_embedder=text_field_embedder,
-                   encoder=encoder,
-                   initializer=initializer,
                    regularizer=regularizer)
