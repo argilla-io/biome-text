@@ -1,12 +1,3 @@
 {
-  "dataset_format": "csv",
-
-  "transformations": {
-    "tokens": [
-      "age"
-    ],
-    "target": {
-      "gold_label": "job"
-    }
-  }
+  "dataset_format": "csv"
 }

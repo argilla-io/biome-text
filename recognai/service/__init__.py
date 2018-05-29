@@ -1,0 +1,1 @@
+from .predictors.sequence_classifier import SequenceClassifierPredictor

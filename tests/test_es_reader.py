@@ -1,6 +1,7 @@
 import unittest
 
-import recognai.data.readers.es_reader as elasticsearch
+from recognai.data.sources import elasticsearch
+
 from tests.test_support import DaskSupportTest
 
 NPARTITIONS = 4
@@ -9,7 +10,6 @@ ES_INDEX = 'gourmet-food'
 
 
 class ElasticsearchReaderTest(DaskSupportTest):
-
     @unittest.skip
     def test_read_whole_index(self):
         es_index = elasticsearch.from_elasticsearch(

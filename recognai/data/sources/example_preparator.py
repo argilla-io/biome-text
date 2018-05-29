@@ -4,11 +4,10 @@ GOLD_LABEL_DEFINITION_FIELD = 'target'
 VALUE_MAPPING_FIELD = "values_mapping"
 USE_MISSING_LABEL_FIELD = "use_missing_label"
 
-DEFAULT_GOLD_LABEL_ID = 'gold_label'
 DEFAULT_MISSING_LABEL = 'None'
 
 
-class ClassificationInstancePreparator(object):
+class ExamplePreparator(object):
     def __init__(self, dataset_transformations: Dict):
         transformations = (dataset_transformations or {}).copy()
         gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, {})
@@ -21,7 +20,7 @@ class ClassificationInstancePreparator(object):
 
     def _gold_label_definition(self, gold_label_definition: Optional[Dict]):
         if gold_label_definition is None:
-            return DEFAULT_GOLD_LABEL_ID
+            return None
         else:
             for name in gold_label_definition.keys():
                 return name
@@ -47,9 +46,6 @@ class ClassificationInstancePreparator(object):
         )
 
         return label
-
-    def get_gold_label_id(self) -> str:
-        return self._gold_label_id
 
     def read_info(self, example: Dict) -> Dict:
 

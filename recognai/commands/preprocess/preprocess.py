@@ -6,11 +6,13 @@ import sys
 from copy import deepcopy
 from typing import Dict, Iterable
 
+import yaml
 from allennlp.commands import Subcommand
 from allennlp.common import Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.tee_logger import TeeLogger
 from allennlp.data import DatasetReader, Vocabulary, Instance
+from recognai.commands.utils import read_params_from_file
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -44,7 +46,7 @@ def preprocess_from_args(args: argparse.Namespace):
 
 
 def preprocess_from_file(parameter_filename: str, serialization_dir: str) -> None:
-    params = Params.from_file(parameter_filename)
+    params = read_params_from_file(parameter_filename)
     preprocess(params, serialization_dir)
 
 

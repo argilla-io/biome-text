@@ -1,15 +1,9 @@
 import os
 import tempfile
-import shutil
 import unittest
 
-from allennlp.data import Vocabulary
-
-from recognai.commands.preprocess.preprocess import preprocess_from_file
 from recognai.commands.train.train import train_model_from_file
-from recognai.data import dataset
 from tests.test_context import TEST_RESOURCES
-
 
 DEFINITION_TRAIN = os.path.join(TEST_RESOURCES, 'resources/definitions/train/train_sequence_pair_classifier.json')
 

@@ -13,10 +13,11 @@ from recognai.data.dataset_readers import ClassificationDatasetReader
 @Predictor.register('sequence-classifier')
 class SequenceClassifierPredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader):
-        assert isinstance(dataset_reader,
-                          ClassificationDatasetReader), "Wrong configuration for prediction. This kind of predictor only accept an classification dataset reader"
+        assert isinstance(dataset_reader, ClassificationDatasetReader), \
+            "Wrong configuration for prediction." \
+            + "This kind of predictor only accept an classification dataset reader"
 
-        super().__init__(model, dataset_reader)
+        super(SequenceClassifierPredictor, self).__init__(model, dataset_reader)
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Tuple[Instance, JsonDict]:

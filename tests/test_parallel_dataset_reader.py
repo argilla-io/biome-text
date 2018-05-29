@@ -3,6 +3,7 @@ import os
 import unittest
 from typing import Iterable
 
+import yaml
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
@@ -17,6 +18,7 @@ JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
 DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions')
 
 TOKENS_FIELD = 'tokens'
+
 
 class ParallelDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
@@ -35,7 +37,15 @@ class ParallelDatasetReaderTest(DaskSupportTest):
 
             dataset = reader.read({
                 "path": CSV_PATH,
-                "format": "csv"
+                "format": "csv",
+                "transformations": {
+                    "tokens": [
+                        "age"
+                    ],
+                    "target": {
+                        "gold_label": "job"
+                    }
+                }
             })
 
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
@@ -46,7 +56,16 @@ class ParallelDatasetReaderTest(DaskSupportTest):
             params = json.loads(json_file.read())
             reader = ParallelDatasetReader.from_params(params=Params(params))
 
-            dataset = reader.read(JSON_PATH)
+            dataset = reader.read({
+                'path': JSON_PATH,
+                'transformations': {
+                    "tokens": [
+                        "reviewText"
+                    ],
+                    "target": {
+                        "gold_label": "overall"
+                    }
+                }})
 
             for example in dataset:
                 print(example.__dict__)

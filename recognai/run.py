@@ -2,14 +2,16 @@ import argparse
 import logging
 import os
 import sys
+from numbers import Number
 from pydoc import locate
 from typing import Iterable
 
+import dask
 import fire
 from allennlp.commands import Evaluate
-from allennlp.commands import MakeVocab
+from distributed import Client
 
-from recognai.commands.preprocess import Preprocess
+from recognai.commands.predict.predict import Predict
 from recognai.commands.publish import PublishModel
 from recognai.commands.restapi import RestAPI
 from recognai.commands.train import Train
@@ -17,6 +19,10 @@ from recognai.commands.train import Train
 __logger = logging.getLogger(__name__)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
+
+DEFAULT_DASK_CLUSTER = '127.0.0.1:8786'
+DEFAULT_DASK_CACHE_SIZE = 2e9
+DEFAULT_DASK_BLOCK_SIZE = 50e6
 
 
 def configure_logging(enable_debug: bool = False):
@@ -59,20 +65,23 @@ def main(*kwargs) -> None:
     # pylint: disable=dangerous-default-value
 
     parser = argparse.ArgumentParser(description="Run RecognAI", usage='%(prog)s [command]', prog=__name__)
-    parser.add_argument('-v', '--verbose', action='store_true', dest='enable_debug', default=False,
+    parser.add_argument('--dask', dest='dask_cluster', default=DEFAULT_DASK_CLUSTER, help='Dask cluster endpoint')
+    parser.add_argument('--dask-cache', dest='dask_cache_size', default=DEFAULT_DASK_CACHE_SIZE)
+    parser.add_argument('--dask-block-size', dest='dask_block_size', default=DEFAULT_DASK_BLOCK_SIZE)
+    parser.add_argument('-v', '--VERBOSE', action='store_true', dest='enable_debug', default=False,
                         help="Enables debug traces")
     subparsers = parser.add_subparsers(title='Commands', metavar='')
 
     from recognai.commands.describe import DescribeRegistrable
     subcommands = {
         # Default commands
-        "preprocess": Preprocess(),
-        "make-vocab": MakeVocab(),
+        # "preprocess": Preprocess(),
+        # "make-vocab": MakeVocab(),
         "train": Train(),
-        'publish': PublishModel(),
+        'predict': Predict(),
         'evaluate': Evaluate(),
-        "rest": RestAPI(),
-        #'kafka': KafkaPipelineCommand(),
+        'publish': PublishModel(),
+        'rest': RestAPI(),
         'describe': DescribeRegistrable()
     }
 
@@ -86,10 +95,32 @@ def main(*kwargs) -> None:
     # So if no such attribute has been added, no subparser was triggered,
     # so give the user some help.
     if 'func' in dir(args):
-        load_customs_components_from_file(kwargs[0])
-        args.func(args)
+        dask_client = _dask_client(args.dask_cluster, args.dask_cache_size)
+        try:
+            load_customs_components_from_file(kwargs[0])
+            args.func(args)
+        finally:
+            if dask_client:
+                try:
+                    dask_client.close()
+                except GeneratorExit:
+                    logging.info('Closing dask connection')
+
     else:
         parser.print_help()
+
+
+def _dask_client(dask_cluster: str, cache_size: Number) -> Client:
+    from dask.distributed import Client
+    from dask.cache import Cache
+    if cache_size:
+        cache = Cache(cache_size)
+        cache.register()
+
+    try:
+        return dask.distributed.Client(dask_cluster)
+    except:
+        return dask.distributed.Client()
 
 
 if __name__ == '__main__':

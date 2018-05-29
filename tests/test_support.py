@@ -9,9 +9,15 @@ class DaskSupportTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if not DaskSupportTest.cluster:
-            DaskSupportTest.cluster = LocalCluster(scheduler_port=8786)
+            try:
+                DaskSupportTest.cluster = LocalCluster(scheduler_port=8786)
+            except:
+                ''''''
 
     @classmethod
     def tearDownClass(cls):
-        DaskSupportTest.cluster.close()
-        DaskSupportTest.cluster = None
+        try:
+            DaskSupportTest.cluster.close()
+            DaskSupportTest.cluster = None
+        except:
+            ''''''
