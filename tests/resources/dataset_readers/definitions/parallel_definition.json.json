@@ -7,9 +7,5 @@
     "target": {
       "gold_label": "overall"
     }
-  },
-  "connection": {
-    "host": "theHost",
-    "port": "8000"
   }
 }

@@ -5,8 +5,8 @@
     "tokens": [
       "reviewText"
     ],
-    "gold_label": {
-      "field": "overall"
+    "target": {
+      "gold_label": "overall"
     }
   }
 }

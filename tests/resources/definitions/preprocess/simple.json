@@ -1,7 +1,6 @@
 {
   "dataset_reader": {
-    "type": "parallel_dataset_reader",
-    "dataset_format": "json",
+    "type": "classification_dataset_reader",
     "transformations": {
       "tokens": [
         "reviewText"
@@ -17,7 +16,27 @@
       }
     }
   },
-
-  "train_data_path": "resources/data/simple.train.10.csv",
-  "validation_data_path": "resources/data/simple.validation.10.csv"
+  "_train_data_path": {
+    "path": "resources/data/simple.train.10.csv"
+  },
+  "validation_data_path": {
+    "format": "json",
+    "path": "resources/data/simple.validation.10.csv"
+  },
+  "train_data_path": {
+    "query": {
+      "query": {
+        "match": {
+          "reviewText": "these"
+        }
+      }
+    },
+    "index": "gourmet-food",
+    "source_only": true,
+    "client_kwargs": {
+      "hosts": "http://localhost:9200"
+    },
+    "npartitions": 2,
+    "size": 5000
+  }
 }
