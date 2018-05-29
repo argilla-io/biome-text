@@ -2,17 +2,5 @@
   "dataset_format": {
     "type": "csv",
     "delimiter": ";"
-  },
-  "transformations": {
-    "tokens": [
-      "name"
-    ],
-    "target": {
-      "gold_label": "category of institution",
-      "use_missing_label": "NOLABEL",
-      "values_mapping": {
-        "None": "NOLABEL"
-      }
-    }
   }
 }

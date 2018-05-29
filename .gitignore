@@ -96,3 +96,4 @@ ENV/
 .history
 
 .vscode
+dask-worker-space

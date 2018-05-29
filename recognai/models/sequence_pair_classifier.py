@@ -22,9 +22,9 @@ from recognai.models import SequenceClassifier
 
 logger = logging.getLogger(__name__)
 
+
 @Model.register("sequence_pair_classifier")
 class SequencePairClassifier(SequenceClassifier):
-
     """
     This ``SequenceClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
@@ -42,6 +42,7 @@ class SequencePairClassifier(SequenceClassifier):
         Used to initialize the model parameters.
     regularizer : ``RegularizerApplicator``, optional (default=``None``)
     """
+
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
                  encoder: Seq2VecEncoder,
@@ -49,11 +50,11 @@ class SequencePairClassifier(SequenceClassifier):
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super(SequencePairClassifier, self).__init__(vocab, text_field_embedder, encoder, initializer, regularizer)
 
-        self.projection_layer = Linear(self.encoder.get_output_dim()*2,
+        self.projection_layer = Linear(self.encoder.get_output_dim() * 2,
                                        self.num_classes)
-    
+
     @overrides
-    def forward(self, # type: ignore
+    def forward(self,  # type: ignore
                 record_1: Dict[str, torch.LongTensor],
                 record_2: Dict[str, torch.LongTensor],
                 gold_label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
@@ -102,9 +103,10 @@ class SequencePairClassifier(SequenceClassifier):
         aggregated_records = torch.cat([encoded_record_1, encoded_record_2], dim=-1)
         logits = self.projection_layer(aggregated_records)
 
-        class_probabilities = F.softmax(logits)
+        class_probabilities = F.softmax(logits, dim=0)
 
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities, "encoded_record_1": encoded_record_1, "encoded_record_2": encoded_record_2}
+        output_dict = {"logits": logits, "class_probabilities": class_probabilities,
+                       "encoded_record_1": encoded_record_1, "encoded_record_2": encoded_record_2}
 
         if gold_label is not None:
             loss = self._loss(logits, gold_label.long().view(-1))
@@ -114,6 +116,3 @@ class SequencePairClassifier(SequenceClassifier):
                 metric(logits, gold_label.squeeze(-1))
 
         return output_dict
-
-
-        

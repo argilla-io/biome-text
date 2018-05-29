@@ -11,7 +11,7 @@ from recognai.data import dataset
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
-DEFINITION_PREPROCESS = os.path.join(TEST_RESOURCES, 'resources/definitions/preprocess/simple.json')
+DEFINITION_PREPROCESS = os.path.join(TEST_RESOURCES, 'resources/definitions/preprocess/simple.yml')
 DEFINITION_TRAIN = os.path.join(TEST_RESOURCES, 'resources/definitions/train/load_and_train.json')
 
 
