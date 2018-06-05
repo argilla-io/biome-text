@@ -1,12 +1,3 @@
 {
-  "dataset_format": "json",
-
-  "transformations": {
-    "inputs": [
-      "reviewText"
-    ],
-    "gold_label": {
-      "field": "overall"
-    }
-  }
+  "dataset_format": "json"
 }

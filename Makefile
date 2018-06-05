@@ -1,6 +1,12 @@
-
+NAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	platform=linux-amd64
+endif
+ifeq ($(UNAME_S),Darwin)
+	platform=darwin-amd64
+endif
 init:
-	@pip install -r requirements.install.txt --upgrade
+	@pip install -r requirements.txt --upgrade
 	@pip install pylint
 
 spacy-es:
@@ -12,15 +18,19 @@ spacy:
 init-test:
 	@pip install -r requirements.test.txt
 
-test: init-test build
+test: init-test check
 	@nosetests --with-coverage --cover-package=recognai -d tests
 
-.PHONY: build
-build:
+.PHONY: check
+check:
 	@pylint recognai -E
 
-install: build
+.PHONY: dist
+dist: test
+	@python setup.py sdist bdist_wheel
+
+install: test
 	@python setup.py install
 
-install-dev: build
+install-dev:
 	@python setup.py develop

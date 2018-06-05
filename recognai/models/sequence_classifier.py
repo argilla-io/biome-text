@@ -17,11 +17,13 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
+from recognai.models import AbstractClassifier
+
 logger = logging.getLogger(__name__)
 
 
 @Model.register("sequence_classifier")
-class SequenceClassifier(Model):
+class SequenceClassifier(AbstractClassifier):
     """
     This ``SequenceClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
@@ -68,7 +70,7 @@ class SequenceClassifier(Model):
     @overrides
     def forward(self,  # type: ignore
                 tokens: Dict[str, torch.LongTensor],
-                label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
+                gold_label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
         Parameters
@@ -82,9 +84,9 @@ class SequenceClassifier(Model):
             sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
             which knows how to combine different word representations into a single vector per
             token in your input.
-        tags : torch.LongTensor, optional (default = None)
-            A torch tensor representing the sequence of integer gold class labels of shape
-            ``(batch_size, num_tokens)``.
+        gold_label : torch.LongTensor, optional (default = None)
+            A torch tensor representing the sequence of integer gold class label of shape
+            ``(batch_size, num_classes)``.
 
         Returns
         -------
@@ -99,72 +101,26 @@ class SequenceClassifier(Model):
             A scalar loss to be optimised.
 
         """
+        encoded_text = self.encode_tokens(tokens)
+        logits = self.projection_layer(encoded_text)
+
+        class_probabilities = F.softmax(logits, dim=0)
+
+        output_dict = {"logits": logits, "class_probabilities": class_probabilities}
+        if gold_label is not None:
+            loss = self._loss(logits, gold_label.long().view(-1))
+            output_dict["loss"] = loss
+            self._accuracy(logits, gold_label.squeeze(-1))
+            for name, metric in self.metrics.items():
+                metric(logits, gold_label.squeeze(-1))
+
+        return output_dict
+
+    def encode_tokens(self, tokens):
         embedded_text_input = self.text_field_embedder(tokens)
         mask = get_text_field_mask(tokens)
         encoded_text = self.encoder(embedded_text_input, mask)
-        logits = self.projection_layer(encoded_text)
-
-        class_probabilities = F.softmax(logits)
-
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities}
-        if label is not None:
-            loss = self._loss(logits, label.long().view(-1))
-            output_dict["loss"] = loss
-            self._accuracy(logits, label.squeeze(-1))
-            for name, metric in self.metrics.items():
-                metric(logits, label.squeeze(-1))
-
-        return output_dict
-
-    @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        """
-        Does a simple position-wise argmax over each token, converts indices to string labels, and
-        adds a ``"tags"`` key to the dictionary with the result.
-        """
-        all_predictions = output_dict['class_probabilities']
-        if not isinstance(all_predictions, numpy.ndarray):
-            all_predictions = all_predictions.data.numpy()
-
-        output_map_probs = []
-        max_labels = []
-        for i, probs in enumerate(all_predictions):
-            argmax_i = numpy.argmax(probs)
-            label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
-            max_labels.append(label)
-
-            output_map_probs.append({})
-            for j, prob in enumerate(probs):
-                label_key = self.vocab.get_token_from_index(j, namespace="labels")
-                output_map_probs[i][label_key] = prob
-
-        output_dict['probabilities_by_class'] = output_map_probs
-        output_dict['max_label'] = max_labels
-        return output_dict
-
-    @overrides
-    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        all_metrics = {}
-
-        total_f1 = 0.0
-        total_precision = 0.0
-        total_recall = 0.0
-        for metric_name, metric in self.metrics.items():
-            precision, recall, f1 = metric.get_metric(reset)  # pylint: disable=invalid-name
-            total_f1 += f1
-            total_precision += precision
-            total_recall += recall
-            all_metrics[metric_name + "_f1"] = f1
-            all_metrics[metric_name + "_precision"] = precision
-            all_metrics[metric_name + "_recall"] = recall
-
-        num_metrics = len(self.metrics)
-        all_metrics["average_f1"] = total_f1 / num_metrics
-        all_metrics["average_precision"] = total_precision / num_metrics
-        all_metrics["average_recall"] = total_recall / num_metrics
-        all_metrics['accuracy'] = self._accuracy.get_metric(reset)
-
-        return all_metrics
+        return encoded_text
 
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceClassifier':

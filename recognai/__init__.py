@@ -1,1 +1,1 @@
-from recognai import data, models
+from recognai import data, models, service

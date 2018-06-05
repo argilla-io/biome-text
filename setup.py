@@ -18,7 +18,7 @@ about = {}
 with open(os.path.join(here, NAME, '__version__.py')) as f:
     exec(f.read(), about)
 
-with open(os.path.join(here, 'requirements.deploy.txt')) as f:
+with open(os.path.join(here, 'requirements.txt')) as f:
     required = f.read().splitlines()
 
 setup(

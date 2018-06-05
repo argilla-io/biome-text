@@ -1,17 +1,3 @@
 {
-  "dataset_format": "json",
-
-  "transformations": {
-    "inputs": [
-      "reviewText"
-    ],
-    "gold_label": {
-      "field": "overall"
-    }
-  },
-
-  "connection" : {
-    "host" : "theHost",
-    "port" : "8000"
-  }
+  "dataset_format": "json"
 }

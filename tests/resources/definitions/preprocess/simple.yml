@@ -1,0 +1,26 @@
+
+dataset_reader:
+  type: classification_dataset_reader
+  target: gold_label
+  token_indexers:
+    tokens:
+      type: single_id
+      lowercase_tokens: true
+
+train_data_path:
+  format: json
+  path: resources/data/simple.train.10.csv
+  transformations:
+    tokens:
+    - reviewText
+    target:
+      gold_label: overall
+
+validation_data_path:
+  format: json
+  path: resources/data/simple.validation.10.csv
+  transformations:
+    tokens:
+    - reviewText
+    target:
+      gold_label: overall

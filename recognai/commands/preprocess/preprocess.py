@@ -6,11 +6,13 @@ import sys
 from copy import deepcopy
 from typing import Dict, Iterable
 
+import yaml
 from allennlp.commands import Subcommand
 from allennlp.common import Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.tee_logger import TeeLogger
 from allennlp.data import DatasetReader, Vocabulary, Instance
+from recognai.commands.utils import read_params_from_file
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -44,7 +46,7 @@ def preprocess_from_args(args: argparse.Namespace):
 
 
 def preprocess_from_file(parameter_filename: str, serialization_dir: str) -> None:
-    params = Params.from_file(parameter_filename)
+    params = read_params_from_file(parameter_filename)
     preprocess(params, serialization_dir)
 
 
@@ -97,9 +99,9 @@ def preprocess(params: Params, serialization_dir: str):
     # TODO save collection with pickle
 
     # TODO Ideally save_to_file and load_from_file should be defined for each object type. But for now, we keep as an util
-    #save_to_file(list(train_data), os.path.join(serialization_dir, "train.data"))
+    # save_to_file(list(train_data), os.path.join(serialization_dir, "train.data"))
     # TODO: what happens when validation data is None?
-    #save_to_file(list(validation_data), os.path.join(serialization_dir, "validation.data"))
+    # save_to_file(list(validation_data), os.path.join(serialization_dir, "validation.data"))
     # TODO: @frascuchon we need to handle test data as well.abs
 
 
@@ -119,6 +121,3 @@ def prepare_serialization_dir(params, serialization_dir):
 
     with open(os.path.join(serialization_dir, "preprocess.json"), "w") as param_file:
         json.dump(serialization_params, param_file, indent=4)
-
-
-

@@ -2,14 +2,5 @@
   "dataset_format": {
     "type": "csv",
     "delimiter": ";"
-  },
-  "transformations": {
-    "inputs": [
-      "name"
-    ],
-    "gold_label": {
-      "field": "organisation name",
-      "use_missing_label" : "None"
-    }
   }
 }
