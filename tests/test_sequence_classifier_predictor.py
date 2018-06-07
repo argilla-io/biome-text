@@ -44,3 +44,5 @@ class SequenceClassifierPredictorTest(DaskSupportTest):
         self.assertRaises(RuntimeError, self.predictor.predict_json, inputs)
 
 
+
+

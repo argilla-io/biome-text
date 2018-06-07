@@ -15,7 +15,7 @@ from allennlp.commands import Evaluate
 from recognai.commands.predict.predict import Predict
 from recognai.commands.publish import PublishModel
 from recognai.commands.restapi import RestAPI
-from recognai.commands.train import Train
+from recognai.commands.train import RecognaiTrain
 
 __logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def main(*kwargs) -> None:
         # Default commands
         # "preprocess": Preprocess(),
         # "make-vocab": MakeVocab(),
-        "train": Train(),
+        "train": RecognaiTrain(),
         'predict': Predict(),
         'evaluate': Evaluate(),
         'publish': PublishModel(),

@@ -61,6 +61,7 @@ class SequencePairClassifier(AbstractClassifier):
     regularizer : ``RegularizerApplicator``, optional (default=``None``)
         If provided, will be used to calculate the regularization penalty during training.
     """
+
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
                  attend_feedforward: FeedForward,
@@ -170,9 +171,13 @@ class SequencePairClassifier(AbstractClassifier):
 
         return output_dict
 
-
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequencePairClassifier':
+        model = super(SequencePairClassifier, cls).try_from_location(params)
+
+        if model:
+            return model
+
         embedder_params = params.pop("text_field_embedder")
         text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
 

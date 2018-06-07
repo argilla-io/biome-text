@@ -124,6 +124,11 @@ class SequenceClassifier(AbstractClassifier):
 
     @classmethod
     def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceClassifier':
+        model = super(SequenceClassifier, cls).try_from_location(params)
+
+        if model:
+            return model
+
         embedder_params = params.pop("text_field_embedder")
         text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
 
