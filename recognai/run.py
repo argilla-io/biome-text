@@ -96,20 +96,29 @@ def main(*kwargs) -> None:
     # So if no such attribute has been added, no subparser was triggered,
     # so give the user some help.
     if 'func' in dir(args):
-        dask_client = _dask_client(args.dask_cluster, args.dask_cache_size)
+        dask_client = None
 
         try:
+            if __dask_needed(args.func.__name__):
+                dask_client = _dask_client(args.dask_cluster, args.dask_cache_size)
+
             load_customs_components_from_file(kwargs[0])
             args.func(args)
         finally:
-            if dask_client:
-                try:
-                    dask_client.close()
-                except GeneratorExit:
-                    logging.info('Closing dask connection')
-
+            try:
+                dask_client.close()
+            except:
+                pass
     else:
         parser.print_help()
+
+
+def __dask_needed(func_name: str) -> bool:
+
+    for dasked_command in ['predict', 'train', 'evaluate']:
+        if dasked_command in func_name:
+            return True
+    return False
 
 
 def _dask_client(dask_cluster: str, cache_size: Number) -> Client:

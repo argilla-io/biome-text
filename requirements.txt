@@ -14,6 +14,7 @@ fire==0.1.2
 sanic-cors==0.6.0
 gevent==1.2.2
 
+smart-open==1.5.7
 boto3==1.7.19
 
 torch==0.3.1
