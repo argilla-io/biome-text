@@ -1,1 +1,2 @@
 from .sequence_classifier import SequenceClassifierPredictor
+from .sequence_encoder_predictor import SequenceEncoderPredictor
