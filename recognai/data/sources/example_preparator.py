@@ -15,7 +15,7 @@ class ExamplePreparator(object):
         self._value_mappings = gold_label_definition.pop(VALUE_MAPPING_FIELD, None)
         self._use_missing_label = gold_label_definition.pop(USE_MISSING_LABEL_FIELD, None)
         self._gold_label_id = self._gold_label_definition(gold_label_definition)
-        self._gold_label_field = gold_label_definition.get(self._gold_label_id, '')
+        self._gold_label_field = gold_label_definition.get(self._gold_label_id, None)
         self._input_transformations = transformations
 
     def _gold_label_definition(self, gold_label_definition: Optional[Dict]):
@@ -40,10 +40,10 @@ class ExamplePreparator(object):
                 else label
 
         label = with_mapping(
-            str(example[self._gold_label_field]).strip(),
-            self._value_mappings,
-            self._use_missing_label
-        )
+                example.get(self._gold_label_field),
+                self._value_mappings,
+                self._use_missing_label
+            )
 
         return label
 
@@ -54,8 +54,8 @@ class ExamplePreparator(object):
             mapped_example = {}
             for field_name, example_fields in self._input_transformations.items():
                 mapped_example[field_name] = self._input(example, example_fields)
-
-            mapped_example[self._gold_label_id] = self._gold_label(example)
+            if self._gold_label_id:
+                mapped_example[self._gold_label_id] = self._gold_label(example)
             return mapped_example
 
         return example
