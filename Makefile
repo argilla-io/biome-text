@@ -23,7 +23,8 @@ test: init-test check
 
 .PHONY: check
 check:
-	@pylint recognai -E
+	@pylint -E recognai
+	@echo "lint succeeded"
 
 .PHONY: dist
 dist: test
