@@ -16,6 +16,7 @@ from allennlp.service.predictors import Predictor
 
 from recognai.data.sinks.helpers import store_dataset
 from recognai.data.sources.helpers import read_dataset
+from recognai.models.archival import to_local_archive
 
 __logger = logging.getLogger(__name__)
 
@@ -78,21 +79,10 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
 
     __logger.info("batching prediction")
     # results = [predictor.predict_json(example, args.cuda_device) for example in partition]
-    results = predictor.predict_batch_json(partition, args.cuda_device)
+    results = predictor.predict_batch_json(partition)
     __logger.info("predictions successfully")
 
     return [predictor.dump_line(output) for model_input, output in zip(partition, results)]
-
-
-def __fetch_model_archive(args: argparse.Namespace) -> str:
-    # Wraps archive download to support remote locations (s3, hdfs,...)
-    archive_file = args.archive_file
-    tempdir = tempfile.mkdtemp()
-    local_file = os.path.join(tempdir, 'model.tar.gz')
-    with smart_open.smart_open(archive_file) as archive, gzip.open(local_file, 'wb') as output:
-        shutil.copyfileobj(archive, output, length=-1)
-
-    return local_file
 
 
 def _predict(args: argparse.Namespace) -> None:
@@ -104,7 +94,7 @@ def _predict(args: argparse.Namespace) -> None:
     partitions = max(1, source_size // args.batch_size)
     __logger.info("Number of partitions {}".format(partitions))
 
-    args.archive_file = __fetch_model_archive(args)
+    args.archive_file = to_local_archive(args.archive_file)
 
     results = test_dataset.repartition(partitions).map_partitions(__predict, args)
     results = store_dataset(results, sink_config)

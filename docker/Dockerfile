@@ -1,4 +1,4 @@
-FROM allennlp/allennlp:v0.4.0
+FROM allennlp/allennlp:v0.4.3
 
 #ENV LIBRDKAFKA_VERSION 0.11.1
 

@@ -17,7 +17,9 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
-logger = logging.getLogger(__name__)
+from recognai.models.archival import load_archive
+
+_logger = logging.getLogger(__name__)
 
 
 @Model.register("abstract_classifier")
@@ -159,3 +161,15 @@ class AbstractClassifier(Model):
 
         return cls(vocab=vocab,
                    regularizer=regularizer)
+
+    @classmethod
+    def try_from_location(cls, params: Params) -> 'AbstractClassifier':
+        model_location = params.get('model_location', None)
+        if model_location:
+            try:
+                archive = load_archive(archive_file=model_location)
+                _logger.warning("Loaded model from location %s", model_location)
+                return archive.model
+            except:
+                _logger.warning("Cannot load model from location %s", model_location)
+                return None

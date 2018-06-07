@@ -8,7 +8,7 @@ elasticsearch>=6.0.0,<7.0.0
 msgpack-python==0.5.4
 psycopg2-binary==2.7.4
 
-allennlp==0.4.0
+allennlp==0.4.3
 
 fire==0.1.2
 sanic-cors==0.6.0
