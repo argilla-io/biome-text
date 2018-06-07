@@ -6,10 +6,11 @@ from numbers import Number
 from pydoc import locate
 from typing import Iterable
 
+from dask.distributed import Client
+from dask.cache import Cache
 import dask
 import fire
 from allennlp.commands import Evaluate
-from distributed import Client
 
 from recognai.commands.predict.predict import Predict
 from recognai.commands.publish import PublishModel
@@ -96,6 +97,7 @@ def main(*kwargs) -> None:
     # so give the user some help.
     if 'func' in dir(args):
         dask_client = _dask_client(args.dask_cluster, args.dask_cache_size)
+
         try:
             load_customs_components_from_file(kwargs[0])
             args.func(args)
@@ -111,8 +113,6 @@ def main(*kwargs) -> None:
 
 
 def _dask_client(dask_cluster: str, cache_size: Number) -> Client:
-    from dask.distributed import Client
-    from dask.cache import Cache
     if cache_size:
         cache = Cache(cache_size)
         cache.register()

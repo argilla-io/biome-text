@@ -3,6 +3,7 @@ import logging
 import ujson as json
 from typing import Dict, Iterable
 
+import math
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
@@ -27,7 +28,7 @@ class Predict(Subcommand):
         subparser.add_argument('--weights-overrides', type=str, help='a path that overrides which weights file to use')
 
         batch_size = subparser.add_mutually_exclusive_group(required=False)
-        batch_size.add_argument('--batch-size', type=int, default=1, help='The batch size to use for processing')
+        batch_size.add_argument('--batch-size', type=int, default=1000, help='The batch size to use for processing')
 
         cuda_device = subparser.add_mutually_exclusive_group(required=False)
         cuda_device.add_argument('--cuda-device', type=int, default=-1, help='id of GPU to use (if any)')
@@ -66,8 +67,14 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
     for package_name in args.include_package:
         import_submodules(package_name)
 
+    __logger.info("Creating predictor")
     predictor = _get_predictor(args)
+    __logger.info("Created predictor")
+
+    __logger.info("batching prediction")
+    # results = [predictor.predict_json(example, args.cuda_device) for example in partition]
     results = predictor.predict_batch_json(partition, args.cuda_device)
+    __logger.info("predictions successfully")
 
     return [predictor.dump_line(output) for model_input, output in zip(partition, results)]
 
@@ -75,9 +82,13 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
 def _predict(args: argparse.Namespace) -> None:
     source_config = json.loads(args.from_source)
     sink_config = json.loads(args.to_sink)
-
     test_dataset = read_dataset(source_config)
-    results = test_dataset.map_partitions(__predict, args)
+
+    source_size = test_dataset.count().compute()
+    partitions = max(1, source_size // args.batch_size)
+    __logger.info("Number of partitions {}".format(partitions))
+
+    results = test_dataset.repartition(partitions).map_partitions(__predict, args)
     results = store_dataset(results, sink_config)
 
     __logger.info(results)
