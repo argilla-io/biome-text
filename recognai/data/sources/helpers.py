@@ -6,6 +6,7 @@ from allennlp.common import Params
 from dask.bag import Bag
 
 from recognai.data import is_elasticsearch_configuration
+from recognai.data.biome.transformations import is_biome_datasource_spec, biome_datasource_spec_to_dataset_config
 from recognai.data.sources import JSON_FORMAT
 from recognai.data.sources.elasticsearch import from_elasticsearch
 from recognai.data.sources.example_preparator import ExamplePreparator
@@ -25,6 +26,9 @@ def read_dataset(dataset_config: Any) -> Bag:
         dataset_config = dataset_config.as_dict()
 
     copy = dataset_config.copy()
+    if is_biome_datasource_spec(dataset_config):
+        copy = biome_datasource_spec_to_dataset_config(dataset_config)
+
     example_preparator = ExamplePreparator(copy.pop('transformations', {}))
 
     __logger.info("Reading instances from dataset at: %s", copy)
