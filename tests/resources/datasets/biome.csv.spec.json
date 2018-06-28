@@ -1,0 +1,88 @@
+{
+  "datasource": {
+    "id": "wikidata-japanese-test",
+    "name": " Wikidata Japanese test",
+    "type": "FileSystem",
+    "params": {
+      "recogn.ai/files": [
+        "resources/data/dataset_source.csv"
+      ],
+      "recogn.ai/location": "resources/data/dataset_source.cs"
+    },
+    "format": {
+      "type": "csv",
+      "charset": "UTF-8",
+      "params": {
+        "charToEscapeQuoteEscaping": "\u0000",
+        "quote": "\"",
+        "quoteEscape": "\"",
+        "lineSeparator": "\n",
+        "delimiter": ","
+      }
+    },
+    "schema": [
+      {
+        "key": "type",
+        "value": {
+          "type": "string",
+          "position": 0
+        }
+      },
+      {
+        "key": "id",
+        "value": {
+          "type": "string",
+          "position": 1
+        }
+      },
+      {
+        "key": "labels.ja",
+        "value": {
+          "type": "string",
+          "position": 2
+        }
+      },
+      {
+        "key": "labels.en",
+        "value": {
+          "type": "string",
+          "position": 3
+        }
+      },
+      {
+        "key": "descriptions.ja",
+        "value": {
+          "type": "string",
+          "position": 4
+        }
+      },
+      {
+        "key": "descriptions.en",
+        "value": {
+          "type": "string",
+          "position": 5
+        }
+      }
+    ],
+    "state": "CREATING",
+    "metadata": {
+      "namespace": "recognai",
+      "owner": "dvilasuero",
+      "type": "DataSource",
+      "resourceVersion": "fc40b974-981d-40c5-b3da-36d868680cc7",
+      "createdBy": "dvilasuero",
+      "createdAt": "2018-06-27T13:15:26.069Z",
+      "lastUpdateAt": "2018-06-27T13:15:26.069Z",
+      "labels": {
+      }
+    }
+  },
+  "settings": {
+    "tokens": [
+      "age"
+    ],
+    "target": {
+      "gold_label": "job"
+    }
+  }
+}
