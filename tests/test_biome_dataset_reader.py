@@ -11,9 +11,6 @@ from recognai.data.dataset_readers.classification_dataset_reader import Classifi
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
-CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
-JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
-
 TOKENS_FIELD = 'tokens'
 LABEL_FIELD = 'gold_label'
 
@@ -36,6 +33,18 @@ class BiomeDatasetReaderTest(DaskSupportTest):
 
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
+    def test_read_input_csv_multi_file(self):
+        expected_length = 18 # Two times the same file
+        expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
+        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
+
+        json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.multi.file.spec.json')
+        with open(json_config) as json_file:
+            params = json.loads(json_file.read())
+            reader = ClassificationDatasetReader.from_params(params=Params(dict()))
+            dataset = reader.read(params)
+
+            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_input_json(self):
         expected_length = 9
