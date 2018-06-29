@@ -15,7 +15,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config) -> Dict:
         format_params = format.pop('params', {})
         delimiter = format_params.pop('delimiter', None)
         config = {
-            'path': "{0}*".format(params['recogn.ai/location']),
+            'path': __extrat_ds_path(params),
             'format': format['type'],
             'encoding': format['charset'],
             'transformations': settings
@@ -26,3 +26,13 @@ def biome_datasource_spec_to_dataset_config(dataset_config) -> Dict:
     else:
         # TODO include another datasource types
         return {}
+
+
+def __extrat_ds_path(params):
+    ds_location = params.pop('recogn.ai/location')
+    ds_files = params.pop('recogn.ai/files')
+    if ds_files and len(ds_files) == 1:
+        return ds_files[0]
+    return '' if not ds_location \
+        else '{0}*'.format(ds_location) if ds_location.endswith('/') \
+        else "{0}/*".format(ds_location)
