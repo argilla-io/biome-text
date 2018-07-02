@@ -18,7 +18,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config) -> Dict:
             'path': __extrat_ds_path(params),
             'format': format['type'],
             'encoding': format['charset'],
-            'transformations': settings
+            'transformations': settings.pop('modelConnect', {})
         }
         if delimiter:
             config['sep'] = delimiter
