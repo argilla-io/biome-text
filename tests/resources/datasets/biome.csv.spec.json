@@ -78,11 +78,13 @@
     }
   },
   "settings": {
-    "tokens": [
-      "age"
-    ],
-    "target": {
-      "gold_label": "job"
+    "modelConnect" : {
+      "tokens": [
+        "age"
+      ],
+      "target": {
+        "gold_label": "job"
+      }
     }
   }
 }
