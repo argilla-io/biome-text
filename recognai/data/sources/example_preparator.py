@@ -33,7 +33,7 @@ class ExamplePreparator(object):
         def with_mapping(value, mapping=None, use_missing_label: str = None):
             # Adding default value to value, enables partial mapping
             # Handling missing labels with a default value
-            value = None if not value or value == '' else value
+            value = None if not value or str(value).isspace() else value
             label = mapping.get(value, value) if mapping else value
             return str(label).strip() if label \
                 else use_missing_label if use_missing_label \

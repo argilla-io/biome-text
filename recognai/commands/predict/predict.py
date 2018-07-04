@@ -14,6 +14,7 @@ from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.service.predictors import Predictor
 
+from recognai.commands.utils import read_datasource_cfg
 from recognai.data.sinks.helpers import store_dataset
 from recognai.data.sources.helpers import read_dataset
 from recognai.models.archival import to_local_archive
@@ -86,8 +87,9 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
 
 
 def _predict(args: argparse.Namespace) -> None:
-    source_config = json.loads(args.from_source)
-    sink_config = json.loads(args.to_sink)
+    source_config = read_datasource_cfg(args.from_source)
+    sink_config = read_datasource_cfg(args.to_sink)
+
     test_dataset = read_dataset(source_config)
 
     source_size = test_dataset.count().compute()

@@ -26,8 +26,9 @@ class ClassificationDatasetReader(DatasetReader):
         self._target_field = target_field
 
     def process_example(self, example: Dict) -> Instance:
-        logger.debug('Example:[%s]', example)
-        return self.text_to_instance(example)
+        if example:
+            logger.debug('Example:[%s]', example)
+            return self.text_to_instance(example)
 
     def text_to_instance(self,  # type: ignore
                          example: Dict) -> Instance:
@@ -45,9 +46,11 @@ class ClassificationDatasetReader(DatasetReader):
         return Instance(fields)
 
     @overrides
-    def _read(self, dataset_config: Any) -> Iterable[Instance]:
+    def _read(self, dataset_config: str) -> Iterable[Instance]:
         for example in read_dataset(dataset_config):
-            yield self.process_example(example)
+            instance = self.process_example(example)
+            if instance:
+                yield instance
 
     @classmethod
     def from_params(cls, params: Params) -> 'ClassificationDatasetReader':

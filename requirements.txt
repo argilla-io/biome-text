@@ -8,6 +8,10 @@ distributed==1.21.8
 # error: PyYAML 4.1 is installed but PyYAML<=3.12,>=3.10 is required by {'awscli'}
 pyyaml==3.12
 
+# Json object flatten
+flatten_json==0.1.6
+
+
 s3fs==0.1.5
 tensorboard==1.0.0a6
 elasticsearch>=6.0.0,<7.0.0
