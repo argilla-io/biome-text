@@ -29,6 +29,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config) -> Dict:
 
 
 def __extrat_ds_path(params):
+    print('Params', params)
     ds_location = params.pop('recogn.ai/location')
     ds_files = params.pop('recogn.ai/files')
     if ds_files and len(ds_files) == 1:

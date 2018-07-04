@@ -16,7 +16,10 @@ __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def __transform_example(data: Dict, example_preparator: ExamplePreparator) -> Dict:
-    return example_preparator.read_info(data)
+    try:
+        return example_preparator.read_info(data)
+    except:
+        return None
 
 
 def read_dataset(dataset_config: Any) -> Bag:

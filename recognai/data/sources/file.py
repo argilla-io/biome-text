@@ -4,6 +4,7 @@ import ujson as json
 from dask.bag import Bag
 import dask.bag as db
 import dask.dataframe as df
+from flatten_json import flatten
 
 
 def from_csv(path: str, columns: List[str] = list(), **params) -> Bag:
@@ -14,4 +15,6 @@ def from_csv(path: str, columns: List[str] = list(), **params) -> Bag:
 
 
 def from_json(path: str, **params) -> Bag:
-    return db.read_text(path, **params).map(json.loads)
+    return db.read_text(path, **params) \
+        .map(json.loads) \
+        .map(lambda dict: flatten(dict, separator='.'))

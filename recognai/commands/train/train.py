@@ -37,7 +37,13 @@ from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.models.model import Model, _DEFAULT_WEIGHTS
 from allennlp.training import Trainer
 
+from recognai.commands.utils import read_datasource_cfg, read_definition_from_model_spec
+
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+TRAIN_DATA_FIELD = 'train_data_path'
+VALIDATION_DATA_FIELD = 'validation_data_path'
+TEST_DATA_FIELD = 'test_data_path'
 
 
 class RecognaiTrain(Train):
@@ -48,24 +54,59 @@ class RecognaiTrain(Train):
                                required=False,
                                type=str,
                                help='optional location for model binary file (model.tar.gz)')
+        subparser.add_argument('--trainer', type=str, help='trainer specs location file', required=True)
+        subparser.add_argument('--train', type=str, help='input train source definition', required=True)
+        subparser.add_argument('--validation', type=str, help='input validation source definition', required=False)
+        subparser.add_argument('--test', type=str, help='input test source definition', required=False)
         subparser.set_defaults(func=train_model_from_args)
 
         return subparser
 
 
 def train_model_from_args(args: argparse.Namespace):
-    train_model_from_file(args.param_path, args.serialization_dir, args.model_location, args.overrides)
+    train_model_from_file(
+        args.param_path,
+        args.serialization_dir,
+        args.model_location,
+
+        args.trainer,
+
+        args.train,
+        args.validation,
+        args.test,
+
+        args.overrides
+    )
 
 
 def train_model_from_file(parameter_filename: str,
                           serialization_dir: str,
                           model_location: Optional[str] = None,
+
+                          trainer_path: str = '',
+
+                          train_cfg: str = "",
+                          validation_cfg: str = "",
+                          test_cfg: Optional[str] = None,
+
                           overrides: str = "",
                           vocab_path: str = None) -> Model:
-    # Load the experiment config from a file and pass it to ``train_model``.
+    with open(trainer_path) as trainer_file:
+        cfg_params = read_definition_from_model_spec(parameter_filename)
+        trainer_params = json.load(trainer_file)
 
-    params = Params.from_file(parameter_filename, overrides)
-    return train_model(params, serialization_dir, file_friendly_logging=True, model_location=model_location)
+        config = {
+            TRAIN_DATA_FIELD: read_datasource_cfg(train_cfg),
+            VALIDATION_DATA_FIELD: read_datasource_cfg(validation_cfg),
+            **cfg_params,
+            **trainer_params
+        }
+
+        if test_cfg and not test_cfg.isspace():
+            config.update({TEST_DATA_FIELD: read_datasource_cfg(test_cfg)})
+
+        params = Params(config)
+        return train_model(params, serialization_dir, file_friendly_logging=True, model_location=model_location)
 
 
 # From Allen NLP module
@@ -73,6 +114,7 @@ def train_model(params: Params,
                 serialization_dir: str,
                 file_friendly_logging: bool = False,
                 recover: bool = False,
+
                 model_location: Optional[str] = None) -> Model:
     """
     Trains the model specified in the given :class:`Params` object, using the data and training
@@ -104,9 +146,9 @@ def train_model(params: Params,
 
     check_for_gpu(params.params.get('trainer').get('cuda_device', -1))
 
-    serialization_params = deepcopy(params).as_dict(quiet=True)
     with open(os.path.join(serialization_dir, CONFIG_NAME), "w") as param_file:
-        json.dump(serialization_params, param_file, indent=4)
+        config_json = json.dumps(params.params, indent=4)
+        param_file.write(config_json)
 
     all_datasets = datasets_from_params(params)
     datasets_for_vocab_creation = set(params.pop("datasets_for_vocab_creation", all_datasets))
@@ -184,5 +226,5 @@ def train_model(params: Params,
 def __fetch_model_params(model_location: Optional[str], model_params: Params) -> Params:
     if model_location:
         model_location_config = pyhocon.ConfigFactory.from_dict({"model_location": model_location})
-        return Params(model_location_config.with_fallback(model_params.as_dict()))
+        return Params(model_location_config.with_fallback(pyhocon.ConfigFactory.from_dict(model_params.as_dict())))
     return model_params
