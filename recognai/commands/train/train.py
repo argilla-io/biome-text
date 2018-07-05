@@ -85,8 +85,8 @@ def train_model_from_file(parameter_filename: str,
 
                           trainer_path: str = '',
 
-                          train_cfg: str = "",
-                          validation_cfg: str = "",
+                          train_cfg: str = '',
+                          validation_cfg: str = '',
                           test_cfg: Optional[str] = None,
 
                           overrides: str = "",
