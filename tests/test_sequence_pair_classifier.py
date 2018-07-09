@@ -26,5 +26,6 @@ class TrainSeqListClassifierTest(DaskSupportTest):
             "model_location": os.path.join(serialization_dir, 'model.tar.gz')
         }))
 
+        print (serialization_dir)
         assert model
         assert isinstance(model, SequencePairClassifier)

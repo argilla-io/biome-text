@@ -11,7 +11,7 @@ from tests.test_support import DaskSupportTest
 MODEL_PATH = os.path.join(TEST_RESOURCES, 'resources/models/model.tar.gz')
 
 
-class SequenceClassifierPredictorTest(DaskSupportTest):
+class SequencePairClassifierPredictorTest(DaskSupportTest):
 
     def setUp(self):
         archive = load_archive(MODEL_PATH)
@@ -20,29 +20,24 @@ class SequenceClassifierPredictorTest(DaskSupportTest):
     def tearDown(self):
         del self.predictor
 
-    @unittest.skip('Update model.tar.gz configuration')
+    # @unittest.skip('Update model.tar.gz configuration')
     def test_label_input(self):
-        inputs = {"label": "Herbert Brandes-Siller", "Branche": "--", "category of dataset": "person",
-                  "Type Info": "person"}
+        inputs = {
+            'record_1': "Herbert Brandes-Siller",
+            'record_2': "Herbert Brandes-Siller"
+        }
 
         result = self.predictor.predict_json(inputs)
 
-        label = result.get("probabilities_by_class")
+        annotation = result.get('annotation')
+        classes = annotation.get('classes')
 
-        assert 'person' in label
-        assert 'business' in label
+        assert 'duplicate' in classes
+        assert 'not_duplicate' in classes
 
-        class_probabilities = result.get("class_probabilities")
-        assert class_probabilities is not None
-        assert all(cp > 0 for cp in class_probabilities)
+        assert all(prob > 0 for _, prob in classes.items())
 
-    @unittest.skip('Update model.tar.gz configuration')
     def test_input_that_make_me_cry(self):
-        inputs = {"label": "Iem Gmbh", "Branche": "Immobilienfirmen", "category of dataset": "business",
-                  "Type Info": "business record"}
+        input = {'gold_label': 'duplicated', 'record_1': "Herbert Brandes-Siller"}
 
-        self.assertRaises(RuntimeError, self.predictor.predict_json, inputs)
-
-
-
-
+        self.assertRaises(Exception, self.predictor.predict_json, input)

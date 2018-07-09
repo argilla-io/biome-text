@@ -9,7 +9,7 @@ from recognai.data import is_elasticsearch_configuration
 from recognai.data.biome.transformations import is_biome_datasource_spec, biome_datasource_spec_to_dataset_config
 from recognai.data.sources import JSON_FORMAT
 from recognai.data.sources.elasticsearch import from_elasticsearch
-from recognai.data.sources.example_preparator import ExamplePreparator
+from recognai.data.sources.example_preparator import ExamplePreparator, RESERVED_FIELD_PREFIX
 from recognai.data.sources.file import from_json, from_csv
 
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -22,7 +22,11 @@ def __transform_example(data: Dict, example_preparator: ExamplePreparator) -> Di
         return None
 
 
-def read_dataset(dataset_config: Any) -> Bag:
+def is_reserved_field(field: str) -> bool:
+    return field and str(field).startswith(RESERVED_FIELD_PREFIX)
+
+
+def read_dataset(dataset_config: Any, include_source: bool = False) -> Bag:
     if isinstance(dataset_config, str):
         dataset_config = {'path': dataset_config}
     elif isinstance(dataset_config, Params):
@@ -32,7 +36,7 @@ def read_dataset(dataset_config: Any) -> Bag:
     if is_biome_datasource_spec(dataset_config):
         copy = biome_datasource_spec_to_dataset_config(dataset_config)
 
-    example_preparator = ExamplePreparator(copy.pop('transformations', {}))
+    example_preparator = ExamplePreparator(copy.pop('transformations', {}), include_source)
 
     __logger.info("Reading instances from dataset at: %s", copy)
     dataset = __build_dataset(copy) \

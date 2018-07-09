@@ -27,7 +27,7 @@ def __bulk_data(data: Iterable[Dict], es_hosts: str, es_batch_size: int) -> Tupl
     return bulk(es, actions=data, stats_only=True, chunk_size=es_batch_size)
 
 
-def es_sink(dataset: Bag, index: str, type: str, es_hosts: str, es_batch_size: str) -> Iterable[Tuple]:
+def es_sink(dataset: Bag, index: str, type: str, es_hosts: str, es_batch_size: int = 1000) -> Iterable[Tuple]:
     return dataset \
         .map(__to_es_document, index=index, type=type) \
         .map_partitions(__bulk_data, es_batch_size=es_batch_size, es_hosts=es_hosts) \

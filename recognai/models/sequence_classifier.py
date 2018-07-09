@@ -104,7 +104,7 @@ class SequenceClassifier(AbstractClassifier):
         encoded_text = self.encode_tokens(tokens)
         logits = self.projection_layer(encoded_text)
 
-        class_probabilities = F.softmax(logits, dim=0)
+        class_probabilities = F.softmax(logits)
 
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
         if gold_label is not None:
