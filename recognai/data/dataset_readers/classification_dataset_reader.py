@@ -38,10 +38,11 @@ class ClassificationDatasetReader(DatasetReader):
         gold_label_id = self._target_field
 
         for field, value in example.items():
-            tensor = LabelField(value) \
-                if field == gold_label_id \
-                else TextField(self._tokenizer.tokenize(value), self._token_indexers)
-            fields[field] = tensor
+            if not is_reserved_field(field):
+                tensor = LabelField(value) \
+                    if field == gold_label_id \
+                    else TextField(self._tokenizer.tokenize(value), self._token_indexers)
+                fields[field] = tensor
 
         return Instance(fields)
 

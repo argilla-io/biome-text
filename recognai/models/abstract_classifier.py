@@ -117,8 +117,8 @@ class AbstractClassifier(Model):
                 label_key = self.vocab.get_token_from_index(j, namespace="labels")
                 output_map_probs[i][label_key] = prob
 
-        output_dict['probabilities_by_class'] = output_map_probs
-        output_dict['max_label'] = max_labels
+        output_dict['classes'] = output_map_probs
+        output_dict['max_class'] = max_labels
         return output_dict
 
     @overrides

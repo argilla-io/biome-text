@@ -6,9 +6,12 @@ USE_MISSING_LABEL_FIELD = "use_missing_label"
 
 DEFAULT_MISSING_LABEL = 'None'
 
+RESERVED_FIELD_PREFIX = '@'
+SOURCE_FIELD = 'source'
+
 
 class ExamplePreparator(object):
-    def __init__(self, dataset_transformations: Dict):
+    def __init__(self, dataset_transformations: Dict, include_source: bool = False):
         transformations = (dataset_transformations or {}).copy()
         gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, {})
 
@@ -17,6 +20,7 @@ class ExamplePreparator(object):
         self._gold_label_id = self._gold_label_definition(gold_label_definition)
         self._gold_label_field = gold_label_definition.get(self._gold_label_id, None)
         self._input_transformations = transformations
+        self._include_source = include_source
 
     def _gold_label_definition(self, gold_label_definition: Optional[Dict]):
         if gold_label_definition is None:
@@ -40,22 +44,27 @@ class ExamplePreparator(object):
                 else label
 
         label = with_mapping(
-                example.get(self._gold_label_field),
-                self._value_mappings,
-                self._use_missing_label
-            )
+            example.get(self._gold_label_field),
+            self._value_mappings,
+            self._use_missing_label
+        )
 
         return label
 
-    def read_info(self, example: Dict) -> Dict:
+    def read_info(self, source: Dict) -> Dict:
 
+        example = source
         if self._input_transformations:
 
             mapped_example = {}
             for field_name, example_fields in self._input_transformations.items():
-                mapped_example[field_name] = self._input(example, example_fields)
+                mapped_example[field_name] = self._input(source, example_fields)
             if self._gold_label_id:
-                mapped_example[self._gold_label_id] = self._gold_label(example)
-            return mapped_example
+                mapped_example[self._gold_label_id] = self._gold_label(source)
+            example = mapped_example
 
-        return example
+        return example if not self._include_source else {
+            **example,
+            f'{RESERVED_FIELD_PREFIX}{SOURCE_FIELD}': source
+
+        }

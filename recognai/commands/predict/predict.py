@@ -90,7 +90,7 @@ def _predict(args: argparse.Namespace) -> None:
     source_config = read_datasource_cfg(args.from_source)
     sink_config = read_datasource_cfg(args.to_sink)
 
-    test_dataset = read_dataset(source_config)
+    test_dataset = read_dataset(source_config, include_source=True)
 
     source_size = test_dataset.count().compute()
     partitions = max(1, source_size // args.batch_size)

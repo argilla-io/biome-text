@@ -103,10 +103,14 @@ class SequencePairClassifier(SequenceClassifier):
         aggregated_records = torch.cat([encoded_record_1, encoded_record_2], dim=-1)
         logits = self.projection_layer(aggregated_records)
 
-        class_probabilities = F.softmax(logits, dim=0)
+        class_probabilities = F.softmax(logits)
 
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities,
-                       "encoded_record_1": encoded_record_1, "encoded_record_2": encoded_record_2}
+        output_dict = {
+            "logits": logits,
+            "class_probabilities": class_probabilities,
+            "encoded_record_1": encoded_record_1,
+            "encoded_record_2": encoded_record_2
+        }
 
         if gold_label is not None:
             loss = self._loss(logits, gold_label.long().view(-1))
