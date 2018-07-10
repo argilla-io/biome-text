@@ -74,14 +74,13 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
     for package_name in args.include_package:
         import_submodules(package_name)
 
-    __logger.info("Creating predictor")
+    __logger.debug("Creating predictor")
     predictor = _get_predictor(args)
-    __logger.info("Created predictor")
+    __logger.debug("Created predictor")
 
-    __logger.info("batching prediction")
-    # results = [predictor.predict_json(example, args.cuda_device) for example in partition]
+    __logger.debug("batching prediction")
     results = predictor.predict_batch_json(partition)
-    __logger.info("predictions successfully")
+    __logger.debug("predictions successfully")
 
     return [predictor.dump_line(output) for model_input, output in zip(partition, results)]
 

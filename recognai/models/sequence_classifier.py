@@ -105,8 +105,8 @@ class SequenceClassifier(AbstractClassifier):
         logits = self.projection_layer(encoded_text)
 
         class_probabilities = F.softmax(logits)
-
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
+
         if gold_label is not None:
             loss = self._loss(logits, gold_label.long().view(-1))
             output_dict["loss"] = loss

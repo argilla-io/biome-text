@@ -45,57 +45,6 @@ class AbstractClassifier(Model):
         self._loss = torch.nn.CrossEntropyLoss()
 
     @overrides
-    def forward(self,  # type: ignore
-                tokens: Dict[str, torch.LongTensor],
-                gold_label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
-        # pylint: disable=arguments-differ
-        """
-        Parameters
-        ----------
-        tokens : Dict[str, torch.LongTensor], required
-            The output of ``TextField.as_array()``, which should typically be passed directly to a
-            ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
-            tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
-            Tensor(batch_size, num_tokens)}``. This dictionary will have the same keys as were used
-            for the ``TokenIndexers`` when you created the ``TextField`` representing your
-            sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
-            which knows how to combine different word representations into a single vector per
-            token in your input.
-        tags : torch.LongTensor, optional (default = None)
-            A torch tensor representing the sequence of integer gold class labels of shape
-            ``(batch_size, num_tokens)``.
-
-        Returns
-        -------
-        An output dictionary consisting of:
-        logits : torch.FloatTensor
-            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
-            unnormalised log probabilities of the tag classes.
-        class_probabilities : torch.FloatTensor
-            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
-            a distribution of the tag classes per word.
-        loss : torch.FloatTensor, optional
-            A scalar loss to be optimised.
-
-        """
-        embedded_text_input = self.text_field_embedder(tokens)
-        mask = get_text_field_mask(tokens)
-        encoded_text = self.encoder(embedded_text_input, mask)
-        logits = self.projection_layer(encoded_text)
-
-        class_probabilities = F.softmax(logits)
-
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities}
-        if gold_label is not None:
-            loss = self._loss(logits, gold_label.long().view(-1))
-            output_dict["loss"] = loss
-            self._accuracy(logits, gold_label.squeeze(-1))
-            for name, metric in self.metrics.items():
-                metric(logits, gold_label.squeeze(-1))
-
-        return output_dict
-
-    @overrides
     def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
         Does a simple position-wise argmax over each token, converts indices to string labels, and
@@ -106,20 +55,29 @@ class AbstractClassifier(Model):
             all_predictions = all_predictions.data.numpy()
 
         output_map_probs = []
-        max_labels = []
+        max_classes = []
+        max_classes_prob = []
         for i, probs in enumerate(all_predictions):
             argmax_i = numpy.argmax(probs)
             label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
-            max_labels.append(label)
+            label_prob = .0
 
             output_map_probs.append({})
             for j, prob in enumerate(probs):
                 label_key = self.vocab.get_token_from_index(j, namespace="labels")
                 output_map_probs[i][label_key] = prob
+                if label_key == label:
+                    label_prob = prob
 
-        output_dict['classes'] = output_map_probs
-        output_dict['max_class'] = max_labels
-        return output_dict
+            max_classes.append(label)
+            max_classes_prob.append(label_prob)
+
+        return {
+            'logits': output_dict.get('logits'),
+            'classes': output_map_probs,
+            'max_class': max_classes,
+            'max_class_prob': max_classes_prob
+        }
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:

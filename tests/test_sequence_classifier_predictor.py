@@ -20,11 +20,31 @@ class SequencePairClassifierPredictorTest(DaskSupportTest):
     def tearDown(self):
         del self.predictor
 
+    def test_batch_input(self):
+        inputs = [{
+            'record_1': "Herbert Brandes-Siller",
+            'record_2': "Herbert Brandes-Siller",
+            "gold_label": "duplicate"
+        }]
+
+        results = self.predictor.predict_batch_json(inputs)
+        result = results[0]
+        annotation = result.get('annotation')
+        classes = annotation.get('classes')
+
+        assert 'duplicate' in classes
+        assert 'not_duplicate' in classes
+
+        assert all(prob > 0 for _, prob in classes.items())
+
+        assert len(results) == 1
+
     # @unittest.skip('Update model.tar.gz configuration')
     def test_label_input(self):
         inputs = {
             'record_1': "Herbert Brandes-Siller",
-            'record_2': "Herbert Brandes-Siller"
+            'record_2': "Herbert Brandes-Siller",
+            "gold_label": "duplicate"
         }
 
         result = self.predictor.predict_json(inputs)

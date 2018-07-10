@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
@@ -20,14 +20,21 @@ class SequenceClassifierPredictor(Predictor):
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         instance, _ = self._json_to_instance(inputs)
-        outputs = self._model.forward_on_instance(instance)
+        output = self._model.forward_on_instance(instance)
+        return self.__to_prediction(inputs, output)
 
-        return {
-            'input': inputs,
-            'annotation': sanitize(outputs)
-        }
+    def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
+        instances, _ = zip(*self._batch_json_to_instances(inputs))
+        outputs = self._model.forward_on_instances(instances)
+        return [self.__to_prediction(input, output) for input, output in zip(inputs, outputs)]
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Tuple[Instance, JsonDict]:
         instance = self._dataset_reader.process_example(json_dict)
-        return instance, None
+        return instance, json_dict
+
+    def __to_prediction(self, inputs, output):
+        return {
+            'input': inputs,
+            'annotation': sanitize(output)
+        }

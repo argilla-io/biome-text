@@ -66,7 +66,7 @@ def main(*kwargs) -> None:
     # pylint: disable=dangerous-default-value
 
     parser = argparse.ArgumentParser(description="Run RecognAI", usage='%(prog)s [command]', prog=__name__)
-    parser.add_argument('--dask', dest='dask_cluster', default=DEFAULT_DASK_CLUSTER, help='Dask cluster endpoint')
+    parser.add_argument('--dask', dest='dask_cluster', default=None, help='Dask cluster endpoint')
     parser.add_argument('--dask-cache', dest='dask_cache_size', default=DEFAULT_DASK_CACHE_SIZE)
     parser.add_argument('--dask-block-size', dest='dask_block_size', default=DEFAULT_DASK_BLOCK_SIZE)
     parser.add_argument('-v', '--VERBOSE', action='store_true', dest='enable_debug', default=False,
@@ -100,7 +100,11 @@ def main(*kwargs) -> None:
 
         try:
             if __dask_needed(args.func.__name__):
-                dask_client = _dask_client(args.dask_cluster, args.dask_cache_size)
+                if args.dask_cluster:
+                    dask_client = _dask_client(args.dask_cluster, args.dask_cache_size)
+                else:
+                    from dask import threaded
+                    dask.set_options(get=dask.threaded.get)
 
             load_customs_components_from_file(kwargs[0])
             args.func(args)
@@ -114,7 +118,6 @@ def main(*kwargs) -> None:
 
 
 def __dask_needed(func_name: str) -> bool:
-
     for dasked_command in ['predict', 'train', 'evaluate']:
         if dasked_command in func_name:
             return True
