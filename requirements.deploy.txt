@@ -1,3 +1,0 @@
-allennlp==0.3.0
-fire==0.1.2
-sanic-cors==0.6.0

@@ -1,0 +1,70 @@
+{
+  "dataset_reader": {
+    "type": "parallel_dataset_reader",
+    "dataset_format": "csv",
+    "target": "gold_label",
+    "token_indexers": {
+      "token_characters": {
+        "type": "characters",
+        "character_tokenizer": {
+          "byte_encoding": "utf-8"
+        }
+      }
+    }
+  },
+  "train_data_path": {
+    "path": "resources/data/dedup_100_de.csv",
+    "transformations": {
+      "target": {
+        "gold_label": "target"
+      },
+      "record_1": [
+        "record1_firstname",
+        "record1_lastname"
+      ],
+      "record_2": [
+        "record2_firstname",
+        "record2_lastname"
+      ]
+    }
+  },
+  "validation_data_path": {
+    "path": "resources/data/dedup_100_de_test.csv",
+    "transformations": {
+      "target": {
+        "gold_label": "target"
+      },
+      "record_1": [
+        "record1_firstname",
+        "record1_lastname"
+      ],
+      "record_2": [
+        "record2_firstname",
+        "record2_lastname"
+      ]
+    }
+  },
+  "model": {
+    "type": "sequence_pair_classifier",
+    "text_field_embedder": {
+      "token_characters": {
+        "type": "character_encoding",
+        "embedding": {
+          "num_embeddings": 260,
+          "embedding_dim": 8
+        },
+        "encoder": {
+          "type": "lstm",
+          "bidirectional": true,
+          "num_layers": 3,
+          "input_size": 8,
+          "hidden_size": 16
+        }
+      }
+    },
+    "encoder": {
+      "type": "boe",
+      "embedding_dim": 32
+    }
+  }
+}

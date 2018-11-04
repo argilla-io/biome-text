@@ -4,7 +4,7 @@
 import os
 from setuptools import setup, find_packages
 
-NAME = 'allennlp_extensions'
+NAME = 'recognai'
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -18,7 +18,7 @@ about = {}
 with open(os.path.join(here, NAME, '__version__.py')) as f:
     exec(f.read(), about)
 
-with open(os.path.join(here, 'requirements.deploy.txt')) as f:
+with open(os.path.join(here, 'requirements.txt')) as f:
     required = f.read().splitlines()
 
 setup(

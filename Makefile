@@ -1,6 +1,13 @@
-
+NAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	platform=linux-amd64
+endif
+ifeq ($(UNAME_S),Darwin)
+	platform=darwin-amd64
+endif
 init:
-	@pip install -r requirements.install.txt
+	@pip install -r requirements.txt --upgrade
+	@pip install pylint
 
 spacy-es:
 	@python -m spacy download es_core_news_sm
@@ -10,9 +17,21 @@ spacy:
 
 init-test:
 	@pip install -r requirements.test.txt
-	
-test: init-test
-	@nosetests --with-coverage --cover-package=allennlp_extensions -d tests
 
-install:
+test: init-test check
+	@nosetests --with-coverage --cover-package=recognai -d tests
+
+.PHONY: check
+check:
+	@pylint -E recognai
+	@echo "lint succeeded"
+
+.PHONY: dist
+dist: test
+	@python setup.py sdist bdist_wheel
+
+install: test
 	@python setup.py install
+
+install-dev:
+	@python setup.py develop

@@ -2,11 +2,5 @@
   "dataset_format": {
     "type": "csv",
     "delimiter": ";"
-  },
-  "transformations": {
-    "inputs": [
-      "dataset id"
-    ],
-    "gold_label": "dataset id"
   }
 }

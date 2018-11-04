@@ -2,20 +2,5 @@
   "dataset_format": {
     "type": "csv",
     "delimiter": ","
-  },
-
-  "transformations": {
-    "inputs": [
-      "age",
-      "job",
-      "marital"
-    ],
-    "gold_label": {
-      "field": "housing",
-      "values_mapping": {
-        "yes": "OF_COURSE",
-        "no": "NOT_AT_ALL"
-      }
-    }
   }
 }

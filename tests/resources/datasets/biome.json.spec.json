@@ -1,0 +1,29 @@
+{
+  "datasource": {
+    "id": "wikidata-japanese-test",
+    "name": " Wikidata Japanese test",
+    "type": "FileSystem",
+    "params": {
+      "recogn.ai/files": [
+        "resources/data/dataset_source.jsonl"
+      ],
+      "recogn.ai/location": "resources/data/dataset_source.json"
+    },
+    "format": {
+      "type": "json",
+      "charset": "UTF-8",
+      "params": {}
+    }
+  },
+  "settings": {
+    "modelConnect": {
+      "tokens": [
+        "reviewText"
+      ],
+      "target": {
+        "gold_label": "overall"
+      }
+    }
+  }
+
+}

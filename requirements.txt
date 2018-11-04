@@ -1,0 +1,34 @@
+cachey==0.1.1
+dask[complete]==0.17.5
+# Workaround: Avoid error "AttributeError: module 'dask' has no attribute 'config'" caused by a
+# mismatch dask dependency configuration
+distributed==1.21.8
+# Workaround: new installations of torch 0.3.1 requires pycharm 4.1 that conflicts with awscli
+# used by allenNLP
+# error: PyYAML 4.1 is installed but PyYAML<=3.12,>=3.10 is required by {'awscli'}
+pyyaml==3.12
+
+psycopg2-binary==2.7.4
+
+# Json object flatten
+flatten_json==0.1.6
+
+s3fs==0.1.5
+tensorboard==1.0.0a6
+elasticsearch>=6.0.0,<7.0.0
+
+# This fix spacy error with msgpack-pyton 0.5.5
+msgpack-python==0.5.4
+psycopg2-binary==2.7.4
+
+allennlp==0.4.3
+
+fire==0.1.2
+sanic-cors==0.6.0
+gevent==1.2.2
+
+smart-open==1.5.7
+boto3==1.7.19
+
+torch==0.3.1
+torchvision==0.2.1
