@@ -4,7 +4,7 @@ import unittest
 from allennlp.models import load_archive
 from allennlp.service.predictors import Predictor
 
-from recognai.service.predictors import SequenceClassifierPredictor
+from biome.service.predictors import SequenceClassifierPredictor
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 

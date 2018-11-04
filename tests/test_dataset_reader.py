@@ -7,7 +7,7 @@ from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
-from recognai.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
+from biome.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
@@ -16,6 +16,9 @@ JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
 
 TOKENS_FIELD = 'tokens'
 LABEL_FIELD = 'gold_label'
+
+CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions/classifier_dataset_reader.json')
+reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
 
 
 def csv_data(path: str, sep: str = ';', transformations: Dict = dict()):
@@ -39,8 +42,6 @@ class DatasetReaderTest(DaskSupportTest):
 
         json_config = os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfig.json')
         with open(json_config) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(csv_data(CSV_PATH, sep=',', transformations={
                 "tokens": [
                     "age"
@@ -62,8 +63,6 @@ class DatasetReaderTest(DaskSupportTest):
                            'single', '30.0', 'management', 'divorced', '39.0', 'divorced', '.']
 
         with open(os.path.join(TEST_RESOURCES, 'resources/readerWithMappings.json')) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(csv_data(CSV_PATH, sep=',', transformations={
                 "tokens": [
                     "age",
@@ -86,8 +85,6 @@ class DatasetReaderTest(DaskSupportTest):
         expected_inputs = ['1.0', '2.0', '3.0']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
         with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigMultiwordTrailing.json')) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(csv_data(local_data_path, transformations={
                 "tokens": [
                     "dataset id"
@@ -105,8 +102,6 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['11205 - Nurses: Private, Ho', 'person']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_2.csv')
         with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigMultiwordMappings.json')) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(csv_data(local_data_path, transformations={
                 "tokens": [
                     "name"
@@ -115,7 +110,6 @@ class DatasetReaderTest(DaskSupportTest):
                     "gold_label": "category of institution"
                 }
             }))
-
             self._check_dataset(dataset, expectedDatasetLength, expected_inputs, expected_labels)
 
     def test_reader_csv_with_missing_label_and_partial_mappings(self):
@@ -137,8 +131,6 @@ class DatasetReaderTest(DaskSupportTest):
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
         with open(os.path.join(TEST_RESOURCES,
                                'resources/datasetReaderConfigPartialMappingMissingLabel.json')) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(csv_data(local_data_path, transformations={
                 "tokens": [
                     "name"
@@ -161,8 +153,6 @@ class DatasetReaderTest(DaskSupportTest):
                            'None', 'None', 'Scott David', '  ', 'None', 'Corby Borough Council']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/uk_customer_data_10.csv')
         with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigUK.json')) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
             dataset = reader.read(csv_data(local_data_path, transformations={
                 "tokens": [
                     "name"
@@ -194,9 +184,6 @@ class DatasetReaderTest(DaskSupportTest):
 
     def test_read_json(self):
         with open(os.path.join(TEST_RESOURCES, 'resources/readerFromJson.json')) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(params))
-
             dataset = reader.read({
                 'path': JSON_PATH,
                 'transformations': {

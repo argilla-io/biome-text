@@ -7,15 +7,19 @@ from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
-from recognai.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
+from biome.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
 TOKENS_FIELD = 'tokens'
 LABEL_FIELD = 'gold_label'
 
+CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions/classifier_dataset_reader.json')
+reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
+
 
 class BiomeDatasetReaderTest(DaskSupportTest):
+
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name('classification_dataset_reader')
         self.assertEquals(ClassificationDatasetReader, dataset_reader)
@@ -26,24 +30,20 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
         json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.spec.json')
-        with open(json_config) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(dict()))
+        with open(json_config) as dataset_cfg:
+            params = json.loads(dataset_cfg.read())
             dataset = reader.read(params)
-
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_input_csv_multi_file(self):
-        expected_length = 18 # Two times the same file
+        expected_length = 18  # Two times the same file
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
         json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.multi.file.spec.json')
-        with open(json_config) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(dict()))
+        with open(json_config) as dataset_cfg:
+            params = json.loads(dataset_cfg.read())
             dataset = reader.read(params)
-
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_input_json(self):
@@ -52,9 +52,8 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
         json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.json.spec.json')
-        with open(json_config) as json_file:
-            params = json.loads(json_file.read())
-            reader = ClassificationDatasetReader.from_params(params=Params(dict()))
+        with open(json_config) as dataset_cfg:
+            params = json.loads(dataset_cfg.read())
             dataset = list(reader.read(params))
 
             assert len(dataset) == 5

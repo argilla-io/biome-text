@@ -11,6 +11,7 @@ init:
 
 spacy-es:
 	@python -m spacy download es_core_news_sm
+	@python -m spacy link es_core_news_sm es -f
 
 spacy:
 	@python -m spacy download en_core_web_sm
@@ -19,16 +20,16 @@ init-test:
 	@pip install -r requirements.test.txt
 
 test: init-test check
-	@nosetests --with-coverage --cover-package=recognai -d tests
+	@nosetests --with-coverage --cover-package=biome -d tests
 
 .PHONY: check
 check:
-	@pylint -E recognai
+	@pylint -E biome
 	@echo "lint succeeded"
 
 .PHONY: dist
 dist: test
-	@python setup.py sdist bdist_wheel
+	@python setup.py sdist
 
 install: test
 	@python setup.py install

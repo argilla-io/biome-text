@@ -4,7 +4,7 @@
 import os
 from setuptools import setup, find_packages
 
-NAME = 'recognai'
+NAME = 'biome'
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -25,11 +25,11 @@ setup(
     name=NAME,
     version=about['__version__'],
     install_requires=required,
-    description='Allen nlp custom extensions',
+    description='Biome plaftform for deep learning models',
     long_description=readme,
     author='recognai',
     author_email='contact@recogn.ai',
-    url='https://bitbucket.org/recognai/allennlp-extensions',
+    url='',
     license=license,
     packages=find_packages(exclude=('tests', 'docs'))
 )

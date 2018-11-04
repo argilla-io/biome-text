@@ -1,15 +1,12 @@
 import json
 import os
-import unittest
 from typing import Iterable
 
-import yaml
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
-from distributed import LocalCluster
 
-from recognai.data.dataset_readers.classification_dataset_reader import ParallelDatasetReader
+from biome.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
@@ -19,21 +16,22 @@ DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/defin
 
 TOKENS_FIELD = 'tokens'
 
+CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions/classifier_dataset_reader.json')
+reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
+
 
 class ParallelDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
-        dataset_reader = DatasetReader.by_name('parallel_dataset_reader')
-        self.assertEquals(ParallelDatasetReader, dataset_reader)
+        dataset_reader = DatasetReader.by_name('classification_dataset_reader')
+        self.assertEquals(ClassificationDatasetReader, dataset_reader)
 
     def test_read_csv(self):
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
-        json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'parallel_definition.csv.json')
+        json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'classifier_dataset_reader.json')
         with open(json_config) as json_file:
-            params = json.loads(json_file.read())
-            reader = ParallelDatasetReader.from_params(params=Params(params))
 
             dataset = reader.read({
                 "path": CSV_PATH,
@@ -51,10 +49,8 @@ class ParallelDatasetReaderTest(DaskSupportTest):
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_json(self):
-        json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'parallel_definition.json.json')
+        json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'classifier_dataset_reader.json')
         with open(json_config) as json_file:
-            params = json.loads(json_file.read())
-            reader = ParallelDatasetReader.from_params(params=Params(params))
 
             dataset = reader.read({
                 'path': JSON_PATH,

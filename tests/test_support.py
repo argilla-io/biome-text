@@ -8,7 +8,7 @@ import dask.threaded
 class DaskSupportTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        dask.set_options(get=dask.threaded.get)
+        dask.config.set(scheduler='threads')
 
     @classmethod
     def tearDownClass(cls):

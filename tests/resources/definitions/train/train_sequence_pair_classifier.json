@@ -1,7 +1,6 @@
 {
   "dataset_reader": {
-    "type": "parallel_dataset_reader",
-    "dataset_format": "csv",
+    "type": "classification_dataset_reader",
     "target": "gold_label",
     "token_indexers": {
       "token_characters": {

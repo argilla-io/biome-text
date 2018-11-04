@@ -1,6 +1,6 @@
 import unittest
 
-from recognai.data.sources import elasticsearch
+from biome.data.sources import elasticsearch
 
 from tests.test_support import DaskSupportTest
 
