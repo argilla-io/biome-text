@@ -3,6 +3,7 @@ from allennlp.data.fields import TextField, LabelField
 from allennlp.data.tokenizers import WordTokenizer
 from overrides import overrides
 
+from biome.commands.utils import read_datasource_cfg
 from biome.data.sources.file import *
 from biome.data.sources.helpers import *
 from biome.data.sources.helpers import read_dataset
@@ -14,10 +15,21 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 DEFAULT_GOLD_LABEL_ID = 'gold_label'
 
 
+def _text_to_instance(example, gold_label_id, token_indexers, tokenizer):
+    fields: Dict[str, Field] = {}
+    for field, value in example.items():
+        if not is_reserved_field(field):
+            tensor = LabelField(value) \
+                if field == gold_label_id \
+                else TextField(tokenizer.tokenize(value), token_indexers)
+            fields[field] = tensor
+    return Instance(fields)
+
+
 @DatasetReader.register(__name__)
 class ClassificationDatasetReader(DatasetReader):
     def __init__(self,
-                 target: str= DEFAULT_GOLD_LABEL_ID,
+                 target: str = DEFAULT_GOLD_LABEL_ID,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
 
         super(ClassificationDatasetReader, self).__init__(lazy=True)
@@ -34,22 +46,17 @@ class ClassificationDatasetReader(DatasetReader):
     def text_to_instance(self,  # type: ignore
                          example: Dict) -> Instance:
         # pylint: disable=arguments-differ
-        fields: Dict[str, Field] = {}
 
         gold_label_id = self._target_field
+        tokenizer = self._tokenizer
+        token_indexers = self._token_indexers
 
-        for field, value in example.items():
-            if not is_reserved_field(field):
-                tensor = LabelField(value) \
-                    if field == gold_label_id \
-                    else TextField(self._tokenizer.tokenize(value), self._token_indexers)
-                fields[field] = tensor
-
-        return Instance(fields)
+        return _text_to_instance(example, gold_label_id, token_indexers, tokenizer)
 
     @overrides
-    def _read(self, dataset_config: str) -> Iterable[Instance]:
-        for example in read_dataset(dataset_config):
+    def _read(self, file_path: str) -> Iterable[Instance]:
+        cfg = read_datasource_cfg(file_path)
+        for example in read_dataset(cfg):
             instance = self.process_example(example)
             if instance:
                 yield instance

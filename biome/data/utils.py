@@ -1,11 +1,11 @@
+import atexit
 import os
 from typing import Optional
 
 import dask
+import dask.multiprocessing
 from dask.cache import Cache
 from dask.distributed import Client
-import dask.multiprocessing
-import atexit
 
 ENV_DASK_CLUSTER = 'DASK_CLUSTER'
 ENV_DASK_CACHE_SIZE = 'DASK_CACHE_SIZE'
@@ -22,7 +22,7 @@ def configure_dask_cluster():
     if dask_cluster:
         dask_client = _dask_client(dask_cluster, dask_cache_size)
     else:
-        dask.config.set(scheduler='processes')
+        dask.config.set(scheduler='threads')
 
 
 @atexit.register

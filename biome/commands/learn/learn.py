@@ -19,12 +19,11 @@ which to write the results.
                             directory in which to save the model and its logs
 """
 import argparse
-import ujson as json
 import logging
-from copy import deepcopy
+import os
+import ujson as json
 from typing import Optional
 
-import os
 import pyhocon
 import torch
 from allennlp.commands.evaluate import evaluate
@@ -37,7 +36,7 @@ from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.models.model import Model, _DEFAULT_WEIGHTS
 from allennlp.training import Trainer
 
-from biome.commands.utils import read_datasource_cfg, read_definition_from_model_spec
+from biome.commands.utils import read_definition_from_model_spec
 from biome.data.utils import configure_dask_cluster
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -47,9 +46,9 @@ VALIDATION_DATA_FIELD = 'validation_data_path'
 TEST_DATA_FIELD = 'test_data_path'
 
 
-class BiomeTrain(Train):
+class BiomeLearn(Train):
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        subparser = super(BiomeTrain, self).add_subparser(name, parser)
+        subparser = super(BiomeLearn, self).add_subparser(name, parser)
 
         subparser.add_argument('--model-location',
                                required=False,
@@ -57,7 +56,7 @@ class BiomeTrain(Train):
                                help='optional location for model binary file (model.tar.gz)')
         subparser.add_argument('--trainer', type=str, help='trainer specs location file', required=True)
         subparser.add_argument('--train', type=str, help='input train source definition', required=True)
-        subparser.add_argument('--validation', type=str, help='input validation source definition', required=False)
+        subparser.add_argument('--validation', type=str, help='input validation source definition', required=True)
         subparser.add_argument('--test', type=str, help='input test source definition', required=False)
         subparser.set_defaults(func=train_model_from_args)
 
@@ -97,14 +96,14 @@ def train_model_from_file(parameter_filename: str,
         trainer_params = json.load(trainer_file)
 
         config = {
-            TRAIN_DATA_FIELD: read_datasource_cfg(train_cfg),
-            VALIDATION_DATA_FIELD: read_datasource_cfg(validation_cfg),
+            TRAIN_DATA_FIELD: train_cfg,
+            VALIDATION_DATA_FIELD: validation_cfg,
             **cfg_params,
             **trainer_params
         }
 
         if test_cfg and not test_cfg.isspace():
-            config.update({TEST_DATA_FIELD: read_datasource_cfg(test_cfg)})
+            config.update({TEST_DATA_FIELD: test_cfg})
 
         params = Params(config)
         return train_model(params, serialization_dir, file_friendly_logging=True, model_location=model_location)
@@ -115,7 +114,6 @@ def train_model(params: Params,
                 serialization_dir: str,
                 file_friendly_logging: bool = False,
                 recover: bool = False,
-
                 model_location: Optional[str] = None) -> Model:
     """
     Trains the model specified in the given :class:`Params` object, using the data and training
@@ -139,6 +137,7 @@ def train_model(params: Params,
     -------
     best_model: ``Model``
         The model with the best epoch weights.
+        :param model_location:
     """
     prepare_environment(params)
     configure_dask_cluster()
@@ -157,7 +156,7 @@ def train_model(params: Params,
 
     for dataset in datasets_for_vocab_creation:
         if dataset not in all_datasets:
-            raise ConfigurationError(f"invalid 'dataset_for_vocab_creation' {dataset}")
+            raise ConfigurationError('invalid dataset_for_vocab_creation {}'.format(dataset))
 
     logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
     vocab = Vocabulary.from_params(params.pop("vocabulary", {}),

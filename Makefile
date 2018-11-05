@@ -29,10 +29,20 @@ check:
 
 .PHONY: dist
 dist: test
-	@python setup.py sdist
+	@python setup.py sdist bdist_wheel
 
-install: test
-	@python setup.py install
+install: dist
+	@pip install dist/*.whl
 
 install-dev:
 	@python setup.py develop
+
+generate-specs:
+	@swagger-codegen generate \
+	-i ~/recognai/biome/apis/engine-api/api.yaml \
+	-o . \
+    -l python \
+    -DpackageName=biome \
+    --model-package spec \
+    --api-package api \
+    --ignore-file-override ./.swagger-codegen-ignore

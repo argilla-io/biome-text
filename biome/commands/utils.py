@@ -1,9 +1,7 @@
-from typing import Dict
+from typing import Dict, Any
 
-from biome.data.biome.transformations import biome_datasource_spec_to_dataset_config, is_biome_datasource_spec
-
-DATASET_READER_FIELD = 'dataset_reader'
-MODEL_FIELD = 'model'
+from biome.spec import ModelDefinition, ModelRevision
+from biome.spec.utils import to_biome_class
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -14,13 +12,18 @@ from allennlp.common import Params
 import json
 
 
-def read_datasource_cfg(cfg: str) -> Dict:
+def read_datasource_cfg(cfg: Any) -> Dict:
     try:
-        ds_cfg = json.loads(cfg)
-        if is_biome_datasource_spec(ds_cfg):
-            return biome_datasource_spec_to_dataset_config(ds_cfg)
-        return ds_cfg
-    except:
+        if isinstance(cfg, str):
+            with open(cfg) as cfg_file:
+                return json.loads(cfg_file.read())
+        if isinstance(cfg, Params):
+            return cfg.as_dict()
+        if isinstance(cfg, Dict):
+            return cfg
+    except TypeError or FileNotFoundError:
+        raise Exception('Missing configuration {}'.format(cfg))
+    except Exception as e:
         return dict(path=cfg)
 
 
@@ -30,15 +33,13 @@ def is_biome_model_spec(spec: Dict) -> bool:
 
 def read_definition_from_model_spec(path: str) -> Dict:
     with open(path) as model_file:
-        model_spec = json.load(model_file)
-
-        if is_biome_model_spec(model_spec):
-            definition = model_spec['definition']['topology']
-            return {
-                DATASET_READER_FIELD: definition.pop('pipeline'),
-                MODEL_FIELD: definition.pop('architecture')
-            }
-        return model_spec
+        model_data = json.load(model_file)
+        try:
+            model_revision = to_biome_class(data=model_data, klass=ModelRevision)
+            topology = model_revision.definition.topology
+            return dict(dataset_reader=topology.pipeline, model=topology.architecture)
+        except:
+            return model_data
 
 
 def yaml_to_dict(filepath: str):

@@ -8,7 +8,7 @@ from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
 from biome.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
-from tests.test_context import TEST_RESOURCES
+from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
@@ -21,7 +21,7 @@ CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/defini
 reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
 
 
-def csv_data(path: str, sep: str = ';', transformations: Dict = dict()):
+def csv_data(path: str, sep: str = ';', transformations: Dict = {}):
     return {
         'path': path,
         'sep': sep,
@@ -40,18 +40,18 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
-        json_config = os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfig.json')
-        with open(json_config) as json_file:
-            dataset = reader.read(csv_data(CSV_PATH, sep=',', transformations={
-                "tokens": [
-                    "age"
-                ],
-                "target": {
-                    "gold_label": "job"
-                }
-            }))
+        dataset = reader.read(
+            create_temp_configuration(
+                csv_data(CSV_PATH, sep=',', transformations={
+                    "tokens": [
+                        "age"
+                    ],
+                    "target": {
+                        "gold_label": "job"
+                    }
+                })))
 
-            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_reader_csv_with_mappings(self):
         expected_length = 9
@@ -62,8 +62,8 @@ class DatasetReaderTest(DaskSupportTest):
                            'management',
                            'single', '30.0', 'management', 'divorced', '39.0', 'divorced', '.']
 
-        with open(os.path.join(TEST_RESOURCES, 'resources/readerWithMappings.json')) as json_file:
-            dataset = reader.read(csv_data(CSV_PATH, sep=',', transformations={
+        dataset = reader.read(create_temp_configuration(
+            csv_data(CSV_PATH, sep=',', transformations={
                 "tokens": [
                     "age",
                     "job",
@@ -76,41 +76,44 @@ class DatasetReaderTest(DaskSupportTest):
                         "no": "NOT_AT_ALL"
                     }
                 }
-            }))
+            })))
 
-            self._check_dataset(dataset, expected_length, expected_inputs, ['NOT_AT_ALL', 'OF_COURSE'])
+        self._check_dataset(dataset, expected_length, expected_inputs, ['NOT_AT_ALL', 'OF_COURSE'])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
         expected_length = 3
         expected_inputs = ['1.0', '2.0', '3.0']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
-        with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigMultiwordTrailing.json')) as json_file:
-            dataset = reader.read(csv_data(local_data_path, transformations={
+        dataset = reader.read(create_temp_configuration(
+            csv_data(local_data_path, transformations={
                 "tokens": [
                     "dataset id"
                 ],
                 "target": {
                     "gold_label": "dataset id"
                 }
-            }))
+            }
+                     )
+        ))
 
-            self._check_dataset(dataset, expected_length, expected_inputs, ['1.0', '2.0', '3.0'])
+        self._check_dataset(dataset, expected_length, expected_inputs, ['1.0', '2.0', '3.0'])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
         expected_inputs = ['Dufils', 'Anne', 'Pierre', 'Jousseaume', 'Thierry']
         expected_labels = ['11205 - Nurses: Private, Ho', 'person']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_2.csv')
-        with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigMultiwordMappings.json')) as json_file:
-            dataset = reader.read(csv_data(local_data_path, transformations={
+        dataset = reader.read(create_temp_configuration(
+            csv_data(local_data_path, transformations={
                 "tokens": [
                     "name"
                 ],
                 "target": {
                     "gold_label": "category of institution"
                 }
-            }))
-            self._check_dataset(dataset, expectedDatasetLength, expected_inputs, expected_labels)
+            }
+                     )))
+        self._check_dataset(dataset, expectedDatasetLength, expected_inputs, expected_labels)
 
     def test_reader_csv_with_missing_label_and_partial_mappings(self):
         '''
@@ -129,22 +132,20 @@ class DatasetReaderTest(DaskSupportTest):
         # 'None' is a custom partial mapping for missing labels
         expected_labels = ['11205 - Nurses: Private, Ho', 'person', 'NOLABEL']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
-        with open(os.path.join(TEST_RESOURCES,
-                               'resources/datasetReaderConfigPartialMappingMissingLabel.json')) as json_file:
-            dataset = reader.read(csv_data(local_data_path, transformations={
-                "tokens": [
-                    "name"
-                ],
-                "target": {
-                    "gold_label": "category of institution",
-                    "use_missing_label": "NOLABEL",
-                    "values_mapping": {
-                        "None": "NOLABEL"
-                    }
+        dataset = reader.read(create_temp_configuration(csv_data(local_data_path, transformations={
+            "tokens": [
+                "name"
+            ],
+            "target": {
+                "gold_label": "category of institution",
+                "use_missing_label": "NOLABEL",
+                "values_mapping": {
+                    "None": "NOLABEL"
                 }
-            }))
+            }
+        })))
 
-            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_reader_csv_uk_data(self):
         expected_length = 9
@@ -152,18 +153,17 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['None ', 'None', 'None', 'Assembly Rooms Edinburgh', 'Fortress Technology (europe) Ltd',
                            'None', 'None', 'Scott David', '  ', 'None', 'Corby Borough Council']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/uk_customer_data_10.csv')
-        with open(os.path.join(TEST_RESOURCES, 'resources/datasetReaderConfigUK.json')) as json_file:
-            dataset = reader.read(csv_data(local_data_path, transformations={
-                "tokens": [
-                    "name"
-                ],
-                "target": {
-                    "gold_label": "organisation name",
-                    "use_missing_label": "None"
-                }
-            }))
+        dataset = reader.read(create_temp_configuration(csv_data(local_data_path, transformations={
+            "tokens": [
+                "name"
+            ],
+            "target": {
+                "gold_label": "organisation name",
+                "use_missing_label": "None"
+            }
+        })))
 
-            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def _check_dataset(self, dataset, expected_length: int, expected_inputs: Iterable, expected_labels: Iterable):
         def check_text_field(textField: TextField, expected_inputs: Iterable):
@@ -183,19 +183,19 @@ class DatasetReaderTest(DaskSupportTest):
             check_label_field(example.fields[LABEL_FIELD], expected_labels)
 
     def test_read_json(self):
-        with open(os.path.join(TEST_RESOURCES, 'resources/readerFromJson.json')) as json_file:
-            dataset = reader.read({
-                'path': JSON_PATH,
-                'transformations': {
-                    "tokens": [
-                        "reviewText"
-                    ],
-                    "target": {
-                        "gold_label": "overall"
-                    }
-                }})
-            for example in dataset:
-                print(example.__dict__)
+        dataset = reader.read(create_temp_configuration({
+            'path': JSON_PATH,
+            'transformations': {
+                "tokens": [
+                    "reviewText"
+                ],
+                "target": {
+                    "gold_label": "overall"
+                }
+            }}))
+        for example in dataset:
+            print(example.__dict__)
 
-            if __name__ == "__main__":
-                unittest.main()
+
+if __name__ == "__main__":
+    unittest.main()

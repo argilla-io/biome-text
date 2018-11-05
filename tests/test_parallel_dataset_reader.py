@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from typing import Iterable
 
 from allennlp.common import Params
@@ -7,7 +8,7 @@ from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
 from biome.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
-from tests.test_context import TEST_RESOURCES
+from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
@@ -31,40 +32,37 @@ class ParallelDatasetReaderTest(DaskSupportTest):
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
         json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'classifier_dataset_reader.json')
-        with open(json_config) as json_file:
 
-            dataset = reader.read({
-                "path": CSV_PATH,
-                "format": "csv",
-                "transformations": {
-                    "tokens": [
-                        "age"
-                    ],
-                    "target": {
-                        "gold_label": "job"
-                    }
+        dataset = reader.read(create_temp_configuration({
+            "path": CSV_PATH,
+            "format": "csv",
+            "transformations": {
+                "tokens": [
+                    "age"
+                ],
+                "target": {
+                    "gold_label": "job"
                 }
-            })
+            }
+        }))
 
-            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_json(self):
-        json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'classifier_dataset_reader.json')
-        with open(json_config) as json_file:
+        dataset = reader.read(create_temp_configuration({
+            'path': JSON_PATH,
+            'transformations': {
+                "tokens": [
+                    "reviewText"
+                ],
+                "target": {
+                    "gold_label": "overall"
+                }
+            }
+        }))
 
-            dataset = reader.read({
-                'path': JSON_PATH,
-                'transformations': {
-                    "tokens": [
-                        "reviewText"
-                    ],
-                    "target": {
-                        "gold_label": "overall"
-                    }
-                }})
-
-            for example in dataset:
-                print(example.__dict__)
+        for example in dataset:
+            print(example.__dict__)
 
     def _check_dataset(self, dataset, expected_length: int, expected_inputs: Iterable, expected_labels: Iterable):
         def check_text_field(textField: TextField, expected_inputs: Iterable):

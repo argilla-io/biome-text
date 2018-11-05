@@ -9,6 +9,7 @@ from typing import List
 
 _logger = logging.getLogger(__name__)
 
+
 class SpacyWordSplitter(WordSplitter):
     """
     A ``WordSplitter`` that uses spaCy's tokenizer.  It's fast and reasonable - this is the
@@ -20,7 +21,6 @@ class SpacyWordSplitter(WordSplitter):
                  pos_tags: bool = False,
                  parse: bool = False,
                  ner: bool = False) -> None:
-
         self.spacy = get_spacy_model(language, pos_tags, parse, ner)
 
     @overrides
@@ -33,12 +33,3 @@ class SpacyWordSplitter(WordSplitter):
                       t.dep,
                       t.ent_type)
                 for t in self.spacy(sentence) if not t.is_space]
-
-    @classmethod
-    def from_params(cls, params: Params) -> 'WordSplitter':
-        language = params.pop('language', 'en_core_web_sm')
-        pos_tags = params.pop('pos_tags', False)
-        parse = params.pop('parse', False)
-        ner = params.pop('ner', False)
-        params.assert_empty(cls.__name__)
-        return cls(language, pos_tags, parse, ner)

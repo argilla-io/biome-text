@@ -1,24 +1,28 @@
 from typing import Dict
 
+from allennlp.common import Params
 
-def is_biome_datasource_spec(dataset_config: Dict) -> bool:
-    return 'datasource' in dataset_config and 'settings' in dataset_config
+from biome.spec import ModelConnect
+from biome.spec.data_source import DataSource
+from biome.spec.utils import to_biome_class
 
 
-def biome_datasource_spec_to_dataset_config(dataset_config) -> Dict:
-    datasource = dataset_config.pop('datasource', {})
-    settings = dataset_config.pop('settings', {})
+def biome_datasource_spec_to_dataset_config(dataset_config: Dict) -> Dict:
+    settings = dataset_config.get('settings', {})
 
-    if datasource['type'] == 'FileSystem':
-        params = datasource.pop('params', {})
-        format = datasource.pop('format', {})
-        format_params = format.pop('params', {})
-        delimiter = format_params.pop('delimiter', None)
+    datasource = to_biome_class(data=dataset_config.get('datasource', {}), klass=DataSource)
+    model_connect = to_biome_class(data=settings.get('modelConnect', {}), klass=ModelConnect)
+
+    if datasource.type == 'FileSystem':
+        params = datasource.params
+        format = datasource.format
+        format_params = format.params
+        delimiter = format_params.get('delimiter', None)
         config = dict(
             path=__extrat_ds_path(params),
-            format=format['type'],
-            encoding=format['charset'],
-            transformations=settings.pop('modelConnect', {})
+            format=format.type,
+            encoding=format.charset,
+            transformations=model_connect
         )
         if delimiter:
             config['sep'] = delimiter
@@ -29,6 +33,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config) -> Dict:
 
 
 def __extrat_ds_path(params):
+    # TODO Define a api constant
     ds_location = params.pop('recogn.ai/location')
     ds_files = params.pop('recogn.ai/files')
     if ds_files and len(ds_files) == 1:

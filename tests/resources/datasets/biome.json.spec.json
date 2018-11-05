@@ -10,7 +10,7 @@
       "recogn.ai/location": "resources/data/dataset_source.json"
     },
     "format": {
-      "type": "json",
+      "type": "json-l",
       "charset": "UTF-8",
       "params": {}
     }
