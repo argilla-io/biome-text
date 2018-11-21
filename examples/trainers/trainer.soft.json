@@ -1,0 +1,14 @@
+{
+  "iterator": {
+    "type": "basic",
+    "batch_size": 128
+  },
+  "trainer": {
+    "optimizer": {
+      "type": "adam"
+    },
+    "num_epochs": 5,
+    "patience": 2,
+    "cuda_device": -1
+  }
+}
