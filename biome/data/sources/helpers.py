@@ -1,13 +1,12 @@
 import logging
-import logging
 import os
 from copy import deepcopy
 from typing import Dict
 
 from dask.bag import Bag
 
-from biome.data import is_elasticsearch_configuration
-from biome.data.biome.transformations import biome_datasource_spec_to_dataset_config
+from biome.data.helpers import is_elasticsearch_configuration
+from biome.allennlp.data.transformations import biome_datasource_spec_to_dataset_config
 from biome.data.sources import JSON_FORMAT
 from biome.data.sources.elasticsearch import from_elasticsearch
 from biome.data.sources.example_preparator import ExamplePreparator, RESERVED_FIELD_PREFIX
@@ -28,10 +27,10 @@ def is_reserved_field(field: str) -> bool:
 
 
 def read_dataset(cfg: Dict, include_source: bool = False) -> Bag:
-
     try:
         config = biome_datasource_spec_to_dataset_config(deepcopy(cfg))
-    except:
+    except Exception as e:
+        print('error', e)
         config = cfg
 
     example_preparator = ExamplePreparator(config.pop('transformations', {}), include_source)

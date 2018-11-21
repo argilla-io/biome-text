@@ -1,10 +1,8 @@
 import os
-import unittest
 
 from allennlp.models import load_archive
 from allennlp.service.predictors import Predictor
 
-from biome.service.predictors import SequenceClassifierPredictor
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
@@ -15,7 +13,7 @@ class SequencePairClassifierPredictorTest(DaskSupportTest):
 
     def setUp(self):
         archive = load_archive(MODEL_PATH)
-        self.predictor = Predictor.from_archive(archive, 'sequence-classifier')
+        self.predictor = Predictor.from_archive(archive, 'sequence_classifier')
 
     def tearDown(self):
         del self.predictor

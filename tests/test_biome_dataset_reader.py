@@ -1,13 +1,12 @@
 import json
 import os
-import unittest
-from typing import Iterable, Dict
+from typing import Iterable
 
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
-from biome.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
+from biome.allennlp.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 

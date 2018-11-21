@@ -7,8 +7,8 @@ import tempfile
 
 from allennlp.common import Params
 
-from biome.commands.learn.learn import train_model_from_file
-from biome.models import SequencePairClassifier
+from biome.allennlp.commands.learn.learn import train_model_from_file
+from biome.allennlp.models import SequencePairClassifier
 from tests.test_support import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
 
@@ -19,19 +19,20 @@ VALIDATION_DATA_PATH = os.path.join(TEST_RESOURCES, 'resources/definitions/train
 
 
 class TrainSeqListClassifierTest(DaskSupportTest):
-    def test_train_model_from_file(self):
+
+    @staticmethod
+    def test_train_model_from_file():
         output_dir = tempfile.mkdtemp()
         serialization_dir = os.path.join(output_dir, "test")
-        _ = train_model_from_file(parameter_filename=DEFINITION_TRAIN,
+        _ = train_model_from_file(model_spec=DEFINITION_TRAIN,
+                                  output=serialization_dir,
                                   train_cfg=TRAIN_DATA_PATH,
                                   validation_cfg=VALIDATION_DATA_PATH,
-                                  serialization_dir=serialization_dir,
-                                  trainer_path=TRAINER_PATH,
-                                  vocab_path=output_dir)
+                                  trainer_path=TRAINER_PATH)
 
-        model = SequencePairClassifier.from_params(vocab=None, params=Params({
+        model = SequencePairClassifier.from_params(params=Params({
             "model_location": os.path.join(serialization_dir, 'model.tar.gz')
-        }))
+        }), vocab=None)
 
         assert model
         assert isinstance(model, SequencePairClassifier)

@@ -2,7 +2,9 @@ import logging
 
 from allennlp.commands import main
 
-from biome.commands.learn import BiomeLearn
+from biome.allennlp.commands import BiomeRestAPI
+from biome.allennlp.commands.explore.explore import BiomeExplore
+from biome.allennlp.commands.learn import BiomeLearn
 
 command_name = 'biome'
 
@@ -23,6 +25,9 @@ def configure_colored_logging(loglevel):
 
 if __name__ == '__main__':
     configure_colored_logging(loglevel=logging.INFO)
-    main(command_name, subcommand_overrides=dict(learn=BiomeLearn()
-                                                 # ,serve=BiomeRestAPI()
-                                                 ))
+    main(command_name,
+         subcommand_overrides=dict(
+             explore=BiomeExplore()
+             , serve=BiomeRestAPI()
+             , learn=BiomeLearn()
+         ))
