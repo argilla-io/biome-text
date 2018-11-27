@@ -101,3 +101,5 @@ dask-worker-space
 
 .generated*
 generated*
+
+*venv

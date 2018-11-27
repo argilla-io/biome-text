@@ -1,33 +1,61 @@
 import argparse
-import datetime
 import logging
-from multiprocessing import Process
+import os
+from typing import List, Dict
 
-from . import web_server
-from ..predict.predict import BiomePredict, _predict
+from allennlp.commands import Subcommand
+from gevent.pywsgi import WSGIServer
+
+from biome.allennlp.commands.start.start import ES_VERSION
+from .app import make_app
 
 __logger = logging.getLogger(__name__)
 
 
-class BiomeExplore(BiomePredict):
+class BiomeExplore(Subcommand):
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
         description = 'Explore your data with model annotations'
 
         subparser = parser.add_parser(name, description=description, help='Explore your data')
-        self.configure_parser(subparser)
         subparser.set_defaults(func=_explore)
 
         return subparser
 
 
-def _explore(args: argparse.Namespace) -> None:
-    now = datetime.datetime.now()
-    args.to_sink = dict(index='explore_{}'.format(now.strftime('%Y%m%d%H%M%S%f')),
-                        type='docs',
-                        es_hosts='localhost:9200',
-                        es_batch_size=args.batch_size)
+def select_index(es_host: str, index_prefix: str = 'prediction') -> str:
+    import requests
+    import inquirer
 
-    web_server_process = Process(target=web_server.start)
-    web_server_process.start()
-    _predict(args)
-    web_server_process.join()
+    indices: List[Dict] = requests.get('{}/_cat/indices?format=json'.format(es_host)).json()
+    prediction_indexes = [item['index'] for item in
+                          filter(
+                              lambda item: item.get('index', '').startswith(index_prefix),
+                              indices
+                          )]
+
+    answers_name = 'Predicions'
+    questions = [
+        inquirer.List(answers_name,
+                      message="Select your predction result to explore",
+                      choices=prediction_indexes,
+                      ),
+    ]
+
+    return inquirer.prompt(questions)[answers_name]
+
+
+def _explore(args: argparse.Namespace) -> None:
+    from elasticsearch_runner.runner import ElasticsearchRunner
+    es_runner = ElasticsearchRunner(version=ES_VERSION)
+    es_runner.run()
+    es_host = 'http://localhost:{}'.format(es_runner.es_state.port)
+
+    flask_app = make_app(
+        es_endpoint='{}/{}'.format(es_host, select_index(es_host)),
+        statics_dir=os.path.join(os.path.dirname(__file__), 'ui', 'classifier')
+    )
+
+    http_server = WSGIServer(('0.0.0.0', 9000), flask_app)
+
+    __logger.info("Running on http://localhost:{}".format(http_server.server_port))
+    http_server.serve_forever()

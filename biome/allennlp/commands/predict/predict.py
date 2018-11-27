@@ -1,13 +1,16 @@
 import argparse
 import logging
+import os
 from typing import Dict, Iterable
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.service.predictors import Predictor
+from biome.allennlp.commands.start.start import ES_VERSION
 
 from biome.allennlp.models.archival import to_local_archive
+from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.helpers import store_dataset
 from biome.data.sources.helpers import read_dataset
 from biome.data.utils import configure_dask_cluster
@@ -23,43 +26,23 @@ class BiomePredict(Subcommand):
         description = '''Make a batch prediction over input test data set'''
 
         subparser = parser.add_parser(name, description=description, help='Use a trained model to make predictions.')
-        self.configure_parser(subparser)
 
-        subparser.add_argument('--to-sink', type=str, help='datasource sink definition', required=True)
+        subparser.add_argument('--binary', type=str, help='the archived model to make predictions with', required=True)
+        subparser.add_argument('--from-source', type=str, help='datasource source definition', required=True)
+        subparser.add_argument('--to-sink', type=str, help='datasource sink definition', default=None)
+        subparser.add_argument('--batch-size', type=int, default=1000, help='The batch size to use for processing')
+        subparser.add_argument('--cuda-device', type=int, default=-1, help='id of GPU to use (if any)')
 
         subparser.set_defaults(func=_predict)
 
         return subparser
 
-    @staticmethod
-    def configure_parser(subparser):
-        subparser.add_argument('--binary', type=str, help='the archived model to make predictions with', required=True)
-        subparser.add_argument('--from-source', type=str, help='datasource source definition', required=True)
-        subparser.add_argument('--weights-overrides', type=str, help='a path that overrides which weights file to use')
-
-        batch_size = subparser.add_mutually_exclusive_group(required=False)
-        batch_size.add_argument('--batch-size', type=int, default=1000, help='The batch size to use for processing')
-
-        cuda_device = subparser.add_mutually_exclusive_group(required=False)
-        cuda_device.add_argument('--cuda-device', type=int, default=-1, help='id of GPU to use (if any)')
-
-        subparser.add_argument('--config-overrides',
-                               type=str,
-                               default="",
-                               help='a HOCON structure used to override the experiment configuration')
-        subparser.add_argument('--predictor',
-                               type=str,
-                               help='optionally specify a specific predictor to use')
-
 
 def _get_predictor(args: argparse.Namespace) -> Predictor:
-    archive = load_archive(args.archive_file,
-                           weights_file=args.weights_overrides,
-                           cuda_device=args.cuda_device,
-                           overrides=args.config_overrides)
+    archive = load_archive(args.archive_file, cuda_device=args.cuda_device)
 
-    # Predictor explicitly specified, so use it
-    return Predictor.from_archive(archive, args.predictor)
+    # Matching predictor name with model name
+    return get_predictor_from_archive(archive)
 
 
 def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[str]:
@@ -77,17 +60,34 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
     return [predictor.dump_line(output) for model_input, output in zip(partition, results)]
 
 
+def to_local_elasticsearch(source_config: str, binary_path: str):
+    file_name = os.path.basename(source_config)
+    model_name = os.path.dirname(binary_path)
+
+    from elasticsearch_runner.runner import ElasticsearchRunner
+    es_runner = ElasticsearchRunner(version=ES_VERSION)
+    es_runner.run()
+
+    return dict(
+        index='prediction_{}_with_{}'.format(file_name, model_name),
+        type='docs',
+        es_hosts='http://localhost:{}'.format(es_runner.es_state.port)
+    )
+
+
 def _predict(args: argparse.Namespace) -> None:
     configure_dask_cluster()
 
     source_config = read_datasource_cfg(args.from_source)
-    sink_config = read_datasource_cfg(args.to_sink)
+    if not args.to_sink:
+        args.to_sink = to_local_elasticsearch(args.from_source, args.binary)
 
+    sink_config = read_datasource_cfg(args.to_sink)
     test_dataset = read_dataset(source_config, include_source=True)
 
     source_size = test_dataset.count().compute()
     partitions = max(1, source_size // args.batch_size)
-    __logger.info("Number of partitions {}".format(partitions))
+    __logger.debug("Number of partitions {}".format(partitions))
 
     args.archive_file = to_local_archive(args.binary)
 

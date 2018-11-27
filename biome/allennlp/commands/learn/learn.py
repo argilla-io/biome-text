@@ -26,6 +26,7 @@ from typing import Optional
 
 import pyhocon
 import torch
+from allennlp.commands import Subcommand
 from allennlp.commands.evaluate import evaluate
 from allennlp.commands.train import Train, create_serialization_dir, datasets_from_params
 from allennlp.common.checks import check_for_gpu, ConfigurationError
@@ -45,7 +46,7 @@ VALIDATION_DATA_FIELD = 'validation_data_path'
 TEST_DATA_FIELD = 'test_data_path'
 
 
-class BiomeLearn(Train):
+class BiomeLearn(Subcommand):
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
         subparser = parser.add_parser(name, description='Make a model learn', help='Make a model learn')
 

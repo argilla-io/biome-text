@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8"> <!-- utf-8 works for most cases -->
+    <meta name="viewport" content="width=device-width"> <!-- Forcing initial-scale shouldn't be necessary -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"> <!-- Use the latest (edge) version of IE rendering engine -->
+    <meta name="x-apple-disable-message-reformatting">  <!-- Disable auto-scale in iOS 10 Mail entirely -->
+    <title>Recognai </title> <!-- The title tag shows in email notifications, like Android 4.4. -->
+
+    <!-- Web Font / @font-face : BEGIN -->
+    <!-- NOTE: If web fonts are not required, lines 10 - 27 can be safely removed. -->
+
+    <!-- Desktop Outlook chokes on web font references and defaults to Times New Roman, so we force a safe fallback font. -->
+    <!--[if mso]>
+        <style>
+            * {
+                font-family: sans-serif !important;
+            }
+        </style>
+    <![endif]-->
+
+    <!-- All other clients get the webfont reference; some will render the font and others will silently fail to the fallbacks. More on that here: http://stylecampaign.com/blog/2015/02/webfont-support-in-email/ -->
+    <!--[if !mso]><!-->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <!--<![endif]-->
+
+    <!-- Web Font / @font-face : END -->
+
+    <!-- CSS Reset : BEGIN -->
+    <style>
+
+        /* What it does: Remove spaces around the email design added by some email clients. */
+        /* Beware: It can remove the padding / margin and add a background color to the compose a reply window. */
+        html,
+        body {
+            margin: 0 auto !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        /* What it does: Stops email clients resizing small text. */
+        * {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* What it does: Centers email on Android 4.4 */
+        div[style*="margin: 16px 0"] {
+            margin: 0 !important;
+        }
+
+        /* What it does: Stops Outlook from adding extra spacing to tables. */
+        table,
+        td {
+            mso-table-lspace: 0pt !important;
+            mso-table-rspace: 0pt !important;
+        }
+
+        /* What it does: Fixes webkit padding issue. Fix for Yahoo mail table alignment bug. Applies table-layout to the first 2 tables then removes for anything nested deeper. */
+        table {
+            border-spacing: 0 !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+        }
+        table table table {
+            table-layout: auto;
+        }
+
+        /* What it does: Uses a better rendering method when resizing images in IE. */
+        img {
+            -ms-interpolation-mode:bicubic;
+        }
+
+        /* What it does: A work-around for email clients meddling in triggered links. */
+        *[x-apple-data-detectors],  /* iOS */
+        .x-gmail-data-detectors,    /* Gmail */
+        .x-gmail-data-detectors *,
+        .aBn {
+            border-bottom: 0 !important;
+            cursor: default !important;
+            color: inherit !important;
+            text-decoration: none !important;
+            font-size: inherit !important;
+            font-family: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+        }
+
+        .a6S {
+            display: none !important;
+            opacity: 0.01 !important;
+        }
+
+        img.g-img + div {
+            display: none !important;
+        }
+
+        .button-link {
+            text-decoration: none !important;
+        }
+        .code {
+            font-size: 36px !important;
+        }
+
+
+    </style>
+    <!-- CSS Reset : END -->
+
+    <!-- Progressive Enhancements : BEGIN -->
+    <style>
+    .button-td {
+        padding: 0 !important;
+    }
+    .button-td,
+    .button-a {
+        transition: all 100ms ease-in;
+    }
+    .button-td:hover,
+    .button-a:hover {
+        border-color: #2BABA6 !important;
+        color: #2BABA6 !important;
+    }
+    .link:hover {
+        text-decoration: underline !important;
+    }
+
+    /* Media Queries */
+    @media screen and (max-width: 480px) {
+
+        td {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+        }
+
+        .fluid {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+
+        .stack-column,
+        .stack-column-center {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            direction: ltr !important;
+        }
+        .stack-column-center {
+            text-align: center !important;
+        }
+
+        .center-on-narrow {
+            text-align: center !important;
+            display: block !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;
+        }
+        table.center-on-narrow {
+            display: inline-block !important;
+        }
+        .email-container {
+            margin-top: 20px !important;
+            width: 96% !important;
+            margin-right: auto !important;
+        }
+
+        .email-container p {
+            font-size: 16px !important;
+        }
+        .email-container p.code {
+            font-size: 36px !important;
+        }
+        .button-a {
+            font-size: 16px !important;
+
+        }
+    }
+
+    </style>
+    <!-- Progressive Enhancements : END -->
+
+    <!-- What it does: Makes background images in 72ppi Outlook render at correct size. -->
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
+
+</head>
+<body width="100%" bgcolor="#E8CFEA" style="margin: 0; mso-line-height-rule: exactly;">
+    <center style="width: 100%; background: #E8CFEA; text-align: left;">
+    <!--[if mso | IE]>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#E8CFEA">
+    <tr>
+    <td>
+    <![endif]-->
+
+        <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all; font-family: 'Open Sans', sans-serif;">
+	        &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+        </div>
+        <div style="max-width: 680px; margin: auto;" class="email-container">
+            <!--[if mso]>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="680" align="center">
+            <tr>
+            <td>
+            <![endif]-->
+
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width: 680px;">
+                <tr>
+                    <td style="padding: 20px 0 0 20px; text-align: left">
+                        <img src="recognai-logo.png" width="160" alt="Recognai Logo" border="0" style="height: auto; font-family: 'Open Sans', sans-serif; font-size: 15px; line-height: 140%; color: #555555;">
+                    </td>
+                </tr>
+            </table>
+
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="90%" style="max-width: 680px; margin-right: 0" class="email-container">
+
+                <tr>
+                    <td bgcolor="#ffffff">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                                <td style="padding: 40px 80px 20px; text-align: left">
+                                    <h1 style="margin: 0; font-family: 'Open Sans', sans-serif; font-size: 24px; line-height: 125%; color: #1E443F; font-weight: normal;">Please confirm your email address with the following code</h1>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0 80px 20px; font-family: 'Open Sans', sans-serif; font-size: 15px; line-height: 140%; color: #1E443F; text-align: left">
+                                    <p style="margin: 0;">Thanks for signing up in RECOGNAI. We are very happy to have you on board!</p>
+                                    <p style="margin: 0;">Provide the following code in the window where you started creating your account:</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0 80px 40px; font-family: 'Open Sans', sans-serif; font-size: 36px; font-weight: bold; line-height: 140%; color: #1E443F; text-align: left">
+                                    <p class="code" style="margin: 0;">432-234</p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0 80px 20px; font-family: 'Open Sans', sans-serif; font-size: 15px; line-height: 140%; color: #1E443F; text-align: left">
+                                    <p style="margin: 0;">This email contains private information about your account - please do not resend it to anyone. </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0 80px 120px; font-family: 'Open Sans', sans-serif; font-size: 15px; line-height: 140%; color: #1E443F; text-align: left">
+                                    <p style="margin: 0;">Thanks,<br>The RECOGNAI team</p>
+                                </td>
+                            </tr>
+
+                        </table>
+                    </td>
+                </tr>
+
+            </table>
+
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="90%" style="max-width: 680px; margin-right: 0" class="email-container">
+                <tr>
+                    <td style="padding: 15px 0; text-align: left">
+                        <p style="margin: 0; font-family: 'Open Sans', sans-serif; font-size: 13px; line-height: 125%; color: #64B09F; font-weight: normal;"><a class="link" style="color: #64B09F; text-decoration: none;"href="http://www.recogn.ai" target="_blank">recogn.ai</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a class="link" style="color: #64B09F; text-decoration: none;"href="http://www.recogn.ai" target="_blank">Go to the console</a></p>
+                    </td>
+                </tr>
+           </table>
+
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </div>
+
+
+    <!--[if mso | IE]>
+    </td>
+    </tr>
+    </table>
+    <![endif]-->
+    </center>
+</body>
+</html>
