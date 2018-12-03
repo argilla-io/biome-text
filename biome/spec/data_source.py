@@ -61,7 +61,7 @@ class DataSource(object):
         'metadata': 'metadata'
     }
 
-    def __init__(self, id=None, name=None, description=None, type=None, params=None, format=None, schema=None, default_role=None, state=None, metadata=None):  # noqa: E501
+    def __init__(self, id=None, name=None, description=None, type='FileSystem', params=None, format=None, schema=None, default_role=None, state=None, metadata=None):  # noqa: E501
         """DataSource - a model defined in Swagger"""  # noqa: E501
 
         self._id = None
@@ -355,6 +355,9 @@ class DataSource(object):
                 ))
             else:
                 result[attr] = value
+        if issubclass(DataSource, dict):
+            for key, value in self.items():
+                result[key] = value
 
         return result
 

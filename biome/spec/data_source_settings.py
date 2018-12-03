@@ -118,6 +118,9 @@ class DataSourceSettings(object):
                 ))
             else:
                 result[attr] = value
+        if issubclass(DataSourceSettings, dict):
+            for key, value in self.items():
+                result[key] = value
 
         return result
 

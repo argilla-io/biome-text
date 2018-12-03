@@ -183,6 +183,9 @@ class DataSourceFormat(object):
                 ))
             else:
                 result[attr] = value
+        if issubclass(DataSourceFormat, dict):
+            for key, value in self.items():
+                result[key] = value
 
         return result
 

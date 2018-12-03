@@ -117,6 +117,9 @@ class ModelDefinitionTopology(object):
                 ))
             else:
                 result[attr] = value
+        if issubclass(ModelDefinitionTopology, dict):
+            for key, value in self.items():
+                result[key] = value
 
         return result
 

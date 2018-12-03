@@ -2,7 +2,6 @@
   "datasource": {
     "id": "wikidata-japanese-test",
     "name": " Wikidata Japanese test",
-    "type": "FileSystem",
     "params": {
       "recogn.ai/files": [
         "resources/data/dataset_source.jsonl"

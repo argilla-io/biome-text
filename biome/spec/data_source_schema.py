@@ -63,6 +63,9 @@ class DataSourceSchema(object):
                 ))
             else:
                 result[attr] = value
+        if issubclass(DataSourceSchema, dict):
+            for key, value in self.items():
+                result[key] = value
 
         return result
 

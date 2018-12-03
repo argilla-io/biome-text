@@ -117,6 +117,9 @@ class DataSourceSchemaEntry(object):
                 ))
             else:
                 result[attr] = value
+        if issubclass(DataSourceSchemaEntry, dict):
+            for key, value in self.items():
+                result[key] = value
 
         return result
 

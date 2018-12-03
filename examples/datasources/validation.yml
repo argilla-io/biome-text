@@ -1,7 +1,6 @@
 datasource:
   id: validation-datasource
   name: Validation data source
-  type: FileSystem
   params:
     path:
     - test_german.csv

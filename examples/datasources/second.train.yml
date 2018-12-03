@@ -1,7 +1,6 @@
 datasource:
   id: second training datasource
   name: Training data source
-  type: FileSystem
   params:
     path:
     - second_train.csv

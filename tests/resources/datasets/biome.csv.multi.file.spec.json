@@ -2,7 +2,6 @@
   "datasource": {
     "id": "test-test-ds",
     "name": " The test csv data source with multiple files",
-    "type": "FileSystem",
     "params": {
       "recogn.ai/files": [
         "resources/data/datasources/csv/dataset_source.1.csv",
