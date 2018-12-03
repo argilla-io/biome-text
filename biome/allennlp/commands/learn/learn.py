@@ -21,23 +21,24 @@ which to write the results.
 import argparse
 import logging
 import os
+import yaml
 import ujson as json
-from typing import Optional
-
 import pyhocon
 import torch
 from allennlp.commands import Subcommand
 from allennlp.commands.evaluate import evaluate
-from allennlp.commands.train import Train, create_serialization_dir, datasets_from_params
+from allennlp.commands.train import create_serialization_dir, datasets_from_params
 from allennlp.common.checks import check_for_gpu, ConfigurationError
 from allennlp.common.params import Params
 from allennlp.common.util import prepare_environment, prepare_global_logging
 from allennlp.data import Vocabulary, DataIterator
-from allennlp.models.archival import CONFIG_NAME, archive_model
+from allennlp.models.archival import CONFIG_NAME, archive_model, load_archive
 from allennlp.models.model import Model, _DEFAULT_WEIGHTS
 from allennlp.training import Trainer
-from biome.data.utils import read_definition_from_model_spec
+from typing import Optional, Dict, Any
+
 from biome.data.utils import configure_dask_cluster
+from biome.data.utils import read_definition_from_model_spec
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -50,10 +51,10 @@ class BiomeLearn(Subcommand):
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
         subparser = parser.add_parser(name, description='Make a model learn', help='Make a model learn')
 
-        subparser.add_argument('--spec', type=str, help='model.json specification', required=True)
+        subparser.add_argument('--spec', type=str, help='model.yml specification', required=False)
         subparser.add_argument('--binary', type=str, help='pretrained model binary tar.gz', required=False)
 
-        subparser.add_argument('--trainer', type=str, help='trainer.json specification', required=True)
+        subparser.add_argument('--trainer', type=str, help='trainer.yml specification', required=True)
         subparser.add_argument('--train', type=str, help='train datasource definition', required=True)
         subparser.add_argument('--validation', type=str, help='validation datasource source definition', required=True)
         subparser.add_argument('--test', type=str, help='test datasource source definition', required=False)
@@ -77,7 +78,12 @@ def train_model_from_args(args: argparse.Namespace):
     )
 
 
-def train_model_from_file(model_spec: str,
+def load_from_archive(model_binary: str) -> Dict[str, Any]:
+    archive = load_archive(model_binary)
+    return archive.config.as_dict()
+
+
+def train_model_from_file(model_spec: Optional[str],
                           output: str,
                           model_binary: Optional[str] = None,
                           trainer_path: str = '',
@@ -85,21 +91,22 @@ def train_model_from_file(model_spec: str,
                           validation_cfg: str = '',
                           test_cfg: Optional[str] = None) -> Model:
     with open(trainer_path) as trainer_file:
-        trainer_params = json.load(trainer_file)
-        cfg_params = read_definition_from_model_spec(model_spec) if model_spec else {}
+        trainer_params = yaml.load(trainer_file)
+        cfg_params = load_from_archive(model_binary) if model_binary else \
+            read_definition_from_model_spec(model_spec) if model_spec else dict()
 
-        allennlp_configuration = {
-            TRAIN_DATA_FIELD: train_cfg,
-            VALIDATION_DATA_FIELD: validation_cfg,
-            **cfg_params,
-            **trainer_params
-        }
+    allennlp_configuration = {
+        **cfg_params,
+        **trainer_params,
+        TRAIN_DATA_FIELD: train_cfg,
+        VALIDATION_DATA_FIELD: validation_cfg
+    }
 
-        if test_cfg and not test_cfg.isspace():
-            allennlp_configuration.update({TEST_DATA_FIELD: test_cfg})
+    if test_cfg and not test_cfg.isspace():
+        allennlp_configuration.update({TEST_DATA_FIELD: test_cfg})
 
-        params = Params(allennlp_configuration)
-        return train_model(params, output, file_friendly_logging=True, model_location=model_binary)
+    params = Params(allennlp_configuration)
+    return train_model(params, output, file_friendly_logging=True, model_location=model_binary)
 
 
 # From Allen NLP module
