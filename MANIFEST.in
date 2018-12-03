@@ -1,2 +1,2 @@
 include LICENSE
-recursive-include allennlp/commands/explore/ui/**/*.*
+recursive-include allennlp/commands/explore/ui/*.*

@@ -1,12 +1,14 @@
 import argparse
 import logging
 import os
-from typing import List, Dict
+import tarfile
+from tempfile import mkdtemp
 
 from allennlp.commands import Subcommand
 from gevent.pywsgi import WSGIServer
+from typing import List, Dict
 
-from biome.allennlp.commands.start.start import ES_VERSION
+from biome.helpers import create_es_runner
 from .app import make_app
 
 __logger = logging.getLogger(__name__)
@@ -44,18 +46,27 @@ def select_index(es_host: str, index_prefix: str = 'prediction') -> str:
     return inquirer.prompt(questions)[answers_name]
 
 
-def _explore(args: argparse.Namespace) -> None:
-    from elasticsearch_runner.runner import ElasticsearchRunner
-    es_runner = ElasticsearchRunner(version=ES_VERSION)
-    es_runner.run()
+def _explore(_: argparse.Namespace) -> None:
+    es_runner = create_es_runner()
     es_host = 'http://localhost:{}'.format(es_runner.es_state.port)
 
     flask_app = make_app(
         es_endpoint='{}/{}'.format(es_host, select_index(es_host)),
-        statics_dir=os.path.join(os.path.dirname(__file__), 'ui', 'classifier')
+        statics_dir=temporal_static_path('classifier')
     )
 
     http_server = WSGIServer(('0.0.0.0', 9000), flask_app)
 
     __logger.info("Running on http://localhost:{}".format(http_server.server_port))
     http_server.serve_forever()
+
+
+def temporal_static_path(explore_view: str):
+    statics_tmp = mkdtemp()
+
+    tar_file = tarfile.open(os.path.join(os.path.dirname(__file__), 'ui', '{}.tar.gz'.format(explore_view)), "r:gz")
+    tar_file.extractall(path=statics_tmp)
+    tar_file.close()
+
+    print(statics_tmp)
+    return statics_tmp

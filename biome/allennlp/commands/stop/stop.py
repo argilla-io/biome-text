@@ -2,8 +2,8 @@ import argparse
 import logging
 
 from allennlp.commands import Subcommand
-from biome.allennlp.commands.start.start import ES_VERSION
-from elasticsearch_runner.runner import ElasticsearchRunner
+
+from biome.helpers import create_es_runner
 
 __logger = logging.getLogger(__name__)
 
@@ -19,6 +19,5 @@ class BiomeStop(Subcommand):
 
 
 def init(args: argparse.Namespace) -> None:
-    es_runner = ElasticsearchRunner(version=ES_VERSION)
-    es_runner.run()
+    es_runner = create_es_runner()
     es_runner.stop()

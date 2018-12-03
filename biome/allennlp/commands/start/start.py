@@ -1,13 +1,9 @@
 import argparse
 import logging
 
-from elasticsearch_runner.runner import ElasticsearchRunner
-
 from allennlp.commands import Subcommand
 
 __logger = logging.getLogger(__name__)
-
-ES_VERSION = '6.3.2'
 
 
 class BiomeStart(Subcommand):
@@ -21,6 +17,4 @@ class BiomeStart(Subcommand):
 
 
 def init(args: argparse.Namespace) -> None:
-    es_runner = ElasticsearchRunner(version=ES_VERSION)
-    es_runner.install()
-    es_runner.run()
+    pass
