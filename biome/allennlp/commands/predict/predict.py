@@ -1,13 +1,12 @@
 import argparse
 import logging
 import os
-from typing import Dict, Iterable
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.service.predictors import Predictor
-from biome.allennlp.commands.start.start import ES_VERSION
+from typing import Dict, Iterable
 
 from biome.allennlp.models.archival import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
@@ -15,6 +14,7 @@ from biome.data.helpers import store_dataset
 from biome.data.sources.helpers import read_dataset
 from biome.data.utils import configure_dask_cluster
 from biome.data.utils import read_datasource_cfg
+from biome.helpers import create_es_runner
 
 __logger = logging.getLogger(__name__)
 
@@ -64,10 +64,7 @@ def to_local_elasticsearch(source_config: str, binary_path: str):
     file_name = os.path.basename(source_config)
     model_name = os.path.dirname(binary_path)
 
-    from elasticsearch_runner.runner import ElasticsearchRunner
-    es_runner = ElasticsearchRunner(version=ES_VERSION)
-    es_runner.run()
-
+    es_runner = create_es_runner()
     return dict(
         index='prediction_{}_with_{}'.format(file_name, model_name),
         type='docs',
