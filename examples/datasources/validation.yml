@@ -1,0 +1,20 @@
+datasource:
+  id: validation-datasource
+  name: Validation data source
+  type: FileSystem
+  params:
+    path:
+    - test_german.csv
+  format:
+    type: csv
+    lang: de
+    charset: UTF-8
+    params:
+      delimiter: ","
+
+settings:
+  modelConnect:
+    tokens:
+    - name
+    target:
+      gold_label: category

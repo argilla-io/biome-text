@@ -10,7 +10,7 @@ inquirer>=2.5.1,<2.6.0
 # mismatch dask dependency configuration
 # distributed==1.22
 
-git+https://github.com/recognai/python-elasticsearch-runner.git#egg=python-elasticsearch-runner
+-e git+https://github.com/recognai/python-elasticsearch-runner.git#egg=elasticsearch-runner
 
 pyhocon>=0.3
 

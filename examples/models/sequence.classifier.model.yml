@@ -1,0 +1,29 @@
+topology:
+  pipeline:
+    type: classification_dataset_reader
+    target: gold_label
+    token_indexers:
+      token_characters:
+        type: characters
+        character_tokenizer:
+          byte_encoding: utf-8
+
+  architecture:
+    type: sequence_classifier
+    text_field_embedder:
+      token_characters:
+        type: character_encoding
+        embedding:
+          num_embeddings: 520
+          embedding_dim: 16
+        encoder:
+          hidden_size: 32
+          num_layers: 3
+          bidirectional: true
+          input_size: 16
+          type: gru
+    encoder:
+      type: gru
+      input_size: 64
+      bidirectional: true
+      hidden_size: 16

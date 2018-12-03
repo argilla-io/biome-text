@@ -1,15 +1,11 @@
 {
-  "topology": {
-    "pipeline": {
-      "type": "classification_dataset_reader",
-      "target": "gold_label",
-      "token_indexers": {
-        "token_characters": {
-          "type": "characters",
-          "character_tokenizer": {
-            "byte_encoding": "utf-8"
-          }
-        }
+  "type": "classification_dataset_reader",
+  "target": "gold_label",
+  "token_indexers": {
+    "token_characters": {
+      "type": "characters",
+      "character_tokenizer": {
+        "byte_encoding": "utf-8"
       }
     }
   }

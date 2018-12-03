@@ -1,0 +1,20 @@
+datasource:
+  id: training datasource
+  name: Training data source
+  type: FileSystem
+  params:
+    path:
+    - first_train.csv
+  format:
+    type: csv
+    lang: de
+    charset: UTF-8
+    params:
+      delimiter: ","
+
+settings:
+  modelConnect:
+    tokens:
+    - name
+    target:
+      gold_label: category

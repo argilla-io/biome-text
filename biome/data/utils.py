@@ -1,12 +1,12 @@
 import atexit
 import os
-from typing import Dict, Any
-from typing import Optional
 
 import dask
 import dask.multiprocessing
 from dask.cache import Cache
 from dask.distributed import Client
+from typing import Dict, Any
+from typing import Optional
 
 from biome.spec import ModelDefinition
 from biome.spec.utils import to_biome_class
@@ -17,7 +17,6 @@ except ImportError:
     from yaml import Loader, Dumper
 import yaml
 from allennlp.common import Params
-import json
 
 ENV_DASK_CLUSTER = 'DASK_CLUSTER'
 ENV_DASK_CACHE_SIZE = 'DASK_CACHE_SIZE'
@@ -29,7 +28,7 @@ def read_datasource_cfg(cfg: Any) -> Dict:
     try:
         if isinstance(cfg, str):
             with open(cfg) as cfg_file:
-                return json.loads(cfg_file.read())
+                return yaml.load(cfg_file.read())
         if isinstance(cfg, Params):
             return cfg.as_dict()
         if isinstance(cfg, Dict):
@@ -46,7 +45,7 @@ def is_biome_model_spec(spec: Dict) -> bool:
 
 def read_definition_from_model_spec(path: str) -> Dict:
     with open(path) as model_file:
-        model_data = json.load(model_file)
+        model_data = yaml.load(model_file)
         try:
             model_definition = to_biome_class(data=model_data, klass=ModelDefinition)
             topology = model_definition.topology

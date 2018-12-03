@@ -32,8 +32,8 @@ def biome_datasource_spec_to_dataset_config(dataset_config: Dict) -> Dict:
 
 def __extrat_ds_path(params):
     # TODO Define a api constant
-    ds_location = params.get('recogn.ai/location')
-    ds_files = params.get('recogn.ai/files')
+    ds_location = params.get('location', params.get('recogn.ai/location'))
+    ds_files = params.get('path', params.get('recogn.ai/files'))
     if ds_files and len(ds_files) == 1:
         return ds_files[0]
     return '' if not ds_location \
