@@ -1,12 +1,12 @@
 import logging
 import os
 from copy import deepcopy
-from typing import Dict
 
 from dask.bag import Bag
+from typing import Dict
 
-from biome.data.helpers import is_elasticsearch_configuration
 from biome.allennlp.data.transformations import biome_datasource_spec_to_dataset_config
+from biome.data.helpers import is_elasticsearch_configuration
 from biome.data.sources import JSON_FORMAT
 from biome.data.sources.elasticsearch import from_elasticsearch
 from biome.data.sources.example_preparator import ExamplePreparator, RESERVED_FIELD_PREFIX
@@ -18,7 +18,8 @@ __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 def __transform_example(data: Dict, example_preparator: ExamplePreparator) -> Dict:
     try:
         return example_preparator.read_info(data)
-    except:
+    except Exception as ex:
+        __logger.warning(ex)
         return None
 
 
@@ -35,12 +36,10 @@ def read_dataset(cfg: Dict, include_source: bool = False) -> Bag:
 
     example_preparator = ExamplePreparator(config.pop('transformations', {}), include_source)
 
-    __logger.info("Reading instances from dataset at: %s", config)
-    dataset = __build_dataset(config) \
+    return __build_dataset(config) \
         .map(__transform_example, example_preparator) \
+        .filter(lambda example: example is not None) \
         .persist()
-    __logger.info("Finished reading instances")
-    return dataset
 
 
 def __build_dataset(config: Dict) -> Bag:

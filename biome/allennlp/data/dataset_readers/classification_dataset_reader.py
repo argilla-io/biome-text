@@ -37,6 +37,7 @@ class ClassificationDatasetReader(DatasetReader):
         self._tokenizer = WordTokenizer(word_splitter=SpacyWordSplitter())
         self._token_indexers = token_indexers
         self._target_field = target
+        self._cached_datasets = dict()
 
     def process_example(self, example: Dict) -> Instance:
         if example:
@@ -56,7 +57,13 @@ class ClassificationDatasetReader(DatasetReader):
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
         cfg = read_datasource_cfg(file_path)
-        for example in read_dataset(cfg):
-            instance = self.process_example(example)
-            if instance:
-                yield instance
+
+        ds_key = id(cfg)
+        if not self._cached_datasets.get(ds_key):
+            logger.debug('Read dataset from {}'.format(file_path))
+            self._cached_datasets[ds_key] = read_dataset(cfg)
+
+        dataset = self._cached_datasets[ds_key]
+        logger.debug('Loaded from cache dataset {}'.format(file_path))
+
+        return (self.process_example(example) for example in dataset)
