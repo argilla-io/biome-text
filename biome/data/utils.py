@@ -80,7 +80,10 @@ def configure_dask_cluster():
     if dask_cluster:
         dask_client = _dask_client(dask_cluster, dask_cache_size)
     else:
-        dask.config.set(scheduler='threads')
+        from multiprocessing.pool import ThreadPool
+        from multiprocessing import cpu_count
+        dask.config.set(pool=ThreadPool(int(max(2, cpu_count()))))
+        dask.config.set(scheduler='processes')
 
 
 @atexit.register

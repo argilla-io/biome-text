@@ -20,28 +20,20 @@ which to write the results.
 """
 import argparse
 import logging
-import os
+
 import yaml
-import ujson as json
-import pyhocon
-import torch
 from allennlp.commands import Subcommand
-from allennlp.commands.evaluate import evaluate
-from allennlp.commands.train import create_serialization_dir, datasets_from_params
-from allennlp.common.checks import check_for_gpu, ConfigurationError
+from allennlp.commands.train import train_model
 from allennlp.common.params import Params
-from allennlp.common.util import prepare_environment, prepare_global_logging
-from allennlp.data import Vocabulary, DataIterator
-from allennlp.models.archival import CONFIG_NAME, archive_model, load_archive
-from allennlp.models.model import Model, _DEFAULT_WEIGHTS
-from allennlp.training import Trainer
+from allennlp.models.archival import load_archive
+from allennlp.models.model import Model
 from typing import Optional, Dict, Any
 
-from biome.data.utils import configure_dask_cluster
-from biome.data.utils import read_definition_from_model_spec
+from biome.data.utils import read_definition_from_model_spec, configure_dask_cluster
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+__logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
+MODEL_FIELD = 'model'
 TRAIN_DATA_FIELD = 'train_data_path'
 VALIDATION_DATA_FIELD = 'validation_data_path'
 TEST_DATA_FIELD = 'test_data_path'
@@ -78,22 +70,21 @@ def train_model_from_args(args: argparse.Namespace):
     )
 
 
-def load_from_archive(model_binary: str) -> Dict[str, Any]:
-    archive = load_archive(model_binary)
-    return archive.config.as_dict()
-
-
-def train_model_from_file(model_spec: Optional[str],
-                          output: str,
+def train_model_from_file(output: str,
+                          model_spec: Optional[str] = None,
                           model_binary: Optional[str] = None,
                           trainer_path: str = '',
                           train_cfg: str = '',
                           validation_cfg: str = '',
                           test_cfg: Optional[str] = None) -> Model:
+    if not model_binary and not model_spec:
+        raise Exception('Missing parameter --spec/--binary')
+
     with open(trainer_path) as trainer_file:
         trainer_params = yaml.load(trainer_file)
-        cfg_params = load_from_archive(model_binary) if model_binary else \
-            read_definition_from_model_spec(model_spec) if model_spec else dict()
+        cfg_params = __load_from_archive(model_binary) \
+            if model_binary \
+            else read_definition_from_model_spec(model_spec) if model_spec else dict()
 
     allennlp_configuration = {
         **cfg_params,
@@ -105,126 +96,21 @@ def train_model_from_file(model_spec: Optional[str],
     if test_cfg and not test_cfg.isspace():
         allennlp_configuration.update({TEST_DATA_FIELD: test_cfg})
 
+    allennlp_configuration[MODEL_FIELD] = __merge_model_params(model_binary, allennlp_configuration.get(MODEL_FIELD))
     params = Params(allennlp_configuration)
-    return train_model(params, output, file_friendly_logging=True, model_location=model_binary)
 
-
-# From Allen NLP module
-def train_model(params: Params,
-                output: str,
-                file_friendly_logging: bool = False,
-                model_location: Optional[str] = None) -> Model:
-    """
-    Trains the model specified in the given :class:`Params` object, using the data and training
-    parameters also specified in that object, and saves the results in ``serialization_dir``.
-
-    Parameters
-    ----------
-    params : ``Params``
-        A parameter object specifying an AllenNLP Experiment.
-    serialization_dir : ``str``
-        The directory in which to save results and logs.
-    file_friendly_logging : ``bool``, optional (default=False)
-        If ``True``, we add newlines to tqdm output, even on an interactive terminal, and we slow
-        down tqdm's output to only once every 10 seconds.
-    recover : ``bool``, optional (default=False)
-        If ``True``, we will try to recover a training run from an existing serialization
-        directory.  This is only intended for use when something actually crashed during the middle
-        of a run.  For continuing training a model on new data, see the ``fine-tune`` command.
-
-    Returns
-    -------
-    best_model: ``Model``
-        The model with the best epoch weights.
-        :param model_location:
-    """
-    prepare_environment(params)
+    __logger.info('Launching dask cluster')
     configure_dask_cluster()
 
-    create_serialization_dir(params=params, serialization_dir=output, recover=False, force=True)
-    prepare_global_logging(output, file_friendly_logging)
-
-    check_for_gpu(params.params.get('trainer').get('cuda_device', -1))
-
-    with open(os.path.join(output, CONFIG_NAME), "w") as param_file:
-        config_json = json.dumps(params.params, indent=4)
-        param_file.write(config_json)
-
-    all_datasets = datasets_from_params(params)
-    datasets_for_vocab_creation = set(params.pop("datasets_for_vocab_creation", all_datasets))
-
-    for dataset in datasets_for_vocab_creation:
-        if dataset not in all_datasets:
-            raise ConfigurationError('invalid dataset_for_vocab_creation {}'.format(dataset))
-
-    logger.info("Creating a vocabulary using %s data.", ", ".join(datasets_for_vocab_creation))
-    vocab = Vocabulary.from_params(params.pop("vocabulary", {}),
-                                   (instance for key, dataset in all_datasets.items()
-                                    for instance in dataset
-                                    if key in datasets_for_vocab_creation))
-    vocab.save_to_files(os.path.join(output, "vocabulary"))
-
-    model_params = __fetch_model_params(model_location, model_params=params.pop('model'))
-    model = Model.from_params(vocab=vocab, params=model_params)
-
-    iterator = DataIterator.from_params(params.pop("iterator"))
-    iterator.index_with(vocab)
-
-    train_data = all_datasets['train']
-    validation_data = all_datasets.get('validation')
-    test_data = all_datasets.get('test')
-
-    trainer_params = params.pop("trainer")
-    trainer = Trainer.from_params(model,
-                                  output,
-                                  iterator,
-                                  train_data,
-                                  validation_data,
-                                  trainer_params)
-
-    evaluate_on_test = params.pop_bool("evaluate_on_test", False)
-    params.assert_empty('base train command')
-
-    try:
-        metrics = trainer.train()
-    except KeyboardInterrupt:
-        # if we have completed an epoch, try to create a model archive.
-        if os.path.exists(os.path.join(output, _DEFAULT_WEIGHTS)):
-            logging.info("Training interrupted by the user. Attempting to create "
-                         "a model archive using the current best epoch weights.")
-            archive_model(output, files_to_archive=params.files_to_archive)
-        raise
-
-    # Now tar up results
-    archive_model(output, files_to_archive=params.files_to_archive)
-
-    logger.info("Loading the best epoch weights.")
-    best_model_state_path = os.path.join(output, 'best.th')
-    best_model_state = torch.load(best_model_state_path)
-    best_model = model
-    best_model.load_state_dict(best_model_state)
-
-    if test_data and evaluate_on_test:
-        logger.info("The model will be evaluated using the best epoch weights.")
-        test_metrics = evaluate(best_model, test_data, iterator,
-                                cuda_device=trainer._cuda_devices[0])  # pylint: disable=protected-access
-        for key, value in test_metrics.items():
-            metrics["test_" + key] = value
-
-    elif test_data:
-        logger.info("To evaluate on the test set after training, pass the "
-                    "'evaluate_on_test' flag, or use the 'allennlp evaluate' command.")
-
-    metrics_json = json.dumps(metrics, indent=2)
-    with open(os.path.join(output, "metrics.json"), "w") as metrics_file:
-        metrics_file.write(metrics_json)
-    logger.info("Metrics: %s", metrics_json)
-
-    return best_model
+    return train_model(params, output, file_friendly_logging=True, recover=False, force=True)
 
 
-def __fetch_model_params(model_location: Optional[str], model_params: Params) -> Params:
-    if model_location:
-        model_location_config = pyhocon.ConfigFactory.from_dict({"model_location": model_location})
-        return Params(model_location_config.with_fallback(pyhocon.ConfigFactory.from_dict(model_params.as_dict())))
-    return model_params
+def __load_from_archive(model_binary: str) -> Dict[str, Any]:
+    archive = load_archive(model_binary)
+    return archive.config.as_dict()
+
+
+def __merge_model_params(model_location: Optional[str], model_params: Dict[str, Any]) -> Dict:
+    return dict(**model_params, model_location=model_location) \
+        if model_location \
+        else model_params

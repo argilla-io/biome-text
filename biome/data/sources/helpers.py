@@ -3,7 +3,7 @@ import os
 from copy import deepcopy
 
 from dask.bag import Bag
-from typing import Dict
+from typing import Dict, Optional
 
 from biome.allennlp.data.transformations import biome_datasource_spec_to_dataset_config
 from biome.data.helpers import is_elasticsearch_configuration
@@ -15,7 +15,7 @@ from biome.data.sources.file import from_json, from_csv
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-def __transform_example(data: Dict, example_preparator: ExamplePreparator) -> Dict:
+def __transform_example(data: Dict, example_preparator: ExamplePreparator) -> Optional[Dict]:
     try:
         return example_preparator.read_info(data)
     except Exception as ex:
