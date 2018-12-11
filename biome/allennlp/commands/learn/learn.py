@@ -20,28 +20,33 @@ which to write the results.
 """
 import argparse
 import logging
+import os
+from copy import deepcopy
 
-import yaml
 from allennlp.commands import Subcommand
+from allennlp.commands.dry_run import dry_run_from_params
 from allennlp.commands.train import train_model
+from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
-from allennlp.models.archival import load_archive
 from allennlp.models.model import Model
-from typing import Optional, Dict, Any
+from typing import Optional, Callable
 
-from biome.data.utils import read_definition_from_model_spec, configure_dask_cluster
+from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.data.utils import configure_dask_cluster
 
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
-MODEL_FIELD = 'model'
-TRAIN_DATA_FIELD = 'train_data_path'
-VALIDATION_DATA_FIELD = 'validation_data_path'
-TEST_DATA_FIELD = 'test_data_path'
-
 
 class BiomeLearn(Subcommand):
+
+    def description(self) -> str:
+        return 'Make a model learn'
+
+    def command_handler(self) -> Callable:
+        return train_model_from_args
+
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
-        subparser = parser.add_parser(name, description='Make a model learn', help='Make a model learn')
+        subparser = parser.add_parser(name, description=self.description(), help=self.description())
 
         subparser.add_argument('--spec', type=str, help='model.yml specification', required=False)
         subparser.add_argument('--binary', type=str, help='pretrained model binary tar.gz', required=False)
@@ -53,7 +58,7 @@ class BiomeLearn(Subcommand):
 
         subparser.add_argument('--output', type=str, help='learn process generation folder', required=True)
 
-        subparser.set_defaults(func=train_model_from_args)
+        subparser.set_defaults(func=self.command_handler())
 
         return subparser
 
@@ -77,40 +82,23 @@ def train_model_from_file(output: str,
                           train_cfg: str = '',
                           validation_cfg: str = '',
                           test_cfg: Optional[str] = None) -> Model:
-    if not model_binary and not model_spec:
-        raise Exception('Missing parameter --spec/--binary')
-
-    with open(trainer_path) as trainer_file:
-        trainer_params = yaml.load(trainer_file)
-        cfg_params = __load_from_archive(model_binary) \
-            if model_binary \
-            else read_definition_from_model_spec(model_spec) if model_spec else dict()
-
-    allennlp_configuration = {
-        **cfg_params,
-        **trainer_params,
-        TRAIN_DATA_FIELD: train_cfg,
-        VALIDATION_DATA_FIELD: validation_cfg
-    }
-
-    if test_cfg and not test_cfg.isspace():
-        allennlp_configuration.update({TEST_DATA_FIELD: test_cfg})
-
-    allennlp_configuration[MODEL_FIELD] = __merge_model_params(model_binary, allennlp_configuration.get(MODEL_FIELD))
-    params = Params(allennlp_configuration)
-
+    allennlp_configuration = biome2allennlp_params(model_spec,
+                                                   model_binary,
+                                                   trainer_path,
+                                                   train_cfg, validation_cfg, test_cfg)
     __logger.info('Launching dask cluster')
     configure_dask_cluster()
 
-    return train_model(params, output, file_friendly_logging=True, recover=False, force=True)
+    vocab_dir = '{}.vocab'.format(output)
+    try:
+        dry_run_from_params(Params(deepcopy(allennlp_configuration)), vocab_dir)
+    except ConfigurationError as cerr:
+        if 'serialization directory is non-empty' not in cerr.message:
+            raise cerr
 
+    allennlp_configuration = {
+        **allennlp_configuration,
+        **dict(vocabulary=dict(directory_path='{}/vocabulary'.format(vocab_dir)))
+    }
 
-def __load_from_archive(model_binary: str) -> Dict[str, Any]:
-    archive = load_archive(model_binary)
-    return archive.config.as_dict()
-
-
-def __merge_model_params(model_location: Optional[str], model_params: Dict[str, Any]) -> Dict:
-    return dict(**model_params, model_location=model_location) \
-        if model_location \
-        else model_params
+    return train_model(Params(allennlp_configuration), output, file_friendly_logging=True, recover=False, force=True)
