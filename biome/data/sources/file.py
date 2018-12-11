@@ -10,7 +10,7 @@ from flatten_json import flatten
 def from_csv(path: str, columns: List[str] = [], **params) -> Bag:
     dataframe = df.read_csv(path, **params)
     if not columns:
-        columns = [column.strip() for column in dataframe.columns]
+        columns = [str(column).strip() for column in dataframe.columns]
     return dataframe.to_bag(index=False).map(lambda row: dict(zip(columns, row)))
 
 

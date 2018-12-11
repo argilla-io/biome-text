@@ -1,17 +1,21 @@
-import json
 import os
 import unittest
-from typing import Iterable, Dict
+
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
+from typing import Iterable, Dict
 
 from biome.allennlp.data.dataset_readers.classification_dataset_reader import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
+NO_HEADER_CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/no.header.dataset_source.csv')
 JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
 
 TOKENS_FIELD = 'tokens'
@@ -21,12 +25,13 @@ CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/defini
 reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
 
 
-def csv_data(path: str, sep: str = ';', transformations: Dict = {}):
+def csv_data(path: str, sep: str = ';', transformations: Dict = {}, **params):
     return {
         'path': path,
         'sep': sep,
         'format': 'csv',
-        'transformations': transformations
+        'transformations': transformations,
+        **params,
     }
 
 
@@ -50,6 +55,25 @@ class DatasetReaderTest(DaskSupportTest):
                         "gold_label": "job"
                     }
                 })))
+
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+
+    def test_read_input_csv_with_no_header(self):
+
+        expected_length = 9
+        expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
+        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
+
+        dataset = reader.read(
+            create_temp_configuration(
+                csv_data(
+                    NO_HEADER_CSV_PATH,
+                    sep=',',
+                    header=None,
+                    transformations=dict(tokens=['0'], target=dict(gold_label='1'))
+                )
+            )
+        )
 
         self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
