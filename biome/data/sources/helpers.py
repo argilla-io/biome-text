@@ -31,7 +31,7 @@ def read_dataset(cfg: Dict, include_source: bool = False) -> Bag:
     try:
         config = biome_datasource_spec_to_dataset_config(deepcopy(cfg))
     except Exception as e:
-        print('error', e)
+        __logger.warning(e)
         config = cfg
 
     example_preparator = ExamplePreparator(config.pop('transformations', {}), include_source)

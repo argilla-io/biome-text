@@ -1,5 +1,7 @@
 import json
 import os
+
+import yaml
 from typing import Iterable
 
 from allennlp.common import Params
@@ -28,9 +30,9 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
-        json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.spec.json')
-        with open(json_config) as dataset_cfg:
-            params = json.loads(dataset_cfg.read())
+        yaml_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.spec.yml')
+        with open(yaml_config) as dataset_cfg:
+            params = yaml.load(dataset_cfg.read())
             dataset = reader.read(params)
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
@@ -39,20 +41,17 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
-        json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.multi.file.spec.json')
-        with open(json_config) as dataset_cfg:
-            params = json.loads(dataset_cfg.read())
+        yaml_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.multi.file.spec.yml')
+        with open(yaml_config) as dataset_cfg:
+            params = yaml.load(dataset_cfg.read())
             dataset = reader.read(params)
             self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_input_json(self):
-        expected_length = 9
-        expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
 
-        json_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.json.spec.json')
-        with open(json_config) as dataset_cfg:
-            params = json.loads(dataset_cfg.read())
+        yaml_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.json.spec.yml')
+        with open(yaml_config) as dataset_cfg:
+            params = yaml.load(dataset_cfg.read())
             dataset = list(reader.read(params))
 
             assert len(dataset) == 5
