@@ -43,7 +43,7 @@ class DatasetReaderTest(DaskSupportTest):
     def test_read_input_csv(self):
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
+        expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
         dataset = reader.read(
             create_temp_configuration(
@@ -62,7 +62,7 @@ class DatasetReaderTest(DaskSupportTest):
 
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
+        expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
         dataset = reader.read(
             create_temp_configuration(
@@ -79,12 +79,12 @@ class DatasetReaderTest(DaskSupportTest):
 
     def test_reader_csv_with_mappings(self):
         expected_length = 9
-        expected_inputs = ['44.0', 'blue', '-', 'collar', 'married', '53.0', 'technician', 'married', '39.0',
+        expected_inputs = ['44', 'blue', '-', 'collar', 'married', '53', 'technician', 'married', '39',
                            'services',
                            'married',
-                           '55.0', 'retired', 'married', '37.0', 'married', '36.0', 'admin', 'married', '28.0',
+                           '55', 'retired', 'married', '37', 'married', '36', 'admin', 'married', '28',
                            'management',
-                           'single', '30.0', 'management', 'divorced', '39.0', 'divorced', '.']
+                           'single', '30', 'management', 'divorced', '39', 'divorced', '.']
 
         dataset = reader.read(create_temp_configuration(
             csv_data(CSV_PATH, sep=',', transformations={
@@ -106,7 +106,7 @@ class DatasetReaderTest(DaskSupportTest):
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
         expected_length = 3
-        expected_inputs = ['1.0', '2.0', '3.0']
+        expected_inputs = ['1', '2', '3']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
         dataset = reader.read(create_temp_configuration(
             csv_data(local_data_path, transformations={
@@ -120,7 +120,7 @@ class DatasetReaderTest(DaskSupportTest):
                      )
         ))
 
-        self._check_dataset(dataset, expected_length, expected_inputs, ['1.0', '2.0', '3.0'])
+        self._check_dataset(dataset, expected_length, expected_inputs, ['1', '2', '3'])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2

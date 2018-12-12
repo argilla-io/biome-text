@@ -3,6 +3,9 @@ import os
 import tempfile
 from typing import Dict
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 TEST_RESOURCES = os.path.dirname(__file__)
 
 os.chdir(TEST_RESOURCES)

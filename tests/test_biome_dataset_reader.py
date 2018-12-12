@@ -28,7 +28,7 @@ class BiomeDatasetReaderTest(DaskSupportTest):
     def test_read_input_csv(self):
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
+        expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
         yaml_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.spec.yml')
         with open(yaml_config) as dataset_cfg:
@@ -39,7 +39,7 @@ class BiomeDatasetReaderTest(DaskSupportTest):
     def test_read_input_csv_multi_file(self):
         expected_length = 18  # Two times the same file
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
+        expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
         yaml_config = os.path.join(TEST_RESOURCES, 'resources/datasets/biome.csv.multi.file.spec.yml')
         with open(yaml_config) as dataset_cfg:

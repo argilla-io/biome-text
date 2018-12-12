@@ -27,9 +27,7 @@ class ParallelDatasetReaderTest(DaskSupportTest):
     def test_read_csv(self):
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
-        expected_inputs = ['44.0', '53.0', '28.0', '39.0', '55.0', '30.0', '37.0', '36.0']
-
-        json_config = os.path.join(TEST_RESOURCES, DEFINITIONS_PATH, 'classifier_dataset_reader.json')
+        expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
         dataset = reader.read(create_temp_configuration({
             "path": CSV_PATH,

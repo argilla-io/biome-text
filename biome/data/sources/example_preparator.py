@@ -1,4 +1,7 @@
+from numpy import float32, number
+from smart_open import smart_open
 from typing import Dict, Optional, Any, List
+import pandas as pd
 
 GOLD_LABEL_DEFINITION_FIELD = 'target'
 VALUE_MAPPING_FIELD = "values_mapping"
@@ -14,10 +17,21 @@ class TransformationConfig(object):
                  field: Optional[str] = None,
                  fields: List[str] = None,
                  values_mapping: Dict[str, str] = None,
-                 use_missing_label: Optional[str] = None):
+                 use_missing_label: Optional[str] = None,
+                 metadata_file: Optional[str] = None):
         self.fields = [field] if field else fields
-        self.value_mappings = values_mapping
+        self.value_mappings = self.__mapping_from_metadata(metadata_file) if metadata_file else values_mapping
         self.use_missing_label = use_missing_label
+
+    @staticmethod
+    def __mapping_from_metadata(path: str) -> Dict[str, str]:
+        classes = pd.read_csv(path, header=None).values
+
+        mapping = {idx + 1: values[0] for idx, values in enumerate(classes)}
+        # mapping variant with integer numbers
+        mapping = {**mapping, **{str(key): value for key, value in mapping.items()}}
+
+        return mapping
 
 
 class ExamplePreparator(object):
@@ -52,9 +66,16 @@ class ExamplePreparator(object):
 
     @staticmethod
     def __with_mapping(value: Any, mapping: Dict[str, str] = None, use_missing_label: Optional[str] = None):
-        # Adding default value to value, enables partial mapping
-        # Handling missing labels with a default value
-        value = None if not value or str(value).isspace() else value
+
+        def sanitize(value: Any):
+            if not value:
+                return None
+            if isinstance(value, float) or isinstance(value, number):
+                return str(int(value))
+            return str(value).strip()
+
+        value = sanitize(value)
+        value = None if not value or value.isspace() else value
         label = mapping.get(value, value) if mapping else value
         return str(label).strip() if label \
             else use_missing_label if use_missing_label \
