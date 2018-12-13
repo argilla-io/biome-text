@@ -13,22 +13,28 @@ TEST_DATA_FIELD = 'test_data_path'
 
 def biome2allennlp_params(model_spec: Optional[str] = None,
                           model_binary: Optional[str] = None,
-                          trainer_path: str = '',
+                          trainer_path: Optional[str] = None,
+                          vocab_path: Optional[str] = None,
                           train_cfg: str = '',
                           validation_cfg: str = '',
                           test_cfg: Optional[str] = None) -> Dict[str, Any]:
+    def load_yaml_config(from_path: Optional[str]) -> Dict:
+        if not from_path:
+            return dict()
+        with open(from_path) as trainer_file:
+            return yaml.load(trainer_file)
+
     if not model_binary and not model_spec:
         raise ConfigurationError('Missing parameter --spec/--binary')
 
-    with open(trainer_path) as trainer_file:
-        trainer_params = yaml.load(trainer_file)
-        cfg_params = __load_from_archive(model_binary) \
-            if model_binary \
-            else read_definition_from_model_spec(model_spec) if model_spec else dict()
+    cfg_params = __load_from_archive(model_binary) \
+        if model_binary \
+        else read_definition_from_model_spec(model_spec) if model_spec else dict()
 
     allennlp_configuration = {
         **cfg_params,
-        **trainer_params,
+        **load_yaml_config(trainer_path),
+        **load_yaml_config(vocab_path),
         TRAIN_DATA_FIELD: train_cfg,
         VALIDATION_DATA_FIELD: validation_cfg
     }

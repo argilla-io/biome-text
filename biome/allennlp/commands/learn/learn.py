@@ -51,6 +51,8 @@ class BiomeLearn(Subcommand):
         subparser.add_argument('--spec', type=str, help='model.yml specification', required=False)
         subparser.add_argument('--binary', type=str, help='pretrained model binary tar.gz', required=False)
 
+        subparser.add_argument('--vocab', type=str, help='path to existing vocab', required=False)
+
         subparser.add_argument('--trainer', type=str, help='trainer.yml specification', required=True)
         subparser.add_argument('--train', type=str, help='train datasource definition', required=True)
         subparser.add_argument('--validation', type=str, help='validation datasource source definition', required=True)
@@ -67,6 +69,7 @@ def learn_from_args(args: argparse.Namespace):
     learn(
         model_spec=args.spec,
         model_binary=args.binary,
+        vocab=args.vocab,
         trainer_path=args.trainer,
         train_cfg=args.train,
         validation_cfg=args.validation,
@@ -80,20 +83,24 @@ def check_configuration(params: Params):
     DataIterator.from_params(params.get('iterator'))
 
 
-def check_model_configuration(params: Params, vocab: Vocabulary):
-    Model.from_params(params.get('model'), vocab=vocab)
+def check_model_configuration(params: Params):
+    pass
+    # berModel.from_params(params.get('model'), vocab=vocab)
 
 
 def learn(output: str,
           model_spec: Optional[str] = None,
           model_binary: Optional[str] = None,
+          vocab: Optional[str] = None,
           trainer_path: str = '',
           train_cfg: str = '',
           validation_cfg: str = '',
           test_cfg: Optional[str] = None) -> Model:
+
     allennlp_configuration = biome2allennlp_params(model_spec,
                                                    model_binary,
                                                    trainer_path,
+                                                   vocab,
                                                    train_cfg, validation_cfg, test_cfg)
 
     __logger.info('Checking initial configuration')
@@ -102,18 +109,9 @@ def learn(output: str,
     __logger.info('Launching dask cluster')
     configure_dask_cluster()
 
-    vocab_dir = '{}.vocab'.format(output)
-    vocabulary_configuration = dict(directory_path='{}/vocabulary'.format(vocab_dir))
-    try:
-        dry_run_from_params(Params(deepcopy(allennlp_configuration)), vocab_dir)
-    except ConfigurationError as cerr:
-        if 'serialization directory is non-empty' not in cerr.message:
-            raise cerr
-
     # Vocabulary is needed for components instantiation
     __logger.info('Checking model configuration')
-    check_model_configuration(Params(deepcopy(allennlp_configuration)),
-                              Vocabulary.from_params(Params(deepcopy(vocabulary_configuration))))
+    check_model_configuration(Params(deepcopy(allennlp_configuration)))
 
-    allennlp_configuration = {**allennlp_configuration, 'vocabulary': vocabulary_configuration}
+    allennlp_configuration = {**allennlp_configuration}
     return train_model(Params(allennlp_configuration), output, file_friendly_logging=True, recover=False, force=True)
