@@ -20,7 +20,6 @@ which to write the results.
 """
 import argparse
 import logging
-import os
 from copy import deepcopy
 
 from allennlp.commands import Subcommand
@@ -28,6 +27,7 @@ from allennlp.commands.dry_run import dry_run_from_params
 from allennlp.commands.train import train_model
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
+from allennlp.data import DataIterator, DatasetReader, Vocabulary
 from allennlp.models.model import Model
 from typing import Optional, Callable
 
@@ -43,7 +43,7 @@ class BiomeLearn(Subcommand):
         return 'Make a model learn'
 
     def command_handler(self) -> Callable:
-        return train_model_from_args
+        return learn_from_args
 
     def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
         subparser = parser.add_parser(name, description=self.description(), help=self.description())
@@ -63,8 +63,8 @@ class BiomeLearn(Subcommand):
         return subparser
 
 
-def train_model_from_args(args: argparse.Namespace):
-    train_model_from_file(
+def learn_from_args(args: argparse.Namespace):
+    learn(
         model_spec=args.spec,
         model_binary=args.binary,
         trainer_path=args.trainer,
@@ -75,30 +75,45 @@ def train_model_from_args(args: argparse.Namespace):
     )
 
 
-def train_model_from_file(output: str,
-                          model_spec: Optional[str] = None,
-                          model_binary: Optional[str] = None,
-                          trainer_path: str = '',
-                          train_cfg: str = '',
-                          validation_cfg: str = '',
-                          test_cfg: Optional[str] = None) -> Model:
+def check_configuration(params: Params):
+    DatasetReader.from_params(params.get('dataset_reader'))
+    DataIterator.from_params(params.get('iterator'))
+
+
+def check_model_configuration(params: Params, vocab: Vocabulary):
+    Model.from_params(params.get('model'), vocab=vocab)
+
+
+def learn(output: str,
+          model_spec: Optional[str] = None,
+          model_binary: Optional[str] = None,
+          trainer_path: str = '',
+          train_cfg: str = '',
+          validation_cfg: str = '',
+          test_cfg: Optional[str] = None) -> Model:
     allennlp_configuration = biome2allennlp_params(model_spec,
                                                    model_binary,
                                                    trainer_path,
                                                    train_cfg, validation_cfg, test_cfg)
+
+    __logger.info('Checking initial configuration')
+    check_configuration(Params(deepcopy(allennlp_configuration)))
+
     __logger.info('Launching dask cluster')
     configure_dask_cluster()
 
     vocab_dir = '{}.vocab'.format(output)
+    vocabulary_configuration = dict(directory_path='{}/vocabulary'.format(vocab_dir))
     try:
         dry_run_from_params(Params(deepcopy(allennlp_configuration)), vocab_dir)
     except ConfigurationError as cerr:
         if 'serialization directory is non-empty' not in cerr.message:
             raise cerr
 
-    allennlp_configuration = {
-        **allennlp_configuration,
-        **dict(vocabulary=dict(directory_path='{}/vocabulary'.format(vocab_dir)))
-    }
+    # Vocabulary is needed for components instantiation
+    __logger.info('Checking model configuration')
+    check_model_configuration(Params(deepcopy(allennlp_configuration)),
+                              Vocabulary.from_params(Params(deepcopy(vocabulary_configuration))))
 
+    allennlp_configuration = {**allennlp_configuration, 'vocabulary': vocabulary_configuration}
     return train_model(Params(allennlp_configuration), output, file_friendly_logging=True, recover=False, force=True)

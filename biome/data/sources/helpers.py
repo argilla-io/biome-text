@@ -2,6 +2,7 @@ import logging
 import os
 from copy import deepcopy
 
+from allennlp.common.file_utils import cached_path
 from dask.bag import Bag
 from typing import Dict, Optional
 
@@ -48,15 +49,17 @@ def __build_dataset(config: Dict) -> Bag:
     if is_elasticsearch_configuration(params):
         return from_elasticsearch(**params)
 
+    path: str = params.pop('path')
+    path = path if path.endswith('*') else cached_path(path)
     if not 'format' in params:
-        _, extension = os.path.splitext(params['path'])
+        _, extension = os.path.splitext(path)
         params['format'] = extension[1:]
 
     format: str = params.pop('format', JSON_FORMAT)
     if __is_json(format):
-        return from_json(**params)
+        return from_json(path, **params)
     else:
-        return from_csv(**params, assume_missing=True)
+        return from_csv(path, **params, assume_missing=True)
 
 
 def __is_json(format: str) -> bool:

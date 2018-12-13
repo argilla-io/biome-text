@@ -7,7 +7,7 @@ import tempfile
 
 from allennlp.common import Params
 
-from biome.allennlp.commands.learn.learn import train_model_from_file
+from biome.allennlp.commands.learn.learn import learn
 from biome.allennlp.models import SequencePairClassifier
 from tests.test_support import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
@@ -24,11 +24,11 @@ class TrainSeqListClassifierTest(DaskSupportTest):
     def test_train_model_from_file():
         output_dir = tempfile.mkdtemp()
         serialization_dir = os.path.join(output_dir, "test")
-        _ = train_model_from_file(model_spec=DEFINITION_TRAIN,
-                                  output=serialization_dir,
-                                  train_cfg=TRAIN_DATA_PATH,
-                                  validation_cfg=VALIDATION_DATA_PATH,
-                                  trainer_path=TRAINER_PATH)
+        _ = learn(model_spec=DEFINITION_TRAIN,
+                  output=serialization_dir,
+                  train_cfg=TRAIN_DATA_PATH,
+                  validation_cfg=VALIDATION_DATA_PATH,
+                  trainer_path=TRAINER_PATH)
 
         model = SequencePairClassifier.from_params(params=Params({
             "model_location": os.path.join(serialization_dir, 'model.tar.gz')

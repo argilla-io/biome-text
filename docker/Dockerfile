@@ -1,4 +1,4 @@
-FROM allennlp/allennlp:v0.7.1
+FROM allennlp/allennlp:v0.7.2
 
 ENV LIBRARY_PATH /usr/local/lib
 
