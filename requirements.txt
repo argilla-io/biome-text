@@ -1,7 +1,7 @@
 Flask>=1.0.0,<2.0.0
 Flask-Cors>=3.0.0,<4.0.0
 cachey>=0.1,<0.2
-dask[complete]==0.20.0
+dask[complete]==1.0.0
 
 # interactive console input
 inquirer>=2.5.1,<2.6.0

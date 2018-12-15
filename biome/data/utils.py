@@ -1,5 +1,8 @@
 import atexit
+import logging
 import os
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
 
 import dask
 import dask.multiprocessing
@@ -22,6 +25,8 @@ ENV_DASK_CLUSTER = 'DASK_CLUSTER'
 ENV_DASK_CACHE_SIZE = 'DASK_CACHE_SIZE'
 
 DEFAULT_DASK_CACHE_SIZE = 2e9
+
+__logger = logging.getLogger(__name__)
 
 
 def read_datasource_cfg(cfg: Any) -> Dict:
@@ -76,14 +81,18 @@ def configure_dask_cluster():
 
     dask_cluster = os.environ.get(ENV_DASK_CLUSTER, None)
     dask_cache_size = os.environ.get(ENV_DASK_CACHE_SIZE, DEFAULT_DASK_CACHE_SIZE)
+    workers = max(2, cpu_count())
 
     if dask_cluster:
-        dask_client = _dask_client(dask_cluster, dask_cache_size)
+        dask_client = _dask_client(dask_cluster, dask_cache_size, workers)
     else:
-        from multiprocessing.pool import ThreadPool
-        from multiprocessing import cpu_count
-        dask.config.set(pool=ThreadPool(int(max(2, cpu_count()))))
+        pool = ThreadPool(workers)
+        dask.config.set(pool=pool)
+        dask.config.set(num_workers=workers)
         dask.config.set(scheduler='processes')
+
+    __logger.info('Dask configuration:')
+    __logger.info(dask.config.config)
 
 
 @atexit.register
@@ -95,12 +104,17 @@ def close_dask_client():
         pass
 
 
-def _dask_client(dask_cluster: str, cache_size: Optional[int]) -> Client:
+def _dask_client(dask_cluster: str, cache_size: Optional[int], workers: int) -> Client:
     if cache_size:
         cache = Cache(cache_size)
         cache.register()
 
     try:
-        return dask.distributed.Client(dask_cluster)
+        if dask_cluster == 'local':
+            from dask.distributed import Client, LocalCluster
+            cluster = LocalCluster(n_workers=workers, threads_per_worker=2)
+            return Client(cluster)
+        else:
+            return dask.distributed.Client(dask_cluster)
     except:
         return dask.distributed.Client()

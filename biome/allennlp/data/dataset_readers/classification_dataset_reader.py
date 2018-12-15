@@ -6,7 +6,6 @@ from overrides import overrides
 from biome.allennlp.data.tokenizer.word_splitter import SpacyWordSplitter
 from biome.data.sources.file import *
 from biome.data.sources.helpers import *
-from biome.data.sources.helpers import read_dataset
 from biome.data.utils import read_datasource_cfg
 
 __name__ = "classification_dataset_reader"
