@@ -17,8 +17,8 @@ spacy:
 	@python -m spacy download en_core_web_sm
 
 
-test: check
-	@nosetests --with-coverage --cover-package=biome -d tests
+test:
+	@python setup.py test
 
 .PHONY: check
 check:
