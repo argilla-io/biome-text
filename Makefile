@@ -5,7 +5,7 @@ endif
 ifeq ($(UNAME_S),Darwin)
 	platform=darwin-amd64
 endif
-init: init-test
+init:
 	@pip install -r requirements.txt --upgrade
 	@pip install pylint
 
@@ -16,8 +16,6 @@ spacy-es:
 spacy:
 	@python -m spacy download en_core_web_sm
 
-init-test:
-	@pip install -r requirements.test.txt
 
 test: check
 	@nosetests --with-coverage --cover-package=biome -d tests

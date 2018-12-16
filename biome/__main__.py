@@ -75,8 +75,8 @@ if __name__ == '__main__':
     configure_colored_logging(loglevel=logging.INFO)
     main(command_name,
          subcommand_overrides=dict(
-             start=BiomeStart()
-             , stop=BiomeStop()
+             # start=BiomeStart()
+             stop=BiomeStop()
              , predict=BiomePredict()
              , explore=BiomeExplore()
              , serve=BiomeRestAPI()

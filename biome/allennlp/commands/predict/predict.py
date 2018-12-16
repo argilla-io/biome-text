@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
@@ -61,12 +62,15 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
 
 
 def to_local_elasticsearch(source_config: str, binary_path: str):
+    def sanizite_index(index_name: str) -> str:
+        return re.sub('\W', '_', index_name)
+
     file_name = os.path.basename(source_config)
     model_name = os.path.dirname(binary_path)
 
     es_runner = create_es_runner()
     return dict(
-        index='prediction_{}_with_{}'.format(file_name, model_name),
+        index=sanizite_index('prediction {} with {}'.format(file_name, model_name)),
         type='docs',
         es_hosts='http://localhost:{}'.format(es_runner.es_state.port)
     )
