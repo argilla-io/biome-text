@@ -1,10 +1,3 @@
-NAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-	platform=linux-amd64
-endif
-ifeq ($(UNAME_S),Darwin)
-	platform=darwin-amd64
-endif
 init:
 	@pip install -r requirements.txt --upgrade
 	@pip install pylint
@@ -16,23 +9,17 @@ spacy-es:
 spacy:
 	@python -m spacy download en_core_web_sm
 
-
 test:
 	@python setup.py test
 
-.PHONY: check
-check:
-	@pylint -E biome
-	@echo "lint succeeded"
-
 .PHONY: dist
 dist: test
-	@python setup.py sdist bdist_wheel
+	@python setup.py bdist_wheel
 
 install: dist
 	@pip install dist/*.whl
 
-install-dev:
+dev:
 	@python setup.py develop
 
 generate-specs:

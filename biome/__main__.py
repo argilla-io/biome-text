@@ -10,7 +10,6 @@ from biome.allennlp.commands.explore.explore import BiomeExplore
 from biome.allennlp.commands.learn import BiomeLearn
 from biome.allennlp.commands.predict.predict import BiomePredict
 from biome.allennlp.commands.serve import BiomeRestAPI
-from biome.allennlp.commands.start.start import BiomeStart
 from biome.allennlp.commands.stop.stop import BiomeStop
 from biome.allennlp.commands.vocab.vocab import BiomeVocab
 
