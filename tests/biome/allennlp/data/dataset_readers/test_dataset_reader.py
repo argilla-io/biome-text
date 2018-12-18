@@ -1,9 +1,6 @@
 import os
 import unittest
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
 
 from allennlp.common import Params
 from allennlp.data import DatasetReader

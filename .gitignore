@@ -98,6 +98,7 @@ ENV/
 
 .vscode
 dask-worker-space
+tests/dask-worker-space
 
 
 .generated*

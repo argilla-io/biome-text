@@ -1,9 +1,7 @@
-import json
 import os
-
-import yaml
 from typing import Iterable
 
+import yaml
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
