@@ -1,3 +1,5 @@
+import os
+
 import yaml
 from allennlp.common.checks import ConfigurationError
 from allennlp.models.archival import load_archive
@@ -5,6 +7,7 @@ from typing import Optional, Dict, Any
 
 from biome.data.utils import read_definition_from_model_spec
 
+CUDA_DEVICE_FIELD = 'cuda_device'
 MODEL_FIELD = 'model'
 TRAIN_DATA_FIELD = 'train_data_path'
 VALIDATION_DATA_FIELD = 'validation_data_path'
@@ -18,7 +21,7 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
                           train_cfg: str = '',
                           validation_cfg: str = '',
                           test_cfg: Optional[str] = None) -> Dict[str, Any]:
-    def load_yaml_config(from_path: Optional[str]) -> Dict:
+    def load_yaml_config(from_path: Optional[str]) -> Dict[str, Any]:
         if not from_path:
             return dict()
         with open(from_path) as trainer_file:
@@ -31,10 +34,15 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
         if model_binary \
         else read_definition_from_model_spec(model_spec) if model_spec else dict()
 
+    trainer_cfg = load_yaml_config(trainer_path)
+    trainer_cfg['trainer'][CUDA_DEVICE_FIELD] = trainer_cfg['trainer'].get(CUDA_DEVICE_FIELD,
+                                                                           int(os.getenv(CUDA_DEVICE_FIELD.upper(), -1)))
+
+    vocab_cfg = load_yaml_config(vocab_path)
     allennlp_configuration = {
         **cfg_params,
-        **load_yaml_config(trainer_path),
-        **load_yaml_config(vocab_path),
+        **trainer_cfg,
+        **vocab_cfg,
         TRAIN_DATA_FIELD: train_cfg,
         VALIDATION_DATA_FIELD: validation_cfg
     }
