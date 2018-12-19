@@ -1,37 +1,33 @@
-NAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-	platform=linux-amd64
-endif
-ifeq ($(UNAME_S),Darwin)
-	platform=darwin-amd64
-endif
 init:
 	@pip install -r requirements.txt --upgrade
 	@pip install pylint
 
 spacy-es:
 	@python -m spacy download es_core_news_sm
+	@python -m spacy link es_core_news_sm es -f
 
 spacy:
 	@python -m spacy download en_core_web_sm
 
-init-test:
-	@pip install -r requirements.test.txt
-
-test: init-test check
-	@nosetests --with-coverage --cover-package=recognai -d tests
-
-.PHONY: check
-check:
-	@pylint -E recognai
-	@echo "lint succeeded"
+test:
+	@python setup.py test
 
 .PHONY: dist
 dist: test
-	@python setup.py sdist bdist_wheel
+	@python setup.py bdist_wheel
 
-install: test
-	@python setup.py install
+install: dist
+	@pip install dist/*.whl
 
-install-dev:
+dev:
 	@python setup.py develop
+
+generate-specs:
+	@swagger-codegen generate \
+	-i ~/recognai/biome/apis/engine-api/api.yaml \
+	-o . \
+    -l python \
+    -DpackageName=biome \
+    --model-package spec \
+    --api-package api \
+    --ignore-file-override ./.swagger-codegen-ignore

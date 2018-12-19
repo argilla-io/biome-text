@@ -1,35 +1,27 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
+    Setup file for biome_allennlp.
+    Use setup.cfg to configure your project.
 
-# Learn more: https://github.com/kennethreitz/setup.py
-import os
-from setuptools import setup, find_packages
+    This file was generated with PyScaffold 3.1.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
+import sys
 
-NAME = 'recognai'
+from pkg_resources import require, VersionConflict
+from setuptools import setup
 
-here = os.path.abspath(os.path.dirname(__file__))
+try:
+    require('setuptools>=38.3')
+except VersionConflict:
+    print("Error: version of setuptools is too old (<38.3)!")
+    sys.exit(1)
 
-with open(os.path.join(here, 'README.md')) as f:
-    readme = f.read()
-
-with open(os.path.join(here, 'LICENSE')) as f:
-    license = f.read()
-
-about = {}
-with open(os.path.join(here, NAME, '__version__.py')) as f:
-    exec(f.read(), about)
-
-with open(os.path.join(here, 'requirements.txt')) as f:
-    required = f.read().splitlines()
-
-setup(
-    name=NAME,
-    version=about['__version__'],
-    install_requires=required,
-    description='Allen nlp custom extensions',
-    long_description=readme,
-    author='recognai',
-    author_email='contact@recogn.ai',
-    url='https://bitbucket.org/recognai/allennlp-extensions',
-    license=license,
-    packages=find_packages(exclude=('tests', 'docs'))
-)
+if __name__ == "__main__":
+    setup(
+        use_pyscaffold=True,
+        long_description_content_type='text/markdown',
+        package_data={'biome': ['allennlp/commands/explore/ui/*.*']}
+    )

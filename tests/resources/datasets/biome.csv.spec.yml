@@ -1,0 +1,18 @@
+datasource:
+  id: wikidata-japanese-test
+  name: " Wikidata Japanese test"
+  params:
+    path:
+    - resources/data/dataset_source.csv
+    location: resources/data/dataset_source.cs
+  format:
+    type: csv
+    charset: UTF-8
+    params:
+      delimiter: ","
+settings:
+  modelConnect:
+    tokens:
+    - age
+    target:
+      gold_label: job

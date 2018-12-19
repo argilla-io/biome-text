@@ -19,6 +19,7 @@ lib/
 lib64/
 parts/
 sdist/
+dist/
 var/
 *.egg-info/
 .installed.cfg
@@ -97,3 +98,10 @@ ENV/
 
 .vscode
 dask-worker-space
+tests/dask-worker-space
+
+
+.generated*
+generated*
+
+*venv
