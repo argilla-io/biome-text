@@ -85,33 +85,17 @@ class AbstractClassifier(Model):
             total_f1 += f1
             total_precision += precision
             total_recall += recall
-            all_metrics[metric_name + "_f1"] = f1
-            all_metrics[metric_name + "_precision"] = precision
-            all_metrics[metric_name + "_recall"] = recall
+            all_metrics[metric_name + "/f1"] = f1
+            all_metrics[metric_name + "/precision"] = precision
+            all_metrics[metric_name + "/recall"] = recall
 
         num_metrics = len(self.metrics)
-        all_metrics["average_f1"] = total_f1 / num_metrics
-        all_metrics["average_precision"] = total_precision / num_metrics
-        all_metrics["average_recall"] = total_recall / num_metrics
+        all_metrics["average/f1"] = total_f1 / num_metrics
+        all_metrics["average/precision"] = total_precision / num_metrics
+        all_metrics["average/recall"] = total_recall / num_metrics
         all_metrics['accuracy'] = self._accuracy.get_metric(reset)
 
         return all_metrics
-
-    @classmethod
-    def from_params(cls, params: Params, vocab: Vocabulary) -> 'AbstractClassifier':
-        embedder_params = params.pop("text_field_embedder")
-        # text_field_embedder = TextFieldEmbedder.from_params(vocab, embedder_params)
-
-        # encoder_params = params.pop("encoder", None)
-        # if encoder_params is not None:
-        #     encoder = Seq2VecEncoder.from_params(encoder_params)
-        # else:
-        #     encoder = None
-
-        # initializer = InitializerApplicator.from_params(params.pop('initializer', []))
-        regularizer = RegularizerApplicator.from_params(params.pop('regularizer', []))
-
-        return cls(vocab=vocab, regularizer=regularizer)
 
     @classmethod
     def try_from_location(cls, params: Params) -> 'AbstractClassifier':
@@ -125,8 +109,8 @@ class AbstractClassifier(Model):
                 _logger.warning("Cannot load model from location %s", model_location)
                 return None
 
-    def get_class_probabilities(self, logist):
-        return F.softmax(logist, dim=self._get_sofmax_dim(logist.dim()))
+    def get_class_probabilities(self, logits):
+        return F.softmax(logits, dim=self._get_sofmax_dim(logits.dim()))
 
     def _get_sofmax_dim(self, ndim: int) -> int:
         # From F.softmax package

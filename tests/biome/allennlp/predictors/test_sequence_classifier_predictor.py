@@ -1,4 +1,5 @@
 import os
+import unittest
 
 from allennlp.models import load_archive
 from allennlp.service.predictors import Predictor
@@ -10,6 +11,8 @@ from tests.test_support import DaskSupportTest
 MODEL_PATH = os.path.join(TEST_RESOURCES, 'resources/models/model.tar.gz')
 
 
+# TODO @dvilasuero check this test when SequenceClassifier refactor is done
+@unittest.skip(reason='SequenceClassifier refactor must be finish')
 class SequencePairClassifierPredictorTest(DaskSupportTest):
 
     def setUp(self):

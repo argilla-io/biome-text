@@ -2,17 +2,17 @@ import logging
 from typing import Dict, Optional
 
 import torch
-
 from allennlp.common import Params
+
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import Seq2VecEncoder
-from allennlp.modules import TextFieldEmbedder
+from allennlp.modules import Seq2VecEncoder, TextFieldEmbedder, FeedForward
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 from overrides import overrides
+
 from torch.nn.modules.linear import Linear
 
 from biome.allennlp.models import AbstractClassifier
@@ -32,9 +32,13 @@ class SequenceClassifier(AbstractClassifier):
         A Vocabulary, required in order to compute sizes for input/output projections.
     text_field_embedder : ``TextFieldEmbedder``, required
         Used to embed the ``tokens`` ``TextField`` we get as input to the model.
+    pre_encoder : ``Feedforward``
+        Feedforward layer to be applied to embedded tokens.
     encoder : ``Seq2VecEncoder``
         The encoder  that we will use in between embedding tokens
         and predicting output tags.
+    decoder : ``Feedforward``
+        The decoder that will decode the final answer of the model
     initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
         Used to initialize the model parameters.
     regularizer : ``RegularizerApplicator``, optional (default=``None``)
@@ -42,21 +46,21 @@ class SequenceClassifier(AbstractClassifier):
 
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
+                 pre_encoder: FeedForward,
                  encoder: Seq2VecEncoder,
+                 decoder: FeedForward,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super(SequenceClassifier, self).__init__(vocab, regularizer)
 
         self.text_field_embedder = text_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
+        self.pre_encoder = pre_encoder
         self.encoder = encoder
-        self.projection_layer = Linear(self.encoder.get_output_dim(), self.num_classes)
+        self.decoder = decoder
+        self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
 
-        if text_field_embedder.get_output_dim() != encoder.get_input_dim():
-            raise ConfigurationError("The output dimension of the text_field_embedder must match the "
-                                     "input dimension of the sequence encoder. Found {} and {}, "
-                                     "respectively.".format(text_field_embedder.get_output_dim(),
-                                                            encoder.get_input_dim()))
+        self.__check_configuration()
         self._accuracy = CategoricalAccuracy()
         self.metrics = {label: F1Measure(index)
                         for index, label in self.vocab.get_index_to_token_vocabulary("labels").items()}
@@ -98,8 +102,18 @@ class SequenceClassifier(AbstractClassifier):
             A scalar loss to be optimised.
 
         """
-        encoded_text = self.encode_tokens(tokens)
-        logits = self.projection_layer(encoded_text)
+        embedded_text_input = self.text_field_embedder(tokens)
+        mask = get_text_field_mask(tokens)
+        if self.pre_encoder:
+            embedded_text_input = self.pre_encoder(embedded_text_input)
+        if self.encoder:
+            encoded_text = self.encoder(embedded_text_input, mask)
+        else:
+            encoded_text = embedded_text_input[:, 0] # Bert
+
+        decoded_text = self.decoder(encoded_text)
+
+        logits = self.output_layer(decoded_text)
 
         class_probabilities = self.get_class_probabilities(logits)
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
@@ -107,40 +121,49 @@ class SequenceClassifier(AbstractClassifier):
         if gold_label is not None:
             loss = self._loss(logits, gold_label.long().view(-1))
             output_dict["loss"] = loss
-            # TODO revise
             self._accuracy(logits, gold_label.squeeze(-1))
             for name, metric in self.metrics.items():
                 metric(logits, gold_label.squeeze(-1))
 
         return output_dict
 
-    def encode_tokens(self, tokens):
-        embedded_text_input = self.text_field_embedder(tokens)
-        mask = get_text_field_mask(tokens)
-        encoded_text = self.encoder(embedded_text_input, mask)
-        return encoded_text
+    def __check_configuration(self):
+        encoder = self.encoder
+        if encoder:
+            if self.pre_encoder:
+                encoder = self.pre_encoder
+            if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
+                raise ConfigurationError("The output dimension of the text_field_embedder must match the "
+                                     "input dimension of the sequence encoder. Found {} and {}, "
+                                     "respectively.".format(self.text_field_embedder.get_output_dim(),
+                                                            encoder.get_input_dim()))
+        else:
+            # TODO: Add more checks
+            pass
 
     @classmethod
-    def from_params(cls, params: Params, vocab: Optional[Vocabulary]) -> 'SequenceClassifier':
-        model = super(SequenceClassifier, cls).try_from_location(params)
-
-        if model:
-            return model
-
+    def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceClassifier':  # type: ignore
+        # pylint: disable=arguments-differ
         embedder_params = params.pop("text_field_embedder")
         text_field_embedder = TextFieldEmbedder.from_params(vocab=vocab, params=embedder_params)
 
-        encoder_params = params.pop("encoder", None)
-        if encoder_params is not None:
-            encoder = Seq2VecEncoder.from_params(encoder_params)
-        else:
-            encoder = None
+        pre_encoder_config = params.pop("pre_encoder", None)
+        pre_encoder = FeedForward.from_params(pre_encoder_config) if pre_encoder_config else None
+
+        encoder_config = params.pop("encoder", None)
+        encoder = Seq2VecEncoder.from_params(encoder_config) if encoder_config else None
+
+        decoder_config = params.pop("decoder", None)
+        decoder = FeedForward.from_params(decoder_config) if decoder_config else None
 
         initializer = InitializerApplicator.from_params(params.pop('initializer', []))
         regularizer = RegularizerApplicator.from_params(params.pop('regularizer', []))
 
         return cls(vocab=vocab,
                    text_field_embedder=text_field_embedder,
+                   pre_encoder=pre_encoder,
                    encoder=encoder,
+                   decoder=decoder,
                    initializer=initializer,
                    regularizer=regularizer)
+
