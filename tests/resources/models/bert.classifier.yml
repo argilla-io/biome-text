@@ -1,0 +1,31 @@
+topology:
+  pipeline:
+    type: classification_dataset_reader
+
+    forward:
+      tokens: TextField
+      gold_label: LabelField
+
+    token_indexers:
+      bert:
+        type: bert-pretrained
+        pretrained_model: bert-base-uncased
+
+  architecture:
+    type: sequence_classifier
+    text_field_embedder:
+      allow_unmatched_keys: true
+      # embedder_to_indexer_map:
+      #   bert:
+      #   - bert
+      #   - bert-offsets
+      #   - mask
+      bert:
+        type: bert-pretrained
+        pretrained_model: bert-base-uncased
+    encoder:
+      type: lstm
+      dropout: 0.5
+      input_size: 768
+      bidirectional: true
+      hidden_size: 200
