@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.allennlp.commands.helpers import biome2allennlp_params, VALIDATION_DATA_FIELD
 
 from tests.test_context import TEST_RESOURCES
 
@@ -22,3 +22,12 @@ class TestCommandHelper(unittest.TestCase):
         trainer_cfg = cfg['trainer']
 
         assert trainer_cfg['cuda_device'] == int(os.getenv('CUDA_DEVICE')), 'Wrong cuda device expected'
+
+    def test_biome2allennlp_params_optional_validation(self):
+        cfg = biome2allennlp_params(model_spec=SPEC_PATH, trainer_path=WITHOUT_CUDA_DEVICE_TRAINER_PATH)
+        assert cfg.get(VALIDATION_DATA_FIELD) is None, 'Non expected value for validation dataset'
+
+        cfg = biome2allennlp_params(model_spec=SPEC_PATH, trainer_path=WITHOUT_CUDA_DEVICE_TRAINER_PATH,
+                                    validation_cfg='bad/path')
+
+        assert cfg.get(VALIDATION_DATA_FIELD) is not None, 'Expected value for validation dataset'

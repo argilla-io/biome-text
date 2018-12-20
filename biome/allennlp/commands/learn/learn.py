@@ -55,7 +55,7 @@ class BiomeLearn(Subcommand):
 
         subparser.add_argument('--trainer', type=str, help='trainer.yml specification', required=True)
         subparser.add_argument('--train', type=str, help='train datasource definition', required=True)
-        subparser.add_argument('--validation', type=str, help='validation datasource source definition', required=True)
+        subparser.add_argument('--validation', type=str, help='validation datasource source definition', required=False)
         subparser.add_argument('--test', type=str, help='test datasource source definition', required=False)
 
         subparser.add_argument('--output', type=str, help='learn process generation folder', required=True)
@@ -96,7 +96,6 @@ def learn(output: str,
           train_cfg: str = '',
           validation_cfg: str = '',
           test_cfg: Optional[str] = None) -> Model:
-
     allennlp_configuration = biome2allennlp_params(model_spec,
                                                    model_binary,
                                                    trainer_path,

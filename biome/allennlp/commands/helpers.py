@@ -9,6 +9,7 @@ from biome.data.utils import read_definition_from_model_spec
 
 CUDA_DEVICE_FIELD = 'cuda_device'
 MODEL_FIELD = 'model'
+TRAINER_FIELD = 'trainer'
 TRAIN_DATA_FIELD = 'train_data_path'
 VALIDATION_DATA_FIELD = 'validation_data_path'
 TEST_DATA_FIELD = 'test_data_path'
@@ -19,7 +20,7 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
                           trainer_path: Optional[str] = None,
                           vocab_path: Optional[str] = None,
                           train_cfg: str = '',
-                          validation_cfg: str = '',
+                          validation_cfg: Optional[str] = None,
                           test_cfg: Optional[str] = None) -> Dict[str, Any]:
     def load_yaml_config(from_path: Optional[str]) -> Dict[str, Any]:
         if not from_path:
@@ -35,23 +36,22 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
         else read_definition_from_model_spec(model_spec) if model_spec else dict()
 
     trainer_cfg = load_yaml_config(trainer_path)
-    trainer_cfg['trainer'][CUDA_DEVICE_FIELD] = trainer_cfg['trainer'].get(CUDA_DEVICE_FIELD,
-                                                                           int(os.getenv(CUDA_DEVICE_FIELD.upper(), -1)))
+    cuda_dive = trainer_cfg[TRAINER_FIELD].get(CUDA_DEVICE_FIELD, int(os.getenv(CUDA_DEVICE_FIELD.upper(), -1)))
+    trainer_cfg[TRAINER_FIELD][CUDA_DEVICE_FIELD] = cuda_dive
 
     vocab_cfg = load_yaml_config(vocab_path)
     allennlp_configuration = {
         **cfg_params,
         **trainer_cfg,
         **vocab_cfg,
-        TRAIN_DATA_FIELD: train_cfg,
-        VALIDATION_DATA_FIELD: validation_cfg
+        TRAIN_DATA_FIELD: train_cfg
     }
 
-    if test_cfg and not test_cfg.isspace():
-        allennlp_configuration.update({TEST_DATA_FIELD: test_cfg})
+    for cfg, field in [(validation_cfg, VALIDATION_DATA_FIELD), (test_cfg, TEST_DATA_FIELD)]:
+        if cfg and not cfg.isspace():
+            allennlp_configuration.update({field: cfg})
 
     allennlp_configuration[MODEL_FIELD] = __merge_model_params(model_binary, allennlp_configuration.get(MODEL_FIELD))
-
     return allennlp_configuration
 
 
