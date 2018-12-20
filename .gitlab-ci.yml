@@ -17,6 +17,7 @@ cache:
   paths:
     - .cache/pip
     - venv/
+    - .eggs/
 
 before_script:
   - python -V               # Print out python version for debugging
@@ -27,14 +28,16 @@ before_script:
 
 test:
   script:
-  - python setup.py test
+    - python setup.py test
 
 run:
   script:
-  - python setup.py bdist_wheel
-  # an alternative approach is to install and run:
-  - pip install dist/*
+    - python setup.py bdist_wheel
+    # an alternative approach is to install and run:
+    - pip install dist/*
   # run the command here
   artifacts:
     paths:
-    - dist/*.whl
+      - dist/*.whl
+  only:
+    - master
