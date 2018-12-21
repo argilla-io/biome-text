@@ -1,6 +1,6 @@
 from typing import Dict
 
-from biome.spec import ModelConnect
+from biome.spec import ModelForward
 from biome.spec.data_source import DataSource
 from biome.spec.utils import to_biome_class
 
@@ -14,7 +14,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config: Dict) -> Dict:
     settings = dataset_config.get('settings', {})
 
     datasource = to_biome_class(data=dataset_config.get('datasource', {}), klass=DataSource)
-    model_connect = to_biome_class(data=settings.get('modelConnect', {}), klass=ModelConnect)
+    model_connect = to_biome_class(data=settings.get('forward', {}), klass=ModelForward)
 
     if datasource.type == 'FileSystem':
         params = datasource.params

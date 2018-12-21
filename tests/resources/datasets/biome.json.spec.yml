@@ -10,7 +10,7 @@ datasource:
     charset: UTF-8
     params: {}
 settings:
-  modelConnect:
+  forward:
     tokens:
     - reviewText
     target:

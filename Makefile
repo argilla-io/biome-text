@@ -1,30 +1,31 @@
-init:
-	@pip install -r requirements.txt --upgrade
-	@pip install pylint
+.PHONY: test dist install dev specs
 
-spacy-es:
-	@python -m spacy download es_core_news_sm
-	@python -m spacy link es_core_news_sm es -f
+bin_dir = tools/bin
+swagger-codegen = java -jar $(bin_dir)/swagger-codegen-cli.jar
+swagger-codegen-version ?= 2.4.0
+maven-repo ?= http://central.maven.org/maven2
 
-spacy:
-	@python -m spacy download en_core_web_sm
+swagger-codegen-url=$(maven-repo)/io/swagger/swagger-codegen-cli/$(swagger-codegen-version)/swagger-codegen-cli-$(swagger-codegen-version).jar
 
 test:
 	@python setup.py test
 
-.PHONY: dist
-dist: test
-	@python setup.py bdist_wheel
+dist:
+	@python setup.py test bdist_wheel
 
-install: dist
+install:
 	@pip install dist/*.whl
 
 dev:
 	@python setup.py develop
 
-generate-specs:
-	@swagger-codegen generate \
-	-i ~/recognai/biome/apis/engine-api/api.yaml \
+
+
+
+specs:
+	@wget $(swagger-codegen-url) -O $(bin_dir)/swagger-codegen-cli.jar
+	@$(swagger-codegen) generate \
+	-i ~/recognai/biome/biome-api/spec.yml \
 	-o . \
     -l python \
     -DpackageName=biome \

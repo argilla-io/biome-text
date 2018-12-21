@@ -13,7 +13,7 @@ datasource:
     params:
       delimiter: ","
 settings:
-  modelConnect:
+  forward:
     tokens:
     - age
     target:
