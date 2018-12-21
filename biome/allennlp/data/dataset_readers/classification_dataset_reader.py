@@ -33,7 +33,13 @@ def _text_to_instance(example: Dict,
             if cls == TextField:
                 return TextField(tokenizer.tokenize(value), token_indexers)
 
-        return Instance({field: field_from_type(type, example[field]) for field, type in forward_definition.items()})
+        fields = {
+            field: field_from_type(type, example[field])
+            for field, type in forward_definition.items()
+            if example.get(field) is not None
+        }
+
+        return Instance(fields)
 
     def instance_by_target_definition(example: Dict,
                                       gold_label_id: str,
