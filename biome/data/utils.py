@@ -76,12 +76,12 @@ def read_params_from_file(filepath: str) -> Params:
         return Params.from_file(filepath)
 
 
-def configure_dask_cluster():
+def configure_dask_cluster(percentage_use: float = 0.25):
     global dask_client
 
     dask_cluster = os.environ.get(ENV_DASK_CLUSTER, None)
     dask_cache_size = os.environ.get(ENV_DASK_CACHE_SIZE, DEFAULT_DASK_CACHE_SIZE)
-    workers = max(2, cpu_count())
+    workers = max(1, round(cpu_count() * percentage_use))
 
     if dask_cluster:
         dask_client = _dask_client(dask_cluster, dask_cache_size, workers)
