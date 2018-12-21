@@ -10,9 +10,9 @@
 !**/spec/data_source_settings.py
 
 !**/spec/model_revision.py
-!**/spec/model_connect.py
 !**/spec/model_definition.py
 !**/spec/model_definition_topology.py
+!**/spec/model_forward.py
 
 !**/spec/metadata*
 !**/spec/__init__.py

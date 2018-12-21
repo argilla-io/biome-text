@@ -22,7 +22,7 @@ from biome.spec.data_source_schema import DataSourceSchema
 from biome.spec.data_source_schema_entry import DataSourceSchemaEntry
 from biome.spec.data_source_settings import DataSourceSettings
 from biome.spec.metadata import Metadata
-from biome.spec.model_connect import ModelConnect
 from biome.spec.model_definition import ModelDefinition
 from biome.spec.model_definition_topology import ModelDefinitionTopology
+from biome.spec.model_forward import ModelForward
 from biome.spec.model_revision import ModelRevision
