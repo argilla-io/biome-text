@@ -10,6 +10,7 @@ __RECOGNAI_FILES = 'recogn.ai/files'
 __DS_LOCATION = 'location'
 __DS_PATH = 'path'
 
+
 def biome_datasource_spec_to_dataset_config(dataset_config: Dict) -> Dict:
     settings = dataset_config.get('settings', {})
 
@@ -26,7 +27,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config: Dict) -> Dict:
             format=format.type,
             encoding=format.charset,
             transformations=model_connect,
-            **format_params # allow pass through format params to dataset reader
+            **format_params  # allow pass through format params to dataset reader
         )
         return config
     else:
