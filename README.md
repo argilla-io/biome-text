@@ -1,5 +1,13 @@
 # README #
 
+### Install
+
+```
+$ git clone https://gitlab.com/recognai-team/biome/biome-allennlp.git
+$ cd biome-allennlp
+$ pip install -e .
+```
+
 AllenNLP extensions contains custom extensions for library [allenNLP](http://allennlp.org/)
 
 ### Extensions
