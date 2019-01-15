@@ -13,6 +13,7 @@ TRAINER_FIELD = 'trainer'
 TRAIN_DATA_FIELD = 'train_data_path'
 VALIDATION_DATA_FIELD = 'validation_data_path'
 TEST_DATA_FIELD = 'test_data_path'
+EVALUATE_ON_TEST_FIELD = 'evaluate_on_test'
 
 
 def biome2allennlp_params(model_spec: Optional[str] = None,
@@ -44,7 +45,8 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
         **cfg_params,
         **trainer_cfg,
         **vocab_cfg,
-        TRAIN_DATA_FIELD: train_cfg
+        TRAIN_DATA_FIELD: train_cfg,
+        EVALUATE_ON_TEST_FIELD: True,  # When no test data is provided, this param is ignored
     }
 
     for cfg, field in [(validation_cfg, VALIDATION_DATA_FIELD), (test_cfg, TEST_DATA_FIELD)]:
