@@ -26,18 +26,21 @@ def _text_to_instance(example: Dict,
                                        token_indexers: Dict[str, TokenIndexer],
                                        tokenizer: Tokenizer
                                        ) -> Instance:
-        def field_from_type(type: str, value: Any) -> Field:
-            cls = globals()[type]
-            if cls == LabelField:
-                return cls(value)
-            if cls == TextField:
-                return TextField(tokenizer.tokenize(value), token_indexers)
+        def field_from_type(field_type: str, field_value: Any) -> Field:
+            if field_type == 'LabelField':
+                return LabelField(field_value)
+            elif field_type == 'TextField':
+                return TextField(tokenizer.tokenize(field_value), token_indexers)
+            else:
+                raise TypeError(f"{field_type} is not a valid allennlp.data.fields or not supported yet.")
 
-        fields = {
-            field: field_from_type(type, example[field])
-            for field, type in forward_definition.items()
-            if example.get(field) is not None
-        }
+        fields = {}
+        for field, field_type in forward_definition.items():
+            # Skipp completely examples that have an empty TextField
+            if example[field] is None and field_type == 'TextField':
+                fields = {}  # An empty Instance({}) resolves to False in if statements
+                break
+            fields[field] = field_from_type(field_type, example[field])
 
         return Instance(fields)
 
@@ -46,6 +49,7 @@ def _text_to_instance(example: Dict,
                                       token_indexers: Dict[str, TokenIndexer],
                                       tokenizer: Tokenizer
                                       ) -> Instance:
+        logger.warning("Call to the deprecated method instance_by_target_definition()")
         fields: Dict[str, Field] = {}
 
         for field, value in example.items():
@@ -79,9 +83,12 @@ class ClassificationDatasetReader(DatasetReader):
         self.__cached_datasets = dict()
 
     def process_example(self, example: Dict) -> Instance:
-        if example:
-            logger.debug('Example:[%s]', example)
+        logger.debug('Example:[%s]', example)
+        try:
             return self.text_to_instance(example)
+        except Exception as e:
+            logger.warning(e)
+            return Instance({})  # An empty Instance({}) resolves to False in an if statements
 
     def text_to_instance(self,  # type: ignore
                          example: Dict) -> Instance:
@@ -106,4 +113,10 @@ class ClassificationDatasetReader(DatasetReader):
         dataset = self.__cached_datasets[ds_key]
         logger.debug('Loaded from cache dataset {}'.format(file_path))
 
-        return (self.process_example(example) for example in dataset)
+        def instance_generator():
+            for example in dataset:
+                instance = self.process_example(example)
+                if instance:
+                    yield instance
+
+        return instance_generator()
