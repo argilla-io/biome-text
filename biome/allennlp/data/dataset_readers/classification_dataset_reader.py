@@ -36,7 +36,7 @@ def _text_to_instance(example: Dict,
 
         fields = {}
         for field, field_type in forward_definition.items():
-            # Skipp completely examples that have an empty TextField
+            # Completely skip examples that have an empty TextField
             if example[field] is None and field_type == 'TextField':
                 fields = {}  # An empty Instance({}) resolves to False in if statements
                 break
