@@ -49,7 +49,7 @@ def _text_to_instance(example: Dict,
                                       token_indexers: Dict[str, TokenIndexer],
                                       tokenizer: Tokenizer
                                       ) -> Instance:
-        logger.warning("Call to the deprecated method instance_by_target_definition()")
+        logger.warning("Call to the deprecated method instance_by_target_definition(). Use forward definition in config file instead of target.")
         fields: Dict[str, Field] = {}
 
         for field, value in example.items():
