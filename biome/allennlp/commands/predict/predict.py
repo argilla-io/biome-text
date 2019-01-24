@@ -99,21 +99,38 @@ def _predict(args: argparse.Namespace) -> None:
     args.archive_file = to_local_archive(args.binary)
     predictor = __predictor_from_args(args)
 
-    batch = []
-    batch_id = 0
-    for example in test_dataset:
-        if len(batch) < batch_size:
-            batch.append(example)
-        else:
-            __logger.info('Running prediction batch {}...'.format(batch_id))
-            __make_predict(batch, predictor, sink_config)
-            batch = []
-            batch_id += 1
-
-    if len(batch) > 0:
+    for i, batch in enumerate(_get_batch(test_dataset, batch_size)):
+        __logger.info('Running prediction batch {}...'.format(i))
         __make_predict(batch, predictor, sink_config)
 
     __logger.info("Finished predictions")
+
+
+def _get_batch(dataset, batch_size: int):
+    """A batch generator.
+
+    Continuously generates a batch of size `batch_size` out of the provided dataset
+
+    Parameters
+    ----------
+    dataset : An iterable object
+        Batches will be produced out of this dataset
+    batch_size : int
+        The batch size
+
+    Yields
+    ------
+    batch : list
+        The next batch of the dataset
+    """
+    batch = []
+    for example in dataset:
+        batch.append(example)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+    if len(batch) > 0:
+        yield batch
 
 
 def __make_predict(batch: List[Dict[str, Any]], predictor: Predictor, sink_config: Dict[str, Any]):
