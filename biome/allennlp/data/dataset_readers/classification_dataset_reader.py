@@ -34,13 +34,11 @@ def _text_to_instance(example: Dict,
             else:
                 raise TypeError(f"{field_type} is not a valid allennlp.data.fields or not supported yet.")
 
-        fields = {}
-        for field, field_type in forward_definition.items():
-            # Completely skip examples that have an empty TextField
-            if example[field] is None and field_type == 'TextField':
-                fields = {}  # An empty Instance({}) resolves to False in if statements
-                break
-            fields[field] = field_from_type(field_type, example[field])
+        fields = {
+            field: field_from_type(type, example[field])
+            for field, type in forward_definition.items()
+            if example.get(field) is not None
+        }
 
         return Instance(fields)
 

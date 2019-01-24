@@ -40,8 +40,10 @@ def read_dataset(cfg: Dict, include_source: bool = False) -> Bag:
     return __build_dataset(config) \
         .map(__transform_example, example_preparator) \
         .filter(lambda example: example is not None) \
+        .filter(lambda example: example['tokens'] is not None) \  # CHAPUZA!!!
         .persist()
-
+    # TODO: We have to think about a more general solution for the CHAPUZA,
+    #       once we have more model types and get rid of the forward in the model yml!
 
 def __build_dataset(config: Dict) -> Bag:
     params = {k: v for k, v in config.items()}  # Preserve original config (multiple reads)
