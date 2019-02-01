@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, Iterable
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Field, Tokenizer
 from allennlp.data.fields import TextField, LabelField
@@ -6,8 +6,7 @@ from allennlp.data.tokenizers import WordTokenizer
 from overrides import overrides
 
 from biome.allennlp.data.tokenizer.word_splitter import SpacyWordSplitter
-from biome.data.sources.file import *
-from biome.data.sources.helpers import *
+from biome.data.sources.helpers import logging, is_reserved_field, read_dataset
 from biome.data.utils import read_datasource_cfg
 
 __name__ = "classification_dataset_reader"
@@ -20,34 +19,29 @@ def _text_to_instance(example: Dict,
                       forward_definition: Dict[str, Any],
                       gold_label_id: str,
                       token_indexers: Dict[str, TokenIndexer],
-                      tokenizer: Tokenizer):
-    def instance_by_forward_definition(example: Dict,
-                                       forward_definition: Dict[str, Any],
-                                       token_indexers: Dict[str, TokenIndexer],
-                                       tokenizer: Tokenizer
-                                       ) -> Instance:
+                      tokenizer: Tokenizer) -> Instance:
+
+    def instance_by_forward_definition() -> Instance:
+
         def field_from_type(field_type: str, field_value: Any) -> Field:
             if field_type == 'LabelField':
                 return LabelField(field_value)
             elif field_type == 'TextField':
                 return TextField(tokenizer.tokenize(field_value), token_indexers)
             else:
-                raise TypeError(f"{field_type} is not a valid allennlp.data.fields or not supported yet.")
+                raise TypeError(f"{field_type} is not supported yet.")
 
         fields = {
-            field: field_from_type(type, example[field])
-            for field, type in forward_definition.items()
+            field: field_from_type(field_type, example[field])
+            for field, field_type in forward_definition.items()
             if example.get(field) is not None
         }
 
         return Instance(fields)
 
-    def instance_by_target_definition(example: Dict,
-                                      gold_label_id: str,
-                                      token_indexers: Dict[str, TokenIndexer],
-                                      tokenizer: Tokenizer
-                                      ) -> Instance:
-        logger.warning("Call to the deprecated method instance_by_target_definition(). Use forward definition in config file instead of target.")
+    def instance_by_target_definition() -> Instance:
+        logger.warning("Call to the deprecated method instance_by_target_definition(). "
+                       "Use forward definition in config file instead of target.")
         fields: Dict[str, Field] = {}
 
         for field, value in example.items():
@@ -59,22 +53,32 @@ def _text_to_instance(example: Dict,
 
         return Instance(fields)
 
-    return instance_by_forward_definition(example, forward_definition, token_indexers, tokenizer) \
+    return instance_by_forward_definition() \
         if forward_definition \
-        else instance_by_target_definition(example, gold_label_id, token_indexers, tokenizer)
+        else instance_by_target_definition()
 
 
 @DatasetReader.register(__name__)
 class ClassificationDatasetReader(DatasetReader):
+    """A DatasetReader for a Classification dataset
 
+    Parameters
+    ----------
+    forward
+    target
+    tokenizer
+        By default we use a WordTokenizer with the SpacyWordSplitter
+    token_indexers
+    """
     def __init__(self,
                  forward: Dict[str, Any] = None,
                  target: str = DEFAULT_GOLD_LABEL_ID,
+                 tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None) -> None:
 
         super(ClassificationDatasetReader, self).__init__(lazy=True)
 
-        self.__tokenizer = WordTokenizer(word_splitter=SpacyWordSplitter())
+        self.__tokenizer = tokenizer or WordTokenizer(word_splitter=SpacyWordSplitter())
         self.__token_indexers = token_indexers
         self.__target_field = target
         self.__forward_definition = forward
