@@ -46,11 +46,11 @@ class SequenceClassifier(AbstractClassifier):
 
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
-                 pre_encoder: FeedForward,
-                 encoder: Seq2VecEncoder,
                  decoder: FeedForward,
+                 encoder: Seq2VecEncoder = None,
+                 pre_encoder: FeedForward = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
-                 regularizer: Optional[RegularizerApplicator] = None) -> None:
+                 regularizer: RegularizerApplicator = None) -> None:
         super(SequenceClassifier, self).__init__(vocab, regularizer)
 
         self.text_field_embedder = text_field_embedder
@@ -140,30 +140,3 @@ class SequenceClassifier(AbstractClassifier):
         else:
             # TODO: Add more checks
             pass
-
-    @classmethod
-    def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequenceClassifier':  # type: ignore
-        # pylint: disable=arguments-differ
-        embedder_params = params.pop("text_field_embedder")
-        text_field_embedder = TextFieldEmbedder.from_params(vocab=vocab, params=embedder_params)
-
-        pre_encoder_config = params.pop("pre_encoder", None)
-        pre_encoder = FeedForward.from_params(pre_encoder_config) if pre_encoder_config else None
-
-        encoder_config = params.pop("encoder", None)
-        encoder = Seq2VecEncoder.from_params(encoder_config) if encoder_config else None
-
-        decoder_config = params.pop("decoder", None)
-        decoder = FeedForward.from_params(decoder_config) if decoder_config else None
-
-        initializer = InitializerApplicator.from_params(params.pop('initializer', []))
-        regularizer = RegularizerApplicator.from_params(params.pop('regularizer', []))
-
-        return cls(vocab=vocab,
-                   text_field_embedder=text_field_embedder,
-                   pre_encoder=pre_encoder,
-                   encoder=encoder,
-                   decoder=decoder,
-                   initializer=initializer,
-                   regularizer=regularizer)
-
