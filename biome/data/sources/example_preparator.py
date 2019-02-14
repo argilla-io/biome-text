@@ -1,7 +1,5 @@
-from numpy import float32, number
-from smart_open import smart_open
+from numpy import number
 from typing import Dict, Optional, Any, List
-import pandas as pd
 
 GOLD_LABEL_DEFINITION_FIELD = 'target'
 VALUE_MAPPING_FIELD = "values_mapping"
@@ -25,9 +23,10 @@ class TransformationConfig(object):
 
     @staticmethod
     def __mapping_from_metadata(path: str) -> Dict[str, str]:
-        classes = pd.read_csv(path, header=None).values
+        with open(path) as metadata_file:
+            classes = [line.rstrip('\n').rstrip() for line in metadata_file]
 
-        mapping = {idx + 1: values[0] for idx, values in enumerate(classes)}
+        mapping = {idx + 1: cls for idx, cls in enumerate(classes)}
         # mapping variant with integer numbers
         mapping = {**mapping, **{str(key): value for key, value in mapping.items()}}
 
