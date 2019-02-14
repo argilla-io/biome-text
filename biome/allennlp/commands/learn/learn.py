@@ -21,20 +21,23 @@ which to write the results.
 import argparse
 import logging
 from copy import deepcopy
+from typing import Optional, Callable
 
 from allennlp.commands import Subcommand
-from allennlp.commands.dry_run import dry_run_from_params
+from allennlp.commands.fine_tune import fine_tune_model
 from allennlp.commands.train import train_model
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
-from allennlp.data import DataIterator, DatasetReader, Vocabulary
+from allennlp.data import DataIterator, DatasetReader
 from allennlp.models.model import Model
-from typing import Optional, Callable
 
 from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.allennlp.models.archival import load_archive
 from biome.data.utils import configure_dask_cluster
 
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+DATASET_READER_FIELD_NAME = 'dataset_reader'
 
 
 class BiomeLearn(Subcommand):
@@ -79,7 +82,7 @@ def learn_from_args(args: argparse.Namespace):
 
 
 def check_configuration(params: Params):
-    DatasetReader.from_params(params.get('dataset_reader'))
+    DatasetReader.from_params(params.get(DATASET_READER_FIELD_NAME))
     DataIterator.from_params(params.get('iterator'))
 
 
@@ -97,10 +100,12 @@ def learn(output: str,
           validation_cfg: str = '',
           test_cfg: Optional[str] = None) -> Model:
     allennlp_configuration = biome2allennlp_params(model_spec,
-                                                   model_binary,
                                                    trainer_path,
                                                    vocab,
                                                    train_cfg, validation_cfg, test_cfg)
+
+    if not model_binary and not model_spec:
+        raise ConfigurationError('Missing parameter --spec/--binary')
 
     __logger.info('Checking initial configuration')
     check_configuration(Params(deepcopy(allennlp_configuration)))
@@ -113,4 +118,25 @@ def learn(output: str,
     check_model_configuration(Params(deepcopy(allennlp_configuration)))
 
     allennlp_configuration = {**allennlp_configuration}
-    return train_model(Params(allennlp_configuration), output, file_friendly_logging=True, recover=False, force=True)
+    if model_binary:
+        archive = load_archive(model_binary)
+        __logger.info(archive.config.as_dict())
+
+        return fine_tune_model(
+            model=archive.model,
+            params=Params({
+                DATASET_READER_FIELD_NAME: archive.config.get(DATASET_READER_FIELD_NAME).as_dict(),
+                **allennlp_configuration
+            }),
+            serialization_dir=output,
+            extend_vocab=False,
+            file_friendly_logging=True
+        )
+    else:
+        return train_model(
+            params=Params(allennlp_configuration),
+            serialization_dir=output,
+            file_friendly_logging=True,
+            recover=False,
+            force=True
+        )
