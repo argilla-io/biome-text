@@ -1,8 +1,7 @@
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 import torch
-from allennlp.common import Params
 
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
@@ -10,7 +9,7 @@ from allennlp.models.model import Model
 from allennlp.modules import Seq2VecEncoder, TextFieldEmbedder, FeedForward
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure, Metric
 from overrides import overrides
 
 from torch.nn.modules.linear import Linear
@@ -28,29 +27,30 @@ class SequenceClassifier(AbstractClassifier):
 
     Parameters
     ----------
-    vocab : ``Vocabulary``, required
+    vocab : ``Vocabulary``
         A Vocabulary, required in order to compute sizes for input/output projections.
-    text_field_embedder : ``TextFieldEmbedder``, required
+    text_field_embedder : ``TextFieldEmbedder``
         Used to embed the ``tokens`` ``TextField`` we get as input to the model.
-    pre_encoder : ``Feedforward``
-        Feedforward layer to be applied to embedded tokens.
-    encoder : ``Seq2VecEncoder``
-        The encoder  that we will use in between embedding tokens
-        and predicting output tags.
     decoder : ``Feedforward``
         The decoder that will decode the final answer of the model
-    initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
+    pre_encoder : ``allennlp.modules.FeedForward``, optional (default = None)
+        Feedforward layer to be applied to embedded tokens.
+    encoder : ``Seq2VecEncoder``, optional (default = None)
+        The encoder  that we will use in between embedding tokens
+        and predicting output tags.
+    initializer : ``InitializerApplicator``, optional (default = ``InitializerApplicator()``)
         Used to initialize the model parameters.
-    regularizer : ``RegularizerApplicator``, optional (default=``None``)
+    regularizer : ``RegularizerApplicator``, optional (default = None)
     """
-
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
                  decoder: FeedForward,
                  encoder: Seq2VecEncoder = None,
                  pre_encoder: FeedForward = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
-                 regularizer: RegularizerApplicator = None) -> None:
+                 regularizer: RegularizerApplicator = None,
+                 accuracy: Metric = None,
+                 ) -> None:
         super(SequenceClassifier, self).__init__(vocab, regularizer)
 
         self.text_field_embedder = text_field_embedder
@@ -61,7 +61,7 @@ class SequenceClassifier(AbstractClassifier):
         self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
 
         self.__check_configuration()
-        self._accuracy = CategoricalAccuracy()
+        self._accuracy = accuracy or CategoricalAccuracy()
         self.metrics = {label: F1Measure(index)
                         for index, label in self.vocab.get_index_to_token_vocabulary("labels").items()}
         self._loss = torch.nn.CrossEntropyLoss()
