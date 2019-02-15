@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @Model.register("sequence_classifier")
-class SequenceClassifier(AbstractClassifier):
+class SequenceClassifier(Model):
     """
     This ``SequenceClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
@@ -50,9 +50,10 @@ class SequenceClassifier(AbstractClassifier):
         decoder: FeedForward,
         encoder: Seq2VecEncoder = None,
         pre_encoder: FeedForward = None,
-        initializer: InitializerApplicator = InitializerApplicator(),
+        initializer: InitializerApplicator = None,
         regularizer: RegularizerApplicator = None,
         accuracy: Metric = None,
+        **kwargs
     ) -> None:
         super(SequenceClassifier, self).__init__(vocab, regularizer)
 
@@ -61,10 +62,12 @@ class SequenceClassifier(AbstractClassifier):
         self.pre_encoder = pre_encoder
         self.encoder = encoder
         self.decoder = decoder
+        self.initializer = initializer or InitializerApplicator()
+        self._accuracy = accuracy or CategoricalAccuracy()
+
         self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
 
         self.__check_configuration()
-        self._accuracy = accuracy or CategoricalAccuracy()
         self.metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
@@ -73,7 +76,7 @@ class SequenceClassifier(AbstractClassifier):
         }
         self._loss = torch.nn.CrossEntropyLoss()
 
-        initializer(self)
+        self.initializer(self)
 
     @overrides
     def forward(
@@ -153,3 +156,72 @@ class SequenceClassifier(AbstractClassifier):
         else:
             # TODO: Add more checks
             pass
+
+    @overrides
+    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """
+        Does a simple position-wise argmax over each token, converts indices to string labels, and
+        adds a ``"tags"`` key to the dictionary with the result.
+        """
+        all_predictions = output_dict['class_probabilities']
+        if not isinstance(all_predictions, numpy.ndarray):
+            all_predictions = all_predictions.data.numpy()
+
+        output_map_probs = []
+        max_classes = []
+        max_classes_prob = []
+        for i, probs in enumerate(all_predictions):
+            argmax_i = numpy.argmax(probs)
+            label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
+            label_prob = .0
+
+            output_map_probs.append({})
+            for j, prob in enumerate(probs):
+                label_key = self.vocab.get_token_from_index(j, namespace="labels")
+                output_map_probs[i][label_key] = prob
+                if label_key == label:
+                    label_prob = prob
+
+            max_classes.append(label)
+            max_classes_prob.append(label_prob)
+
+        return {
+            'logits': output_dict.get('logits'),
+            'classes': output_map_probs,
+            'max_class': max_classes,
+            'max_class_prob': max_classes_prob
+        }
+
+    @overrides
+    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
+        all_metrics = {}
+
+        total_f1 = 0.0
+        total_precision = 0.0
+        total_recall = 0.0
+        for metric_name, metric in self.metrics.items():
+            precision, recall, f1 = metric.get_metric(reset)  # pylint: disable=invalid-name
+            total_f1 += f1
+            total_precision += precision
+            total_recall += recall
+            all_metrics[metric_name + "/f1"] = f1
+            all_metrics[metric_name + "/precision"] = precision
+            all_metrics[metric_name + "/recall"] = recall
+
+        num_metrics = len(self.metrics)
+        all_metrics["average/f1"] = total_f1 / num_metrics
+        all_metrics["average/precision"] = total_precision / num_metrics
+        all_metrics["average/recall"] = total_recall / num_metrics
+        all_metrics['accuracy'] = self._accuracy.get_metric(reset)
+
+        return all_metrics
+
+    def get_class_probabilities(self, logits):
+        return F.softmax(logits, dim=self._get_sofmax_dim(logits.dim()))
+
+    def _get_sofmax_dim(self, ndim: int) -> int:
+        # From F.softmax package
+        if ndim in [0, 1, 3]:
+            return 0
+        else:
+            return 1
