@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 import torch
 
@@ -42,6 +42,7 @@ class SequenceClassifier(AbstractClassifier):
         Used to initialize the model parameters.
     regularizer : ``RegularizerApplicator``, optional (default = None)
     """
+
     def __init__(self, vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
                  decoder: FeedForward,
@@ -50,6 +51,7 @@ class SequenceClassifier(AbstractClassifier):
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: RegularizerApplicator = None,
                  accuracy: Metric = None,
+                 model_location: Optional[str] = None,  # Backward compatibility --> TODO: remove
                  ) -> None:
         super(SequenceClassifier, self).__init__(vocab, regularizer)
 
@@ -109,7 +111,7 @@ class SequenceClassifier(AbstractClassifier):
         if self.encoder:
             encoded_text = self.encoder(embedded_text_input, mask)
         else:
-            encoded_text = embedded_text_input[:, 0] # Bert
+            encoded_text = embedded_text_input[:, 0]  # Bert
 
         decoded_text = self.decoder(encoded_text)
 
@@ -134,9 +136,9 @@ class SequenceClassifier(AbstractClassifier):
                 encoder = self.pre_encoder
             if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
                 raise ConfigurationError("The output dimension of the text_field_embedder must match the "
-                                     "input dimension of the sequence encoder. Found {} and {}, "
-                                     "respectively.".format(self.text_field_embedder.get_output_dim(),
-                                                            encoder.get_input_dim()))
+                                         "input dimension of the sequence encoder. Found {} and {}, "
+                                         "respectively.".format(self.text_field_embedder.get_output_dim(),
+                                                                encoder.get_input_dim()))
         else:
             # TODO: Add more checks
             pass
