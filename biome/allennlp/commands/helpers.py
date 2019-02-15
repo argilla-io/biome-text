@@ -1,9 +1,9 @@
+import logging
 import os
+from typing import Optional, Dict, Any
 
 import yaml
-from allennlp.common.checks import ConfigurationError
 from allennlp.models.archival import load_archive
-from typing import Optional, Dict, Any
 
 from biome.data.utils import read_definition_from_model_spec
 
@@ -17,7 +17,6 @@ EVALUATE_ON_TEST_FIELD = 'evaluate_on_test'
 
 
 def biome2allennlp_params(model_spec: Optional[str] = None,
-                          model_binary: Optional[str] = None,
                           trainer_path: Optional[str] = None,
                           vocab_path: Optional[str] = None,
                           train_cfg: str = '',
@@ -29,12 +28,9 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
         with open(from_path) as trainer_file:
             return yaml.load(trainer_file)
 
-    if not model_binary and not model_spec:
-        raise ConfigurationError('Missing parameter --spec/--binary')
-
-    cfg_params = __load_from_archive(model_binary) \
-        if model_binary \
-        else read_definition_from_model_spec(model_spec) if model_spec else dict()
+    cfg_params = read_definition_from_model_spec(model_spec) \
+        if model_spec \
+        else dict()
 
     trainer_cfg = load_yaml_config(trainer_path)
     cuda_dive = trainer_cfg[TRAINER_FIELD].get(CUDA_DEVICE_FIELD, int(os.getenv(CUDA_DEVICE_FIELD.upper(), -1)))
@@ -53,16 +49,9 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
         if cfg and not cfg.isspace():
             allennlp_configuration.update({field: cfg})
 
-    allennlp_configuration[MODEL_FIELD] = __merge_model_params(model_binary, allennlp_configuration.get(MODEL_FIELD))
     return allennlp_configuration
 
 
 def __load_from_archive(model_binary: str) -> Dict[str, Any]:
     archive = load_archive(model_binary)
     return archive.config.as_dict()
-
-
-def __merge_model_params(model_location: Optional[str], model_params: Dict[str, Any]) -> Dict:
-    return {**model_params, **dict(model_location=model_location)} \
-        if model_location \
-        else model_params
