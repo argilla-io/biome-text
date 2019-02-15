@@ -97,24 +97,12 @@ class AbstractClassifier(Model):
 
         return all_metrics
 
-    @classmethod
-    def try_from_location(cls, params: Params) -> 'AbstractClassifier':
-        model_location = params.get('model_location', None)
-        if model_location:
-            try:
-                archive = load_archive(archive_file=model_location)
-                _logger.warning("Loaded model from location %s", model_location)
-                return archive.model
-            except:
-                _logger.warning("Cannot load model from location %s", model_location)
-                return None
-
     def get_class_probabilities(self, logits):
         return F.softmax(logits, dim=self._get_sofmax_dim(logits.dim()))
 
     def _get_sofmax_dim(self, ndim: int) -> int:
         # From F.softmax package
-        if ndim == 0 or ndim == 1 or ndim == 3:
+        if ndim in [0, 1, 3]:
             return 0
         else:
             return 1
