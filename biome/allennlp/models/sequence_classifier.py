@@ -1,7 +1,8 @@
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 import torch
+import numpy as np
 
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
@@ -26,20 +27,22 @@ class SequenceClassifier(Model):
 
     Parameters
     ----------
-    vocab : ``Vocabulary``
-        A Vocabulary, required in order to compute sizes for input/output projections.
-    text_field_embedder : ``TextFieldEmbedder``
-        Used to embed the ``tokens`` ``TextField`` we get as input to the model.
-    decoder : ``Feedforward``
+    vocab
+        A Vocabulary, required in order to compute sizes for input/output projections
+        and passed on to the :class:`~allennlp.models.model.Model` class.
+    text_field_embedder
+        Used to embed the tokens we get as input to the model.
+    decoder
         The decoder that will decode the final answer of the model
-    pre_encoder : ``allennlp.modules.FeedForward``, optional (default = None)
+    pre_encoder
         Feedforward layer to be applied to embedded tokens.
-    encoder : ``Seq2VecEncoder``, optional (default = None)
+    encoder
         The encoder  that we will use in between embedding tokens
         and predicting output tags.
-    initializer : ``InitializerApplicator``, optional (default = ``InitializerApplicator()``)
+    initializer
         Used to initialize the model parameters.
-    regularizer : ``RegularizerApplicator``, optional (default = None)
+    regularizer
+        Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
     """
 
     def __init__(
@@ -47,13 +50,15 @@ class SequenceClassifier(Model):
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
         decoder: FeedForward,
-        encoder: Seq2VecEncoder = None,
-        pre_encoder: FeedForward = None,
-        initializer: InitializerApplicator = None,
-        regularizer: RegularizerApplicator = None,
-        accuracy: Metric = None,
+        encoder: Optional[Seq2VecEncoder] = None,
+        pre_encoder: Optional[FeedForward] = None,
+        initializer: Optional[InitializerApplicator] = None,
+        regularizer: Optional[RegularizerApplicator] = None,
+        accuracy: Optional[Metric] = None,
     ) -> None:
-        super().__init__(vocab, regularizer)  # Passing on kwargs does not work because of the 'from_params' machinery
+        super().__init__(
+            vocab, regularizer
+        )  # Passing on kwargs does not work because of the 'from_params' machinery
 
         self.text_field_embedder = text_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
@@ -86,7 +91,7 @@ class SequenceClassifier(Model):
         """
         Parameters
         ----------
-        tokens : Dict[str, torch.LongTensor], required
+        tokens
             The output of ``TextField.as_array()``, which should typically be passed directly to a
             ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
             tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
@@ -95,22 +100,21 @@ class SequenceClassifier(Model):
             sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
             which knows how to combine different word representations into a single vector per
             token in your input.
-        gold_label : torch.LongTensor, optional (default = None)
+        gold_label
             A torch tensor representing the sequence of integer gold class label of shape
             ``(batch_size, num_classes)``.
 
         Returns
         -------
         An output dictionary consisting of:
-        logits : torch.FloatTensor
-            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
-            unnormalised log probabilities of the tag classes.
-        class_probabilities : torch.FloatTensor
-            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
-            a distribution of the tag classes per word.
-        loss : torch.FloatTensor, optional
+        logits : :class:`~torch.Tensor`
+            A tensor of shape ``(batch_size, num_classes)`` representing
+            the logits of the classifier model.
+        class_probabilities : :class:`~torch.Tensor`
+            A tensor of shape ``(batch_size, num_classes)`` representing
+            the softmax probabilities of the classes.
+        loss : :class:`~torch.Tensor`, optional
             A scalar loss to be optimised.
-
         """
         embedded_text_input = self.text_field_embedder(tokens)
         mask = get_text_field_mask(tokens)
@@ -125,7 +129,7 @@ class SequenceClassifier(Model):
 
         logits = self.output_layer(decoded_text)
 
-        class_probabilities = self.get_class_probabilities(logits)
+        class_probabilities = softmax(logits, dim=1)
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
 
         if gold_label is not None:
@@ -144,14 +148,14 @@ class SequenceClassifier(Model):
         adds a ``"tags"`` key to the dictionary with the result.
         """
         all_predictions = output_dict["class_probabilities"]
-        if not isinstance(all_predictions, numpy.ndarray):
+        if not isinstance(all_predictions, np.ndarray):
             all_predictions = all_predictions.data.numpy()
 
         output_map_probs = []
         max_classes = []
         max_classes_prob = []
         for i, probs in enumerate(all_predictions):
-            argmax_i = numpy.argmax(probs)
+            argmax_i = np.argmax(probs)
             label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
             label_prob = 0.0
 
@@ -174,17 +178,16 @@ class SequenceClassifier(Model):
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        """Get the metrics of our classifier, see :method:`~allennlp.models.Model.get_metrics`.
+        """Get the metrics of our classifier, see :func:`~allennlp.models.Model.get_metrics`.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         reset
             Reset the metrics after obtaining them?
 
         Returns
         -------
-        all_metrics
-            A dictionary with metric name and value.
+        A dictionary with all metric names and values.
         """
         all_metrics = {}
 
@@ -209,28 +212,6 @@ class SequenceClassifier(Model):
         all_metrics["accuracy"] = self._accuracy.get_metric(reset)
 
         return all_metrics
-
-    def get_class_probabilities(self, logits : torch.Tensor) -> torch.Tensor:
-        """Get class probabilities by applying a softmax function.
-
-        Parameter
-        ---------
-        logits
-            The logits of our classification model
-
-        Returns
-        -------
-        probabilities
-            The logits are transformed to probabilities by applying a softmax
-        """
-        logits_dim = logits.dim()
-        # TODO: Describe what we are doing in the following ...
-        # From torch.nn.functional.softmax package
-        if logits_dim in [0, 1, 3]:
-            dim = 0
-        else:
-            dim = 1
-        return softmax(logits, dim=dim)
 
     def __check_configuration(self):
         """Some basic checks of the architecture."""
