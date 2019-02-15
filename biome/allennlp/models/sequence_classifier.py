@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 import torch
 
@@ -52,9 +52,8 @@ class SequenceClassifier(Model):
         initializer: InitializerApplicator = None,
         regularizer: RegularizerApplicator = None,
         accuracy: Metric = None,
-        **kwargs
     ) -> None:
-        super(SequenceClassifier, self).__init__(vocab, regularizer)
+        super().__init__(vocab, regularizer)  # Passing on kwargs does not work because of the 'from_params' machinery
 
         self.text_field_embedder = text_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
