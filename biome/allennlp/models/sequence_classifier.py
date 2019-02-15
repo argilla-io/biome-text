@@ -43,16 +43,17 @@ class SequenceClassifier(AbstractClassifier):
     regularizer : ``RegularizerApplicator``, optional (default = None)
     """
 
-    def __init__(self, vocab: Vocabulary,
-                 text_field_embedder: TextFieldEmbedder,
-                 decoder: FeedForward,
-                 encoder: Seq2VecEncoder = None,
-                 pre_encoder: FeedForward = None,
-                 initializer: InitializerApplicator = InitializerApplicator(),
-                 regularizer: RegularizerApplicator = None,
-                 accuracy: Metric = None,
-                 model_location: Optional[str] = None,  # Backward compatibility --> TODO: remove
-                 ) -> None:
+    def __init__(
+        self,
+        vocab: Vocabulary,
+        text_field_embedder: TextFieldEmbedder,
+        decoder: FeedForward,
+        encoder: Seq2VecEncoder = None,
+        pre_encoder: FeedForward = None,
+        initializer: InitializerApplicator = InitializerApplicator(),
+        regularizer: RegularizerApplicator = None,
+        accuracy: Metric = None,
+    ) -> None:
         super(SequenceClassifier, self).__init__(vocab, regularizer)
 
         self.text_field_embedder = text_field_embedder
@@ -64,16 +65,22 @@ class SequenceClassifier(AbstractClassifier):
 
         self.__check_configuration()
         self._accuracy = accuracy or CategoricalAccuracy()
-        self.metrics = {label: F1Measure(index)
-                        for index, label in self.vocab.get_index_to_token_vocabulary("labels").items()}
+        self.metrics = {
+            label: F1Measure(index)
+            for index, label in self.vocab.get_index_to_token_vocabulary(
+                "labels"
+            ).items()
+        }
         self._loss = torch.nn.CrossEntropyLoss()
 
         initializer(self)
 
     @overrides
-    def forward(self,  # type: ignore
-                tokens: Dict[str, torch.Tensor],
-                gold_label: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,  # type: ignore
+        tokens: Dict[str, torch.Tensor],
+        gold_label: torch.Tensor = None,
+    ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
         Parameters
@@ -135,10 +142,14 @@ class SequenceClassifier(AbstractClassifier):
             if self.pre_encoder:
                 encoder = self.pre_encoder
             if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
-                raise ConfigurationError("The output dimension of the text_field_embedder must match the "
-                                         "input dimension of the sequence encoder. Found {} and {}, "
-                                         "respectively.".format(self.text_field_embedder.get_output_dim(),
-                                                                encoder.get_input_dim()))
+                raise ConfigurationError(
+                    "The output dimension of the text_field_embedder must match the "
+                    "input dimension of the sequence encoder. Found {} and {}, "
+                    "respectively.".format(
+                        self.text_field_embedder.get_output_dim(),
+                        encoder.get_input_dim(),
+                    )
+                )
         else:
             # TODO: Add more checks
             pass
