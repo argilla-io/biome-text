@@ -8,7 +8,6 @@ from allennlp.commands import Subcommand
 from gevent.pywsgi import WSGIServer
 from typing import List, Dict
 
-from biome.helpers import create_es_runner
 from .app import make_app
 
 __logger = logging.getLogger(__name__)
@@ -47,8 +46,7 @@ def select_index(es_host: str, index_prefix: str = 'prediction') -> str:
 
 
 def _explore(_: argparse.Namespace) -> None:
-    es_runner = create_es_runner()
-    es_host = 'http://localhost:{}'.format(es_runner.es_state.port)
+    es_host = 'http://localhost:9200'
 
     flask_app = make_app(
         es_endpoint='{}/{}'.format(es_host, select_index(es_host)),

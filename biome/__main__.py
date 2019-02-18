@@ -10,7 +10,6 @@ from biome.allennlp.commands.explore.explore import BiomeExplore
 from biome.allennlp.commands.learn import BiomeLearn
 from biome.allennlp.commands.predict.predict import BiomePredict
 from biome.allennlp.commands.serve import BiomeRestAPI
-from biome.allennlp.commands.stop.stop import BiomeStop
 from biome.allennlp.commands.vocab.vocab import BiomeVocab
 
 command_name = 'biome'
@@ -74,9 +73,7 @@ if __name__ == '__main__':
     configure_colored_logging(loglevel=logging.INFO)
     main(command_name,
          subcommand_overrides=dict(
-             # start=BiomeStart()
-             stop=BiomeStop()
-             , predict=BiomePredict()
+             predict=BiomePredict()
              , explore=BiomeExplore()
              , serve=BiomeRestAPI()
              , learn=BiomeLearn()
