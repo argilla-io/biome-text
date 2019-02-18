@@ -1,1 +1,0 @@
--e git+https://github.com/recognai/python-elasticsearch-runner.git#egg=elasticsearch-runner
