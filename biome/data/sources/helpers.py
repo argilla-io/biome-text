@@ -1,17 +1,11 @@
 import logging
 import os
-from copy import deepcopy
-
-from allennlp.common.file_utils import cached_path
-from dask.bag import Bag
 from typing import Dict, Optional
 
-from biome.allennlp.data.transformations import biome_datasource_spec_to_dataset_config
-from biome.data.helpers import is_elasticsearch_configuration
-from biome.data.sources import JSON_FORMAT
+from biome.data.sources import file
 from biome.data.sources.elasticsearch import from_elasticsearch
-from biome.data.sources.example_preparator import ExamplePreparator, RESERVED_FIELD_PREFIX
-from biome.data.sources.file import from_json, from_csv
+from biome.data.sources.example_preparator import ExamplePreparator
+from dask.bag import Bag
 
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -24,46 +18,48 @@ def __transform_example(data: Dict, example_preparator: ExamplePreparator) -> Op
         return None
 
 
-def is_reserved_field(field: str) -> bool:
-    return field and str(field).startswith(RESERVED_FIELD_PREFIX)
-
-
-def read_dataset(cfg: Dict, include_source: bool = False) -> Bag:
-    try:
-        config = biome_datasource_spec_to_dataset_config(deepcopy(cfg))
-    except Exception as e:
-        __logger.warning(e)
-        config = cfg
-
-    example_preparator = ExamplePreparator(config.pop('transformations', {}), include_source)
+def read_dataset(config: Dict, include_source: bool = False) -> Bag:
+    example_preparator = ExamplePreparator(config.pop('forward', {}), include_source)
 
     return __build_dataset(config) \
         .map(__transform_example, example_preparator) \
-        .filter(lambda example: example is not None) \
-        .filter(lambda example: example['tokens'] is not None) \
-        .persist()
-    # TODO: The second filter (example['tokens'] is not None) is a chapuza!!
-    #  We have to think about a more general solution once we have more model types
-    #  and get rid of the forward in the model yml!
+        .filter(lambda example: example is not None)
+
+
+def format_from_params(path: str, params) -> Optional[str]:
+    format_field_name = 'format'
+
+    if path and format_field_name not in params:
+        _, extension = os.path.splitext(path)
+        params[format_field_name] = extension[1:]
+
+    return params.pop(format_field_name).lower() if params.get(format_field_name) else None
+
 
 def __build_dataset(config: Dict) -> Bag:
     params = {k: v for k, v in config.items()}  # Preserve original config (multiple reads)
 
-    if is_elasticsearch_configuration(params):
-        return from_elasticsearch(**params)
+    supported_formats = {
+        'xls': (file.from_excel, dict(na_filter=False, keep_default_na=False, dtype=str)),
+        'xlsx': (file.from_excel, dict(na_filter=False, keep_default_na=False, dtype=str)),
+        'csv': (file.from_csv, dict(assume_missing=False, na_filter=False, dtype=str)),
+        'json': (file.from_json, dict()),
+        'jsonl': (file.from_json, dict()),
+        'json-l': (file.from_json, dict()),
+        'raw': (file.from_documents, dict(recursive=True)),
+        'document': (file.from_documents, dict(recursive=True)),
+        'pdf': (file.from_documents, dict(recursive=True)),
+        'elasticsearch': (from_elasticsearch, dict()),
+        'elastic': (from_elasticsearch, dict()),
+        'es': (from_elasticsearch, dict())
+    }
 
-    path: str = params.pop('path')
-    path = path if path.endswith('*') else cached_path(path)
-    if not 'format' in params:
-        _, extension = os.path.splitext(path)
-        params['format'] = extension[1:]
+    format = format_from_params(params.get('path'), params)
 
-    format: str = params.pop('format', JSON_FORMAT)
-    if __is_json(format):
-        return from_json(path, **params)
+    if format in supported_formats:
+        dataset_reader, extra_arguments = supported_formats[format]
+        return dataset_reader(**{**params, **extra_arguments})
     else:
-        return from_csv(path, **params, assume_missing=True)
-
-
-def __is_json(format: str) -> bool:
-    return JSON_FORMAT in format
+        raise Exception(
+            'Format {} not supported. Supported formats are: {}'.format(format, ' '.join(supported_formats))
+        )

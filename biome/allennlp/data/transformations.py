@@ -26,7 +26,7 @@ def biome_datasource_spec_to_dataset_config(dataset_config: Dict) -> Dict:
             path=__extrat_ds_path(params),
             format=format.type,
             encoding=format.charset,
-            transformations=model_connect,
+            forward=model_connect,
             **format_params  # allow pass through format params to dataset reader
         )
         return config

@@ -6,8 +6,8 @@ from typing import Dict, Optional
 
 import dask
 import dask.distributed
-from dask import delayed
 from dask import bag
+from dask import delayed
 from dask.bag import Bag
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
@@ -52,12 +52,12 @@ def from_elasticsearch(query: Optional[Dict] = None, npartitions: int = 8, clien
 
     Get all documents in elasticsearch.
 
-    >>> docs = dask.bag.from_delayed(from_elasticsearch())
+    >>> docs = from_elasticsearch()
 
     Get documents matching a given query.
 
     >>> query = {"query": {"match_all": {}}}
-    >>> docs = dask.bag.from_delayed(from_elasticsearch(query, index="myindex", doc_type="stuff"))
+    >>> docs = from_elasticsearch(query, index="myindex", doc_type="stuff")
 
     """
 

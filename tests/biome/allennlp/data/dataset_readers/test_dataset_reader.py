@@ -1,7 +1,6 @@
 import os
 import unittest
 
-
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
@@ -22,16 +21,6 @@ CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/defini
 reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
 
 
-def csv_data(path: str, sep: str = ';', transformations: Dict = {}, **params):
-    return {
-        'path': path,
-        'sep': sep,
-        'format': 'csv',
-        'transformations': transformations,
-        **params,
-    }
-
-
 class DatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name('classification_dataset_reader')
@@ -44,14 +33,13 @@ class DatasetReaderTest(DaskSupportTest):
 
         dataset = reader.read(
             create_temp_configuration(
-                csv_data(CSV_PATH, sep=',', transformations={
-                    "tokens": [
-                        "age"
-                    ],
-                    "target": {
-                        "gold_label": "job"
-                    }
-                })))
+                dict(
+                    path=CSV_PATH,
+                    sep=',',
+                    forward=dict(tokens=['age'], target=dict(gold_label='job'))
+                )
+            )
+        )
 
         self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
@@ -63,11 +51,11 @@ class DatasetReaderTest(DaskSupportTest):
 
         dataset = reader.read(
             create_temp_configuration(
-                csv_data(
-                    NO_HEADER_CSV_PATH,
+                dict(
+                    path=NO_HEADER_CSV_PATH,
                     sep=',',
                     header=None,
-                    transformations=dict(tokens=['0'], target=dict(gold_label='1'))
+                    forward=dict(tokens=['0'], target=dict(gold_label='1'))
                 )
             )
         )
@@ -84,20 +72,16 @@ class DatasetReaderTest(DaskSupportTest):
                            'single', '30', 'management', 'divorced', '39', 'divorced', '.']
 
         dataset = reader.read(create_temp_configuration(
-            csv_data(CSV_PATH, sep=',', transformations={
-                "tokens": [
-                    "age",
-                    "job",
-                    "marital"
-                ],
-                "target": {
-                    "gold_label": "housing",
-                    "values_mapping": {
-                        "yes": "OF_COURSE",
-                        "no": "NOT_AT_ALL"
-                    }
-                }
-            })))
+            dict(path=CSV_PATH,
+                 sep=',',
+                 forward=dict(
+                     tokens=['age', 'job', 'marital'],
+                     target=dict(
+                         gold_label='housing',
+                         values_mapping=dict(yes='OF_COURSE', no='NOT_AT_ALL')
+                     )
+                 ))
+        ))
 
         self._check_dataset(dataset, expected_length, expected_inputs, ['NOT_AT_ALL', 'OF_COURSE'])
 
@@ -106,15 +90,8 @@ class DatasetReaderTest(DaskSupportTest):
         expected_inputs = ['1', '2', '3']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
         dataset = reader.read(create_temp_configuration(
-            csv_data(local_data_path, transformations={
-                "tokens": [
-                    "dataset id"
-                ],
-                "target": {
-                    "gold_label": "dataset id"
-                }
-            }
-                     )
+            dict(path=local_data_path, sep=';',
+                 forward=dict(tokens=['dataset id'], target=dict(gold_label='dataset id')))
         ))
 
         self._check_dataset(dataset, expected_length, expected_inputs, ['1', '2', '3'])
@@ -125,7 +102,7 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['11205 - Nurses: Private, Ho', 'person']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_2.csv')
         dataset = reader.read(create_temp_configuration(
-            csv_data(local_data_path, transformations={
+            dict(path=local_data_path, sep=';', forward={
                 "tokens": [
                     "name"
                 ],
@@ -133,7 +110,7 @@ class DatasetReaderTest(DaskSupportTest):
                     "gold_label": "category of institution"
                 }
             }
-                     )))
+                 )))
         self._check_dataset(dataset, expectedDatasetLength, expected_inputs, expected_labels)
 
     def test_reader_csv_with_missing_label_and_partial_mappings(self):
@@ -153,7 +130,7 @@ class DatasetReaderTest(DaskSupportTest):
         # 'None' is a custom partial mapping for missing labels
         expected_labels = ['11205 - Nurses: Private, Ho', 'person', 'NOLABEL']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
-        dataset = reader.read(create_temp_configuration(csv_data(local_data_path, transformations={
+        dataset = reader.read(create_temp_configuration(dict(path=local_data_path, sep=';', forward={
             "tokens": [
                 "name"
             ],
@@ -174,7 +151,7 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['None ', 'None', 'None', 'Assembly Rooms Edinburgh', 'Fortress Technology (europe) Ltd',
                            'None', 'None', 'Scott David', '  ', 'None', 'Corby Borough Council']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/uk_customer_data_10.csv')
-        dataset = reader.read(create_temp_configuration(csv_data(local_data_path, transformations={
+        dataset = reader.read(create_temp_configuration(dict(path=local_data_path, sep=';', forward={
             "tokens": [
                 "name"
             ],
@@ -206,7 +183,7 @@ class DatasetReaderTest(DaskSupportTest):
     def test_read_json(self):
         dataset = reader.read(create_temp_configuration({
             'path': JSON_PATH,
-            'transformations': {
+            'forward': {
                 "tokens": [
                     "reviewText"
                 ],

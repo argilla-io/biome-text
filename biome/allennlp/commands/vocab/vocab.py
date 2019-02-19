@@ -21,11 +21,10 @@ which to write the results.
 import argparse
 import logging
 from copy import deepcopy
+from typing import Optional, Callable
 
-from allennlp.commands.dry_run import dry_run_from_params
 from allennlp.commands.make_vocab import make_vocab_from_params
 from allennlp.common.params import Params
-from typing import Optional, Callable
 
 from biome.allennlp.commands.helpers import biome2allennlp_params
 from biome.allennlp.commands.learn import BiomeLearn

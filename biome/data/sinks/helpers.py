@@ -1,3 +1,4 @@
+import json
 import logging
 
 from dask.bag import Bag
@@ -20,4 +21,4 @@ def store_dataset(dataset: Bag, store_config: Dict):
     if is_elasticsearch_configuration(store_config):
         return es_sink(dataset, **store_config)
     else:
-        return file_sink(dataset, store_config)
+        return file_sink(dataset.map(json.dumps), store_config)

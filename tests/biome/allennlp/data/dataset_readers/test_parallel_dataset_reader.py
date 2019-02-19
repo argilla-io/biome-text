@@ -32,7 +32,7 @@ class ParallelDatasetReaderTest(DaskSupportTest):
         dataset = reader.read(create_temp_configuration({
             "path": CSV_PATH,
             "format": "csv",
-            "transformations": {
+            "forward": {
                 "tokens": [
                     "age"
                 ],
@@ -47,7 +47,7 @@ class ParallelDatasetReaderTest(DaskSupportTest):
     def test_read_json(self):
         dataset = reader.read(create_temp_configuration({
             'path': JSON_PATH,
-            'transformations': {
+            'forward': {
                 "tokens": [
                     "reviewText"
                 ],

@@ -1,9 +1,8 @@
 import logging
 from typing import Dict, Optional
 
-import torch
 import numpy as np
-
+import torch
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
@@ -12,9 +11,8 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure, Metric
 from overrides import overrides
-
-from torch.nn.modules.linear import Linear
 from torch.nn.functional import softmax
+from torch.nn.modules.linear import Linear
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +53,7 @@ class SequenceClassifier(Model):
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
         accuracy: Optional[Metric] = None,
+        model_location:Optional[str] = None
     ) -> None:
         super().__init__(
             vocab, regularizer

@@ -3,10 +3,10 @@ import logging
 import os
 import tarfile
 from tempfile import mkdtemp
+from typing import List, Dict
 
 from allennlp.commands import Subcommand
 from gevent.pywsgi import WSGIServer
-from typing import List, Dict
 
 from .app import make_app
 

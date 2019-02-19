@@ -1,5 +1,5 @@
 from allennlp.data import DatasetReader
-from allennlp.models import Archive, Model
+from allennlp.models import Archive
 from allennlp.predictors import Predictor
 
 from biome.allennlp.predictors import DefaultBasePredictor

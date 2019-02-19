@@ -2,7 +2,6 @@ import logging
 from typing import Dict, Optional
 
 import torch
-import torch.nn.functional as F
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
 from allennlp.modules import Seq2VecEncoder

@@ -1,12 +1,16 @@
-from numpy import number
 from typing import Dict, Optional, Any, List
+
+import pandas as pd
+from biome.data.utils import get_nested_property_from_data
+
+from numpy import number
 
 GOLD_LABEL_DEFINITION_FIELD = 'target'
 VALUE_MAPPING_FIELD = "values_mapping"
 USE_MISSING_LABEL_FIELD = "use_missing_label"
 
 RESERVED_FIELD_PREFIX = '@'
-SOURCE_FIELD = 'source'
+SOURCE_FIELD = '{}source'.format(RESERVED_FIELD_PREFIX)
 
 
 class TransformationConfig(object):
@@ -23,10 +27,9 @@ class TransformationConfig(object):
 
     @staticmethod
     def __mapping_from_metadata(path: str) -> Dict[str, str]:
-        with open(path) as metadata_file:
-            classes = [line.rstrip('\n').rstrip() for line in metadata_file]
+        classes = pd.read_csv(path, header=None).values
 
-        mapping = {idx + 1: cls for idx, cls in enumerate(classes)}
+        mapping = {idx + 1: values[0] for idx, values in enumerate(classes)}
         # mapping variant with integer numbers
         mapping = {**mapping, **{str(key): value for key, value in mapping.items()}}
 
@@ -81,16 +84,16 @@ class ExamplePreparator(object):
             else label
 
     def __apply_transformation(self, example: Dict, transformation: TransformationConfig) -> str:
-        input_values = [self.__with_mapping(example.get(input),
+        input_values = [self.__with_mapping(get_nested_property_from_data(example, input),
                                             mapping=transformation.value_mappings,
                                             use_missing_label=transformation.use_missing_label)
                         for input in transformation.fields]
 
         input = " ".join([value for value in input_values if value]).strip()
-
         return input if len(input) > 0 else None
 
-    def read_info(self, source: Dict) -> Dict:
+    def read_info(self, source: Any) -> Dict:
+
         example = {
             field_name: self.__apply_transformation(source, transformation_config)
             for field_name, transformation_config in self._input_transformations.items()
@@ -101,5 +104,5 @@ class ExamplePreparator(object):
 
         return example if not self._include_source else {
             **example,
-            f'{RESERVED_FIELD_PREFIX}{SOURCE_FIELD}': source
+            SOURCE_FIELD: source
         }

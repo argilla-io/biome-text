@@ -5,57 +5,15 @@ from allennlp.data.fields import TextField, LabelField
 from allennlp.data.tokenizers import WordTokenizer
 from overrides import overrides
 
+from biome.allennlp.commands.helpers import read_datasource_configuration
 from biome.allennlp.data.tokenizer.word_splitter import SpacyWordSplitter
-from biome.data.sources.helpers import logging, is_reserved_field, read_dataset
-from biome.data.utils import read_datasource_cfg
+from biome.data.sources import RESERVED_FIELD_PREFIX
+from biome.data.sources.helpers import logging, read_dataset
 
 __name__ = "classification_dataset_reader"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 DEFAULT_GOLD_LABEL_ID = 'gold_label'
-
-
-def _text_to_instance(example: Dict,
-                      forward_definition: Dict[str, Any],
-                      gold_label_id: str,
-                      token_indexers: Dict[str, TokenIndexer],
-                      tokenizer: Tokenizer) -> Instance:
-
-    def instance_by_forward_definition() -> Instance:
-
-        def field_from_type(field_type: str, field_value: Any) -> Field:
-            if field_type == 'LabelField':
-                return LabelField(field_value)
-            elif field_type == 'TextField':
-                return TextField(tokenizer.tokenize(field_value), token_indexers)
-            else:
-                raise TypeError(f"{field_type} is not supported yet.")
-
-        fields = {
-            field: field_from_type(field_type, example[field])
-            for field, field_type in forward_definition.items()
-            if example.get(field) is not None
-        }
-
-        return Instance(fields)
-
-    def instance_by_target_definition() -> Instance:
-        logger.warning("Call to the deprecated method instance_by_target_definition(). "
-                       "Use forward definition in config file instead of target.")
-        fields: Dict[str, Field] = {}
-
-        for field, value in example.items():
-            if not is_reserved_field(field):
-                tensor = LabelField(value) \
-                    if field == gold_label_id \
-                    else TextField(tokenizer.tokenize(value), token_indexers)
-                fields[field] = tensor
-
-        return Instance(fields)
-
-    return instance_by_forward_definition() \
-        if forward_definition \
-        else instance_by_target_definition()
 
 
 @DatasetReader.register(__name__)
@@ -70,6 +28,7 @@ class ClassificationDatasetReader(DatasetReader):
         By default we use a WordTokenizer with the SpacyWordSplitter
     token_indexers
     """
+
     def __init__(self,
                  forward: Dict[str, Any] = None,
                  target: str = DEFAULT_GOLD_LABEL_ID,
@@ -101,16 +60,15 @@ class ClassificationDatasetReader(DatasetReader):
         token_indexers = self.__token_indexers
         forward_definition = self.__forward_definition
 
-        return _text_to_instance(example, forward_definition, gold_label_id, token_indexers, tokenizer)
+        return self.__text_to_instance(example, forward_definition, gold_label_id, token_indexers, tokenizer)
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        cfg = read_datasource_cfg(file_path)
-
-        ds_key = id(cfg)
+        config = read_datasource_configuration(file_path)
+        ds_key = id(config)
         if not self.__cached_datasets.get(ds_key):
             logger.debug('Read dataset from {}'.format(file_path))
-            self.__cached_datasets[ds_key] = read_dataset(cfg)
+            self.__cached_datasets[ds_key] = read_dataset(config).persist()
 
         dataset = self.__cached_datasets[ds_key]
         logger.debug('Loaded from cache dataset {}'.format(file_path))
@@ -122,3 +80,48 @@ class ClassificationDatasetReader(DatasetReader):
                     yield instance
 
         return instance_generator()
+
+    @staticmethod
+    def __text_to_instance(example: Dict,
+                           forward_definition: Dict[str, Any],
+                           gold_label_id: str,
+                           token_indexers: Dict[str, TokenIndexer],
+                           tokenizer: Tokenizer) -> Instance:
+        def is_reserved_field(field_name: str) -> bool:
+            return field_name and field_name.startswith(RESERVED_FIELD_PREFIX)
+
+        def instance_by_forward_definition() -> Instance:
+
+            def field_from_type(field_type: str, field_value: Any) -> Field:
+                if field_type == 'LabelField':
+                    return LabelField(field_value)
+                elif field_type == 'TextField':
+                    return TextField(tokenizer.tokenize(field_value), token_indexers)
+                else:
+                    raise TypeError(f"{field_type} is not supported yet.")
+
+            fields = {
+                field: field_from_type(field_type, example[field])
+                for field, field_type in forward_definition.items()
+                if example.get(field) is not None
+            }
+
+            return Instance(fields)
+
+        def instance_by_target_definition() -> Instance:
+            logger.warning("Call to the deprecated method instance_by_target_definition(). "
+                           "Use forward definition in config file instead of target.")
+            fields: Dict[str, Field] = {}
+
+            for field, value in example.items():
+                if not is_reserved_field(field):
+                    tensor = LabelField(value) \
+                        if field == gold_label_id \
+                        else TextField(tokenizer.tokenize(value), token_indexers)
+                    fields[field] = tensor
+
+            return Instance(fields)
+
+        return instance_by_forward_definition() \
+            if forward_definition \
+            else instance_by_target_definition()
