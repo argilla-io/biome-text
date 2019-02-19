@@ -86,7 +86,7 @@ def read_params_from_file(filepath: str) -> Dict[str, Any]:
         return yaml.load(stream, Loader)
 
 
-def configure_dask_cluster(n_workers: int, worker_memory: int = 3e9):
+def configure_dask_cluster(n_workers: int = 1, worker_memory: int = 3e9):
     def create_dask_client(dask_cluster: str, cache_size: Optional[int], workers: int) -> Client:
         if cache_size:
             cache = Cache(cache_size)
