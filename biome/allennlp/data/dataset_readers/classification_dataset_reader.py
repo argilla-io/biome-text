@@ -6,7 +6,6 @@ from allennlp.data.tokenizers import WordTokenizer
 from overrides import overrides
 
 from biome.allennlp.commands.helpers import read_datasource_configuration
-from biome.allennlp.data.tokenizer.word_splitter import SpacyWordSplitter
 from biome.data.sources import RESERVED_FIELD_PREFIX
 from biome.data.sources.helpers import logging, read_dataset
 
@@ -37,7 +36,7 @@ class ClassificationDatasetReader(DatasetReader):
 
         super(ClassificationDatasetReader, self).__init__(lazy=True)
 
-        self.__tokenizer = tokenizer or WordTokenizer(word_splitter=SpacyWordSplitter())
+        self.__tokenizer = tokenizer or WordTokenizer()
         self.__token_indexers = token_indexers
         self.__target_field = target
         self.__forward_definition = forward
