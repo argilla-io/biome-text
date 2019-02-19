@@ -25,7 +25,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     def test_reader_with_forward_definition(self):
         with open(DS_READER_DEFINITION) as yml_config:
             reader = ClassificationDatasetReader.from_params(params=Params(yaml.load(yml_config)))
-            read_config = dict(path=JSON_PATH, transformations=dict(input=['reviewText'], label='overall'))
+            read_config = dict(path=JSON_PATH, forward=dict(input=['reviewText'], label='overall'))
 
             dataset = reader.read(create_temp_configuration(read_config))
             for example in dataset:
@@ -42,8 +42,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     def test_reader_with_another_forward_definition(self):
         with open(MULTIPLE_INPUT_READER_DEFINITION) as yml_config:
             reader = ClassificationDatasetReader.from_params(params=Params(yaml.load(yml_config)))
-            read_config = dict(path=JSON_PATH,
-                               transformations=dict(r1=['reviewText'], r2=['reviewText'], gold='overall'))
+            read_config = dict(path=JSON_PATH, forward=dict(r1=['reviewText'], r2=['reviewText'], gold='overall'))
 
             dataset = reader.read(create_temp_configuration(read_config))
             for example in dataset:
@@ -63,7 +62,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     def test_reader_with_optional_params(self):
         with open(DS_READER_DEFINITION) as yml_config:
             reader = ClassificationDatasetReader.from_params(params=Params(yaml.load(yml_config)))
-            read_config = dict(path=NOLABEL_JSON_PATH, transformations=dict(input=['reviewText'], label='overall'))
+            read_config = dict(path=NOLABEL_JSON_PATH, forward=dict(input=['reviewText'], label='overall'))
 
             dataset = reader.read(create_temp_configuration(read_config))
             for example in dataset:

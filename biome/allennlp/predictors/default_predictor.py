@@ -1,10 +1,11 @@
+from typing import List
+
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance, DatasetReader
 from allennlp.models import Model
 from allennlp.predictors import Predictor
 from overrides import overrides
-from typing import List
 
 
 class DefaultBasePredictor(Predictor):

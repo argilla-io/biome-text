@@ -1,11 +1,10 @@
 import logging
-
-from allennlp.common import Params
-from allennlp.data import Token
-from overrides import overrides
-from allennlp.data.tokenizers.word_splitter import WordSplitter
-from allennlp.common.util import get_spacy_model
 from typing import List
+
+from allennlp.common.util import get_spacy_model
+from allennlp.data import Token
+from allennlp.data.tokenizers.word_splitter import WordSplitter
+from overrides import overrides
 
 _logger = logging.getLogger(__name__)
 

@@ -1,11 +1,12 @@
-import logging
 import os
+from copy import deepcopy
 from typing import Optional, Dict, Any
 
 import yaml
-from allennlp.models.archival import load_archive
 
-from biome.data.utils import read_definition_from_model_spec
+from biome.allennlp.data.transformations import biome_datasource_spec_to_dataset_config
+from biome.spec import ModelDefinition
+from biome.spec.utils import to_biome_class
 
 CUDA_DEVICE_FIELD = 'cuda_device'
 MODEL_FIELD = 'model'
@@ -14,6 +15,16 @@ TRAIN_DATA_FIELD = 'train_data_path'
 VALIDATION_DATA_FIELD = 'validation_data_path'
 TEST_DATA_FIELD = 'test_data_path'
 EVALUATE_ON_TEST_FIELD = 'evaluate_on_test'
+
+from biome.data.utils import read_datasource_cfg
+
+
+def read_datasource_configuration(config: Any) -> Dict:
+    cfg = read_datasource_cfg(config)
+    try:
+        return biome_datasource_spec_to_dataset_config(deepcopy(cfg))
+    except Exception as e:
+        return cfg
 
 
 def biome2allennlp_params(model_spec: Optional[str] = None,
@@ -27,6 +38,17 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
             return dict()
         with open(from_path) as trainer_file:
             return yaml.load(trainer_file)
+
+    def read_definition_from_model_spec(path: str) -> Dict:
+        with open(path) as model_file:
+            model_data = yaml.load(model_file)
+            try:
+                model_definition = to_biome_class(data=model_data, klass=ModelDefinition)
+                topology = model_definition.topology
+                return dict(dataset_reader=topology.pipeline, model=topology.architecture)
+            except Exception as e:
+                print(e)
+                return model_data
 
     cfg_params = read_definition_from_model_spec(model_spec) \
         if model_spec \
@@ -50,8 +72,3 @@ def biome2allennlp_params(model_spec: Optional[str] = None,
             allennlp_configuration.update({field: cfg})
 
     return allennlp_configuration
-
-
-def __load_from_archive(model_binary: str) -> Dict[str, Any]:
-    archive = load_archive(model_binary)
-    return archive.config.as_dict()

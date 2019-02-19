@@ -1,7 +1,7 @@
+import gzip
+import os
 import shutil
 import tempfile
-import os
-import gzip
 
 import smart_open
 from allennlp.models import load_archive as _load_archive, Archive

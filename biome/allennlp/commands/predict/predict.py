@@ -2,21 +2,20 @@ import argparse
 import logging
 import os
 import re
+from typing import Dict, Iterable, Any, List
 
+import dask.bag as db
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.service.predictors import Predictor
-from typing import Dict, Iterable, Any, List
 
-import dask.bag as db
-
+from biome.allennlp.commands.helpers import read_datasource_configuration
 from biome.allennlp.models.archival import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
-from biome.data.helpers import store_dataset
+from biome.data.sinks import store_dataset
 from biome.data.sources.helpers import read_dataset
-from biome.data.utils import configure_dask_cluster
-from biome.data.utils import read_datasource_cfg
+from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 
 __logger = logging.getLogger(__name__)
 
@@ -61,28 +60,14 @@ def __predict(partition: Iterable[Dict], args: argparse.Namespace) -> Iterable[s
     return [predictor.dump_line(output) for model_input, output in zip(partition, results)]
 
 
-def __local_elasticsearch_sink(source_config: str, binary_path: str):
-    def sanizite_index(index_name: str) -> str:
-        return re.sub('\W', '_', index_name)
-
-    file_name = os.path.basename(source_config)
-    model_name = os.path.dirname(binary_path)
-
-    return dict(
-        index=sanizite_index('prediction {} with {}'.format(file_name, model_name)),
-        type='docs',
-        es_hosts='http://localhost:9200'
-    )
-
-
 def _predict(args: argparse.Namespace) -> None:
-    configure_dask_cluster()
+    configure_dask_cluster(n_workers=1)
 
     if not args.to_sink:
-        args.to_sink = __local_elasticsearch_sink(args.from_source, args.binary)
+        args.to_sink = default_elasticsearch_sink(args.from_source, args.binary, args.batch_size)
 
-    source_config = read_datasource_cfg(args.from_source)
-    sink_config = read_datasource_cfg(args.to_sink)
+    source_config = read_datasource_configuration(args.from_source)
+    sink_config = read_datasource_configuration(args.to_sink)
 
     test_dataset = read_dataset(source_config, include_source=True)
     __logger.info("Source sample data:{}".format(test_dataset.take(5)))
@@ -135,4 +120,4 @@ def __make_predict(batch: List[Dict[str, Any]], predictor: Predictor, sink_confi
     results = predictor.predict_batch_json(batch)
     store = db.from_sequence([predictor.dump_line(output) for model_input, output in zip(batch, results)],
                              npartitions=1)
-    __logger.info(store_dataset(store, sink_config))
+    __logger.info(store_dataset(store, sink_config).persist())
