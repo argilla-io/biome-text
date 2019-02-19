@@ -111,7 +111,7 @@ def learn(output: str,
     check_configuration(Params(deepcopy(allennlp_configuration)))
 
     __logger.info('Launching dask cluster')
-    configure_dask_cluster()
+    configure_dask_cluster(n_workers=1)
 
     # Vocabulary is needed for components instantiation
     __logger.info('Checking model configuration')
