@@ -23,6 +23,7 @@ dev: ## install package in develop mode
 	@python setup.py develop
 
 submodules: ## sync git submodules in repo
+	@git submodule init && exit
 	@git submodule sync --recursive && git submodule update --recursive --remote
 	@cp -R modules/biome-data/src/biome/data biome/
 
