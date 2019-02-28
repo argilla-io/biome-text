@@ -1,20 +1,11 @@
----
-datasource:
-  id: test-test-ds
-  name: " The test csv data source with multiple files"
-  params:
-    path:
-    - resources/data/datasources/csv/dataset_source.1.csv
-    - resources/data/datasources/csv/dataset_source.2.csv
-    location: resources/data/datasources/csv
-  format:
-    type: csv
-    charset: UTF-8
-    params:
-      delimiter: ","
-settings:
-  forward:
-    tokens:
-    - age
-    target:
-      gold_label: job
+path:
+- resources/data/datasources/csv/dataset_source.1.csv
+- resources/data/datasources/csv/dataset_source.2.csv
+
+forward:
+  tokens:
+  - age
+  target:
+    gold_label: job
+
+delimiter: ","

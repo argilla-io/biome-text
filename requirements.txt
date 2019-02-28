@@ -1,0 +1,2 @@
+-e git+git@gitlab.com:recognai-team/biome/biome-data.git#egg=biome-data
+-e git+https://github.com/recognai/python-elasticsearch-runner.git#egg=elasticsearch-runner

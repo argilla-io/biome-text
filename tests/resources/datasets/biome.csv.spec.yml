@@ -1,18 +1,16 @@
-datasource:
-  id: wikidata-japanese-test
-  name: " Wikidata Japanese test"
-  params:
-    path:
-    - resources/data/dataset_source.csv
-    location: resources/data/dataset_source.cs
-  format:
-    type: csv
-    charset: UTF-8
-    params:
-      delimiter: ","
-settings:
-  forward:
-    tokens:
-    - age
-    target:
-      gold_label: job
+# data path (could be also a list)
+path: resources/data/dataset_source.csv
+
+# data format (infered from path extension if no provided)
+format: csv
+
+# mapping model-dataset definition
+forward:
+  tokens:
+  - age
+  target:
+    gold_label: job
+
+# Extra arguments passed to pandas.read_csv method
+encoding: UTF-8
+delimiter: ","
