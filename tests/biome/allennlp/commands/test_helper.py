@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from biome.allennlp import biome2allennlp_params, VALIDATION_DATA_FIELD
+from biome.allennlp.commands.helpers import biome2allennlp_params, VALIDATION_DATA_FIELD
 
 from tests.test_context import TEST_RESOURCES
 
