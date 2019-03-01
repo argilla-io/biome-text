@@ -1,17 +1,11 @@
-datasource:
-  id: wikidata-japanese-test
-  name: " Wikidata Japanese test"
-  params:
-    path:
-    - resources/data/dataset_source.jsonl
-    location: resources/data/dataset_source.json
-  format:
-    type: json-l
-    charset: UTF-8
-    params: {}
-settings:
-  forward:
+path: resources/data/dataset_source.jsonl
+
+format: json
+
+forward:
     tokens:
     - reviewText
     target:
       gold_label: overall
+
+encoding: UTF-8
