@@ -26,7 +26,7 @@ before_script:
   - source venv/bin/activate
   - pip install -r requirements.txt --upgrade
   # Private dependencies installation
-  - pip install -e git+https://$CI_DEPLOY_USER_BIOME_DATA:$CI_DEPLOY_TOKEN_BIOME_DATA@gitlab.com/recognai-team/biome/biome-data.git#egg=biome-data
+  - pip install git+https://${BIOME_DATA_DEPL_USER}:${BIOME_DATA_DEPL_TOKEN}@gitlab.com/recognai-team/biome/biome-data.git
 
 
 test:
