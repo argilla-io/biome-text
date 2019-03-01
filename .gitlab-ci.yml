@@ -24,9 +24,10 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - pip install -r requirements.txt --upgrade
+  - pip install -e .
+  # - pip install -r requirements.txt --upgrade
   # Private dependencies installation
-  - pip install git+https://${BIOME_DATA_DEPL_USER}:${BIOME_DATA_DEPL_TOKEN}@gitlab.com/recognai-team/biome/biome-data.git
+  # - pip install git+https://${BIOME_DATA_DEPL_USER}:${BIOME_DATA_DEPL_TOKEN}@gitlab.com/recognai-team/biome/biome-data.git
 
 
 test:
