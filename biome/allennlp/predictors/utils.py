@@ -2,7 +2,7 @@ from allennlp.data import DatasetReader
 from allennlp.models import Archive
 from allennlp.predictors import Predictor
 
-from biome.text.allennlp.predictors import DefaultBasePredictor
+from biome.allennlp.predictors import DefaultBasePredictor
 
 
 def get_predictor_from_archive(archive: Archive) -> Predictor:

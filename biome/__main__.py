@@ -6,11 +6,11 @@ import coloredlogs
 from allennlp.commands import Subcommand
 from allennlp.common.util import import_submodules
 
-from biome.text.allennlp.commands import BiomeExplore
-from biome.text.allennlp.commands import BiomeLearn
-from biome.text.allennlp.commands.predict import BiomePredict
-from biome.text.allennlp.commands import BiomeRestAPI
-from biome.text.allennlp.commands.vocab import BiomeVocab
+from biome.allennlp import BiomeExplore
+from biome.allennlp import BiomeLearn
+from biome.allennlp.commands.predict import BiomePredict
+from biome.allennlp import BiomeRestAPI
+from biome.allennlp import BiomeVocab
 
 command_name = "biome"
 
@@ -33,7 +33,7 @@ def main(
     prog: str = None, subcommand_overrides: Dict[str, Subcommand] = dict()
 ) -> None:
     """
-    The :mod:`~allennlp.run` command only knows about the registered classes in the ``allennlp``
+    The :mod:`~allennlp_2.run` command only knows about the registered classes in the ``allennlp_2``
     codebase. In particular, once you start creating your own ``Model`` s and so forth, it won't
     work for them, unless you use the ``--include-package`` flag.
     """

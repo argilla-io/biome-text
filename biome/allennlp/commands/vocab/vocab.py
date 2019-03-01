@@ -5,7 +5,7 @@ which to write the results.
 
 .. code-block:: bash
 
-   $ python -m allennlp.run train --help
+   $ python -m allennlp_2.run train --help
    usage: run [command] train [-h] -s SERIALIZATION_DIR param_path
 
    Train the specified model on the specified dataset.
@@ -26,8 +26,8 @@ from typing import Optional, Callable
 from allennlp.commands.make_vocab import make_vocab_from_params
 from allennlp.common.params import Params
 
-from biome.text.allennlp.commands.helpers import biome2allennlp_params
-from biome.text.allennlp.commands import BiomeLearn
+from biome.allennlp import biome2allennlp_params
+from biome.allennlp import BiomeLearn
 from biome.data.utils import configure_dask_cluster
 
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name

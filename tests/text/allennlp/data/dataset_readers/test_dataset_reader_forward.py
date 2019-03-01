@@ -5,7 +5,7 @@ import yaml
 from allennlp.common import Params
 from allennlp.data.fields import TextField, LabelField
 
-from biome.text.allennlp.data.dataset_readers import ClassificationDatasetReader
+from biome.allennlp import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 

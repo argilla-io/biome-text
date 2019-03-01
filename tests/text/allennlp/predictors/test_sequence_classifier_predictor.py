@@ -3,7 +3,7 @@ import unittest
 
 from allennlp.models import load_archive
 
-from biome.text.allennlp.predictors.utils import get_predictor_from_archive
+from biome.allennlp.predictors import get_predictor_from_archive
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 

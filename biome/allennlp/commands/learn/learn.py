@@ -5,7 +5,7 @@ which to write the results.
 
 .. code-block:: bash
 
-   $ python -m allennlp.run train --help
+   $ python -m allennlp_2.run train --help
    usage: run [command] train [-h] -s SERIALIZATION_DIR param_path
 
    Train the specified model on the specified dataset.
@@ -31,8 +31,8 @@ from allennlp.common.params import Params
 from allennlp.data import DataIterator, DatasetReader
 from allennlp.models.model import Model
 
-from biome.text.allennlp.commands.helpers import biome2allennlp_params
-from biome.text.allennlp.models import load_archive
+from biome.allennlp import biome2allennlp_params
+from biome.allennlp import load_archive
 from biome.data.utils import configure_dask_cluster
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name

@@ -20,4 +20,4 @@ except VersionConflict:
     sys.exit(1)
 
 if __name__ == "__main__":
-    setup(use_pyscaffold=True, long_description_content_type="text/markdown")
+    setup(use_pyscaffold=True, long_description_content_type="allennlp_2/markdown")

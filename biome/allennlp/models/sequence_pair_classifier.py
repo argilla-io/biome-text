@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @Model.register("sequence_pair_classifier")
 class SequencePairClassifier(SequenceClassifier):
     """
-    This ``SequenceClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
+    This ``SequenceClassifier`` simply encodes a sequence of allennlp_2 with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
     Parameters

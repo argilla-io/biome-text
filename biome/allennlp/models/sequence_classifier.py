@@ -20,14 +20,14 @@ logger = logging.getLogger(__name__)
 @Model.register("sequence_classifier")
 class SequenceClassifier(Model):
     """
-    This ``SequenceClassifier`` simply encodes a sequence of text with a ``Seq2VecEncoder``, then
+    This ``SequenceClassifier`` simply encodes a sequence of allennlp_2 with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
     Parameters
     ----------
     vocab
         A Vocabulary, required in order to compute sizes for input/output projections
-        and passed on to the :class:`~allennlp.models.model.Model` class.
+        and passed on to the :class:`~allennlp_2.models.model.Model` class.
     text_field_embedder
         Used to embed the tokens we get as input to the model.
     decoder
@@ -40,7 +40,7 @@ class SequenceClassifier(Model):
     initializer
         Used to initialize the model parameters.
     regularizer
-        Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
+        Used to regularize the model. Passed on to :class:`~allennlp_2.models.model.Model`.
     """
 
     def __init__(
@@ -177,7 +177,7 @@ class SequenceClassifier(Model):
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        """Get the metrics of our classifier, see :func:`~allennlp.models.Model.get_metrics`.
+        """Get the metrics of our classifier, see :func:`~allennlp_2.models.Model.get_metrics`.
 
         Parameters
         ----------
