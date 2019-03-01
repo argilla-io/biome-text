@@ -1,1 +1,1 @@
-from . import dataset_readers, models, predictors
+from . import commands, dataset_readers, models, predictors

@@ -31,8 +31,8 @@ from allennlp.common.params import Params
 from allennlp.data import DataIterator, DatasetReader
 from allennlp.models.model import Model
 
-from biome.allennlp import biome2allennlp_params
-from biome.allennlp import load_archive
+from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.allennlp.models import load_archive
 from biome.data.utils import configure_dask_cluster
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name

@@ -8,8 +8,8 @@ from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
-from biome.allennlp import to_local_archive
-from biome.allennlp.predictors import get_predictor_from_archive
+from biome.allennlp.models import to_local_archive
+from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
 from biome.data.sources import read_dataset
 from biome.data.utils import (

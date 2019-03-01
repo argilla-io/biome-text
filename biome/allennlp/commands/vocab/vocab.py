@@ -26,8 +26,8 @@ from typing import Optional, Callable
 from allennlp.commands.make_vocab import make_vocab_from_params
 from allennlp.common.params import Params
 
-from biome.allennlp import biome2allennlp_params
-from biome.allennlp import BiomeLearn
+from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.allennlp.commands import BiomeLearn
 from biome.data.utils import configure_dask_cluster
 
 __logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
