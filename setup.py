@@ -21,6 +21,7 @@ if __name__ == "__main__":
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
         packages=find_packages(
+            'biome',
             exclude=["tests", "*.tests", "*.tests.*", "tests.*"]
         ),
         install_requires=[
@@ -42,7 +43,7 @@ if __name__ == "__main__":
             'pandas',
             'elasticsearch>=6.0,<7.0',
             'bokeh',
-            # private/not published repositories
+            # private/not published repositories, should be changed for an opensource release!
             'biome-data @ git+https://gitlab+deploy-token-48918:Lhgdcy6sa_9xBnLyaN7u@gitlab.com/recognai-team/biome/biome-data.git',
             'elasticsearch-runner @ git+https://github.com/recognai/python-elasticsearch-runner.git',
         ],
