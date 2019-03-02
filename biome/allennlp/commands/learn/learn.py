@@ -5,7 +5,7 @@ which to write the results.
 
 .. code-block:: bash
 
-   $ python -m allennlp_2.run train --help
+   $ python -m allennlp.run train --help
    usage: run [command] train [-h] -s SERIALIZATION_DIR param_path
 
    Train the specified model on the specified dataset.

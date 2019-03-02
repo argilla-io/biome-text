@@ -1,18 +1,14 @@
 import argparse
 import logging
-from typing import Dict
 
 import coloredlogs
-from allennlp.commands import Subcommand
 from allennlp.common.util import import_submodules
 
 from biome.allennlp.commands import BiomeExplore
 from biome.allennlp.commands import BiomeLearn
-from biome.allennlp.commands.predict import BiomePredict
+from biome.allennlp.commands import BiomePredict
 from biome.allennlp.commands import BiomeRestAPI
 from biome.allennlp.commands import BiomeVocab
-
-command_name = "biome"
 
 
 def configure_colored_logging(loglevel):
@@ -29,9 +25,7 @@ def configure_colored_logging(loglevel):
     )
 
 
-def main(
-    prog: str = None, subcommand_overrides: Dict[str, Subcommand] = dict()
-) -> None:
+def main() -> None:
     """
     The :mod:`~allennlp.run` command only knows about the registered classes in the ``allennlp``
     codebase. In particular, once you start creating your own ``Model`` s and so forth, it won't
@@ -39,14 +33,17 @@ def main(
     """
     # pylint: disable=dangerous-default-value
     parser = argparse.ArgumentParser(
-        description="Run biome", usage="%(prog)s", prog=prog
+        description="Run biome", prog='biome',
     )
 
     subparsers = parser.add_subparsers(title="Commands", metavar="")
 
     subcommands = {
-        # Superseded by overrides
-        **subcommand_overrides
+         'predict': BiomePredict(),
+         'explore': BiomeExplore(),
+         'serve': BiomeRestAPI(),
+         'learn': BiomeLearn(),
+         'vocab': BiomeVocab(),
     }
 
     for name, subcommand in subcommands.items():
@@ -78,13 +75,4 @@ def main(
 
 if __name__ == "__main__":
     configure_colored_logging(loglevel=logging.INFO)
-    main(
-        command_name,
-        subcommand_overrides=dict(
-            predict=BiomePredict(),
-            explore=BiomeExplore(),
-            serve=BiomeRestAPI(),
-            learn=BiomeLearn(),
-            vocab=BiomeVocab(),
-        ),
-    )
+    main()
