@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-    Setup file for biome_allennlp.
+    Setup file for biome-allennlp.
     Use setup.cfg to configure your project.
 
     This file was generated with PyScaffold 3.1.
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
         packages=find_packages(
-            'biome',
+            include=["biome.*"],
             exclude=["tests", "*.tests", "*.tests.*", "tests.*"]
         ),
         install_requires=[
@@ -58,6 +58,11 @@ if __name__ == "__main__":
             ]
         },
         include_package_data=True,
-        python_requires='>=3.6.1',
+        package_data={'': [
+            'LICENSE.txt',
+            'biome/allennlp/commands/explore/ui/*',
+            ]
+        },
+        python_requires='>=3.6.1',  # taken from AllenNLP
         zip_safe=False,
     )
