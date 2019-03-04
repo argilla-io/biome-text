@@ -6,7 +6,7 @@ from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 from typing import Iterable
 
-from biome.allennlp.dataset_readers import ClassificationDatasetReader
+from biome.allennlp import ClassificationDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 

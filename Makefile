@@ -2,16 +2,16 @@
 default: help
 
 test: ## launch package tests
-	@python setup.py test
+	@pytest
 
-dist: ## build a package distribution with tests
-	@python setup.py test bdist_wheel
+dist: ## run tests and build a package distribution
+	@pytest && python setup.py sdist bdist_wheel
 
 install: ## install package
-	@python setup.py install
+	@pip install .
 
 dev: ## install package in develop mode
-	@python setup.py develop
+	@pip install -e .[testing]
 
 .PHONY: help
 help:

@@ -7,7 +7,7 @@ from allennlp.service import server_simple
 from flask_cors import CORS
 from gevent.pywsgi import WSGIServer
 
-from biome.allennlp.predictors import get_predictor_from_archive
+from biome.allennlp import get_predictor_from_archive
 
 logger = logging.getLogger(__name__)
 

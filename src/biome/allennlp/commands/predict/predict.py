@@ -9,10 +9,10 @@ from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
 from biome.allennlp.models import to_local_archive
-from biome.allennlp.predictors.utils import get_predictor_from_archive
-from biome.data.sinks import store_dataset
-from biome.data.sources import read_dataset
-from biome.data.utils import (
+from biome.allennlp import get_predictor_from_archive
+from biome import store_dataset
+from biome import read_dataset
+from biome import (
     configure_dask_cluster,
     default_elasticsearch_sink,
     read_datasource_cfg,

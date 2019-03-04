@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from biome.allennlp.commands.helpers import biome2allennlp_params, VALIDATION_DATA_FIELD
+from biome.allennlp import biome2allennlp_params, VALIDATION_DATA_FIELD
 
 from tests.test_context import TEST_RESOURCES
 
@@ -31,3 +31,4 @@ class TestCommandHelper(unittest.TestCase):
                                     validation_cfg='bad/path')
 
         assert cfg.get(VALIDATION_DATA_FIELD) is not None, 'Expected value for validation dataset'
+        assert False
