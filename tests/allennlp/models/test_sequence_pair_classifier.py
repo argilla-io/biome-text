@@ -8,7 +8,7 @@ import tempfile
 
 from allennlp.common import Params
 
-from biome.allennlp.commands.learn.learn import learn
+from biome.allennlp.commands.learn import learn
 from biome.allennlp.models import SequencePairClassifier
 from tests.test_support import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
