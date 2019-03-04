@@ -13,13 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 class BiomeRestAPI(Subcommand):
-    def add_subparser(self, name: str, parser: argparse._SubParsersAction) -> argparse.ArgumentParser:
+    def add_subparser(
+        self, name: str, parser: argparse._SubParsersAction
+    ) -> argparse.ArgumentParser:
         # pylint: disable=protected-access
-        description = '''Run the web service, which provides an HTTP Rest API.'''
-        subparser = parser.add_parser(name, description=description, help='Run the web service.')
+        description = """Run the web service, which provides an HTTP Rest API."""
+        subparser = parser.add_parser(
+            name, description=description, help="Run the web service."
+        )
 
-        subparser.add_argument('--port', type=int, default=8000)
-        subparser.add_argument('--binary', type=str, required=True)
+        subparser.add_argument("--port", type=int, default=8000)
+        subparser.add_argument("--binary", type=str, required=True)
 
         subparser.set_defaults(func=_serve)
 
@@ -35,6 +39,6 @@ def _serve(args: argparse.Namespace) -> None:
     app = server_simple.make_app(predictor, title=predictor.__class__.__name__)
     CORS(app)
 
-    http_server = WSGIServer(('0.0.0.0', args.port), app)
+    http_server = WSGIServer(("0.0.0.0", args.port), app)
     logger.info(f"Model loaded, serving demo on port {args.port}")
     http_server.serve_forever()

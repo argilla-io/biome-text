@@ -1,6 +1,0 @@
-FROM allennlp/allennlp:v0.7.2
-
-COPY . /src
-WORKDIR /src
-
-RUN make init spacy
