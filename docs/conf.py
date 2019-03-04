@@ -81,7 +81,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'biome-allennlp'
+project = u'biome-allennlp_2'
 copyright = u'2018, Francisco Aranda'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -107,10 +107,10 @@ release = ''  # Is set by calling `setup.py docs`
 # directories to ignore when looking for source files.
 exclude_patterns = ['_build']
 
-# The reST default role (used for this markup: `text`) to use for all documents.
+# The reST default role (used for this markup: `allennlp_2`) to use for all documents.
 # default_role = None
 
-# If true, '()' will be appended to :func: etc. cross-reference text.
+# If true, '()' will be appended to :func: etc. cross-reference allennlp_2.
 # add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
@@ -235,7 +235,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'user_guide.tex', u'biome-allennlp Documentation',
+  ('index', 'user_guide.tex', u'biome-allennlp_2 Documentation',
    u'Francisco Aranda', 'manual'),
 ]
 

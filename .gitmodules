@@ -1,3 +1,0 @@
-[submodule "modules/biome-data"]
-	path = modules/biome-data
-	url = git@gitlab.com:recognai-team/biome/biome-data.git
