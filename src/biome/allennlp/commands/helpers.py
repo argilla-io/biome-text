@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import Optional, Dict, Any
-from biome import get_nested_property_from_data
+from biome.data.utils import get_nested_property_from_data
 
 import yaml
 

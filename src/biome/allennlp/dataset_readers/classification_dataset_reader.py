@@ -4,8 +4,8 @@ from typing import Any, Dict, Iterable
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Field, Tokenizer
 from allennlp.data.fields import TextField, LabelField
 from allennlp.data.tokenizers import WordTokenizer
-from biome import read_dataset, RESERVED_FIELD_PREFIX
-from biome import read_datasource_cfg
+from biome.data.sources import read_dataset, RESERVED_FIELD_PREFIX
+from biome.data.utils import read_datasource_cfg
 from overrides import overrides
 
 __name__ = "classification_dataset_reader"

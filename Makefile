@@ -10,7 +10,7 @@ dist: ## run tests and build a package distribution
 install: ## install package
 	@pip install .
 
-dev: ## install package in develop mode
+dev: ## install package in development mode
 	@pip install -e .[testing]
 
 .PHONY: help

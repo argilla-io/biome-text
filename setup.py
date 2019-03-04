@@ -1,20 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-    Setup file for biome-allennlp.
-    Use setup.cfg to configure your project.
-
-    This file was generated with PyScaffold 3.1.
-    PyScaffold helps you to put up the scaffold of your new Python project.
-    Learn more under: https://pyscaffold.org/
-"""
 from setuptools import setup, find_packages
 
 if __name__ == "__main__":
     setup(
         name='biome-allennlp',
-        description='This package wraps and adds some new functionalities to the AllenNLP library.'
-                    'It is used by Biome to train and apply NLP models.Biome plaftform for deep learning models.',
+        description="This package wraps and adds some new functionalities to "
+                    "the AllenNLP library. It is used by Biome to train and "
+                    "apply NLP models.Biome plaftform for deep learning "
+                    "models.",
         author='Recognai',
         author_email='francisco@recogn.ai',
         url='https://www.recogn.ai/',
@@ -36,7 +30,7 @@ if __name__ == "__main__":
             'coloredlogs',
             # fix pyyaml version to avoid package incompatibilities
             'pyyaml>=3.0,<4.0',
-            # private repositories, should be changed for an opensource release!
+            # private repositories, CHANGE FOR OPENSOURCE RELEASE!
             'biome-data @ git+https://gitlab+deploy-token-48918:Lhgdcy6sa_9xBnLyaN7u@gitlab.com/recognai-team/biome/biome-data.git',
         ],
         extras_require={
