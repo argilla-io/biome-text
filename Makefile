@@ -12,8 +12,7 @@ install: ## install package
 
 dev: ## install package in development mode
 # See https://github.com/pypa/pip/issues/4537#issuecomment-373386803
-	@python setup.py install_egg_info
-	@pip install -e .[testing]
+	@pip install --upgrade -e .[testing]
 
 .PHONY: help
 help:

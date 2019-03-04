@@ -32,7 +32,7 @@ if __name__ == "__main__":
             # fix pyyaml version to avoid package incompatibilities
             "pyyaml>=3.0,<4.0",
             # private repositories, CHANGE FOR OPENSOURCE RELEASE!
-            "biome-data @ git+https://gitlab+deploy-token-48918:Lhgdcy6sa_9xBnLyaN7u@gitlab.com/recognai-team/biome/biome-data.git",
+            "biome-data@git+https://gitlab+deploy-token-48918:Lhgdcy6sa_9xBnLyaN7u@gitlab.com/recognai-team/biome/biome-data.git",
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
         entry_points={"console_scripts": ["biome=biome.__main__:main"]},
