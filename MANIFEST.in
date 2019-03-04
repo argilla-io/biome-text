@@ -1,0 +1,22 @@
+# https://docs.python.org/3.7/distutils/sourcedist.html#specifying-the-files-to-distribute
+include AUTHORS.rst
+include CHANGELOG.rst
+include docker-compose.yml
+include LICENSE.txt
+include Makefile
+include README.md
+include setup.cfg
+
+recursive-include docker *
+recursive-include docs *
+recursive-include src/biome *
+recursive-include tests *
+
+prune build
+prune docs/_build
+prune docs/_static
+prune docs/api
+prune dist
+prune tests/htmlcov
+
+global-exclude *.pyc *.o
