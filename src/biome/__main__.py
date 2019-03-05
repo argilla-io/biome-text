@@ -32,18 +32,17 @@ def main() -> None:
     work for them, unless you use the ``--include-package`` flag.
     """
     # pylint: disable=dangerous-default-value
-    parser = argparse.ArgumentParser(
-        description="Run biome", prog='biome',
-    )
+    logger = logging.getLogger(__name__)
+    parser = argparse.ArgumentParser(description="Run biome", prog="biome")
 
     subparsers = parser.add_subparsers(title="Commands", metavar="")
 
     subcommands = {
-         'predict': BiomePredict(),
-         'explore': BiomeExplore(),
-         'serve': BiomeRestAPI(),
-         'learn': BiomeLearn(),
-         'vocab': BiomeVocab(),
+        "predict": BiomePredict(),
+        "explore": BiomeExplore(),
+        "serve": BiomeRestAPI(),
+        "learn": BiomeLearn(),
+        "vocab": BiomeVocab(),
     }
 
     for name, subcommand in subcommands.items():
@@ -67,6 +66,7 @@ def main() -> None:
     if "func" in dir(args):
         # Import any additional modules needed (to register custom classes).
         for package_name in getattr(args, "include_package", ()):
+            logger.info("Loading packager {}".format(package_name))
             import_submodules(package_name)
         args.func(args)
     else:

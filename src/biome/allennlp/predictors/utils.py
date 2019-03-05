@@ -5,6 +5,9 @@ from allennlp.models import Archive
 from allennlp.predictors import Predictor
 
 from biome.allennlp.predictors import DefaultBasePredictor
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 def get_predictor_from_archive(
@@ -16,6 +19,7 @@ def get_predictor_from_archive(
     predictor = predictor_name if predictor_name else model_config.get("type")
     try:
         return Predictor.from_archive(archive, predictor)
-    except Exception:
+    except Exception as e:
+        _logger.warning("Cannot create predictor {}, usind default. Error: {}".format(predictor, e))
         ds_reader = DatasetReader.from_params(dataset_reader_config)
         return DefaultBasePredictor(archive.model, ds_reader)
