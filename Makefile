@@ -11,7 +11,6 @@ install: ## install package
 	@pip install .
 
 dev: ## install package in development mode
-# See https://github.com/pypa/pip/issues/4537#issuecomment-373386803
 	@pip install --upgrade -e .[testing]
 
 .PHONY: help
