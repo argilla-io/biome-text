@@ -5,11 +5,9 @@ from setuptools import setup, find_packages
 if __name__ == "__main__":
 
     setup(
-        name="biome",
-        description="This package wraps and adds some new functionalities to "
-        "the AllenNLP library. It is used by Biome to train and "
-        "apply NLP models.Biome plaftform for deep learning "
-        "models.",
+        name="biome-text",
+        description="Biome-text is a light-weight open source Natural Language Processing "
+        "tool built with AllenNLP",
         author="Recognai",
         author_email="francisco@recogn.ai",
         url="https://www.recogn.ai/",
