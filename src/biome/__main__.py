@@ -4,11 +4,11 @@ import logging
 import coloredlogs
 from allennlp.common.util import import_submodules
 
-from biome.allennlp import BiomeExplore
-from biome.allennlp import BiomeLearn
-from biome.allennlp import BiomePredict
-from biome.allennlp import BiomeRestAPI
-from biome.allennlp import BiomeVocab
+from .allennlp.commands import BiomeExplore
+from .allennlp.commands import BiomeLearn
+from .allennlp.commands import BiomePredict
+from .allennlp.commands import BiomeRestAPI
+from .allennlp.commands import BiomeVocab
 
 
 def configure_colored_logging(loglevel):

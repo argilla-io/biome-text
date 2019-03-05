@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 if __name__ == "__main__":
 
     setup(
-        name="biome-allennlp",
+        name="biome",
         description="This package wraps and adds some new functionalities to "
         "the AllenNLP library. It is used by Biome to train and "
         "apply NLP models.Biome plaftform for deep learning "

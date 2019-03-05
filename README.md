@@ -6,16 +6,16 @@ Tool for easily build models based on [allenNLP](http://allennlp.org/)
 ### Install
 
 ```
-$ git clone https://gitlab.com/recognai-team/biome/biome-allennlp.git
-$ cd biome-allennlp
+$ git clone https://github.com/recognai/biome.git
+$ cd biome
 $ make install
 ```
 
 ### Development
 
 ```
-$ git clone https://gitlab.com/recognai-team/biome/biome-allennlp.git
-$ cd biome-allennlp
+$ git clone https://github.com/recognai/biome.git
+$ cd biome
 $ make dev
 ```
 
