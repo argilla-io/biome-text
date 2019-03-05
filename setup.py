@@ -15,8 +15,8 @@ if __name__ == "__main__":
         url="https://www.recogn.ai/",
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
-        packages=find_packages('src'),
-        package_dir={'': 'src'},
+        packages=find_packages("src"),
+        package_dir={"": "src"},
         install_requires=[
             "allennlp>=0.8.0",
             "torch>=1.0.0",
@@ -33,17 +33,9 @@ if __name__ == "__main__":
             "elasticsearch>=6.0,<7.0",
             "bokeh",
         ],
-        extras_require={
-            'testing': ['pytest', 'pytest-cov', 'pytest-pylint'],
-        },
-        package_data={
-            'biome': ['allennlp/commands/explore/ui/classifier.tar.gz']
-            },
-        entry_points={
-            'console_scripts': [
-                "biome=biome.__main__:main"
-            ]
-        },
-        python_requires='>=3.6.1',  # taken from AllenNLP
+        extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
+        package_data={"biome": ["allennlp/commands/explore/ui/classifier.tar.gz"]},
+        entry_points={"console_scripts": ["biome=biome.__main__:main"]},
+        python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,
     )
