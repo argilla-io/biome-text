@@ -84,8 +84,8 @@ The code in this project is licensed under Apache 2 license.
 ## Setup for development
 
 ```
-$ git clone https://gitlab.com/recognai-team/biome/biome-allennlp.git
-$ cd biome-allennlp
+$ git clone https://github.com/recognai/biome-text.git
+$ cd biome-text
 $ make dev
 ```
 
