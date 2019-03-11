@@ -81,6 +81,18 @@ If you'd like to contribute, please read our contributing guidelines.
 
 The code in this project is licensed under Apache 2 license.
 
+## Setup for development
 
+```
+$ git clone https://gitlab.com/recognai-team/biome/biome-allennlp.git
+$ cd biome-allennlp
+$ make dev
+```
+
+If you do not want to install the packages required for testing, just use:
+
+```
+$ pip install -e .
+```
 
 
