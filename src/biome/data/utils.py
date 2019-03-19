@@ -20,10 +20,9 @@ import yaml
 
 ENV_DASK_CLUSTER = "DASK_CLUSTER"
 ENV_DASK_CACHE_SIZE = "DASK_CACHE_SIZE"
+DEFAULT_DASK_CACHE_SIZE = 2e9
 
 ENV_ES_HOSTS = "ES_HOSTS"
-
-DEFAULT_DASK_CACHE_SIZE = 2e9
 
 __logger = logging.getLogger(__name__)
 
@@ -74,12 +73,9 @@ def read_datasource_cfg(cfg: Any) -> Dict:
                 return yaml.load(cfg_file.read())
         if isinstance(cfg, Dict):
             return cfg
-    except FileNotFoundError as e:
-        __logger.warning(e)
+    except Exception as e:
+        __logger.debug(e)
         return dict(path=cfg)
-    except (TypeError, OSError) as e:
-        __logger.warning(e)
-        raise Exception("Missing configuration {}".format(cfg))
 
 
 def yaml_to_dict(filepath: str):
