@@ -108,3 +108,5 @@ tools
 generated*
 
 *venv
+
+.DS_Store
