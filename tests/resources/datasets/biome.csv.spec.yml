@@ -8,8 +8,7 @@ format: csv
 forward:
   tokens:
   - age
-  target:
-    gold_label: job
+  gold_label: job
 
 # Extra arguments passed to pandas.read_csv method
 encoding: UTF-8

@@ -2,53 +2,19 @@ import os
 from typing import Iterable
 
 import yaml
-from allennlp.common import Params
-from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
-from biome.allennlp.dataset_readers import ClassificationDatasetReader
+from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "gold_label"
 
-CLASSIFIER_SPEC = os.path.join(
-    TEST_RESOURCES,
-    "resources/dataset_readers/definitions/classifier_dataset_reader.json",
-)
-reader = ClassificationDatasetReader.from_params(
-    params=Params.from_file(CLASSIFIER_SPEC)
-)
+reader = SequenceClassifierDatasetReader()
 
 
 class BiomeDatasetReaderTest(DaskSupportTest):
-    def test_dataset_reader_registration(self):
-        dataset_reader = DatasetReader.by_name("classification_dataset_reader")
-        self.assertEquals(ClassificationDatasetReader, dataset_reader)
-
-    def test_read_input_csv(self):
-        expected_length = 9
-        expected_labels = [
-            "blue-collar",
-            "technician",
-            "management",
-            "services",
-            "retired",
-            "admin.",
-        ]
-        expected_inputs = ["44", "53", "28", "39", "55", "30", "37", "36"]
-
-        yaml_config = os.path.join(
-            TEST_RESOURCES, "resources/datasets/biome.csv.spec.yml"
-        )
-        with open(yaml_config) as dataset_cfg:
-            params = yaml.load(dataset_cfg.read())
-            dataset = reader.read(params)
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, expected_labels
-            )
-
     def test_read_input_csv_multi_file(self):
         expected_length = 18  # Two times the same file
         expected_labels = [

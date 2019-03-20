@@ -5,7 +5,7 @@ import yaml
 from allennlp.common import Params
 from allennlp.data.fields import TextField, LabelField
 
-from biome.allennlp.dataset_readers import ClassificationDatasetReader
+from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader, SequencePairClassifierDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 
@@ -24,7 +24,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     @pytest.mark.xfail
     def test_reader_with_forward_definition(self):
         with open(DS_READER_DEFINITION) as yml_config:
-            reader = ClassificationDatasetReader.from_params(params=Params(yaml.load(yml_config)))
+            reader = SequenceClassifierDatasetReader()
             read_config = dict(path=JSON_PATH, forward=dict(input=['reviewText'], label='overall'))
 
             dataset = reader.read(create_temp_configuration(read_config))
@@ -41,7 +41,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     @pytest.mark.xfail
     def test_reader_with_another_forward_definition(self):
         with open(MULTIPLE_INPUT_READER_DEFINITION) as yml_config:
-            reader = ClassificationDatasetReader.from_params(params=Params(yaml.load(yml_config)))
+            reader = SequenceClassifierDatasetReader.from_params(params=Params(yaml.load(yml_config)))
             read_config = dict(path=JSON_PATH, forward=dict(r1=['reviewText'], r2=['reviewText'], gold='overall'))
 
             dataset = reader.read(create_temp_configuration(read_config))
@@ -61,7 +61,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     @pytest.mark.xfail
     def test_reader_with_optional_params(self):
         with open(DS_READER_DEFINITION) as yml_config:
-            reader = ClassificationDatasetReader.from_params(params=Params(yaml.load(yml_config)))
+            reader = SequenceClassifierDatasetReader.from_params(params=Params(yaml.load(yml_config)))
             read_config = dict(path=NOLABEL_JSON_PATH, forward=dict(input=['reviewText'], label='overall'))
 
             dataset = reader.read(create_temp_configuration(read_config))
