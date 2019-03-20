@@ -45,7 +45,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
-        """
+        """An generator that yields `Instance`s that are fed to the model
 
         Parameters
         ----------
@@ -54,7 +54,8 @@ class SequenceClassifierDatasetReader(DatasetReader):
 
         Yields
         ------
-
+        instance
+            An `Instance` that is fed to the model
         """
         config = read_datasource_cfg(file_path)
         ds_key = id(config)
@@ -73,7 +74,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
                 yield instance
 
     def text_to_instance(self, example: Dict) -> Optional[Instance]:
-        """ Transforms an example to an Instance
+        """Transforms an example to an Instance
 
         The actual work is done in the private method `_example_to_instance`.
 
@@ -86,6 +87,11 @@ class SequenceClassifierDatasetReader(DatasetReader):
         -------
         instance
             Returns `None` if the example could not be transformed to an Instance.
+
+        Raises
+        ------
+        ValueError
+            If a value in the `example` dict resolves to False.
         """
         fields = {}
         try:
@@ -100,13 +106,12 @@ class SequenceClassifierDatasetReader(DatasetReader):
         return Instance(fields)
 
     def _value_to_field(self, field_type: str, value: Any) -> Union[LabelField, TextField]:
-        """
-        Embeds the values in one of the `allennlp.data.fields`.
+        """Embeds the value in one of the `allennlp.data.fields`
 
         Parameters
         ----------
         field_type
-            Name of the field, must match one of the arguments of the `forward` method of your model.
+            Name of the field, must match one of the arguments in the `forward` method of your model.
         value
             Value of the field.
 
@@ -122,7 +127,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
         param = self.forward_params.get(field_type)
         if not param:
             raise ValueError(f"{field_type} must not form part of the Instance passed on to the model!")
-        # the gold label should be optional in the classification model, otherwise no predict is possible
+        # the gold label must be optional in the classification model, otherwise no predict is possible
         if param.default is not Parameter.empty:
             return LabelField(value)
         else:
