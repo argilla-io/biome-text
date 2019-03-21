@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Optional, Callable, Any
+from typing import Dict, Optional, Callable, Any, Union, List
 
 from dask.bag import Bag
 
@@ -44,20 +44,20 @@ def add_supported_format(
 
 
 def read_dataset(config: Dict, include_source: bool = False) -> Bag:
-    example_preparator = ExamplePreparator(config.pop("forward", {}), include_source)
+    example_preparator = ExamplePreparator(config.pop("forward", {}))
 
     return (
         _build_dataset(config)
-        .map(_transform_example, example_preparator)
+        .map(_transform_example, example_preparator, include_source)
         .filter(lambda example: example is not None)
     )
 
 
 def _transform_example(
-    data: Dict, example_preparator: ExamplePreparator
+    data: Dict, example_preparator: ExamplePreparator, include_source: bool = False
 ) -> Optional[Dict]:
     try:
-        return example_preparator.read_info(data)
+        return example_preparator.read_info(data, include_source)
     except Exception as ex:
         _logger.warning(ex)
         return None
@@ -66,11 +66,11 @@ def _transform_example(
 def _build_dataset(config: Dict) -> Bag:
     params = config.copy()  # Preserve original config (multiple reads)
 
-    format = format_from_params(params.get("path"), params)
+    data_format = format_from_params(params.get("path"), params)
 
-    if format in _SUPPORTED_FORMATS:
-        dataset_reader, extra_arguments = _SUPPORTED_FORMATS[format]
-        return dataset_reader(**{**params, **extra_arguments})
+    if data_format in _SUPPORTED_FORMATS:
+        data_reader, extra_arguments = _SUPPORTED_FORMATS[data_format]
+        return data_reader(**{**params, **extra_arguments})
     else:
         raise Exception(
             "Format {} not supported. Supported formats are: {}".format(
@@ -79,7 +79,19 @@ def _build_dataset(config: Dict) -> Bag:
         )
 
 
-def format_from_params(path, params) -> Optional[str]:
+def format_from_params(path: Union[List[str], str], params) -> Optional[str]:
+    """
+
+    Parameters
+    ----------
+    path
+        Can be a st
+    params
+
+    Returns
+    -------
+
+    """
     format_field_name = "format"
 
     if isinstance(path, str):
@@ -89,6 +101,7 @@ def format_from_params(path, params) -> Optional[str]:
         _, extension = os.path.splitext(path[0])
         params[format_field_name] = extension[1:]
 
-    return (
-        params.pop(format_field_name).lower() if params.get(format_field_name) else None
-    )
+    try:
+        return params.pop(format_field_name).lower()
+    except KeyError:
+        return None
