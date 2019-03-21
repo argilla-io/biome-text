@@ -1,137 +1,168 @@
 import logging
-from typing import Any, Dict, Iterable
+from inspect import signature, Parameter
+from typing import Any, Dict, Iterable, Optional, Union
 
-from allennlp.data import DatasetReader, Instance, TokenIndexer, Field, Tokenizer
+from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
 from allennlp.data.fields import TextField, LabelField
+from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer
-from biome.data.sources import read_dataset, RESERVED_FIELD_PREFIX
+from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
+from biome.data.sources import read_dataset
 from biome.data.utils import read_datasource_cfg
 from overrides import overrides
 
-__name__ = "classification_dataset_reader"
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
-DEFAULT_GOLD_LABEL_ID = "gold_label"
 
-
-@DatasetReader.register(__name__)
-class ClassificationDatasetReader(DatasetReader):
-    """A DatasetReader for a Classification dataset
+@DatasetReader.register("sequence_classifier")
+class SequenceClassifierDatasetReader(DatasetReader):
+    """A DatasetReader for the SequenceClassifier model.
 
     Parameters
     ----------
-    forwardR
-    target
     tokenizer
         By default we use a WordTokenizer with the SpacyWordSplitter
     token_indexers
+        By default we use a SingleIdTokenIndexer for all token fields
     """
-
     def __init__(
         self,
-        forward: Dict[str, Any] = None,
-        target: str = DEFAULT_GOLD_LABEL_ID,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
     ) -> None:
 
-        super(ClassificationDatasetReader, self).__init__(lazy=True)
+        super().__init__(lazy=True)
 
-        self.__tokenizer = tokenizer or WordTokenizer()
-        self.__token_indexers = token_indexers
-        self.__target_field = target
-        self.__forward_definition = forward
-        self.__cached_datasets = dict()
+        self.tokenizer = tokenizer or WordTokenizer()
 
-    def process_example(self, example: Dict) -> Instance:
-        logger.debug("Example:[%s]", example)
-        try:
-            return self.text_to_instance(example)
-        except Exception as e:
-            logger.warning(e)
-            return Instance(
-                {}
-            )  # An empty Instance({}) resolves to False in an if statements
+        # The keys of the Instances have to match the signature of the forward method of the model
+        self.forward_params = signature(SequenceClassifier.forward).parameters
+        self.tokens_field_id = list(self.forward_params)[0]
 
-    def text_to_instance(self, example: Dict) -> Instance:
-        # pylint: disable=arguments-differ
+        self.token_indexers = token_indexers or {self.tokens_field_id: SingleIdTokenIndexer}
 
-        gold_label_id = self.__target_field
-        tokenizer = self.__tokenizer
-        token_indexers = self.__token_indexers
-        forward_definition = self.__forward_definition
-
-        return self.__text_to_instance(
-            example, forward_definition, gold_label_id, token_indexers, tokenizer
-        )
+        self._cached_datasets = dict()
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
+        """An generator that yields `Instance`s that are fed to the model
+
+        Parameters
+        ----------
+        file_path
+            Path to the configuration file (yml) of the data source.
+
+        Yields
+        ------
+        instance
+            An `Instance` that is fed to the model
+        """
         config = read_datasource_cfg(file_path)
         ds_key = id(config)
-        if not self.__cached_datasets.get(ds_key):
+
+        dataset = self._cached_datasets.get(ds_key)
+        if dataset:
+            logger.debug("Loaded cached dataset {}".format(file_path))
+        else:
             logger.debug("Read dataset from {}".format(file_path))
-            self.__cached_datasets[ds_key] = read_dataset(config).persist()
+            dataset = read_dataset(config).persist()
+            self._cached_datasets[ds_key] = dataset
 
-        dataset = self.__cached_datasets[ds_key]
-        logger.debug("Loaded from cache dataset {}".format(file_path))
+        for example in dataset:
+            instance = self.text_to_instance(example)
+            if instance:
+                yield instance
 
-        def instance_generator():
-            for example in dataset:
-                instance = self.process_example(example)
-                if instance:
-                    yield instance
+    def text_to_instance(self, example: Dict) -> Optional[Instance]:
+        """Transforms an example to an Instance
 
-        return instance_generator()
+        The actual work is done in the private method `_example_to_instance`.
 
-    @staticmethod
-    def __text_to_instance(
-        example: Dict,
-        forward_definition: Dict[str, Any],
-        gold_label_id: str,
-        token_indexers: Dict[str, TokenIndexer],
-        tokenizer: Tokenizer,
-    ) -> Instance:
-        def is_reserved_field(field_name: str) -> bool:
-            return field_name and field_name.startswith(RESERVED_FIELD_PREFIX)
+        Parameters
+        ----------
+        example
+            The keys of this dictionary should match the arguments of the `forward` method of your model.
 
-        def instance_by_forward_definition() -> Instance:
-            def field_from_type(field_type: str, field_value: Any) -> Field:
-                if field_type == "LabelField":
-                    return LabelField(field_value)
-                elif field_type == "TextField":
-                    return TextField(tokenizer.tokenize(field_value), token_indexers)
-                else:
-                    raise TypeError(f"{field_type} is not supported yet.")
+        Returns
+        -------
+        instance
+            Returns `None` if the example could not be transformed to an Instance.
 
-            fields = {
-                field: field_from_type(field_type, example[field])
-                for field, field_type in forward_definition.items()
-                if example.get(field) is not None
-            }
-
-            return Instance(fields)
-
-        def instance_by_target_definition() -> Instance:
-            logger.warning(
-                "Call to the deprecated method instance_by_target_definition(). "
-                "Use forward definition in config file instead of target."
-            )
-            fields: Dict[str, Field] = {}
-
+        Raises
+        ------
+        ValueError
+            If a value in the `example` dict resolves to False.
+        """
+        fields = {}
+        try:
             for field, value in example.items():
-                if not is_reserved_field(field):
-                    tensor = (
-                        LabelField(value)
-                        if field == gold_label_id
-                        else TextField(tokenizer.tokenize(value), token_indexers)
-                    )
-                    fields[field] = tensor
+                if not value:
+                    raise ValueError(f"{field} probably contains an empty string!")
+                fields[field] = self._value_to_field(field, value)
+        except Exception as e:
+            logger.warning(e)
+            return None
 
-            return Instance(fields)
+        return Instance(fields)
 
-        return (
-            instance_by_forward_definition()
-            if forward_definition
-            else instance_by_target_definition()
-        )
+    def _value_to_field(self, field_type: str, value: Any) -> Union[LabelField, TextField]:
+        """Embeds the value in one of the `allennlp.data.fields`
+
+        Parameters
+        ----------
+        field_type
+            Name of the field, must match one of the arguments in the `forward` method of your model.
+        value
+            Value of the field.
+
+        Returns
+        -------
+        Returns either a `LabelField` or a `TextField` depending on the `field_type` parameter.
+
+        Raises
+        ------
+        ValueError
+            If `field_type` is not found in the arguments of your model's `forward` method.
+        """
+        param = self.forward_params.get(field_type)
+        if not param:
+            raise ValueError(f"{field_type} must not form part of the Instance passed on to the model!")
+        # the gold label must be optional in the classification model, otherwise no predict is possible
+        if param.default is not Parameter.empty:
+            return LabelField(value)
+        else:
+            return TextField(self.tokenizer.tokenize(value), self.token_indexers)
+
+
+@DatasetReader.register("sequence_pair_classifier")
+class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
+    """A DatasetReader for the SequencePairClassifier model.
+
+    Parameters
+    ----------
+    tokenizer
+        By default we use a WordTokenizer with the SpacyWordSplitter
+    token_indexers
+        By default we use a SingleIdTokenIndexer for all token fields
+    """
+    def __init__(
+            self,
+            tokenizer: Tokenizer = None,
+            token_indexers: Dict[str, TokenIndexer] = None,
+    ) -> None:
+
+        super(SequenceClassifier, self).__init__(lazy=True)
+
+        self.tokenizer = tokenizer or WordTokenizer()
+
+        # The keys of the Instances have to match the signature of the forward method of the model
+        self.forward_params = signature(SequencePairClassifier.forward).parameters
+        self.tokens_field_id = list(self.forward_params)[0]
+        self.tokens2_field_id = list(self.forward_params)[1]
+
+        self.token_indexers = token_indexers or {self.tokens_field_id: SingleIdTokenIndexer,
+                                                 self.tokens2_field_id: SingleIdTokenIndexer}
+
+        self._cached_datasets = dict()
+
+

@@ -5,7 +5,7 @@ from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 
-from biome.allennlp.dataset_readers import ClassificationDatasetReader
+from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 
@@ -15,14 +15,13 @@ DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/defin
 
 TOKENS_FIELD = 'tokens'
 
-CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions/classifier_dataset_reader.json')
-reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
+reader = SequenceClassifierDatasetReader()
 
 
 class ParallelDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
-        dataset_reader = DatasetReader.by_name('classification_dataset_reader')
-        self.assertEquals(ClassificationDatasetReader, dataset_reader)
+        dataset_reader = DatasetReader.by_name('sequence_classifier')
+        self.assertEquals(SequenceClassifierDatasetReader, dataset_reader)
 
     def test_read_csv(self):
         expected_length = 9

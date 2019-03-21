@@ -1,12 +1,13 @@
 import os
 import unittest
 
+import yaml
 from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 from typing import Iterable
 
-from biome.allennlp.dataset_readers import ClassificationDatasetReader
+from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
 
@@ -17,29 +18,37 @@ JSON_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.jsonl')
 TOKENS_FIELD = 'tokens'
 LABEL_FIELD = 'gold_label'
 
-CLASSIFIER_SPEC = os.path.join(TEST_RESOURCES, 'resources/dataset_readers/definitions/classifier_dataset_reader.json')
-reader = ClassificationDatasetReader.from_params(params=Params.from_file(CLASSIFIER_SPEC))
+reader = SequenceClassifierDatasetReader()
 
 
 class DatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
-        dataset_reader = DatasetReader.by_name('classification_dataset_reader')
-        self.assertEquals(ClassificationDatasetReader, dataset_reader)
+        dataset_reader = DatasetReader.by_name('sequence_classifier')
+        self.assertEquals(SequenceClassifierDatasetReader, dataset_reader)
 
     def test_read_input_csv(self):
         expected_length = 9
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
-        dataset = reader.read(
-            create_temp_configuration(
-                dict(
-                    path=CSV_PATH,
-                    sep=',',
-                    forward=dict(tokens=['age'], target=dict(gold_label='job'))
-                )
-            )
+        yaml_config = os.path.join(
+            TEST_RESOURCES, "resources/datasets/biome.csv.spec.yml"
         )
+        with open(yaml_config) as dataset_cfg:
+            params = yaml.load(dataset_cfg.read())
+            dataset = reader.read(params)
+            self._check_dataset(
+                dataset, expected_length, expected_inputs, expected_labels
+            )
+        # dataset = reader.read(
+        #     create_temp_configuration(
+        #         dict(
+        #             path=CSV_PATH,
+        #             sep=',',
+        #             forward=dict(tokens=['age'], target=dict(gold_label='job'))
+        #         )
+        #     )
+        # )
 
         self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 

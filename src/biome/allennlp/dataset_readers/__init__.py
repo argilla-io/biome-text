@@ -1,1 +1,1 @@
-from .classification_dataset_reader import ClassificationDatasetReader
+from .classification_dataset_reader import SequenceClassifierDatasetReader, SequencePairClassifierDatasetReader
