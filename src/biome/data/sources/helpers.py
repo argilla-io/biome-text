@@ -53,6 +53,32 @@ def read_dataset(config: Dict, include_source: bool = False) -> Bag:
     )
 
 
+def _transform_example(
+    data: Dict, example_preparator: ExamplePreparator
+) -> Optional[Dict]:
+    try:
+        return example_preparator.read_info(data)
+    except Exception as ex:
+        _logger.warning(ex)
+        return None
+
+
+def _build_dataset(config: Dict) -> Bag:
+    params = config.copy()  # Preserve original config (multiple reads)
+
+    format = format_from_params(params.get("path"), params)
+
+    if format in _SUPPORTED_FORMATS:
+        dataset_reader, extra_arguments = _SUPPORTED_FORMATS[format]
+        return dataset_reader(**{**params, **extra_arguments})
+    else:
+        raise Exception(
+            "Format {} not supported. Supported formats are: {}".format(
+                format, " ".join(_SUPPORTED_FORMATS)
+            )
+        )
+
+
 def format_from_params(path, params) -> Optional[str]:
     format_field_name = "format"
 
@@ -66,31 +92,3 @@ def format_from_params(path, params) -> Optional[str]:
     return (
         params.pop(format_field_name).lower() if params.get(format_field_name) else None
     )
-
-
-def _transform_example(
-    data: Dict, example_preparator: ExamplePreparator
-) -> Optional[Dict]:
-    try:
-        return example_preparator.read_info(data)
-    except Exception as ex:
-        _logger.warning(ex)
-        return None
-
-
-def _build_dataset(config: Dict) -> Bag:
-    params = {
-        k: v for k, v in config.items()
-    }  # Preserve original config (multiple reads)
-
-    format = format_from_params(params.get("path"), params)
-
-    if format in _SUPPORTED_FORMATS:
-        dataset_reader, extra_arguments = _SUPPORTED_FORMATS[format]
-        return dataset_reader(**{**params, **extra_arguments})
-    else:
-        raise Exception(
-            "Format {} not supported. Supported formats are: {}".format(
-                format, " ".join(_SUPPORTED_FORMATS)
-            )
-        )
