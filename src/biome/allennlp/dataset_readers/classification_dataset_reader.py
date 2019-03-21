@@ -25,6 +25,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
     token_indexers
         By default we use a SingleIdTokenIndexer for all token fields
     """
+
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -39,7 +40,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
         self.forward_params = signature(SequenceClassifier.forward).parameters
         self.tokens_field_id = list(self.forward_params)[0]
 
-        self.token_indexers = token_indexers or {self.tokens_field_id: SingleIdTokenIndexer}
+        self.token_indexers = token_indexers or {
+            self.tokens_field_id: SingleIdTokenIndexer
+        }
 
         self._cached_datasets = dict()
 
@@ -73,10 +76,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
             if instance:
                 yield instance
 
-    def text_to_instance(self, example: Dict) -> Optional[Instance]:
+    @overrides
+    def text_to_instance(self, example: Dict[str, str]) -> Optional[Instance]:
         """Transforms an example to an Instance
-
-        The actual work is done in the private method `_example_to_instance`.
 
         Parameters
         ----------
@@ -105,7 +107,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
 
         return Instance(fields)
 
-    def _value_to_field(self, field_type: str, value: Any) -> Union[LabelField, TextField]:
+    def _value_to_field(
+        self, field_type: str, value: Any
+    ) -> Union[LabelField, TextField]:
         """Embeds the value in one of the `allennlp.data.fields`
 
         Parameters
@@ -126,7 +130,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
         """
         param = self.forward_params.get(field_type)
         if not param:
-            raise ValueError(f"{field_type} must not form part of the Instance passed on to the model!")
+            raise ValueError(
+                f"{field_type} must not form part of the Instance passed on to the model!"
+            )
         # the gold label must be optional in the classification model, otherwise no predict is possible
         if param.default is not Parameter.empty:
             return LabelField(value)
@@ -145,10 +151,11 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
     token_indexers
         By default we use a SingleIdTokenIndexer for all token fields
     """
+
     def __init__(
-            self,
-            tokenizer: Tokenizer = None,
-            token_indexers: Dict[str, TokenIndexer] = None,
+        self,
+        tokenizer: Tokenizer = None,
+        token_indexers: Dict[str, TokenIndexer] = None,
     ) -> None:
 
         super(SequenceClassifier, self).__init__(lazy=True)
@@ -160,9 +167,9 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         self.tokens_field_id = list(self.forward_params)[0]
         self.tokens2_field_id = list(self.forward_params)[1]
 
-        self.token_indexers = token_indexers or {self.tokens_field_id: SingleIdTokenIndexer,
-                                                 self.tokens2_field_id: SingleIdTokenIndexer}
+        self.token_indexers = token_indexers or {
+            self.tokens_field_id: SingleIdTokenIndexer,
+            self.tokens2_field_id: SingleIdTokenIndexer,
+        }
 
         self._cached_datasets = dict()
-
-
