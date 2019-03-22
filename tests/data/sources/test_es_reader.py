@@ -1,6 +1,6 @@
 import unittest
 
-from biome.data.sources import elasticsearch
+from biome.data.sources.readers import from_elasticsearch
 
 from tests.test_support import DaskSupportTest
 
@@ -12,7 +12,7 @@ ES_INDEX = 'gourmet-food'
 class ElasticsearchReaderTest(DaskSupportTest):
     @unittest.skip
     def test_read_whole_index(self):
-        es_index = elasticsearch.from_elasticsearch(
+        es_index = from_elasticsearch(
             npartitions=NPARTITIONS,
             client_kwargs={'hosts': ES_HOST},
             index=ES_INDEX,

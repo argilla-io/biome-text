@@ -28,11 +28,11 @@ def biome2allennlp_params(
         if not from_path:
             return dict()
         with open(from_path) as trainer_file:
-            return yaml.load(trainer_file)
+            return yaml.safe_load(trainer_file)
 
     def read_definition_from_model_spec(path: str) -> Dict:
         with open(path) as model_file:
-            model_data = yaml.load(model_file)
+            model_data = yaml.safe_load(model_file)
             try:
                 return dict(
                     dataset_reader=get_nested_property_from_data(

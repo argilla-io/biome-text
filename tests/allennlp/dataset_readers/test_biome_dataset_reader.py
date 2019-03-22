@@ -30,25 +30,21 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         yaml_config = os.path.join(
             TEST_RESOURCES, "resources/datasets/biome.csv.multi.file.spec.yml"
         )
-        with open(yaml_config) as dataset_cfg:
-            params = yaml.load(dataset_cfg.read())
-            dataset = reader.read(params)
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, expected_labels
-            )
+        dataset = reader.read(yaml_config)
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, expected_labels
+        )
 
     def test_read_input_json(self):
 
         yaml_config = os.path.join(
             TEST_RESOURCES, "resources/datasets/biome.json.spec.yml"
         )
-        with open(yaml_config) as dataset_cfg:
-            params = yaml.load(dataset_cfg.read())
-            dataset = list(reader.read(params))
+        dataset = list(reader.read(yaml_config))
 
-            assert len(dataset) == 5
-            for example in dataset:
-                print(example.fields)
+        assert len(dataset) == 5
+        for example in dataset:
+            print(example.fields)
 
     def _check_dataset(
         self,

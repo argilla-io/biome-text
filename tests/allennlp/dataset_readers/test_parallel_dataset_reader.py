@@ -45,6 +45,7 @@ class ParallelDatasetReaderTest(DaskSupportTest):
 
     def test_read_json(self):
         dataset = reader.read(create_temp_configuration({
+            'format': 'json',
             'path': JSON_PATH,
             'forward': {
                 "tokens": [
