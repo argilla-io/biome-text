@@ -46,7 +46,7 @@ def is_document(source_config: Dict[str, Any]) -> bool:
 
 def default_elasticsearch_sink(
     source_config: str, binary_path: str, es_batch_size: int
-):
+) -> Dict:
     def sanizite_index(index_name: str) -> str:
         return re.sub("\W", "_", index_name)
 
@@ -64,18 +64,6 @@ def default_elasticsearch_sink(
         es_hosts=os.getenv(ENV_ES_HOSTS, "http://localhost:9200"),
         es_batch_size=es_batch_size,
     )
-
-
-def read_datasource_cfg(cfg: Any) -> Dict:
-    try:
-        if isinstance(cfg, str):
-            with open(cfg) as cfg_file:
-                return yaml.load(cfg_file.read())
-        if isinstance(cfg, Dict):
-            return cfg
-    except Exception as e:
-        __logger.debug(e)
-        return dict(path=cfg)
 
 
 def yaml_to_dict(filepath: str):

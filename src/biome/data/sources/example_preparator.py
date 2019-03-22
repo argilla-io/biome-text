@@ -1,6 +1,5 @@
 from typing import Dict, Optional, Any, List
 
-import pandas as pd
 from biome.data.utils import get_nested_property_from_data
 
 from numpy import number
