@@ -1,10 +1,15 @@
 import logging
-from typing import Dict, Optional, TypeVar, Type
+from typing import Dict, Optional, TypeVar, Type, Callable, Any
 
 import yaml
 from dask.bag import Bag
 
-from biome.data.sources.readers import from_csv, from_json, from_excel, from_elasticsearch
+from biome.data.sources.readers import (
+    from_csv,
+    from_json,
+    from_excel,
+    from_elasticsearch,
+)
 from biome.data.sources.example_preparator import ExamplePreparator
 
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
@@ -43,14 +48,30 @@ class DataSource:
         "es": (from_elasticsearch, dict()),
     }
 
-    def __init__(
-        self, format: str, forward: Dict, **kwargs
-    ):
+    def __init__(self, format: str, forward: Dict = None, **kwargs):
         self.format = format
-        self.forward = forward.copy()
+        self.example_preparator = ExamplePreparator(forward.copy()) if forward else None
         self.kwargs = kwargs
 
-        self.example_preparator = ExamplePreparator(forward)
+    def add_supported_format(
+        self, format_key: str, parser: Callable, default_params: Dict[str, Any]
+    ) -> None:
+        """Add a new format and reader to the data source readers.
+
+        Parameters
+        ----------
+        format_key
+            The new format key
+        parser
+            The parser function
+        default_params
+            Default parameters for the parser function
+        """
+        if format_key in self.SUPPORTED_FORMATS.keys():
+            _logger.warning("Already defined format {}".format(format_key))
+            return
+
+        self.SUPPORTED_FORMATS[format_key] = (parser, default_params)
 
     def read(self, include_source: bool = False) -> Bag:
         """Reads a data source and extracts the relevant information.
@@ -65,14 +86,13 @@ class DataSource:
         bag
             A `dask.Bag` of dicts (called examples) that hold the relevant information passed on to our model
             (for example the tokens and the label).
-
         """
-        data_source = self._build_data_source()
+        data_source = self.to_bag()
         examples = data_source.map(self._extract_example, include_source)
 
         return examples.filter(lambda example: example is not None)
 
-    def _build_data_source(self) -> Bag:
+    def to_bag(self) -> Bag:
         """Reads in the data source and returns it as dicts in a `dask.Bag`
 
         Returns
