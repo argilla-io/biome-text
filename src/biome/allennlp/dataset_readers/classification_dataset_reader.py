@@ -6,10 +6,10 @@ from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
 from allennlp.data.fields import TextField, LabelField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer
-from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
-from biome.data.sources import read_dataset
-from biome.data.utils import read_datasource_cfg
 from overrides import overrides
+
+from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
+from biome.data.sources import DataSource
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -60,15 +60,15 @@ class SequenceClassifierDatasetReader(DatasetReader):
         instance
             An `Instance` that is fed to the model
         """
-        config = read_datasource_cfg(file_path)
-        ds_key = id(config)
+        data_source = DataSource.from_yaml(file_path)
+        ds_key = id(data_source)
 
         dataset = self._cached_datasets.get(ds_key)
         if dataset:
             logger.debug("Loaded cached dataset {}".format(file_path))
         else:
             logger.debug("Read dataset from {}".format(file_path))
-            dataset = read_dataset(config).persist()
+            dataset = data_source.read().persist()
             self._cached_datasets[ds_key] = dataset
 
         for example in dataset:

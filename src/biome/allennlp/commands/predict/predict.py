@@ -11,12 +11,12 @@ from allennlp.predictors import Predictor
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
-from biome.data.sources import read_dataset
 from biome.data.utils import (
     configure_dask_cluster,
     default_elasticsearch_sink,
     read_datasource_cfg,
 )
+from biome.data.sources import DataSource
 
 __logger = logging.getLogger(__name__)
 
@@ -132,11 +132,10 @@ def _predict_deprecated(args: argparse.Namespace) -> None:
             args.from_source, args.binary, args.batch_size
         )
 
-
-    source_config = read_datasource_cfg(args.from_source)
+    data_source = DataSource.from_yaml(args.from_source)
     sink_config = read_datasource_cfg(args.to_sink)
 
-    test_dataset = read_dataset(source_config, include_source=True)
+    test_dataset = data_source.read(include_source=True)
     __logger.info("Source sample data:{}".format(test_dataset.take(5)))
 
     source_size = test_dataset.count().compute()
@@ -170,13 +169,12 @@ def predict(
         )
         return predictor.predict_batch_json(partition)
 
-    to_sink = default_elasticsearch_sink(from_source, binary, batch_size)
-    source_config = read_datasource_cfg(from_source)
-    sink_config = read_datasource_cfg(to_sink)
+    data_source = DataSource.from_yaml(from_source)
+    sink_config = default_elasticsearch_sink(from_source, binary, batch_size)
 
     configure_dask_cluster(workers, worker_mem)
 
-    test_dataset = read_dataset(source_config, include_source=True).persist()
+    test_dataset = data_source.read(include_source=True).persist()
     predicted_dataset = (
         test_dataset.repartition(npartitions=workers)
         .map_partitions(predict_partition)
