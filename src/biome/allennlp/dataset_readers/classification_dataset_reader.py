@@ -79,14 +79,14 @@ class SequenceClassifierDatasetReader(DatasetReader):
             if instance:
                 yield instance
 
-    def example_to_instance(self, example: Dict[str, str], exclude_defaults: bool = False) -> Optional[Instance]:
+    def example_to_instance(self, example: Dict[str, str], exclude_optional: bool = False) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
         example
             The keys of this dictionary should match the arguments of the `forward` method of your model.
-        exclude_defaults
+        exclude_optional
             Only extract the mandatory parameters of the model's forward method.
 
         Returns
@@ -99,7 +99,8 @@ class SequenceClassifierDatasetReader(DatasetReader):
             for param_name, param in self.forward_params.items():
                 if param_name == 'self':
                     continue
-                if exclude_defaults and param.default is not Parameter.empty:
+                # if desired, skip optional parameters like the label for example
+                if exclude_optional and param.default is not Parameter.empty:
                     continue
 
                 value = example[param_name]
@@ -149,7 +150,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
         instance
             Returns `None` if the example could not be transformed to an Instance.
         """
-        return self.example_to_instance(example, exclude_defaults=True)
+        return self.example_to_instance(example, exclude_optional=True)
 
 
 @DatasetReader.register("sequence_pair_classifier")
