@@ -25,6 +25,16 @@ class DefaultBasePredictor(Predictor):
         return self.__to_prediction(inputs, output)
 
     @overrides
+    def _batch_json_to_instances(self, json_dicts: List[JsonDict]) -> List[Instance]:
+        instances = []
+        for json_dict in json_dicts:
+            instance = self._json_to_instance(json_dict)
+            # skip examples that failed to be converted to instances! For example (and maybe solely) empty strings
+            if instance:
+                instances.append(instance)
+        return instances
+
+    @overrides
     def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
         instances = self._batch_json_to_instances(inputs)
         outputs = self._model.forward_on_instances(instances)
