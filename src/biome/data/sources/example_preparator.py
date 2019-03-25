@@ -8,6 +8,7 @@ from numpy import number
 GOLD_LABEL_DEFINITION_FIELD = "target"
 VALUE_MAPPING_FIELD = "values_mapping"
 USE_MISSING_LABEL_FIELD = "use_missing_label"
+METADATA_FILE_FIELD = "metadata_file"
 
 RESERVED_FIELD_PREFIX = "@"
 SOURCE_FIELD = "{}source".format(RESERVED_FIELD_PREFIX)
@@ -56,12 +57,14 @@ class ExamplePreparator(object):
         if gold_label_definition:
             values_mapping = gold_label_definition.pop(VALUE_MAPPING_FIELD, None)
             use_missing_label = gold_label_definition.pop(USE_MISSING_LABEL_FIELD, None)
+            metadata_file = gold_label_definition.pop(METADATA_FILE_FIELD, None)
 
             for key, value in gold_label_definition.items():
                 transformation = dict(
                     fields=[value],
                     values_mapping=values_mapping,
                     use_missing_label=use_missing_label,
+                    metadata_file=metadata_file,
                 )
                 self._input_transformations[key] = self.__build_transformation(
                     transformation
