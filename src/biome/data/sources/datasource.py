@@ -87,6 +87,8 @@ class DataSource:
             A `dask.Bag` of dicts (called examples) that hold the relevant information passed on to our model
             (for example the tokens and the label).
         """
+        if not ExamplePreparator:
+            raise RuntimeError("You properly forgot to specify the forward configuration.")
         data_source = self.to_bag()
         examples = data_source.map(self._extract_example, include_source)
 
