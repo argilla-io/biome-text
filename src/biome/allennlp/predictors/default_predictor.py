@@ -33,3 +33,8 @@ class DefaultBasePredictor(Predictor):
     @staticmethod
     def __to_prediction(inputs, output):
         return dict(input=inputs, annotation=sanitize(output))
+
+
+@Predictor.register("sequence_classifier")
+class SequenceClassifierPredictor(DefaultBasePredictor):
+    pass
