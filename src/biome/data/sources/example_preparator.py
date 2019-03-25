@@ -1,6 +1,5 @@
 from typing import Dict, Optional, Any, List
 
-import pandas as pd
 from biome.data.utils import get_nested_property_from_data
 
 from numpy import number
@@ -43,11 +42,10 @@ class TransformationConfig(object):
 
 
 class ExamplePreparator(object):
-    def __init__(self, dataset_transformations: Dict, include_source: bool = False):
+    def __init__(self, dataset_transformations: Dict):
         transformations = (dataset_transformations or dict()).copy()
         gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, {})
 
-        self._include_source = include_source
         self._input_transformations = {
             key: self.__build_transformation(value)
             for key, value in transformations.items()
@@ -114,7 +112,7 @@ class ExamplePreparator(object):
         input = " ".join([value for value in input_values if value]).strip()
         return input if len(input) > 0 else None
 
-    def read_info(self, source: Any) -> Dict:
+    def read_info(self, source: Dict, include_source: bool = False) -> Dict:
 
         example = {
             field_name: self.__apply_transformation(source, transformation_config)
@@ -125,5 +123,5 @@ class ExamplePreparator(object):
             example = source
 
         return (
-            example if not self._include_source else {**example, SOURCE_FIELD: source}
+            example if not include_source else {**example, SOURCE_FIELD: source}
         )

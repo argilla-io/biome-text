@@ -7,28 +7,24 @@ from tests.test_support import DaskSupportTest
 
 FILES_PATH = os.path.join(TESTS_BASEPATH, 'resources/files')
 
-from biome.data.sources.helpers import read_dataset
+from biome.data.sources import DataSource
 from biome.data.sinks.helpers import store_dataset
 
 
-class ExcelDatasourceTest(DaskSupportTest):
+class JsonDatasourceTest(DaskSupportTest):
 
-    def test_read_and_write_excel(self):
-        file_path = os.path.join(FILES_PATH, 'test.xlsx')
+    def test_read_and_write_json(self):
+        file_path = os.path.join(FILES_PATH, 'dataset_source.jsonl')
 
-        datasource = read_dataset(
-            dict(path=file_path, format='xlsx')
-        )
+        datasource = DataSource(format='json', path=file_path)
 
         tmpfile = tempfile.mkdtemp()
-        store_dataset(datasource, dict(path=tmpfile))
+        store_dataset(datasource.to_bag(), dict(path=tmpfile))
 
-        stored_dataset = read_dataset(
-            dict(path=os.path.join(tmpfile, '*.part'), format='json')
-        )
+        stored_dataset = DataSource(format='json', path=os.path.join(tmpfile, '*.part'))
 
-        stored = stored_dataset.compute()
-        read = datasource.compute()
+        stored = stored_dataset.to_bag().compute()
+        read = datasource.to_bag().compute()
 
         assert len(stored) == len(read)
 

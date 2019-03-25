@@ -9,7 +9,7 @@ METADATA_FILE = os.path.join(TESTS_BASEPATH, "resources/classes.txt")
 
 class ExamplePreparatorTest(unittest.TestCase):
     def test_simple_example_preparator(self):
-        preparator = ExamplePreparator(dict(), include_source=False)
+        preparator = ExamplePreparator(dict())
 
         source = dict(a="single", dictionary="example")
         example = preparator.read_info(source)
@@ -18,7 +18,7 @@ class ExamplePreparatorTest(unittest.TestCase):
 
     def test_simple_transformations(self):
         preparator = ExamplePreparator(
-            dict(gold_label="a", other_field=["b", "c"]), include_source=False
+            dict(gold_label="a", other_field=["b", "c"]),
         )
 
         source = dict(a="Target field", b="b value", c="c value")
@@ -46,17 +46,16 @@ class ExamplePreparatorTest(unittest.TestCase):
                 gold_label=dict(field="a", use_missing_label="Missing"),
                 other_field=["b", "c"],
             ),
-            include_source=True,
         )
 
         source = dict(b="b value", c="c value")
-        example = preparator.read_info(source)
+        example = preparator.read_info(source, include_source=True)
         assert "Missing" == example["gold_label"]
         assert example["other_field"] == " ".join([source["b"], source["c"]])
         assert example["@source"] == source
 
         source = dict(a="A value", b="b value", c="c value")
-        example = preparator.read_info(source)
+        example = preparator.read_info(source, include_source=True)
         assert source["a"] == example["gold_label"]
         assert example["other_field"] == " ".join([source["b"], source["c"]])
 

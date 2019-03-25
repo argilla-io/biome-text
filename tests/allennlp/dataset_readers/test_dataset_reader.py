@@ -1,8 +1,9 @@
 import os
 import unittest
+import tempfile
+import pytest
 
 import yaml
-from allennlp.common import Params
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
 from typing import Iterable
@@ -10,6 +11,7 @@ from typing import Iterable
 from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 from tests.test_support import DaskSupportTest
+
 
 CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/dataset_source.csv')
 NO_HEADER_CSV_PATH = os.path.join(TEST_RESOURCES, 'resources/data/no.header.dataset_source.csv')
@@ -22,6 +24,7 @@ reader = SequenceClassifierDatasetReader()
 
 
 class DatasetReaderTest(DaskSupportTest):
+
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name('sequence_classifier')
         self.assertEquals(SequenceClassifierDatasetReader, dataset_reader)
@@ -34,21 +37,10 @@ class DatasetReaderTest(DaskSupportTest):
         yaml_config = os.path.join(
             TEST_RESOURCES, "resources/datasets/biome.csv.spec.yml"
         )
-        with open(yaml_config) as dataset_cfg:
-            params = yaml.load(dataset_cfg.read())
-            dataset = reader.read(params)
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, expected_labels
-            )
-        # dataset = reader.read(
-        #     create_temp_configuration(
-        #         dict(
-        #             path=CSV_PATH,
-        #             sep=',',
-        #             forward=dict(tokens=['age'], target=dict(gold_label='job'))
-        #         )
-        #     )
-        # )
+        dataset = reader.read(yaml_config)
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, expected_labels
+        )
 
         self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
@@ -58,18 +50,19 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['blue-collar', 'technician', 'management', 'services', 'retired', 'admin.']
         expected_inputs = ['44', '53', '28', '39', '55', '30', '37', '36']
 
-        dataset = reader.read(
-            create_temp_configuration(
-                dict(
-                    path=NO_HEADER_CSV_PATH,
-                    sep=',',
-                    header=None,
-                    forward=dict(tokens=['0'], target=dict(gold_label='1'))
-                )
-            )
+        datasource_cfg = dict(
+            format='csv',
+            path=NO_HEADER_CSV_PATH,
+            sep=',',
+            header=None,
+            forward=dict(tokens=['0'], target=dict(gold_label='1'))
         )
 
-        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+        with tempfile.NamedTemporaryFile('w') as cfg_file:
+            yaml.dump(datasource_cfg, cfg_file)
+            dataset = reader.read(cfg_file.name)
+
+            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_reader_csv_with_mappings(self):
         expected_length = 9
@@ -80,38 +73,57 @@ class DatasetReaderTest(DaskSupportTest):
                            'management',
                            'single', '30', 'management', 'divorced', '39', 'divorced', '.']
 
-        dataset = reader.read(create_temp_configuration(
-            dict(path=CSV_PATH,
-                 sep=',',
-                 forward=dict(
-                     tokens=['age', 'job', 'marital'],
-                     target=dict(
-                         gold_label='housing',
-                         values_mapping=dict(yes='OF_COURSE', no='NOT_AT_ALL')
-                     )
-                 ))
-        ))
+        datasource_cfg = dict(
+            format='csv',
+            path=CSV_PATH,
+            sep=',',
+            forward=dict(
+                tokens=['age', 'job', 'marital'],
+                target=dict(
+                    gold_label='housing',
+                    values_mapping=dict(yes='OF_COURSE', no='NOT_AT_ALL')
+                )
+             )
+        )
+        with tempfile.NamedTemporaryFile('w') as cfg_file:
+            yaml.dump(datasource_cfg, cfg_file)
+            dataset = reader.read(cfg_file.name)
 
-        self._check_dataset(dataset, expected_length, expected_inputs, ['NOT_AT_ALL', 'OF_COURSE'])
+            self._check_dataset(dataset, expected_length, expected_inputs, ['NOT_AT_ALL', 'OF_COURSE'])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
         expected_length = 3
         expected_inputs = ['1', '2', '3']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
-        dataset = reader.read(create_temp_configuration(
-            dict(path=local_data_path, sep=';',
-                 forward=dict(tokens=['dataset id'], target=dict(gold_label='dataset id')))
-        ))
 
-        self._check_dataset(dataset, expected_length, expected_inputs, ['1', '2', '3'])
+        datasource_cfg = dict(
+            format='csv',
+            path=local_data_path,
+            sep=';',
+            forward=dict(
+                tokens=['dataset id'],
+                target=dict(
+                    gold_label='dataset id',
+                )
+            )
+        )
+        with tempfile.NamedTemporaryFile('w') as cfg_file:
+            yaml.dump(datasource_cfg, cfg_file)
+            dataset = reader.read(cfg_file.name)
+
+            self._check_dataset(dataset, expected_length, expected_inputs, ['1', '2', '3'])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
         expected_inputs = ['Dufils', 'Anne', 'Pierre', 'Jousseaume', 'Thierry']
         expected_labels = ['11205 - Nurses: Private, Ho', 'person']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_2.csv')
-        dataset = reader.read(create_temp_configuration(
-            dict(path=local_data_path, sep=';', forward={
+
+        datasource_cfg = dict(
+            format='csv',
+            path=local_data_path,
+            sep=';',
+            forward={
                 "tokens": [
                     "name"
                 ],
@@ -119,8 +131,12 @@ class DatasetReaderTest(DaskSupportTest):
                     "gold_label": "category of institution"
                 }
             }
-                 )))
-        self._check_dataset(dataset, expectedDatasetLength, expected_inputs, expected_labels)
+        )
+        with tempfile.NamedTemporaryFile('w') as cfg_file:
+            yaml.dump(datasource_cfg, cfg_file)
+            dataset = reader.read(cfg_file.name)
+
+            self._check_dataset(dataset, expectedDatasetLength, expected_inputs, expected_labels)
 
     def test_reader_csv_with_missing_label_and_partial_mappings(self):
         '''
@@ -139,20 +155,29 @@ class DatasetReaderTest(DaskSupportTest):
         # 'None' is a custom partial mapping for missing labels
         expected_labels = ['11205 - Nurses: Private, Ho', 'person', 'NOLABEL']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/french_customer_data_clean_3_missing_label.csv')
-        dataset = reader.read(create_temp_configuration(dict(path=local_data_path, sep=';', forward={
-            "tokens": [
-                "name"
-            ],
-            "target": {
-                "gold_label": "category of institution",
-                "use_missing_label": "NOLABEL",
-                "values_mapping": {
-                    "None": "NOLABEL"
+
+        datasource_cfg = dict(
+            format='csv',
+            path=local_data_path,
+            sep=';',
+            forward={
+                "tokens": [
+                    "name"
+                ],
+                "target": {
+                    "gold_label": "category of institution",
+                    "use_missing_label": "NOLABEL",
+                    "values_mapping": {
+                        "None": "NOLABEL"
+                    }
                 }
             }
-        })))
+        )
+        with tempfile.NamedTemporaryFile('w') as cfg_file:
+            yaml.dump(datasource_cfg, cfg_file)
+            dataset = reader.read(cfg_file.name)
 
-        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_reader_csv_uk_data(self):
         expected_length = 9
@@ -160,17 +185,26 @@ class DatasetReaderTest(DaskSupportTest):
         expected_labels = ['None ', 'None', 'None', 'Assembly Rooms Edinburgh', 'Fortress Technology (europe) Ltd',
                            'None', 'None', 'Scott David', '  ', 'None', 'Corby Borough Council']
         local_data_path = os.path.join(TEST_RESOURCES, 'resources/data/uk_customer_data_10.csv')
-        dataset = reader.read(create_temp_configuration(dict(path=local_data_path, sep=';', forward={
-            "tokens": [
-                "name"
-            ],
-            "target": {
-                "gold_label": "organisation name",
-                "use_missing_label": "None"
-            }
-        })))
 
-        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
+        datasource_cfg = dict(
+            format='csv',
+            path=local_data_path,
+            sep=';',
+            forward={
+                "tokens": [
+                    "name"
+                ],
+                "target": {
+                    "gold_label": "organisation name",
+                    "use_missing_label": "None"
+                }
+            }
+        )
+        with tempfile.NamedTemporaryFile('w') as cfg_file:
+            yaml.dump(datasource_cfg, cfg_file)
+            dataset = reader.read(cfg_file.name)
+
+            self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def _check_dataset(self, dataset, expected_length: int, expected_inputs: Iterable, expected_labels: Iterable):
         def check_text_field(textField: TextField, expected_inputs: Iterable):
@@ -191,6 +225,7 @@ class DatasetReaderTest(DaskSupportTest):
 
     def test_read_json(self):
         dataset = reader.read(create_temp_configuration({
+            'format': 'json',
             'path': JSON_PATH,
             'forward': {
                 "tokens": [

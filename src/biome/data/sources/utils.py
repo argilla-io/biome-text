@@ -1,4 +1,5 @@
-from typing import Tuple, List, Optional, Dict, Any
+from typing import Tuple, List, Optional, Dict, Any, Union
+import os.path
 
 
 ID = "id"
@@ -24,3 +25,25 @@ def row2dict(
     data[RESOURCE] = data.get(_DASK_PATH_COLUMN_NAME, str(default_path))
 
     return data
+
+
+def extension_from_path(path: Union[str, List[str]]) -> str:
+    """Helper method to get file extension
+
+    Parameters
+    ----------
+    path
+        A string or a list of strings.
+        If it is a list, the first entry is taken.
+
+    Returns
+    -------
+    extension
+        File extension
+    """
+    if isinstance(path, str):
+        path = [path]
+
+    _, extension = os.path.splitext(path[0])
+
+    return extension.lower()[1:]  # skip first char, which is a dot
