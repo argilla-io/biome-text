@@ -50,6 +50,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
     def _read(self, file_path: str) -> Iterable[Instance]:
         """An generator that yields `Instance`s that are fed to the model
 
+        This method is implicitly called when training the model.
+        The predictor uses the `self.text_to_instance` method.
+
         Parameters
         ----------
         file_path
@@ -72,36 +75,38 @@ class SequenceClassifierDatasetReader(DatasetReader):
             self._cached_datasets[ds_key] = dataset
 
         for example in dataset:
-            instance = self.text_to_instance(example)
+            instance = self.example_to_instance(example)
             if instance:
                 yield instance
 
-    @overrides
-    def text_to_instance(self, example: Dict[str, str]) -> Optional[Instance]:
-        """Transforms an example to an Instance
+    def example_to_instance(self, example: Dict[str, str], exclude_defaults: bool = False) -> Optional[Instance]:
+        """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
         example
             The keys of this dictionary should match the arguments of the `forward` method of your model.
+        exclude_defaults
+            Only extract the mandatory parameters of the model's forward method.
 
         Returns
         -------
         instance
             Returns `None` if the example could not be transformed to an Instance.
-
-        Raises
-        ------
-        ValueError
-            If a value in the `example` dict resolves to False.
         """
         fields = {}
         try:
-            for field, value in example.items():
+            for param_name, param in self.forward_params.items():
+                if param_name == 'self':
+                    continue
+                if exclude_defaults and param.default is not Parameter.empty:
+                    continue
+
+                value = example[param_name]
                 if not value:
-                    raise ValueError(f"{field} probably contains an empty string!")
-                fields[field] = self._value_to_field(field, value)
-        except Exception as e:
+                    raise ValueError(f"{param_name} probably contains an empty string!")
+                fields[param_name] = self._value_to_field(param_name, value)
+        except ValueError as e:
             logger.warning(e)
             return None
 
@@ -115,29 +120,36 @@ class SequenceClassifierDatasetReader(DatasetReader):
         Parameters
         ----------
         field_type
-            Name of the field, must match one of the arguments in the `forward` method of your model.
+            Name of the field, must match one of the parameters in the `forward` method of your model.
         value
             Value of the field.
 
         Returns
         -------
         Returns either a `LabelField` or a `TextField` depending on the `field_type` parameter.
-
-        Raises
-        ------
-        ValueError
-            If `field_type` is not found in the arguments of your model's `forward` method.
         """
         param = self.forward_params.get(field_type)
-        if not param:
-            raise ValueError(
-                f"{field_type} must not form part of the Instance passed on to the model!"
-            )
         # the gold label must be optional in the classification model, otherwise no predict is possible
         if param.default is not Parameter.empty:
             return LabelField(value)
         else:
             return TextField(self.tokenizer.tokenize(value), self.token_indexers)
+
+    @overrides
+    def text_to_instance(self, example: Dict[str, str]) -> Optional[Instance]:
+        """Transforms an example to an Instance for the predictor.
+
+        Parameters
+        ----------
+        example
+            The keys of this dictionary must include the mandatory arguments of the `forward` method of your model.
+
+        Returns
+        -------
+        instance
+            Returns `None` if the example could not be transformed to an Instance.
+        """
+        return self.example_to_instance(example, exclude_defaults=True)
 
 
 @DatasetReader.register("sequence_pair_classifier")
