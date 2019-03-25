@@ -62,7 +62,7 @@ class BiomePredict(Subcommand):
         return subparser
 
 
-def __predictor_from_args(
+def _predictor_from_args(
     archive_file: str, cuda_device: int, include_package: List[str] = []
 ) -> Predictor:
     for package_name in include_package:
@@ -144,7 +144,7 @@ def _predict_deprecated(args: argparse.Namespace) -> None:
     test_dataset = test_dataset.repartition(batches)
 
     args.archive_file = to_local_archive(args.binary)
-    predictor = __predictor_from_args(args)
+    predictor = _predictor_from_args(args)
 
     for i, batch in enumerate(get_batch(test_dataset, batch_size)):
         _logger.info("Running prediction batch {}...".format(i))
@@ -162,7 +162,7 @@ def predict(
     cuda_device: int = -1,
 ) -> None:
     def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
-        predictor = __predictor_from_args(
+        predictor = _predictor_from_args(
             archive_file=to_local_archive(binary), cuda_device=cuda_device
         )
         return predictor.predict_batch_json(partition)
