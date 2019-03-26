@@ -23,8 +23,9 @@ if __name__ == "__main__":
             "inquirer>=2.5.1,<2.6.0",
             "smart-open>=1.7.0",
             "coloredlogs",
-            # fix pyyaml version to avoid package incompatibilities
-            "pyyaml>=3.0,<4.0",
+            # github complains that pyyaml <4.0 is a security risk. 
+            # We will use the newest one, some packages, though, will complain because they have not updated their requirements!
+            "pyyaml",
             "ujson",
             "spacy",
             "pandas",
