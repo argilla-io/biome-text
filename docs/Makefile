@@ -8,7 +8,7 @@ PAPER         =
 BUILDDIR      = _build
 AUTODOCDIR    = api
 AUTODOCBUILD  = sphinx-apidoc
-PROJECT       = biome-allennlp
+PROJECT       = biome-text
 MODULEDIR     = ../src/biome
 
 # User-friendly check for sphinx-build

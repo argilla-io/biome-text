@@ -81,7 +81,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'biome-allennlp_2'
+project = u'biome-text'
 copyright = u'2018, Francisco Aranda'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -235,7 +235,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'user_guide.tex', u'biome-allennlp_2 Documentation',
+  ('index', 'user_guide.tex', u'biome-text Documentation',
    u'Francisco Aranda', 'manual'),
 ]
 

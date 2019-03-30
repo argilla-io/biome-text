@@ -1,8 +1,8 @@
 ==============
-biome-allennlp
+biome-text
 ==============
 
-This is the documentation of **biome-allennlp**.
+This is the documentation of **biome-text**.
 
 .. note::
 
