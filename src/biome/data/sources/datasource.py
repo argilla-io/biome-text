@@ -53,8 +53,9 @@ class DataSource:
         self.example_preparator = ExamplePreparator(forward.copy()) if forward else None
         self.kwargs = kwargs
 
+    @classmethod
     def add_supported_format(
-        self, format_key: str, parser: Callable, default_params: Dict[str, Any]
+        cls, format_key: str, parser: Callable, default_params: Dict[str, Any]
     ) -> None:
         """Add a new format and reader to the data source readers.
 
@@ -67,11 +68,11 @@ class DataSource:
         default_params
             Default parameters for the parser function
         """
-        if format_key in self.SUPPORTED_FORMATS.keys():
+        if format_key in cls.SUPPORTED_FORMATS.keys():
             _logger.warning("Already defined format {}".format(format_key))
             return
 
-        self.SUPPORTED_FORMATS[format_key] = (parser, default_params)
+        cls.SUPPORTED_FORMATS[format_key] = (parser, default_params)
 
     def read(self, include_source: bool = False) -> Bag:
         """Reads a data source and extracts the relevant information.
@@ -88,7 +89,9 @@ class DataSource:
             (for example the tokens and the label).
         """
         if not ExamplePreparator:
-            raise RuntimeError("You properly forgot to specify the forward configuration.")
+            raise RuntimeError(
+                "You properly forgot to specify the forward configuration."
+            )
         data_source = self.to_bag()
         examples = data_source.map(self._extract_example, include_source)
 
