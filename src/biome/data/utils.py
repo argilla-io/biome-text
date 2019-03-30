@@ -3,13 +3,14 @@ import logging
 import os
 import re
 from multiprocessing.pool import ThreadPool
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from typing import Optional
 
 import dask
 import dask.multiprocessing
 from dask.cache import Cache
 from dask.distributed import Client
+from dask.utils import parse_bytes
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -77,9 +78,16 @@ def read_params_from_file(filepath: str) -> Dict[str, Any]:
         return yaml.load(stream, Loader)
 
 
-def configure_dask_cluster(n_workers: int = 1, worker_memory: int = 3e9):
+def configure_dask_cluster(n_workers: int = 1, worker_memory: Union[str, int] = "1GB"):
+    global dask_client
+    try:
+        if dask_client:
+            return
+    except:
+        pass
+
     def create_dask_client(
-        dask_cluster: str, cache_size: Optional[int], workers: int
+        dask_cluster: str, cache_size: Optional[int], workers: int, worker_mem: int
     ) -> Client:
         if cache_size:
             cache = Cache(cache_size)
@@ -97,7 +105,7 @@ def configure_dask_cluster(n_workers: int = 1, worker_memory: int = 3e9):
                     }
                 )
                 cluster = LocalCluster(
-                    n_workers=0, threads_per_worker=1, memory_limit=worker_memory
+                    n_workers=0, threads_per_worker=1, memory_limit=worker_mem
                 )
                 cluster.scale_up(workers)
                 return Client(cluster)
@@ -106,7 +114,6 @@ def configure_dask_cluster(n_workers: int = 1, worker_memory: int = 3e9):
         except:
             return dask.distributed.Client()
 
-    global dask_client
     # import pandas as pd
     # pd.options.mode.chained_assignment = None
 
@@ -114,8 +121,11 @@ def configure_dask_cluster(n_workers: int = 1, worker_memory: int = 3e9):
     dask_cache_size = os.environ.get(ENV_DASK_CACHE_SIZE, DEFAULT_DASK_CACHE_SIZE)
 
     if dask_cluster:
+        if isinstance(worker_memory, str):
+            worker_memory = parse_bytes(worker_memory)
+
         dask_client = create_dask_client(
-            dask_cluster, dask_cache_size, workers=n_workers
+            dask_cluster, dask_cache_size, workers=n_workers, worker_mem=worker_memory
         )
     else:
         pool = ThreadPool(n_workers)
