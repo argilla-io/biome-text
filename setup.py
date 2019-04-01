@@ -25,7 +25,7 @@ if __name__ == "__main__":
             "coloredlogs",
             # github complains that pyyaml <4.0 is a security risk. 
             # We will use the newest one, some packages, though, will complain because they have not updated their requirements!
-            "pyyaml",
+            "PyYAML<=3.13,>=3.10",
             "ujson",
             "spacy",
             "pandas",
