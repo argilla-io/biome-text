@@ -86,5 +86,4 @@ def temporal_static_path(explore_view: str):
     tar_file.extractall(path=statics_tmp)
     tar_file.close()
 
-    print(statics_tmp)
     return statics_tmp
