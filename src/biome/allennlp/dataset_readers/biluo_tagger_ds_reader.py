@@ -2,10 +2,10 @@ import glob
 import logging
 from typing import List, Dict, Iterable
 
+import pandas
 from allennlp.common.file_utils import cached_path
 from allennlp.data import DatasetReader, Token, Instance, Field, TokenIndexer
-from allennlp.data.fields import TextField, MetadataField, SequenceLabelField
-import pandas
+from allennlp.data.fields import TextField, SequenceLabelField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -33,18 +33,12 @@ class BiluoSequenceTaggerDatasetReader(DatasetReader):
         self._label_ns = label_namespace
 
     def _read(self, file_path: str) -> Iterable[Instance]:
-
-        df = pandas.concat(
-            [
-                pandas.read_json(cached_path(file), orient="records", lines=True)
-                for file in glob.glob(file_path)
-            ]
-        )
-
-        for tokens, tags in df.values:
-            yield self.text_to_instance(
-                tokens=[Token(t) for t in tokens], ner_tags=tags
-            )
+        for file in glob.glob(file_path):
+            df = pandas.read_json(cached_path(file), orient="records", lines=True)
+            for tokens, tags in zip(df.tokens.values, df.tags.values):
+                yield self.text_to_instance(
+                    tokens=[Token(t) for t in tokens], ner_tags=tags
+                )
 
     def text_to_instance(
         self,  # type: ignore
@@ -59,8 +53,8 @@ class BiluoSequenceTaggerDatasetReader(DatasetReader):
         sequence = TextField(tokens, self._token_indexers)
         instance_fields: Dict[str, Field] = {
             "tokens": sequence,
-            "metadata": MetadataField({"words": [x.text for x in tokens]}),
-            "ner_tags": SequenceLabelField(ner_tags, sequence, "ner_tags"),
+            # "metadata": MetadataField({"words": [x.text for x in tokens]}),
+            # "ner_tags": SequenceLabelField(ner_tags, sequence, "ner_tags"),
             "tags": SequenceLabelField(ner_tags, sequence, self._label_ns),
         }
 

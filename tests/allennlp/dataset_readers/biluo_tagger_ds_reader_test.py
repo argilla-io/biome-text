@@ -11,7 +11,7 @@ class BiluoSequenceTaggerDatasetReaderTest(unittest.TestCase):
 
     reader = BiluoSequenceTaggerDatasetReader(lazy=False)
     data_path = os.path.join(TEST_RESOURCES, "data/biluo.data.json")
-    expected_dataset_size = 3797
+    expected_dataset_size = 1
 
     def test_read_biluo_dataset(self):
         instances = self.reader.read(self.data_path)
