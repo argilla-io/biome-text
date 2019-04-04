@@ -1,5 +1,6 @@
 from typing import List
 
+import numpy as np
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance, DatasetReader
@@ -7,11 +8,8 @@ from allennlp.models import Model
 from allennlp.predictors import Predictor
 from overrides import overrides
 
-import numpy as np
-
 
 class DefaultBasePredictor(Predictor):
-
     def __init__(self, model: Model, reader: DatasetReader) -> None:
         super(DefaultBasePredictor, self).__init__(model, reader)
 
@@ -35,7 +33,10 @@ class DefaultBasePredictor(Predictor):
         idx = instances != np.array(None)
 
         outputs = self._model.forward_on_instances(instances[idx])
-        return [self.__to_prediction(input, output) for input, output in zip(inputs_ar[idx], outputs)]
+        return [
+            self.__to_prediction(input, output)
+            for input, output in zip(inputs_ar[idx], outputs)
+        ]
 
     @staticmethod
     def __to_prediction(inputs, output):
