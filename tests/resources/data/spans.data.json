@@ -1,0 +1,1 @@
+{ "text" : "Deviation: Lack of Dannacol on support and surrounding.", "annotations" : [{              "entity" : "description",              "value" : "support",              "start" : 31,              "end" : 38,              "confidence" : null,              "extractor" : "RuleBasedTagger"            }          ] }
