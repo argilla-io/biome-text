@@ -11,8 +11,9 @@ from gevent.pywsgi import WSGIServer
 from biome.data.utils import ENV_ES_HOSTS
 from .app import make_app
 
+# TODO centralize configuration
+logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
 
 
 class BiomeExplore(Subcommand):
@@ -61,6 +62,7 @@ def _select_index(es_host: str, index_prefix: str = "prediction") -> str:
 
 
 def _explore(args: argparse.Namespace) -> None:
+    _logger.info("Hilo")
     port = args.port
     es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
 
@@ -84,5 +86,4 @@ def temporal_static_path(explore_view: str):
     tar_file.extractall(path=statics_tmp)
     tar_file.close()
 
-    print(statics_tmp)
     return statics_tmp

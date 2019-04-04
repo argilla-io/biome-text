@@ -14,7 +14,9 @@ from biome.data.sinks import store_dataset
 from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 from biome.data.sources import DataSource
 
-__logger = logging.getLogger(__name__)
+# TODO centralize configuration
+logging.basicConfig(level=logging.INFO)
+_logger = logging.getLogger(__name__)
 
 
 class BiomePredict(Subcommand):
@@ -119,7 +121,7 @@ def _predict_deprecated(args: argparse.Namespace) -> None:
             ],
             npartitions=1,
         )
-        __logger.info(store_dataset(store, sink_config).persist())
+        _logger.info(store_dataset(store, sink_config).persist())
 
     configure_dask_cluster(n_workers=1)
 
@@ -132,23 +134,23 @@ def _predict_deprecated(args: argparse.Namespace) -> None:
     sink_config = read_datasource_cfg(args.to_sink)
 
     test_dataset = data_source.read(include_source=True)
-    __logger.info("Source sample data:{}".format(test_dataset.take(5)))
+    _logger.info("Source sample data:{}".format(test_dataset.take(5)))
 
     source_size = test_dataset.count().compute()
     batch_size = args.batch_size
     batches = max(1, source_size // batch_size)
 
-    __logger.info("Number of batches {}".format(batches))
+    _logger.info("Number of batches {}".format(batches))
     test_dataset = test_dataset.repartition(batches)
 
     args.archive_file = to_local_archive(args.binary)
     predictor = __predictor_from_args(args)
 
     for i, batch in enumerate(get_batch(test_dataset, batch_size)):
-        __logger.info("Running prediction batch {}...".format(i))
+        _logger.info("Running prediction batch {}...".format(i))
         make_predict(batch, predictor, sink_config)
 
-    __logger.info("Finished predictions")
+    _logger.info("Finished predictions")
 
 
 def predict(
@@ -177,4 +179,4 @@ def predict(
         .persist()
     )
 
-    [__logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
+    [_logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
