@@ -1,8 +1,10 @@
 import os
+
 import pytest
-from tests.test_context import TEST_RESOURCES
-from biome.allennlp.predictors import get_predictor_from_archive
 from allennlp.models import load_archive
+from biome.allennlp.predictors import get_predictor_from_archive
+
+from tests.test_context import TEST_RESOURCES
 
 MODEL_PATH = os.path.join(
     TEST_RESOURCES, "resources/models/eng_es_word_classifier/model.tar.gz"
@@ -54,4 +56,6 @@ def test_predict_batch_json(predictor):
 
     with pytest.raises(IndexError) as err:
         predictor.predict_batch_json([inputs[2]])
-    assert "No instances found in batch. Check input or make batch size bigger." in str(err)
+    assert "No instances found in batch. Check input or make batch size bigger." in str(
+        err
+    )
