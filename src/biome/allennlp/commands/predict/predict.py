@@ -83,76 +83,6 @@ def _predict(args: argparse.Namespace) -> None:
     )
 
 
-def _predict_deprecated(args: argparse.Namespace) -> None:
-    def get_batch(dataset, batch_size: int):
-        """A batch generator.
-
-        Continuously generates a batch of size `batch_size` out of the provided dataset
-
-        Parameters
-        ----------
-        dataset : An iterable object
-            Batches will be produced out of this dataset
-        batch_size : int
-            The batch size
-
-        Yields
-        ------
-        batch : list
-            The next batch of the dataset
-        """
-        batch = []
-        for example in dataset:
-            batch.append(example)
-            if len(batch) == batch_size:
-                yield batch
-                batch = []
-        if len(batch) > 0:
-            yield batch
-
-    def make_predict(
-        batch: List[Dict[str, Any]], predictor: Predictor, sink_config: Dict[str, Any]
-    ):
-        results = predictor.predict_batch_json(batch)
-        store = db.from_sequence(
-            [
-                predictor.dump_line(output)
-                for model_input, output in zip(batch, results)
-            ],
-            npartitions=1,
-        )
-        _logger.info(store_dataset(store, sink_config).persist())
-
-    configure_dask_cluster(n_workers=1)
-
-    if not args.to_sink:
-        args.to_sink = default_elasticsearch_sink(
-            args.from_source, args.binary, args.batch_size
-        )
-
-    data_source = DataSource.from_yaml(args.from_source)
-    sink_config = read_datasource_cfg(args.to_sink)
-
-    test_dataset = data_source.read(include_source=True)
-    _logger.info("Source sample data:{}".format(test_dataset.take(5)))
-
-    source_size = test_dataset.count().compute()
-    batch_size = args.batch_size
-    batches = max(1, source_size // batch_size)
-
-    _logger.info("Number of batches {}".format(batches))
-    test_dataset = test_dataset.repartition(batches)
-
-    args.archive_file = to_local_archive(args.binary)
-    predictor = __predictor_from_args(args)
-
-    for i, batch in enumerate(get_batch(test_dataset, batch_size)):
-        _logger.info("Running prediction batch {}...".format(i))
-        make_predict(batch, predictor, sink_config)
-
-    _logger.info("Finished predictions")
-
-
 def predict(
     binary: str,
     from_source: str,
@@ -180,3 +110,4 @@ def predict(
     )
 
     [_logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
+
