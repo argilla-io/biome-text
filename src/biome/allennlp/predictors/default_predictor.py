@@ -22,7 +22,7 @@ class DefaultBasePredictor(Predictor):
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         instance = self._json_to_instance(inputs)
         output = self.predict_instance(instance)
-        return self.__to_prediction(inputs, output)
+        return self._to_prediction(inputs, output)
 
     @overrides
     def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
@@ -34,12 +34,12 @@ class DefaultBasePredictor(Predictor):
 
         outputs = self._model.forward_on_instances(instances[idx])
         return [
-            self.__to_prediction(input, output)
+            self._to_prediction(input, output)
             for input, output in zip(inputs_ar[idx], outputs)
         ]
 
     @staticmethod
-    def __to_prediction(inputs, output):
+    def _to_prediction(inputs, output):
         return dict(input=inputs, annotation=sanitize(output))
 
 
