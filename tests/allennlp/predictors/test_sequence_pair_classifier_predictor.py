@@ -11,8 +11,8 @@ from tests.test_support import DaskSupportTest
 MODEL_PATH = os.path.join(TEST_RESOURCES, "resources/models/model.tar.gz")
 
 
-# TODO @dvilasuero check this test when SequenceClassifier refactor is done
-@unittest.skip(reason="SequenceClassifier refactor must be finish")
+# TODO @dvilasuero check this test when SequencePairClassifier refactor is done
+@unittest.skip(reason="SequencePairClassifier refactor must be finish")
 class SequencePairClassifierPredictorTest(DaskSupportTest):
     def setUp(self):
         archive = load_archive(MODEL_PATH)
@@ -64,3 +64,4 @@ class SequencePairClassifierPredictorTest(DaskSupportTest):
         input = {"gold_label": "duplicated", "record_1": "Herbert Brandes-Siller"}
 
         self.assertRaises(Exception, self.predictor.predict_json, input)
+

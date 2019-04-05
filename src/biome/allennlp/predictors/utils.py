@@ -20,6 +20,10 @@ def get_predictor_from_archive(
     try:
         return Predictor.from_archive(archive, predictor_name)
     except Exception as e:
-        _logger.warning("Cannot create predictor {}, usind default. Error: {}".format(predictor_name, e))
+        _logger.warning(
+            "Cannot create predictor {}, using the DefaultBasePredictor. Error: {}".format(
+                predictor_name, e
+            )
+        )
         ds_reader = DatasetReader.from_params(dataset_reader_config)
         return DefaultBasePredictor(archive.model, ds_reader)

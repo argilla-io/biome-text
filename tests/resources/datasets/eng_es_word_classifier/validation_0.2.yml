@@ -1,0 +1,10 @@
+path: /Users/david/recognai/biome/biome-classifiers/datasources/char_level_test/validation_0.2.csv
+format: csv
+encoding: UTF-8
+delimiter: ','
+forward:
+    tokens:
+    - word
+    target:
+        gold_label: label
+        metadata_file: /Users/david/recognai/biome/biome-classifiers/datasources/char_level_test/classes.txt

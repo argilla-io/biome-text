@@ -21,8 +21,13 @@ class DefaultBasePredictor(Predictor):
     @overrides
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         instance = self._json_to_instance(inputs)
+
+        # check if instance is valid and print out meaningful error message
+        if instance is None:
+            raise ValueError("Input {} could not be converted to an instance. No prediction possible.".format(inputs))
+
         output = self.predict_instance(instance)
-        return self.__to_prediction(inputs, output)
+        return self._to_prediction(inputs, output)
 
     @overrides
     def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
@@ -32,14 +37,18 @@ class DefaultBasePredictor(Predictor):
         # skip examples that failed to be converted to instances! For example (and maybe solely) empty strings
         idx = instances != np.array(None)
 
+        # check if there are instances left and print out meaningful error message
+        if not any(idx):
+            raise IndexError("No instances found in batch. Check input or make batch size bigger.")
+
         outputs = self._model.forward_on_instances(instances[idx])
         return [
-            self.__to_prediction(input, output)
+            self._to_prediction(input, output)
             for input, output in zip(inputs_ar[idx], outputs)
         ]
 
     @staticmethod
-    def __to_prediction(inputs, output):
+    def _to_prediction(inputs, output):
         return dict(input=inputs, annotation=sanitize(output))
 
 
