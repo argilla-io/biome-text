@@ -1,5 +1,7 @@
+import copy
 import glob
-from typing import Dict, Optional
+import os
+from typing import Dict, Optional, Union
 from typing import List
 
 import dask
@@ -11,13 +13,16 @@ from dask.bag import Bag
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 
+from biome.data.sources import DataSource
+from biome.data.sources.datasource import DataSourceReader
 from .utils import row2dict
+
 
 # TODO: The idea is to make the readers a class and define a metaclass that they have to follow.
 #       For now, all reader methods have to return a dask.Bag of dicts
 
 
-def from_csv(path: str, columns: List[str] = [], **params) -> Bag:
+def from_csv(path: List[str], columns: List[str] = [], **params) -> Bag:
     """Creates a dask.Bag of dict objects from a collection of csv files
 
     Parameters
@@ -45,7 +50,7 @@ def from_csv(path: str, columns: List[str] = [], **params) -> Bag:
     return dataframe.to_bag(index=True).map(row2dict, columns)
 
 
-def from_json(path: str, **params) -> Bag:
+def from_json(path: List[str], **params) -> Bag:
     """
     Creates a dask.Bag of dict objects from a collection of json files
 
@@ -155,3 +160,52 @@ def _elasticsearch_scan(client_cls, client_kwargs, **params):
     # the ES client as it cannot be serialized.
     client = client_cls(**(client_kwargs or {}))
     return list(scan(client, **params))
+
+
+class FileBasedDataSourceReader(DataSourceReader):
+    def _read(self, path: List[str], **kwargs):
+        raise NotImplementedError
+
+    def __call__(self, data_source: DataSource):
+        args = copy.deepcopy(data_source.kwargs)
+        base_path = (
+            os.path.dirname(data_source.definition_file)
+            if data_source.definition_file
+            else "."
+        )
+
+        paths = args.pop("path")
+        if isinstance(paths, str):
+            paths = [paths]
+
+        return self._read(
+            path=[
+                path if os.path.isabs(path) else os.path.join(base_path, path)
+                for path in paths
+            ],
+            **args
+        )
+
+
+class JsonDataSourceReader(FileBasedDataSourceReader):
+    def _read(self, path: Union[str, List[str]], **kwargs):
+        return from_json(path, **kwargs)
+
+
+class XlsDataSourceReader(FileBasedDataSourceReader):
+    _default_arguments = dict(na_filter=False, keep_default_na=False, dtype=str)
+
+    def _read(self, path: List[str], **kwargs):
+        return from_excel(path[-1], **{**self._default_arguments, **kwargs})
+
+
+class CsvDataSourceReader(FileBasedDataSourceReader):
+    _default_arguments = dict(assume_missing=False, na_filter=False, dtype=str)
+
+    def _read(self, path: List[str], **kwargs):
+        return from_csv(path, **{**self._default_arguments, **kwargs})
+
+
+class ElasticsearchDataSourceReader(DataSourceReader):
+    def __call__(self, data_source: DataSource):
+        return from_elasticsearch(**data_source.kwargs)

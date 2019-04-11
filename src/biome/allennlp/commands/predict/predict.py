@@ -110,4 +110,3 @@ def predict(
     )
 
     [_logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
-

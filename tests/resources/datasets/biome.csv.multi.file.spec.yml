@@ -1,7 +1,7 @@
 format: csv
 path:
-- resources/data/datasources/csv/dataset_source.1.csv
-- resources/data/datasources/csv/dataset_source.2.csv
+- ../data/datasources/csv/dataset_source.1.csv
+- ../data/datasources/csv/dataset_source.2.csv
 delimiter: ","
 forward:
   tokens:

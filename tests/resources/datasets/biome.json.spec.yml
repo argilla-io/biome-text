@@ -1,4 +1,4 @@
-path: resources/data/dataset_source.jsonl
+path: ../data/dataset_source.jsonl
 
 format: json
 

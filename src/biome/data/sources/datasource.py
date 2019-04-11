@@ -4,12 +4,6 @@ from typing import Dict, Optional, TypeVar, Type, Callable, Any
 import yaml
 from dask.bag import Bag
 
-from biome.data.sources.readers import (
-    from_csv,
-    from_json,
-    from_excel,
-    from_elasticsearch,
-)
 from biome.data.sources.example_preparator import ExamplePreparator
 
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
@@ -31,31 +25,27 @@ class DataSource:
     forward
         A dict passed on to the `ExamplePreparator`.
         The keys of this dict must match the arguments of the model's `forward` method.
+    definition_file
+        Path to data source yaml specification.
+        This path could be useful for file-based readers
     kwargs
         Additional kwargs are passed on to the *source readers* that depend on the format.
     """
 
     # maps the supported formats to the corresponding "source readers"
-    SUPPORTED_FORMATS = {
-        "xls": (from_excel, dict(na_filter=False, keep_default_na=False, dtype=str)),
-        "xlsx": (from_excel, dict(na_filter=False, keep_default_na=False, dtype=str)),
-        "csv": (from_csv, dict(assume_missing=False, na_filter=False, dtype=str)),
-        "json": (from_json, dict()),
-        "jsonl": (from_json, dict()),
-        "json-l": (from_json, dict()),
-        "elasticsearch": (from_elasticsearch, dict()),
-        "elastic": (from_elasticsearch, dict()),
-        "es": (from_elasticsearch, dict()),
-    }
+    SUPPORTED_FORMATS = dict()
 
-    def __init__(self, format: str, forward: Dict = None, **kwargs):
+    def __init__(
+        self, format: str, forward: Dict = None, definition_file: str = None, **kwargs
+    ):
         self.format = format
         self.example_preparator = ExamplePreparator(forward.copy()) if forward else None
         self.kwargs = kwargs
+        self.definition_file = definition_file
 
     @classmethod
     def add_supported_format(
-        cls, format_key: str, parser: Callable, default_params: Dict[str, Any]
+        cls, format_key: str, parser: Callable, default_params: Dict[str, Any] = None
     ) -> None:
         """Add a new format and reader to the data source readers.
 
@@ -107,11 +97,13 @@ class DataSource:
         """
         try:
             from_source_to_bag, arguments = self.SUPPORTED_FORMATS[self.format]
+            if isinstance(from_source_to_bag, DataSourceReader):
+                return from_source_to_bag(self)
             return from_source_to_bag(**{**arguments, **self.kwargs})
         except KeyError:
             raise TypeError(
-                "Format {} not supported. Supported formats are: {}".format(
-                    self.format, " ".join(self.SUPPORTED_FORMATS)
+                "Format [{}] not supported. Supported formats are: {}".format(
+                    self.format, ", ".join(self.SUPPORTED_FORMATS)
                 )
             )
 
@@ -156,4 +148,15 @@ class DataSource:
         """
         with open(file_path) as yaml_file:
             cfg_dict = yaml.safe_load(yaml_file)
-        return cls(**cfg_dict)
+        return cls(**cfg_dict, definition_file=file_path)
+
+
+class DataSourceReader(object):
+    """
+    Abstract class for data source readers definitions
+
+    This class extends data source readers functionality by passing the whole data source instance
+    """
+
+    def __call__(self, data_source: DataSource):
+        raise NotImplementedError
