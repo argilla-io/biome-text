@@ -93,26 +93,29 @@ def configure_dask_cluster(n_workers: int = 1, worker_memory: Union[str, int] = 
             cache = Cache(cache_size)
             cache.register()
 
-        try:
-            if dask_cluster == "local":
-                from dask.distributed import Client, LocalCluster
+        if dask_cluster == "local":
+            from dask.distributed import Client, LocalCluster
 
-                dask.config.set(
-                    {
-                        "distributed.worker.memory": dict(
-                            target=0.95, spill=False, pause=False, terminate=False
-                        )
-                    }
-                )
+            dask.config.set(
+                {
+                    "distributed.worker.memory": dict(
+                        target=0.95, spill=False, pause=False, terminate=False
+                    )
+                }
+            )
+            try:
                 cluster = LocalCluster(
-                    n_workers=0, threads_per_worker=1, memory_limit=worker_mem
+                    n_workers=0,
+                    threads_per_worker=1,
+                    scheduler_port=8786,  # TODO configurable
+                    memory_limit=worker_mem,
                 )
                 cluster.scale_up(workers)
                 return Client(cluster)
-            else:
-                return dask.distributed.Client(dask_cluster)
-        except:
-            return dask.distributed.Client()
+            except :
+                return Client("localhost:8786")
+        else:
+            return dask.distributed.Client(dask_cluster)
 
     # import pandas as pd
     # pd.options.mode.chained_assignment = None
