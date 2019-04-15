@@ -31,20 +31,23 @@ class DefaultBasePredictor(Predictor):
 
     @overrides
     def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
-        instances = np.array(self._batch_json_to_instances(inputs))
-        inputs_ar = np.array(inputs)
+        instances = self._batch_json_to_instances(inputs)
+        # I tried to work with numpy arrays here to elegantly mask the Nones ... does not work with instances!!!
+        # This fails: np.array(instances)
 
         # skip examples that failed to be converted to instances! For example (and maybe solely) empty strings
-        idx = instances != np.array(None)
+        input_and_instances = [(input, instance) for input, instance in zip(inputs, instances)
+                               if instance is not None]
 
         # check if there are instances left and print out meaningful error message
-        if not any(idx):
+        if not input_and_instances:
             raise IndexError("No instances found in batch. Check input or make batch size bigger.")
 
-        outputs = self._model.forward_on_instances(instances[idx])
+        outputs = self._model.forward_on_instances([instance[1] for instance in input_and_instances])
+
         return [
-            self._to_prediction(input, output)
-            for input, output in zip(inputs_ar[idx], outputs)
+            self._to_prediction(input[0], output)
+            for input, output in zip(input_and_instances, outputs)
         ]
 
     @staticmethod
