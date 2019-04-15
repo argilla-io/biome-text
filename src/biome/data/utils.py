@@ -78,11 +78,13 @@ def read_params_from_file(filepath: str) -> Dict[str, Any]:
         return yaml.load(stream, Loader)
 
 
-def configure_dask_cluster(n_workers: int = 1, worker_memory: Union[str, int] = "1GB"):
+def configure_dask_cluster(
+    address: str = "local", n_workers: int = 1, worker_memory: Union[str, int] = "1GB"
+) -> Optional[Client]:
     global dask_client
     try:
         if dask_client:
-            return
+            return dask_client
     except:
         pass
 
@@ -105,14 +107,14 @@ def configure_dask_cluster(n_workers: int = 1, worker_memory: Union[str, int] = 
             )
             try:
                 cluster = LocalCluster(
-                    n_workers=0,
+                    n_workers=workers,
                     threads_per_worker=1,
                     scheduler_port=8786,  # TODO configurable
                     memory_limit=worker_mem,
                 )
                 cluster.scale_up(workers)
                 return Client(cluster)
-            except :
+            except:
                 return Client("localhost:8786")
         else:
             return dask.distributed.Client(dask_cluster)
@@ -120,14 +122,14 @@ def configure_dask_cluster(n_workers: int = 1, worker_memory: Union[str, int] = 
     # import pandas as pd
     # pd.options.mode.chained_assignment = None
 
-    dask_cluster = os.environ.get(ENV_DASK_CLUSTER, None)
+    dask_cluster = address
     dask_cache_size = os.environ.get(ENV_DASK_CACHE_SIZE, DEFAULT_DASK_CACHE_SIZE)
 
     if dask_cluster:
         if isinstance(worker_memory, str):
             worker_memory = parse_bytes(worker_memory)
 
-        dask_client = create_dask_client(
+        return create_dask_client(
             dask_cluster, dask_cache_size, workers=n_workers, worker_mem=worker_memory
         )
     else:
