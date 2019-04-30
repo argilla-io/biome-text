@@ -1,16 +1,17 @@
 import logging
+import os.path
 from typing import Dict, Optional, TypeVar, Type, Callable, Any
 
 import yaml
-from dask.bag import Bag
-
+from biome.data.sources.example_preparator import ExamplePreparator
 from biome.data.sources.readers import (
     from_csv,
     from_json,
     from_excel,
     from_elasticsearch,
 )
-from biome.data.sources.example_preparator import ExamplePreparator
+from biome.data.sources.utils import make_paths_relative
+from dask.bag import Bag
 
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
 T = TypeVar("T")
@@ -156,4 +157,9 @@ class DataSource:
         """
         with open(file_path) as yaml_file:
             cfg_dict = yaml.safe_load(yaml_file)
+
+        # File system paths are usually specified relative to the yaml config file -> they have to be modified
+        make_paths_relative(os.path.dirname(file_path), cfg_dict)
+
         return cls(**cfg_dict)
+
