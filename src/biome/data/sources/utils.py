@@ -49,10 +49,13 @@ def extension_from_path(path: Union[str, List[str]]) -> str:
     return extension.lower()[1:]  # skip first char, which is a dot
 
 
-def make_paths_relative(yaml_dirname: str, cfg_dict: Dict):
-    """
-    Helper method to convert file system paths relative to the yaml config file,
+def make_paths_relative(
+    yaml_dirname: str, cfg_dict: Dict, path_keys: Union[str, List[str]] = None
+):
+    """Helper method to convert file system paths relative to the yaml config file,
     to paths relative to the current path.
+
+    It will recursively cycle through `cfg_dict` if it is nested.
 
     Parameters
     ----------
@@ -60,17 +63,28 @@ def make_paths_relative(yaml_dirname: str, cfg_dict: Dict):
         Dirname to the yaml config file (as obtained by `os.path.dirname`.
     cfg_dict
         The config dictionary extracted from the yaml file.
+    path_keys
+        If not None, it will only try to modify the `cfg_dict` values corresponding to the `path_keys`.
     """
     for k, v in cfg_dict.items():
         if isinstance(v, dict):
             make_paths_relative(yaml_dirname, v)
 
-        cfg_dict[k] = os.path.join(yaml_dirname, v) if is_relative_file_system_path(v) else v
+        if path_keys and k not in path_keys:
+            continue
 
-        # cover list cases as well
+        cfg_dict[k] = (
+            os.path.join(yaml_dirname, v) if is_relative_file_system_path(v) else v
+        )
+
+        # cover lists as well
         if isinstance(v, list):
-            cfg_dict[k] = [os.path.join(yaml_dirname, path) if is_relative_file_system_path(path) else path
-                           for path in cfg_dict[k]]
+            cfg_dict[k] = [
+                os.path.join(yaml_dirname, path)
+                if is_relative_file_system_path(path)
+                else path
+                for path in cfg_dict[k]
+            ]
 
         pass
 

@@ -159,7 +159,7 @@ class DataSource:
             cfg_dict = yaml.safe_load(yaml_file)
 
         # File system paths are usually specified relative to the yaml config file -> they have to be modified
-        make_paths_relative(os.path.dirname(file_path), cfg_dict)
+        path_keys = ["path", "metadata_file"]  # specifying the dict keys is a safer choice ...
+        make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
         return cls(**cfg_dict)
-
