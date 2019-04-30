@@ -1,6 +1,5 @@
 import glob
-from typing import Dict, Optional
-from typing import List
+from typing import Dict, Optional, Union, List
 
 import dask
 import dask.dataframe as dd
@@ -13,11 +12,12 @@ from elasticsearch.helpers import scan
 
 from .utils import row2dict
 
+
 # TODO: The idea is to make the readers a class and define a metaclass that they have to follow.
 #       For now, all reader methods have to return a dask.Bag of dicts
 
 
-def from_csv(path: str, columns: List[str] = [], **params) -> Bag:
+def from_csv(path: Union[str, List[str]], columns: List[str] = [], **params) -> Bag:
     """Creates a dask.Bag of dict objects from a collection of csv files
 
     Parameters
@@ -45,7 +45,7 @@ def from_csv(path: str, columns: List[str] = [], **params) -> Bag:
     return dataframe.to_bag(index=True).map(row2dict, columns)
 
 
-def from_json(path: str, **params) -> Bag:
+def from_json(path: Union[str, List[str]], **params) -> Bag:
     """
     Creates a dask.Bag of dict objects from a collection of json files
 
