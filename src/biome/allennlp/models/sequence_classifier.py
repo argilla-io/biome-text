@@ -35,7 +35,7 @@ class SequenceClassifier(Model):
     pre_encoder
         Feedforward layer to be applied to embedded tokens.
     encoder
-        The encoder  that we will use in between embedding tokens
+        The encoder that we will use in between embedding tokens
         and predicting output tags.
     initializer
         Used to initialize the model parameters.
