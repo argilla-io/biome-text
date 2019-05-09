@@ -16,6 +16,7 @@ if __name__ == "__main__":
         packages=find_packages("src"),
         package_dir={"": "src"},
         install_requires=[
+            "urllib3>=1.21.1,<1.25"  # avoids version conflicts
             "allennlp>=0.8.0",
             "torch>=1.0.0",
             "dask[complete]>=1.0,<2.0",
@@ -23,7 +24,7 @@ if __name__ == "__main__":
             "inquirer>=2.5.1,<2.6.0",
             "smart-open>=1.7.0",
             "coloredlogs",
-            # github complains that pyyaml <4.0 is a security risk. 
+            # github complains that pyyaml <4.0 is a security risk.
             # We will use the newest one, some packages, though, will complain because they have not updated their requirements!
             "PyYAML<=3.13,>=3.10",
             "ujson",
