@@ -73,6 +73,7 @@ def make_paths_relative(
         if path_keys and k not in path_keys:
             continue
 
+        # is_relative_file_system_path(v) returns False if v is not a str
         cfg_dict[k] = (
             os.path.join(yaml_dirname, v) if is_relative_file_system_path(v) else v
         )
@@ -83,7 +84,7 @@ def make_paths_relative(
                 os.path.join(yaml_dirname, path)
                 if is_relative_file_system_path(path)
                 else path
-                for path in cfg_dict[k]
+                for path in v
             ]
 
         pass
@@ -101,6 +102,7 @@ def is_relative_file_system_path(string: str) -> bool:
     -------
     bool
         Whether the string is a relative file system path or not.
+        If string is not type(str), return False.
     """
     if not isinstance(string, str):
         return False
@@ -108,7 +110,7 @@ def is_relative_file_system_path(string: str) -> bool:
     if not extension_from_path(string):
         return False
     # check if a domain name
-    if string.lower().startswith(["http", "ftp"]):
+    if string.lower().startswith(("http", "ftp")):
         return False
     # check if an absolute path
     if os.path.isabs(string):
