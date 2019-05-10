@@ -16,7 +16,7 @@ if __name__ == "__main__":
         packages=find_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "urllib3>=1.21.1,<1.25"  # avoids version conflicts
+            "urllib3>=1.21.1,<1.25",  # avoids version conflicts
             "allennlp>=0.8.0",
             "torch>=1.0.0",
             "dask[complete]>=1.0,<2.0",
