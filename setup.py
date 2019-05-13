@@ -17,6 +17,7 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         install_requires=[
             "urllib3>=1.21.1,<1.25",  # avoids version conflicts
+            "jsonschema~=2.6",  # avoids version conflicts
             "allennlp>=0.8.0",
             "cachey",  # Needed to use the Cache class in dask
             "dask[complete]>=1.0,<2.0",
