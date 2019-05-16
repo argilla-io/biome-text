@@ -100,7 +100,7 @@ def predict(
     data_source = DataSource.from_yaml(from_source)
     sink_config = default_elasticsearch_sink(from_source, binary, batch_size)
 
-    configure_dask_cluster(workers, worker_mem)
+    configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
 
     test_dataset = data_source.read(include_source=True).persist()
     predicted_dataset = (
