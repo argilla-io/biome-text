@@ -31,8 +31,28 @@ class BiomeExplore(Subcommand):
             default=9000,
             type=lambda a: int(a),
         )
-        subparser.set_defaults(func=_explore)
+        subparser.set_defaults(func=_explore_from_args)
         return subparser
+
+
+def _explore_from_args(args: argparse.Namespace) -> None:
+    return explore(port=args.port, index=args.index)
+
+
+def explore(port: int = 9000, index: str = None) -> None:
+    _logger.info("Hilo")
+    es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
+    if index is None:
+        index = _select_index(es_host)
+
+    flask_app = make_app(
+        es_host="{}/{}".format(es_host, index),
+        statics_dir=temporal_static_path("classifier"),
+    )
+
+    http_server = WSGIServer(("0.0.0.0", port), flask_app)
+    _logger.info("Running on http://localhost:{}".format(http_server.server_port))
+    http_server.serve_forever()
 
 
 def _select_index(es_host: str, index_prefix: str = "prediction") -> str:
@@ -59,21 +79,6 @@ def _select_index(es_host: str, index_prefix: str = "prediction") -> str:
     ]
 
     return inquirer.prompt(questions)[answers_name]
-
-
-def _explore(args: argparse.Namespace) -> None:
-    _logger.info("Hilo")
-    port = args.port
-    es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
-
-    flask_app = make_app(
-        es_host="{}/{}".format(es_host, _select_index(es_host)),
-        statics_dir=temporal_static_path("classifier"),
-    )
-
-    http_server = WSGIServer(("0.0.0.0", port), flask_app)
-    _logger.info("Running on http://localhost:{}".format(http_server.server_port))
-    http_server.serve_forever()
 
 
 def temporal_static_path(explore_view: str):
