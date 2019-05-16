@@ -31,19 +31,23 @@ class BiomeRestAPI(Subcommand):
             required=False,
         )
 
-        subparser.set_defaults(func=_serve)
+        subparser.set_defaults(func=_serve_from_args)
 
         return subparser
 
 
-def _serve(args: argparse.Namespace) -> None:
-    model_archive = load_archive(args.binary)
+def _serve_from_args(args: argparse.Namespace) -> None:
+    return serve(binary=args.binary, port=args.port, predictor=args.predictor)
+
+
+def serve(binary: str, port: int = 8000, predictor: str = None) -> None:
+    model_archive = load_archive(binary)
     # Matching predictor name with model name
-    predictor = get_predictor_from_archive(model_archive, predictor_name=args.predictor)
+    predictor = get_predictor_from_archive(model_archive, predictor_name=predictor)
 
     app = server_simple.make_app(predictor, title=predictor.__class__.__name__)
     CORS(app)
 
-    http_server = WSGIServer(("0.0.0.0", args.port), app)
-    logger.info(f"Model loaded, serving on port {args.port}")
+    http_server = WSGIServer(("0.0.0.0", port), app)
+    logger.info(f"Model loaded, serving on port {port}")
     http_server.serve_forever()
