@@ -1,5 +1,5 @@
 # data path (could be also a list)
-path: resources/data/dataset_source.csv
+path: ../data/dataset_source.csv
 
 # data format (infered from path extension if no provided)
 format: csv
