@@ -31,6 +31,12 @@ class BiomeExplore(Subcommand):
             default=9000,
             type=lambda a: int(a),
         )
+        subparser.add_argument(
+            "--index",
+            help="The Elasticsearch index with the predictions. If None, you can choose from a list (default: None).",
+            type=str,
+            default=None,
+        )
         subparser.set_defaults(func=_explore_from_args)
         return subparser
 
