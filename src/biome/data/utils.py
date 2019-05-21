@@ -3,14 +3,14 @@ import logging
 import os
 import re
 from multiprocessing.pool import ThreadPool
-from typing import Dict, Any, Union
-from typing import Optional
 
 import dask
 import dask.multiprocessing
 from dask.cache import Cache
 from dask.distributed import Client
 from dask.utils import parse_bytes
+from typing import Dict, Any, Union
+from typing import Optional
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -18,6 +18,7 @@ except ImportError:
     from yaml import Loader, Dumper
 
 import yaml
+from dask.distributed import Client, LocalCluster
 
 ENV_DASK_CLUSTER = "DASK_CLUSTER"
 ENV_DASK_CACHE_SIZE = "DASK_CACHE_SIZE"
@@ -96,26 +97,26 @@ def configure_dask_cluster(
             cache.register()
 
         if dask_cluster == "local":
-            from dask.distributed import Client, LocalCluster
-
-            dask.config.set(
-                {
-                    "distributed.worker.memory": dict(
-                        target=0.95, spill=False, pause=False, terminate=False
-                    )
-                }
-            )
             try:
+                return Client("localhost:8786", timeout=5)
+            except OSError:
+                dask.config.set(
+                    {
+                        "distributed.worker.memory": dict(
+                            target=0.95, spill=False, pause=False, terminate=False
+                        )
+                    }
+                )
+
                 cluster = LocalCluster(
                     n_workers=workers,
                     threads_per_worker=1,
+                    asynchronous=False,
                     scheduler_port=8786,  # TODO configurable
                     memory_limit=worker_mem,
+                    silence_logs=logging.ERROR,
                 )
-                cluster.scale_up(workers)
                 return Client(cluster)
-            except:
-                return Client("localhost:8786")
         else:
             return dask.distributed.Client(dask_cluster)
 
