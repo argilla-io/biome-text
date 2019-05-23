@@ -58,6 +58,18 @@ def from_json(path: Union[str, List[str]], **params) -> Bag:
     columns = [str(column).strip() for column in dataframe.columns]
     return dataframe.to_bag(index=True).map(row2dict, columns, path)
 
+def from_parquet(path: Union[str, List[str]], **params) -> Bag:
+    """
+    Creates a dask.Bag of dict objects from a parquet paths
+
+    :param path: The path
+    :param params: extra arguments passed to pandas.read_json
+    :return: dask.bag.Bag
+    """
+    dataframe = dd.read_parquet(path, **params)
+
+    columns = [str(column).strip() for column in dataframe.columns]
+    return dataframe.to_bag(index=True).map(row2dict, columns, path)
 
 def from_excel(path: str, **params) -> Bag:
     """

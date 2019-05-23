@@ -1,8 +1,9 @@
 import argparse
 import logging
 from typing import Dict, Iterable, Any, List
+import time, datetime
 
-import dask.bag as db
+
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
@@ -113,19 +114,29 @@ def predict(
         )
         return predictor.predict_batch_json(partition)
 
+    prediction_start_time = time.time()
+
+
     data_source = DataSource.from_yaml(from_source)
     sink_config = default_elasticsearch_sink(from_source, binary, batch_size)
 
     configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
 
     test_dataset = data_source.read(include_source=True).persist()
+
+    npartitions = max(1, round(test_dataset.count().compute() / batch_size))
+
     predicted_dataset = (
-        test_dataset.repartition(npartitions=workers)
+        test_dataset.repartition(npartitions=npartitions)
         .map_partitions(predict_partition)
         .persist()
     )
 
     [_logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
+
+    prediction_elapsed_time = time.time() - prediction_start_time
+    formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
+    _logger.info("Prediction and indexing time: %s", formatted_time)
 
     return sink_config['index']
 
