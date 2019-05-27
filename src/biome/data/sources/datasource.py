@@ -9,6 +9,7 @@ from biome.data.sources.readers import (
     from_json,
     from_excel,
     from_elasticsearch,
+    from_parquet
 )
 from biome.data.sources.utils import make_paths_relative
 from dask.bag import Bag
@@ -47,6 +48,7 @@ class DataSource:
         "elasticsearch": (from_elasticsearch, dict()),
         "elastic": (from_elasticsearch, dict()),
         "es": (from_elasticsearch, dict()),
+        "parquet": (from_parquet, dict())
     }
 
     def __init__(self, format: str, forward: Dict = None, **kwargs):
