@@ -5,6 +5,7 @@ from setuptools import setup, find_packages
 if __name__ == "__main__":
 
     setup(
+        version="0.1.dev",
         name="biome-text",
         description="Biome-text is a light-weight open source Natural Language Processing "
         "tool built with AllenNLP",
@@ -18,6 +19,7 @@ if __name__ == "__main__":
         install_requires=[
             "urllib3>=1.21.1,<1.25",  # avoids version conflicts
             "jsonschema~=2.6",  # avoids version conflicts
+            "requests<=2.21.0",  # avoid version conflicts
             "allennlp>=0.8.0",
             "cachey",  # Needed to use the Cache class in dask
             "dask[complete]>=1.0,<2.0",
