@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 if __name__ == "__main__":
 
     setup(
-        version="0.1.dev",
+        version="0.1.0",
         name="biome-text",
         description="Biome-text is a light-weight open source Natural Language Processing "
         "tool built with AllenNLP",
