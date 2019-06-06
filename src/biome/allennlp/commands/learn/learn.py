@@ -103,11 +103,6 @@ def learn_from_args(args: argparse.Namespace):
     )
 
 
-def check_configuration(params: Params):
-    DatasetReader.from_params(params.get(DATASET_READER_FIELD_NAME))
-    DataIterator.from_params(params.get("iterator"))
-
-
 def check_model_configuration(params: Params):
     pass
 
@@ -129,9 +124,6 @@ def learn(
     allennlp_configuration = biome2allennlp_params(
         model_spec, trainer_path, vocab, train_cfg, validation_cfg, test_cfg
     )
-
-    _logger.info("Checking initial configuration")
-    check_configuration(Params(deepcopy(allennlp_configuration)))
 
     _logger.info("Launching dask cluster")
     configure_dask_cluster(n_workers=1)
