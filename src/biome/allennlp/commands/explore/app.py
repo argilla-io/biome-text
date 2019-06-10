@@ -18,8 +18,18 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     def index() -> Response:  # pylint: disable=unused-variable
         return send_file(os.path.join(statics_dir, "index.html"))
 
+    @app.route("/elastic/.biome.feedback/_search", methods=["GET", "OPTIONS"])
+    def query_meta():
+        if request.method == "OPTIONS":
+            return Response(response="", status=200)
+
+        es_url = f"{es_host}/.biome.feedback/_search"
+        response = requests.get(es_url)
+        return jsonify(json.loads(response.text))
+
     @app.route("/<path:index>/_search", methods=["POST", "OPTIONS"])
     @app.route("/<path:index>/_search/", methods=["POST", "OPTIONS"])
+    @app.route("/elastic/<path:index>/_search/", methods=["POST", "OPTIONS"])
     @app.route("/_search/", methods=["POST", "OPTIONS"])
     def search_proxy(index: str = None) -> Response:  # pylint: disable=unused-variable
         if request.method == "OPTIONS":

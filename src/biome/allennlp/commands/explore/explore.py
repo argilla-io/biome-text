@@ -3,7 +3,7 @@ import logging
 import os
 import tarfile
 from tempfile import mkdtemp
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from allennlp.commands import Subcommand
 from gevent.pywsgi import WSGIServer
@@ -87,13 +87,13 @@ def _select_index(es_host: str, index_prefix: str = "prediction") -> str:
     return inquirer.prompt(questions)[answers_name]
 
 
-def temporal_static_path(explore_view: str):
+def temporal_static_path(explore_view: str, basedir: Optional[str] = None):
     statics_tmp = mkdtemp()
 
-    tar_file = tarfile.open(
-        os.path.join(os.path.dirname(__file__), "ui", "{}.tar.gz".format(explore_view)),
-        "r:gz",
+    compressed_ui = os.path.join(
+        basedir or os.path.dirname(__file__), "ui", "{}.tar.gz".format(explore_view)
     )
+    tar_file = tarfile.open(compressed_ui, "r:gz")
     tar_file.extractall(path=statics_tmp)
     tar_file.close()
 

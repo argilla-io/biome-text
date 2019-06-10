@@ -1,19 +1,18 @@
 import argparse
+import datetime
 import logging
+import time
 from typing import Dict, Iterable, Any, List
-import time, datetime
-
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
-
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
-from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 from biome.data.sources import DataSource
+from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 
 # TODO centralize configuration
 logging.basicConfig(level=logging.INFO)
@@ -91,6 +90,7 @@ def predict(
     worker_mem: int = 2e9,
     batch_size: int = 1000,
     cuda_device: int = -1,
+    to_sink: dict = None,
 ) -> str:
     """
 
@@ -108,6 +108,7 @@ def predict(
     index
         Name of the Elasticsearch index where the predictions are stored
     """
+
     def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
         predictor = __predictor_from_args(
             archive_file=to_local_archive(binary), cuda_device=cuda_device
@@ -116,15 +117,16 @@ def predict(
 
     prediction_start_time = time.time()
 
-
     data_source = DataSource.from_yaml(from_source)
-    sink_config = default_elasticsearch_sink(from_source, binary, batch_size)
+    sink_config = (
+        default_elasticsearch_sink(from_source, binary, batch_size)
+        if not to_sink
+        else to_sink
+    )
 
     configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
-
-    test_dataset = data_source.read(include_source=True).persist()
-
-    npartitions = max(1, round(test_dataset.count().compute() / batch_size))
+    test_dataset = data_source.read(include_source=True)
+    npartitions = max(1, round(test_dataset.count().persist().compute() / batch_size))
 
     predicted_dataset = (
         test_dataset.repartition(npartitions=npartitions)
@@ -138,5 +140,4 @@ def predict(
     formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
     _logger.info("Prediction and indexing time: %s", formatted_time)
 
-    return sink_config['index']
-
+    return sink_config["index"]
