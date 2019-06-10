@@ -125,8 +125,8 @@ def predict(
     )
 
     configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
-    test_dataset = data_source.read(include_source=True)
-    npartitions = max(1, round(test_dataset.count().persist().compute() / batch_size))
+    test_dataset = data_source.read(include_source=True).persist()
+    npartitions = max(1, round(test_dataset.count().compute() / batch_size))
 
     predicted_dataset = (
         test_dataset.repartition(npartitions=npartitions)
