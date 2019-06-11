@@ -1,7 +1,6 @@
 import os
 import unittest
 import tempfile
-import pytest
 
 import yaml
 from allennlp.data import DatasetReader

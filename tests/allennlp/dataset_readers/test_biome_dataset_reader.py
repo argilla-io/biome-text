@@ -1,7 +1,6 @@
 import os
 from typing import Iterable
 
-import yaml
 from allennlp.data.fields import TextField, LabelField
 
 from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
