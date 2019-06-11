@@ -18,9 +18,7 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     def index() -> Response:  # pylint: disable=unused-variable
         return send_file(os.path.join(statics_dir, "index.html"))
 
-    @app.route("/<path:index>/_search", methods=["POST", "OPTIONS"])
-    @app.route("/<path:index>/_search/", methods=["POST", "OPTIONS"])
-    @app.route("/_search/", methods=["POST", "OPTIONS"])
+    @app.route("/elastic/<path:index>/_search", methods=["GET", "POST", "OPTIONS"])
     def search_proxy(index: str = None) -> Response:  # pylint: disable=unused-variable
         if request.method == "OPTIONS":
             return Response(response="", status=200)
@@ -31,7 +29,11 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
             else "{}/_search".format(es_host)
         )
 
-        response = requests.post(es_url, json=request.get_json())
+        if request.method == "GET":
+            response = requests.get(es_url)
+        else:
+            response = requests.post(es_url, json=request.get_json())
+
         return jsonify(json.loads(response.text))
 
     @app.route("/<path:path>")

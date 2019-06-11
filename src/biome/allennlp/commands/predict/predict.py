@@ -2,7 +2,7 @@ import argparse
 import datetime
 import logging
 import time
-from typing import Dict, Iterable, Any, List
+from typing import Dict, Iterable, Any, List, Optional
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
@@ -15,8 +15,12 @@ from biome.data.sources import DataSource
 from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 
 # TODO centralize configuration
+from elasticsearch import Elasticsearch
+
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
+
+BIOME_METADATA_INDEX = ".biome"
 
 
 class BiomePredict(Subcommand):
@@ -81,6 +85,7 @@ def _predict(args: argparse.Namespace) -> None:
         cuda_device=args.cuda_device,
         workers=args.workers,
     )
+    exit(0)
 
 
 def predict(
@@ -91,7 +96,7 @@ def predict(
     batch_size: int = 1000,
     cuda_device: int = -1,
     to_sink: dict = None,
-) -> str:
+) -> Optional[str]:
     """
 
     Parameters
@@ -127,20 +132,60 @@ def predict(
         else to_sink
     )
 
-    configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
-    test_dataset = data_source.read(include_source=True).persist()
-    npartitions = max(1, round(test_dataset.count().compute() / batch_size))
+    client = configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
+    try:
+        test_dataset = data_source.read(include_source=True).persist()
+        npartitions = max(1, round(test_dataset.count().compute() / batch_size))
 
-    predicted_dataset = (
-        test_dataset.repartition(npartitions=npartitions)
-        .map_partitions(predict_partition)
-        .persist()
+        predicted_dataset = (
+            test_dataset.repartition(npartitions=npartitions)
+            .map_partitions(predict_partition)
+            .persist()
+        )
+
+        [
+            _logger.info(result)
+            for result in store_dataset(predicted_dataset, sink_config)
+        ]
+
+        prediction_elapsed_time = time.time() - prediction_start_time
+        formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
+        _logger.info("Prediction and indexing time: %s", formatted_time)
+
+        client.close()
+
+        if not to_sink:
+            es_index = sink_config["index"]
+            es_hosts = sink_config["es_hosts"]
+            register_biome_prediction(
+                project=None, name=es_index, created_index=es_index, es_hosts=es_hosts
+            )
+            return es_index
+        return None
+    finally:
+        client.close()
+
+
+def register_biome_prediction(
+    project: str, name: str, created_index: str, es_hosts: str, **kargs
+):
+
+    metadata_index = f"{BIOME_METADATA_INDEX}"
+    es = Elasticsearch(hosts=es_hosts)
+    es.indices.create(
+        index=metadata_index,
+        body={"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}},
+        ignore=400,
     )
 
-    [_logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
-
-    prediction_elapsed_time = time.time() - prediction_start_time
-    formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
-    _logger.info("Prediction and indexing time: %s", formatted_time)
-
-    return sink_config["index"]
+    es.update(
+        index=metadata_index,
+        id=created_index,
+        body={
+            "doc": dict(
+                project=project, name=name, created_at=datetime.datetime.now(), **kargs
+            ),
+            "doc_as_upsert": True,
+        },
+    )
+    del es
