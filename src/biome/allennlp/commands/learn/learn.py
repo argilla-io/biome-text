@@ -20,6 +20,7 @@ which to write the results.
 """
 import argparse
 import logging
+import multiprocessing
 from typing import Optional, Callable
 
 from allennlp.commands import Subcommand
@@ -158,39 +159,39 @@ def learn(
     ).to_allennlp_params()
 
     _logger.info("Launching dask cluster")
-    client = configure_dask_cluster(n_workers=1)
+    client = configure_dask_cluster(n_workers=workers)
 
     # Vocabulary is needed for components instantiation
     # TODO: Include a proper checking of the model configuration
-    #_logger.info("Checking model configuration")
-    #check_model_configuration(Params(deepcopy(allennlp_configuration)))
+    # _logger.info("Checking model configuration")
+    # check_model_configuration(Params(deepcopy(allennlp_configuration)))
     try:
-      allennlp_configuration = allennlp_configuration.copy()
-      if model_binary:
-          archive = load_archive(model_binary)
-          _logger.info(archive.config.as_dict())
+        allennlp_configuration = allennlp_configuration.copy()
+        if model_binary:
+            archive = load_archive(model_binary)
+            _logger.info(archive.config.as_dict())
 
-          return fine_tune_model(
-              model=archive.model,
-              params=Params(
-                  {
-                      DATASET_READER_FIELD_NAME: archive.config.get(
-                          DATASET_READER_FIELD_NAME
-                      ).as_dict(),
-                      **allennlp_configuration,
-                  }
-              ),
-              serialization_dir=output,
-              extend_vocab=False,
-              file_friendly_logging=True,
-          )
-      else:
-          return train_model(
-              params=Params(allennlp_configuration),
-              serialization_dir=output,
-              file_friendly_logging=True,
-              recover=False,
-              force=True,
-          )
+            return fine_tune_model(
+                model=archive.model,
+                params=Params(
+                    {
+                        DATASET_READER_FIELD_NAME: archive.config.get(
+                            DATASET_READER_FIELD_NAME
+                        ).as_dict(),
+                        **allennlp_configuration,
+                    }
+                ),
+                serialization_dir=output,
+                extend_vocab=False,
+                file_friendly_logging=True,
+            )
+        else:
+            return train_model(
+                params=Params(allennlp_configuration),
+                serialization_dir=output,
+                file_friendly_logging=True,
+                recover=False,
+                force=True,
+            )
     finally:
-      client.close()
+        client.close()

@@ -33,7 +33,8 @@ if __name__ == "__main__":
             "pandas",
             "elasticsearch>=6.0",
             "bokeh",
-            "xlrd>=1.0,<2.0"
+            "xlrd>=1.0,<2.0",
+            "flatdict~=3.2.0",
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
         package_data={"biome": ["allennlp/commands/explore/ui/classifier.tar.gz"]},
