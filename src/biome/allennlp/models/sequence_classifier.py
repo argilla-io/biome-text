@@ -84,7 +84,7 @@ class SequenceClassifier(Model):
     def forward(
         self,  # type: ignore
         tokens: Dict[str, torch.Tensor],
-        gold_label: torch.Tensor = None,
+        label: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
@@ -99,7 +99,7 @@ class SequenceClassifier(Model):
             sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
             which knows how to combine different word representations into a single vector per
             token in your input.
-        gold_label
+        label
             A torch tensor representing the sequence of integer gold class label of shape
             ``(batch_size, num_classes)``.
 

@@ -47,6 +47,10 @@ class ExamplePreparator(object):
         transformations = (dataset_transformations or dict()).copy()
         gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, {})
 
+        # for backwards compatibility
+        if "gold_label" in gold_label_definition.keys():
+            gold_label_definition["label"] = gold_label_definition.pop("gold_label")
+
         self._input_transformations = {
             key: self.__build_transformation(value)
             for key, value in transformations.items()
