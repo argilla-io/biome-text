@@ -33,6 +33,8 @@ from biome.allennlp.commands.helpers import BiomeConfig
 from biome.allennlp.models import load_archive
 from biome.data.utils import configure_dask_cluster
 
+logging.getLogger("allennlp.training.tensorboard_writer").setLevel(logging.WARNING)
+
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 DATASET_READER_FIELD_NAME = "dataset_reader"

@@ -109,6 +109,9 @@ def predict(
         Name of the Elasticsearch index where the predictions are stored
     """
 
+    logging.getLogger("allennlp.common.params").setLevel(logging.WARNING)
+    logging.getLogger("allennlp.common").setLevel(logging.WARNING)
+
     def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
         predictor = __predictor_from_args(
             archive_file=to_local_archive(binary), cuda_device=cuda_device
