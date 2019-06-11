@@ -9,6 +9,7 @@ from allennlp.data.tokenizers import WordTokenizer
 from overrides import overrides
 
 from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
+from allennlp.models import BertForClassification
 from biome.data.sources import DataSource
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -23,7 +24,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
     tokenizer
         By default we use a WordTokenizer with the SpacyWordSplitter
     token_indexers
-        By default we use a SingleIdTokenIndexer for all token fields
+        By default we use the following dict {'tokens': SingleIdTokenIndexer}
     """
 
     def __init__(
@@ -38,10 +39,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
 
         # The keys of the Instances have to match the signature of the forward method of the model
         self.forward_params = signature(SequenceClassifier.forward).parameters
-        self.tokens_field_id = list(self.forward_params)[0]
 
         self.token_indexers = token_indexers or {
-            self.tokens_field_id: SingleIdTokenIndexer
+            'tokens': SingleIdTokenIndexer()
         }
 
         self._cached_datasets = dict()
@@ -186,3 +186,17 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         }
 
         self._cached_datasets = dict()
+
+
+@DatasetReader.register("bert_classifier")
+class BertClassifierDatasetReader(SequenceClassifierDatasetReader):
+    def __init__(
+            self,
+            tokenizer: Tokenizer = None,
+            token_indexers: Dict[str, TokenIndexer] = None,
+    ) -> None:
+        super().__init__(tokenizer=tokenizer, token_indexers=token_indexers)
+
+        # The keys of the Instances have to match the signature of the forward method of the model
+        self.forward_params = signature(BertForClassification.forward).parameters
+
