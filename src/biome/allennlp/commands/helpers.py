@@ -20,7 +20,7 @@ class BiomeConfig:
     trainer_path
         Path to the trainer yaml file
     vocab_path
-        Path to the vocab folder
+        Path to the vocab yaml file
     train_path
         Path to the data source yaml file of the training set
     validation_path
