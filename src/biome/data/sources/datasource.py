@@ -94,6 +94,8 @@ class DataSource:
         cls.SUPPORTED_FORMATS[format_key] = (parser, default_params)
 
     def read(self, include_source: bool = False) -> Bag:
+        import flatdict
+
         """Reads a data source and extracts the relevant information.
 
         Parameters
