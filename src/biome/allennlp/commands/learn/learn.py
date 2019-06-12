@@ -20,7 +20,6 @@ which to write the results.
 """
 import argparse
 import logging
-from copy import deepcopy
 from typing import Optional, Callable
 
 from allennlp.commands import Subcommand
@@ -28,10 +27,9 @@ from allennlp.commands.fine_tune import fine_tune_model
 from allennlp.commands.train import train_model
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
-from allennlp.data import DataIterator, DatasetReader
 from allennlp.models.model import Model
 
-from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.allennlp.commands.helpers import BiomeConfig
 from biome.allennlp.models import load_archive
 from biome.data.utils import configure_dask_cluster
 
@@ -55,14 +53,26 @@ class BiomeLearn(Subcommand):
         )
 
         subparser.add_argument(
-            "--spec", type=str, help="model.yml specification", required=False
+            "--spec",
+            type=str,
+            help="model.yml specification",
+            required=False,
+            default=None,
         )
         subparser.add_argument(
-            "--binary", type=str, help="pretrained model binary tar.gz", required=False
+            "--binary",
+            type=str,
+            help="pretrained model binary tar.gz",
+            required=False,
+            default=None,
         )
 
         subparser.add_argument(
-            "--vocab", type=str, help="path to existing vocab", required=False
+            "--vocab",
+            type=str,
+            help="path to existing vocab",
+            required=False,
+            default=None,
         )
 
         subparser.add_argument(
@@ -76,13 +86,22 @@ class BiomeLearn(Subcommand):
             type=str,
             help="validation datasource source definition",
             required=False,
+            default=None,
         )
         subparser.add_argument(
-            "--test", type=str, help="test datasource source definition", required=False
+            "--test",
+            type=str,
+            help="test datasource source definition",
+            required=False,
+            default=None,
         )
 
         subparser.add_argument(
-            "--output", type=str, help="learn process generation folder", required=True
+            "--output",
+            type=str,
+            help="learn process generation folder",
+            required=True,
+            default=None,
         )
 
         subparser.set_defaults(func=self.command_handler())
@@ -121,18 +140,24 @@ def learn(
     if not model_binary and not model_spec:
         raise ConfigurationError("Missing parameter --spec/--binary")
 
-    allennlp_configuration = biome2allennlp_params(
-        model_spec, trainer_path, vocab, train_cfg, validation_cfg, test_cfg
-    )
+    allennlp_configuration = BiomeConfig(
+        model_path=model_spec,
+        trainer_path=trainer_path,
+        vocab_path=vocab,
+        train_path=train_cfg,
+        validation_path=validation_cfg,
+        test_path=test_cfg,
+    ).to_allennlp_params()
 
     _logger.info("Launching dask cluster")
     configure_dask_cluster(n_workers=1)
 
     # Vocabulary is needed for components instantiation
-    _logger.info("Checking model configuration")
-    check_model_configuration(Params(deepcopy(allennlp_configuration)))
+    # TODO: Include a proper checking of the model configuration
+    #_logger.info("Checking model configuration")
+    #check_model_configuration(Params(deepcopy(allennlp_configuration)))
 
-    allennlp_configuration = {**allennlp_configuration}
+    allennlp_configuration = allennlp_configuration.copy()
     if model_binary:
         archive = load_archive(model_binary)
         _logger.info(archive.config.as_dict())

@@ -26,7 +26,7 @@ from typing import Optional, Callable
 from allennlp.commands.make_vocab import make_vocab_from_params
 from allennlp.common.params import Params
 
-from biome.allennlp.commands.helpers import biome2allennlp_params
+from biome.allennlp.commands.helpers import BiomeConfig
 from biome.allennlp.commands import BiomeLearn
 from biome.data.utils import configure_dask_cluster
 
@@ -44,8 +44,6 @@ class BiomeVocab(BiomeLearn):
 def vocab_from_args(args: argparse.Namespace):
     vocab(
         spec=args.spec,
-        binary=args.binary,
-        trainer=args.trainer,
         train=args.train,
         validation=args.validation,
         test=args.test,
@@ -55,20 +53,18 @@ def vocab_from_args(args: argparse.Namespace):
 
 def vocab(
     spec: Optional[str],
-    binary: Optional[str],
-    trainer: str,
     train: str,
     validation: str,
     test: Optional[str],
     output: str,
 ):
-    allennlp_configuration = biome2allennlp_params(
-        spec,
+    allennlp_configuration = BiomeConfig(
+        model_path=spec,
         trainer_path=None,
-        train_cfg=train,
-        validation_cfg=validation,
-        test_cfg=test,
-    )
+        train_path=train,
+        validation_path=validation,
+        test_path=test,
+    ).to_allennlp_params()
 
     configure_dask_cluster()
     make_vocab_from_params(Params(deepcopy(allennlp_configuration)), output)

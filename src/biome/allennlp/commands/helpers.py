@@ -1,73 +1,147 @@
 import os
 import logging
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from biome.data.utils import get_nested_property_from_data
 
 import yaml
 
-_logger= logging.getLogger(__name__)
-
-CUDA_DEVICE_FIELD = "cuda_device"
-MODEL_FIELD = "model"
-TRAINER_FIELD = "trainer"
-TRAIN_DATA_FIELD = "train_data_path"
-VALIDATION_DATA_FIELD = "validation_data_path"
-TEST_DATA_FIELD = "test_data_path"
-EVALUATE_ON_TEST_FIELD = "evaluate_on_test"
+_logger = logging.getLogger(__name__)
 
 
-def biome2allennlp_params(
-    model_spec: Optional[str] = None,
-    trainer_path: Optional[str] = None,
-    vocab_path: Optional[str] = None,
-    train_cfg: str = "",
-    validation_cfg: Optional[str] = None,
-    test_cfg: Optional[str] = None,
-) -> Dict[str, Any]:
-    def load_yaml_config(from_path: Optional[str]) -> Dict[str, Any]:
-        if not from_path:
+class BiomeConfig:
+    """This class contains biome config parameters usually necessary to run the biome commands.
+
+    It also allows a transformation of these parameters to AllenNLP parameters.
+
+    Parameters
+    ----------
+    model_path
+        Path to the model yaml file
+    trainer_path
+        Path to the trainer yaml file
+    vocab_path
+        Path to the vocab yaml file
+    train_path
+        Path to the data source yaml file of the training set
+    validation_path
+        Path to the data source yaml file of the validation set
+    test_path
+        Path to the data source yaml file of the test set
+    """
+
+    # AllenNLP param fields
+    CUDA_DEVICE_FIELD = "cuda_device"
+    MODEL_FIELD = "model"
+    TRAINER_FIELD = "trainer"
+    TRAIN_DATA_FIELD = "train_data_path"
+    VALIDATION_DATA_FIELD = "validation_data_path"
+    TEST_DATA_FIELD = "test_data_path"
+    EVALUATE_ON_TEST_FIELD = "evaluate_on_test"
+
+    def __init__(
+        self,
+        model_path: str = None,
+        trainer_path: str = None,
+        vocab_path: str = None,
+        train_path: str = None,
+        validation_path: str = None,
+        test_path: str = None,
+    ):
+        self.model_path = model_path
+        self.trainer_path = trainer_path
+        self.vocab_path = vocab_path
+        self.train_path = train_path
+        self.validation_path = validation_path
+        self.test_path = test_path
+
+        # Read yaml configs
+        self.model_dict = self.yaml_to_dict(self.model_path)
+        self._model_to_new_format()  # for backward compatibility
+        self.vocab_dict = self.yaml_to_dict(self.vocab_path)
+        self.trainer_dict = self.yaml_to_dict(self.trainer_path)
+        # Add cuda device if necessary
+        if not self.trainer_dict[self.TRAINER_FIELD].get(self.CUDA_DEVICE_FIELD):
+            self.trainer_dict[self.TRAINER_FIELD][
+                self.CUDA_DEVICE_FIELD
+            ] = self.get_cuda_device()
+
+    def _model_to_new_format(self):
+        """This helper function transforms old model spec formats to the current one.
+
+        The current one follows the AllenNLP format -> keys are "dataset_reader" and "model"
+
+        Returns
+        -------
+        model_dict
+            The model configuration as a dict
+        """
+        if "topology" in self.model_dict.keys():
+            self.model_dict = dict(
+                dataset_reader=get_nested_property_from_data(
+                    self.model_dict, "topology.pipeline"
+                ),
+                model=get_nested_property_from_data(
+                    self.model_dict, "topology.architecture"
+                ),
+            )
+        # In general the dataset reader should be of the same type as the model
+        # (we use the signature of the model's forward method in the dataset reader)
+        if "type" not in self.model_dict["dataset_reader"]:
+            self.model_dict["dataset_reader"]["type"] = self.model_dict["model"]["type"]
+
+    @staticmethod
+    def yaml_to_dict(path: str) -> Dict[str, Any]:
+        """Reads a yaml file and returns a dict.
+
+        Parameters
+        ----------
+        path
+            Path to the yaml file
+
+        Returns
+        -------
+        dict
+            If no path is specified, returns an empty dict
+        """
+        if not path:
             return dict()
-        with open(from_path) as trainer_file:
-            return yaml.safe_load(trainer_file)
-
-    def read_definition_from_model_spec(path: str) -> Dict:
         with open(path) as model_file:
-            model_data = yaml.safe_load(model_file)
-            try:
-                return dict(
-                    dataset_reader=get_nested_property_from_data(
-                        model_data, "topology.pipeline"
-                    ),
-                    model=get_nested_property_from_data(
-                        model_data, "topology.architecture"
-                    ),
-                )
-            except Exception as e:
-                _logger.warning(e)
-                return model_data
+            return yaml.safe_load(model_file)
 
-    cfg_params = read_definition_from_model_spec(model_spec) if model_spec else dict()
+    def get_cuda_device(self) -> int:
+        """Gets the cuda device from an environment variable.
 
-    trainer_cfg = load_yaml_config(trainer_path)
-    cuda_dive = trainer_cfg[TRAINER_FIELD].get(
-        CUDA_DEVICE_FIELD, int(os.getenv(CUDA_DEVICE_FIELD.upper(), -1))
-    )
-    trainer_cfg[TRAINER_FIELD][CUDA_DEVICE_FIELD] = cuda_dive
+        This is necessary to activate a GPU if available
 
-    vocab_cfg = load_yaml_config(vocab_path)
-    allennlp_configuration = {
-        **cfg_params,
-        **trainer_cfg,
-        **vocab_cfg,
-        TRAIN_DATA_FIELD: train_cfg,
-        EVALUATE_ON_TEST_FIELD: True,  # When no test data is provided, this param is ignored
-    }
+        Returns
+        -------
+        cuda_device
+            The integer number of the CUDA device
+        """
+        cuda_device = int(os.getenv(self.CUDA_DEVICE_FIELD.upper(), -1))
+        return cuda_device
 
-    for cfg, field in [
-        (validation_cfg, VALIDATION_DATA_FIELD),
-        (test_cfg, TEST_DATA_FIELD),
-    ]:
-        if cfg and not cfg.isspace():
-            allennlp_configuration.update({field: cfg})
+    def to_allennlp_params(self) -> Dict:
+        """Transforms the cfg to AllenNLP parameters by basically joining all biome configurations.
 
-    return allennlp_configuration
+        Returns
+        -------
+        params
+            A dict in the right format containing the AllenNLP parameters
+        """
+        allennlp_params = dict(
+            **self.model_dict,
+            **self.trainer_dict,
+            **self.vocab_dict,
+        )
+
+        # add data fields
+        data_fields = [self.TRAIN_DATA_FIELD, self.VALIDATION_DATA_FIELD, self.TEST_DATA_FIELD]
+        data_paths = [self.train_path, self.validation_path, self.test_path]
+        for field, path in zip(data_fields, data_paths):
+            if path:
+                allennlp_params[field] = path
+        if self.test_path:
+            allennlp_params[self.EVALUATE_ON_TEST_FIELD] = True
+
+        return allennlp_params

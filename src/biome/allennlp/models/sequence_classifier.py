@@ -131,12 +131,12 @@ class SequenceClassifier(Model):
         class_probabilities = softmax(logits, dim=1)
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
 
-        if gold_label is not None:
-            loss = self._loss(logits, gold_label.long())
+        if label is not None:
+            loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self._accuracy(logits, gold_label)
+            self._accuracy(logits, label)
             for name, metric in self.metrics.items():
-                metric(logits, gold_label)
+                metric(logits, label)
 
         return output_dict
 
