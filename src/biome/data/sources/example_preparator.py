@@ -1,5 +1,6 @@
 from typing import Dict, Optional, Any, List
 
+import deprecated
 from biome.data.utils import get_nested_property_from_data
 
 from numpy import number
@@ -13,6 +14,7 @@ RESERVED_FIELD_PREFIX = "@"
 SOURCE_FIELD = "{}source".format(RESERVED_FIELD_PREFIX)
 
 
+@deprecated.deprecated(reason="Will be removed!!")
 class TransformationConfig(object):
     def __init__(
         self,
@@ -42,6 +44,7 @@ class TransformationConfig(object):
         return mapping
 
 
+@deprecated.deprecated(reason="This class will be removed")
 class ExamplePreparator(object):
     def __init__(self, dataset_transformations: Dict):
         transformations = (dataset_transformations or dict()).copy()
@@ -129,6 +132,4 @@ class ExamplePreparator(object):
         if not example:
             example = source
 
-        return (
-            example if not include_source else {**example, SOURCE_FIELD: source}
-        )
+        return example if not include_source else {**example, SOURCE_FIELD: source}

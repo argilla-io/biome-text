@@ -1,18 +1,83 @@
 import logging
-from inspect import signature, Parameter
-from typing import Any, Dict, Iterable, Optional, Union
+from inspect import signature
+from typing import Dict, Iterable, Optional, Union, List
 
+import pandas
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
 from allennlp.data.fields import TextField, LabelField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer
+from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
+from biome.data.sources import DataSource
+from biome.data.utils import yaml_to_dict
+from dask.dataframe import Series
 from overrides import overrides
 
-from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
-
-from biome.data.sources import DataSource
-
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+
+def get_reader_configuration(file_path: str):
+    cfg = yaml_to_dict(file_path)
+    forward = _ForwardConfiguration(**cfg.pop("forward", dict()))
+    data_source = DataSource.from_cfg(cfg, cfg_file=file_path)
+    return data_source, forward
+
+
+class _ForwardConfiguration:
+    def __init__(
+        self,
+        tokens: Union[str, List[str]],
+        label: Union[str, dict] = None,
+        target: dict = None,
+    ):
+        if isinstance(tokens, str):
+            tokens = [tokens]
+
+        self._tokens = tokens
+
+        if target and not label:
+            label = target
+
+        if label:
+            if isinstance(label, str):
+                self._label = label
+            else:
+                self._label = label.get("name", label.get("gold_label"))
+                self._default_label = label.get(
+                    "default", label.get("use_missing_label")
+                )
+                self._metadata = (
+                    self._load_metadata(label.get("metadata_file"))
+                    if label.get("metadata_file")
+                    else None
+                )
+
+    @staticmethod
+    def _load_metadata(path: str) -> Dict[str, str]:
+        with open(path) as metadata_file:
+            classes = [line.rstrip("\n").rstrip() for line in metadata_file]
+
+        mapping = {idx + 1: cls for idx, cls in enumerate(classes)}
+        # mapping variant with integer numbers
+        mapping = {**mapping, **{str(key): value for key, value in mapping.items()}}
+
+        return mapping
+
+    @property
+    def tokens(self) -> List[str]:
+        return self._tokens
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def default_label(self):
+        return self._default_label
+
+    @property
+    def metadata(self):
+        return self._metadata
 
 
 @DatasetReader.register("sequence_classifier")
@@ -33,13 +98,11 @@ class SequenceClassifierDatasetReader(DatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
     ) -> None:
 
-        super().__init__(lazy=True)
+        super(SequenceClassifierDatasetReader, self).__init__(lazy=True)
 
         self.tokenizer = tokenizer or WordTokenizer()
-
         # The keys of the Instances have to match the signature of the forward method of the model
         self.forward_params = signature(SequenceClassifier.forward).parameters
-
         self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
 
         self._cached_datasets = dict()
@@ -61,9 +124,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
         instance
             An `Instance` that is fed to the model
         """
-        data_source = DataSource.from_yaml(file_path)
-        ds_key = id(data_source)
+        data_source, forward = get_reader_configuration(file_path)
 
+        ds_key = id(data_source)
         dataset = self._cached_datasets.get(ds_key)
         if dataset:
             logger.debug("Loaded cached dataset {}".format(file_path))
@@ -72,69 +135,59 @@ class SequenceClassifierDatasetReader(DatasetReader):
             dataset = data_source.read().persist()
             self._cached_datasets[ds_key] = dataset
 
-        for example in dataset:
-            instance = self.example_to_instance(example)
-            if instance:
-                yield instance
+        df = data_source.to_dataframe()
+        df["tokens"] = df[forward.tokens].apply(
+            lambda r: " ".join(r.values.astype(str)), axis=1
+        )
+        df["label"] = (
+            df[forward.label].astype(str).map_partitions(self.sanitize_label, forward)
+        )
 
-    def example_to_instance(
-        self, example: Dict[str, str], exclude_optional: bool = False
-    ) -> Optional[Instance]:
+        instances = df.apply(self.example_to_instance, axis=1).persist()
+        return (instance for idx, instance in instances.iteritems() if instance)
+
+    def sanitize_label(
+        self, series: pandas.Series, forward: _ForwardConfiguration
+    ) -> pandas.Series:
+
+        series = series.map(lambda s: s.strip())
+        if forward.default_label:
+            series = series.map(lambda s: s if s else forward.default_label)
+        if forward.metadata:
+            series = series.map(lambda s: forward.metadata.get(s, s))
+
+        return series
+
+    def example_to_instance_df(self, df: pandas.DataFrame) -> pandas.DataFrame:
+        return df.apply(self.example_to_instance)
+
+    def example_to_instance(self, example: Union[dict, Series]) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
         example
             The keys of this dictionary should match the arguments of the `forward` method of your model.
-        exclude_optional
-            Only extract the mandatory parameters of the model's forward method.
 
         Returns
         -------
         instance
             Returns `None` if the example could not be transformed to an Instance.
         """
-        fields = {}
-        try:
-            for param_name, param in self.forward_params.items():
-                if param_name == "self":
-                    continue
-                # if desired, skip optional parameters like the label for example
-                if exclude_optional and param.default is not Parameter.empty:
-                    continue
+        tokens = example["tokens"]
+        label = example.get("label", None)
 
-                value = example[param_name]
-                if not value:
-                    raise ValueError(f"{param_name} probably contains an empty string!")
-                fields[param_name] = self._value_to_field(param_name, value)
-        except ValueError as e:
-            logger.warning(e)
+        if not tokens:
+            logger.warning(f"'tokens' probably contains an empty string!")
             return None
 
+        fields = {
+            "tokens": TextField(self.tokenizer.tokenize(tokens), self.token_indexers)
+        }
+        if label:
+            fields["label"] = LabelField(label)
+
         return Instance(fields)
-
-    def _value_to_field(
-        self, field_type: str, value: Any
-    ) -> Union[LabelField, TextField]:
-        """Embeds the value in one of the `allennlp.data.fields`
-
-        Parameters
-        ----------
-        field_type
-            Name of the field, must match one of the parameters in the `forward` method of your model.
-        value
-            Value of the field.
-
-        Returns
-        -------
-        Returns either a `LabelField` or a `TextField` depending on the `field_type` parameter.
-        """
-        param = self.forward_params.get(field_type)
-        # the gold label must be optional in the classification model, otherwise no predict is possible
-        if param.default is not Parameter.empty:
-            return LabelField(value)
-        else:
-            return TextField(self.tokenizer.tokenize(value), self.token_indexers)
 
     @overrides
     def text_to_instance(self, example: Dict[str, str]) -> Optional[Instance]:
@@ -150,7 +203,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
         instance
             Returns `None` if the example could not be transformed to an Instance.
         """
-        return self.example_to_instance(example, exclude_optional=True)
+        return self.example_to_instance(example)
 
 
 @DatasetReader.register("sequence_pair_classifier")
@@ -171,7 +224,7 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
     ) -> None:
 
-        super(SequenceClassifier, self).__init__(lazy=True)
+        super(SequencePairClassifierDatasetReader, self).__init__()
 
         self.tokenizer = tokenizer or WordTokenizer()
 
@@ -197,7 +250,7 @@ class BertClassifierDatasetReader(SequenceClassifierDatasetReader):
     ) -> None:
         from allennlp.models import BertForClassification
 
-        super(SequenceClassifierDatasetReader, self).__init__(
+        super(BertClassifierDatasetReader, self).__init__(
             tokenizer=tokenizer, token_indexers=token_indexers
         )
 

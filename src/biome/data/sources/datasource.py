@@ -2,22 +2,26 @@ import logging
 import os.path
 from typing import Dict, Optional, TypeVar, Type, Callable, Any
 
+import deprecated
 import yaml
-from biome.data.sources.example_preparator import ExamplePreparator
 from biome.data.sources.readers import (
     from_csv,
     from_json,
     from_excel,
     from_elasticsearch,
-    from_parquet
+    from_parquet,
 )
 from biome.data.sources.utils import make_paths_relative
 from dask.bag import Bag
 
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
+from dask.dataframe import DataFrame
+
 T = TypeVar("T")
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
+
+from .utils import row2dict
 
 
 class DataSource:
@@ -48,13 +52,25 @@ class DataSource:
         "elasticsearch": (from_elasticsearch, dict()),
         "elastic": (from_elasticsearch, dict()),
         "es": (from_elasticsearch, dict()),
-        "parquet": (from_parquet, dict())
+        "parquet": (from_parquet, dict()),
     }
 
+    @deprecated.deprecated(
+        reason="forward dict will be removed from initializer since is not needed here"
+    )
     def __init__(self, format: str, forward: Dict = None, **kwargs):
-        self.format = format
-        self.example_preparator = ExamplePreparator(forward.copy()) if forward else None
-        self.kwargs = kwargs
+        try:
+            source_reader, arguments = self.SUPPORTED_FORMATS[format]
+            df = source_reader(**{**arguments, **kwargs}).dropna(how="all")
+            self._df = df.rename(
+                columns={
+                    column: column.strip() for column in df.columns.astype(str).values
+                }
+            )
+        except KeyError:
+            raise TypeError(
+                f"Format {format} not supported. Supported formats are: {', '.join(self.SUPPORTED_FORMATS)}"
+            )
 
     @classmethod
     def add_supported_format(
@@ -91,15 +107,12 @@ class DataSource:
             A `dask.Bag` of dicts (called examples) that hold the relevant information passed on to our model
             (for example the tokens and the label).
         """
-        if not ExamplePreparator:
-            raise RuntimeError(
-                "You properly forgot to specify the forward configuration."
-            )
-        data_source = self.to_bag()
-        examples = data_source.map(self._extract_example, include_source)
+        return self.to_bag()
 
-        return examples.filter(lambda example: example is not None)
+    def to_dataframe(self) -> DataFrame:
+        return self._df.persist()
 
+    @deprecated.deprecated(reason="Use to_dataframe method instead")
     def to_bag(self) -> Bag:
         """Reads in the data source and returns it as dicts in a `dask.Bag`
 
@@ -108,39 +121,20 @@ class DataSource:
         bag
             A `dask.Bag` of dicts.
         """
-        try:
-            from_source_to_bag, arguments = self.SUPPORTED_FORMATS[self.format]
-            return from_source_to_bag(**{**arguments, **self.kwargs})
-        except KeyError:
-            raise TypeError(
-                "Format {} not supported. Supported formats are: {}".format(
-                    self.format, " ".join(self.SUPPORTED_FORMATS)
-                )
-            )
+        return self._df.to_bag(index=True).map(
+            row2dict, columns=[str(column).strip() for column in self._df.columns]
+        )
 
-    def _extract_example(
-        self, source_dict: Dict, include_source: bool
-    ) -> Optional[Dict]:
-        """Extracts the relevant information from a source dict.
-
-        Parameters
-        ----------
-        source_dict
-            A single entry of the data source as a dictionary.
-        include_source
-            If True, the returned dict includes a *source* key that holds the entire source dict.
-
-        Returns
-        -------
-        example
-            A dict with keys that match the arguments of our model's forward method.
-            If the extraction fails, None is returned.
-        """
-        try:
-            return self.example_preparator.read_info(source_dict, include_source)
-        except Exception as e:
-            _logger.warning(e)
-            return None
+    @classmethod
+    def from_cfg(cls: Type[T], cfg: dict, cfg_file: str) -> T:
+        """ Create a data source from a dictionary configuration"""
+        # File system paths are usually specified relative to the yaml config file -> they have to be modified
+        path_keys = [
+            "path",
+            "metadata_file",
+        ]  # specifying the dict keys is a safer choice ...
+        make_paths_relative(os.path.dirname(cfg_file), cfg, path_keys=path_keys)
+        return cls(**cfg)
 
     @classmethod
     def from_yaml(cls: Type[T], file_path: str) -> T:
@@ -160,8 +154,4 @@ class DataSource:
         with open(file_path) as yaml_file:
             cfg_dict = yaml.safe_load(yaml_file)
 
-        # File system paths are usually specified relative to the yaml config file -> they have to be modified
-        path_keys = ["path", "metadata_file"]  # specifying the dict keys is a safer choice ...
-        make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
-
-        return cls(**cfg_dict)
+        return cls.from_config(cfg_dict, file_path)

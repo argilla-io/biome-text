@@ -52,7 +52,7 @@ def test_predict_batch_json(predictor):
     ]
 
     results = predictor.predict_batch_json(inputs)
-    assert len(results) == 2
+    assert len(results) == len(inputs) - 1
 
     with pytest.raises(IndexError) as err:
         predictor.predict_batch_json([inputs[2]])
