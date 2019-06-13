@@ -10,11 +10,15 @@ from tests.test_context import TEST_RESOURCES, create_temp_configuration
 
 from tests.test_support import DaskSupportTest
 
-CSV_PATH = os.path.join(TEST_RESOURCES, "resources/data/dataset_source.csv")
-NO_HEADER_CSV_PATH = os.path.join(
-    TEST_RESOURCES, "resources/data/no.header.dataset_source.csv"
+CSV_PATH = os.path.abspath(
+    os.path.join(TEST_RESOURCES, "resources/data/dataset_source.csv")
 )
-JSON_PATH = os.path.join(TEST_RESOURCES, "resources/data/dataset_source.jsonl")
+NO_HEADER_CSV_PATH = os.path.abspath(
+    os.path.join(TEST_RESOURCES, "resources/data/no.header.dataset_source.csv")
+)
+JSON_PATH = os.path.abspath(
+    os.path.join(TEST_RESOURCES, "resources/data/dataset_source.jsonl")
+)
 
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
@@ -22,7 +26,7 @@ LABEL_FIELD = "label"
 reader = SequenceClassifierDatasetReader()
 
 
-class DatasetReaderTest(DaskSupportTest):
+class SequenceClassifierDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name("sequence_classifier")
         self.assertEqual(SequenceClassifierDatasetReader, dataset_reader)
@@ -64,7 +68,7 @@ class DatasetReaderTest(DaskSupportTest):
             path=NO_HEADER_CSV_PATH,
             sep=",",
             header=None,
-            forward=dict(tokens=["0"], target=dict(gold_label="1")),
+            forward=dict(tokens=[0], target=dict(gold_label=1)),
         )
 
         with tempfile.NamedTemporaryFile("w") as cfg_file:
@@ -113,11 +117,7 @@ class DatasetReaderTest(DaskSupportTest):
             path=CSV_PATH,
             sep=",",
             forward=dict(
-                tokens=["age", "job", "marital"],
-                target=dict(
-                    gold_label="housing",
-                    values_mapping=dict(yes="OF_COURSE", no="NOT_AT_ALL"),
-                ),
+                tokens=["age", "job", "marital"], target=dict(gold_label="housing")
             ),
         )
         with tempfile.NamedTemporaryFile("w") as cfg_file:
@@ -125,7 +125,7 @@ class DatasetReaderTest(DaskSupportTest):
             dataset = reader.read(cfg_file.name)
 
             self._check_dataset(
-                dataset, expected_length, expected_inputs, ["NOT_AT_ALL", "OF_COURSE"]
+                dataset, expected_length, expected_inputs, ["yes", "no"]
             )
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
@@ -242,8 +242,8 @@ class DatasetReaderTest(DaskSupportTest):
             "None",
             "Corby Borough Council",
         ]
-        local_data_path = os.path.join(
-            TEST_RESOURCES, "resources/data/uk_customer_data_10.csv"
+        local_data_path = os.path.abspath(
+            os.path.join(TEST_RESOURCES, "resources/data/uk_customer_data_10.csv")
         )
 
         datasource_cfg = dict(
@@ -289,11 +289,17 @@ class DatasetReaderTest(DaskSupportTest):
                 msg="expected [%s] in labels" % labelField.label,
             )
 
-        lInstances = list(dataset)
-        self.assertEqual(expected_length, len(lInstances))
-        for example in lInstances:
-            self.assertTrue(TOKENS_FIELD in example.fields)
-            self.assertTrue(LABEL_FIELD in example.fields)
+        instances = list(dataset)
+        self.assertEqual(expected_length, len(instances))
+        for example in instances:
+            self.assertTrue(
+                TOKENS_FIELD in example.fields,
+                f"{TOKENS_FIELD} not found in {example.fields}",
+            )
+            self.assertTrue(
+                LABEL_FIELD in example.fields,
+                f"{LABEL_FIELD} not found in {example.fields}",
+            )
             check_text_field(example.fields[TOKENS_FIELD], expected_inputs)
             check_label_field(example.fields[LABEL_FIELD], expected_labels)
 

@@ -53,7 +53,7 @@ class SequenceClassifier(Model):
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
         accuracy: Optional[Metric] = None,
-        model_location:Optional[str] = None
+        model_location: Optional[str] = None,
     ) -> None:
         super().__init__(
             vocab, regularizer
