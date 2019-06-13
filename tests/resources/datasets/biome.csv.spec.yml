@@ -4,6 +4,10 @@ path: ../data/dataset_source.csv
 # data format (infered from path extension if no provided)
 format: csv
 
+# Extra arguments passed to pandas.read_csv method
+encoding: UTF-8
+delimiter: ","
+
 # mapping model-dataset definition
 forward:
   tokens:
@@ -11,6 +15,3 @@ forward:
   target:
     gold_label: job
 
-# Extra arguments passed to pandas.read_csv method
-encoding: UTF-8
-delimiter: ","

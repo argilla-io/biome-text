@@ -2,13 +2,13 @@ import os
 from typing import Iterable
 
 from allennlp.data.fields import TextField, LabelField
-
 from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
+
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
 TOKENS_FIELD = "tokens"
-LABEL_FIELD = "gold_label"
+LABEL_FIELD = "label"
 
 reader = SequenceClassifierDatasetReader()
 
@@ -30,9 +30,7 @@ class BiomeDatasetReaderTest(DaskSupportTest):
             TEST_RESOURCES, "resources/datasets/biome.csv.multi.file.spec.yml"
         )
         dataset = reader.read(yaml_config)
-        self._check_dataset(
-            dataset, expected_length, expected_inputs, expected_labels
-        )
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_read_input_json(self):
 
