@@ -17,9 +17,7 @@ class ExamplePreparatorTest(unittest.TestCase):
         assert source == example
 
     def test_simple_transformations(self):
-        preparator = ExamplePreparator(
-            dict(gold_label="a", other_field=["b", "c"]),
-        )
+        preparator = ExamplePreparator(dict(gold_label="a", other_field=["b", "c"]))
 
         source = dict(a="Target field", b="b value", c="c value")
         example = preparator.read_info(source)
@@ -45,7 +43,7 @@ class ExamplePreparatorTest(unittest.TestCase):
             dict(
                 gold_label=dict(field="a", use_missing_label="Missing"),
                 other_field=["b", "c"],
-            ),
+            )
         )
 
         source = dict(b="b value", c="c value")
@@ -66,7 +64,8 @@ class ExamplePreparatorTest(unittest.TestCase):
 
         source = dict(a="A value", b="b value", c="c value")
         example = preparator.read_info(source)
-        assert source["a"] == example["gold_label"]
+        print(example)
+        assert source["a"] == example["label"]
         assert example["other_field"] == " ".join([source["b"], source["c"]])
 
     def test_mappings_from_metadata(self):

@@ -9,7 +9,7 @@ from allennlp.data.tokenizers import WordTokenizer
 from overrides import overrides
 
 from biome.allennlp.models import SequenceClassifier, SequencePairClassifier
-from allennlp.models import BertForClassification
+
 from biome.data.sources import DataSource
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -40,9 +40,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
         # The keys of the Instances have to match the signature of the forward method of the model
         self.forward_params = signature(SequenceClassifier.forward).parameters
 
-        self.token_indexers = token_indexers or {
-            'tokens': SingleIdTokenIndexer()
-        }
+        self.token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
 
         self._cached_datasets = dict()
 
@@ -79,7 +77,9 @@ class SequenceClassifierDatasetReader(DatasetReader):
             if instance:
                 yield instance
 
-    def example_to_instance(self, example: Dict[str, str], exclude_optional: bool = False) -> Optional[Instance]:
+    def example_to_instance(
+        self, example: Dict[str, str], exclude_optional: bool = False
+    ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
@@ -97,7 +97,7 @@ class SequenceClassifierDatasetReader(DatasetReader):
         fields = {}
         try:
             for param_name, param in self.forward_params.items():
-                if param_name == 'self':
+                if param_name == "self":
                     continue
                 # if desired, skip optional parameters like the label for example
                 if exclude_optional and param.default is not Parameter.empty:
@@ -191,12 +191,15 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
 @DatasetReader.register("bert_classifier")
 class BertClassifierDatasetReader(SequenceClassifierDatasetReader):
     def __init__(
-            self,
-            tokenizer: Tokenizer = None,
-            token_indexers: Dict[str, TokenIndexer] = None,
+        self,
+        tokenizer: Tokenizer = None,
+        token_indexers: Dict[str, TokenIndexer] = None,
     ) -> None:
-        super().__init__(tokenizer=tokenizer, token_indexers=token_indexers)
+        from allennlp.models import BertForClassification
+
+        super(SequenceClassifierDatasetReader, self).__init__(
+            tokenizer=tokenizer, token_indexers=token_indexers
+        )
 
         # The keys of the Instances have to match the signature of the forward method of the model
         self.forward_params = signature(BertForClassification.forward).parameters
-
