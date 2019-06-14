@@ -66,7 +66,7 @@ class BiomePredict(Subcommand):
         return subparser
 
 
-def __predictor_from_args(
+def _predictor_from_args(
     archive_file: str, cuda_device: int, include_package: List[str] = []
 ) -> Predictor:
     for package_name in include_package:
@@ -118,7 +118,7 @@ def predict(
     logging.getLogger("allennlp.common").setLevel(logging.WARNING)
 
     def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
-        predictor = __predictor_from_args(
+        predictor = _predictor_from_args(
             archive_file=to_local_archive(binary), cuda_device=cuda_device
         )
         return predictor.predict_batch_json(partition)
