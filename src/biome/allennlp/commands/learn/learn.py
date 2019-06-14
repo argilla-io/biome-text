@@ -20,7 +20,6 @@ which to write the results.
 """
 import argparse
 import logging
-import multiprocessing
 from typing import Optional, Callable
 
 from allennlp.commands import Subcommand
@@ -29,7 +28,6 @@ from allennlp.commands.train import train_model
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
 from allennlp.models.model import Model
-
 from biome.allennlp.commands.helpers import BiomeConfig
 from biome.allennlp.models import load_archive
 from biome.data.utils import configure_dask_cluster
