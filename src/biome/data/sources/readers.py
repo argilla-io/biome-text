@@ -1,12 +1,12 @@
 import glob
 import logging
-import pandas
+import warnings
 from typing import Dict, Optional, Union, List
 
 import dask
 import dask.dataframe as dd
 import dask.distributed
-import deprecated
+import pandas
 import pandas as pd
 from dask import delayed
 from dask.dataframe import DataFrame
@@ -86,13 +86,12 @@ def from_excel(path: str, **params) -> DataFrame:
     return ddf
 
 
-@deprecated.deprecated(reason="source-only field will be removed")
 def from_elasticsearch(
     query: Optional[Dict] = None,
     npartitions: int = 2,
     client_cls: Optional = None,
     client_kwargs=None,
-    source_only=True,
+    source_only: Optional[bool] = None,
     **kwargs
 ) -> DataFrame:
     """Reads documents from Elasticsearch.
@@ -130,6 +129,9 @@ def from_elasticsearch(
     >>> docs = from_elasticsearch(query, index="myindex", doc_type="stuff")
 
     """
+
+    if source_only is not None:
+        warnings.warn("source-only field will be removed", DeprecationWarning)
 
     if npartitions < 2:
         _logger.warning(

@@ -2,7 +2,6 @@ import logging
 import os.path
 from typing import Dict, TypeVar, Type, Callable, Any
 
-import deprecated
 import yaml
 from biome.data.sources.readers import (
     from_csv,
@@ -13,7 +12,6 @@ from biome.data.sources.readers import (
 )
 from biome.data.sources.utils import make_paths_relative
 from dask.bag import Bag
-
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
 from dask.dataframe import DataFrame
 

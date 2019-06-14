@@ -1,6 +1,5 @@
 from typing import Dict, Optional, Any, List
-
-import deprecated
+import warnings
 from biome.data.utils import get_nested_property_from_data
 from numpy import number
 
@@ -13,7 +12,6 @@ RESERVED_FIELD_PREFIX = "@"
 SOURCE_FIELD = "{}source".format(RESERVED_FIELD_PREFIX)
 
 
-@deprecated.deprecated(reason="Will be removed!!")
 class TransformationConfig(object):
     def __init__(
         self,
@@ -23,6 +21,8 @@ class TransformationConfig(object):
         use_missing_label: Optional[str] = None,
         metadata_file: Optional[str] = None,
     ):
+
+        warnings.warn("This class won't be available anymore", DeprecationWarning)
         self.fields = [field] if field else fields
         self.value_mappings = (
             self.__mapping_from_metadata(metadata_file)
@@ -43,9 +43,9 @@ class TransformationConfig(object):
         return mapping
 
 
-@deprecated.deprecated(reason="This class will be removed")
 class ExamplePreparator(object):
     def __init__(self, dataset_transformations: Dict):
+        warnings.warn("This class won't be available anymore", DeprecationWarning)
         transformations = (dataset_transformations or dict()).copy()
         gold_label_definition = transformations.pop(GOLD_LABEL_DEFINITION_FIELD, {})
 
