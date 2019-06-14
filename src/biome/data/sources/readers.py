@@ -123,11 +123,9 @@ def from_elasticsearch(
     --------
 
     Get all documents in elasticsearch.
-
     >>> docs = from_elasticsearch()
 
     Get documents matching a given query.
-
     >>> query = {"query": {"match_all": {}}}
     >>> docs = from_elasticsearch(query, index="myindex", doc_type="stuff")
 

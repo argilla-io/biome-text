@@ -26,14 +26,14 @@ if __name__ == "__main__":
             # interactive console input
             "inquirer>=2.5.1,<2.6.0",
             "smart-open>=1.7.0",
-            "coloredlogs",
+            "coloredlogs~=10.0",
             "PyYAML<=3.13,>=3.10",  # github complains that pyyaml <4.0 is a security risk!
-            "ujson",
-            "spacy",
-            "pandas",
+            "ujson~=1.35",
+            "spacy~=2.1.0",
+            "pandas~=0.24.0",
             "elasticsearch>=6.0",
-            "bokeh",
-            "xlrd>=1.0,<2.0"
+            "bokeh~=1.2.0",
+            "xlrd>=1.0,<2.0",
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
         package_data={"biome": ["allennlp/commands/explore/ui/classifier.tar.gz"]},

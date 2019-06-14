@@ -1,23 +1,26 @@
 import argparse
+import datetime
 import logging
-from typing import Dict, Iterable, Any, List
-import time, datetime
-
+import time
+from typing import Dict, Iterable, Any, List, Optional
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
-
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
-from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 from biome.data.sources import DataSource
+from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
 
 # TODO centralize configuration
+from elasticsearch import Elasticsearch
+
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
+
+BIOME_METADATA_INDEX = ".biome"
 
 
 class BiomePredict(Subcommand):
@@ -63,7 +66,7 @@ class BiomePredict(Subcommand):
         return subparser
 
 
-def __predictor_from_args(
+def _predictor_from_args(
     archive_file: str, cuda_device: int, include_package: List[str] = []
 ) -> Predictor:
     for package_name in include_package:
@@ -82,6 +85,7 @@ def _predict(args: argparse.Namespace) -> None:
         cuda_device=args.cuda_device,
         workers=args.workers,
     )
+    exit(0)
 
 
 def predict(
@@ -91,7 +95,8 @@ def predict(
     worker_mem: int = 2e9,
     batch_size: int = 1000,
     cuda_device: int = -1,
-) -> str:
+    to_sink: dict = None,
+) -> Optional[str]:
     """
 
     Parameters
@@ -108,35 +113,79 @@ def predict(
     index
         Name of the Elasticsearch index where the predictions are stored
     """
+
+    logging.getLogger("allennlp.common.params").setLevel(logging.WARNING)
+    logging.getLogger("allennlp.common").setLevel(logging.WARNING)
+
     def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
-        predictor = __predictor_from_args(
+        predictor = _predictor_from_args(
             archive_file=to_local_archive(binary), cuda_device=cuda_device
         )
         return predictor.predict_batch_json(partition)
 
     prediction_start_time = time.time()
 
-
     data_source = DataSource.from_yaml(from_source)
-    sink_config = default_elasticsearch_sink(from_source, binary, batch_size)
-
-    configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
-
-    test_dataset = data_source.read(include_source=True).persist()
-
-    npartitions = max(1, round(test_dataset.count().compute() / batch_size))
-
-    predicted_dataset = (
-        test_dataset.repartition(npartitions=npartitions)
-        .map_partitions(predict_partition)
-        .persist()
+    sink_config = (
+        default_elasticsearch_sink(from_source, binary, batch_size)
+        if not to_sink
+        else to_sink
     )
 
-    [_logger.info(result) for result in store_dataset(predicted_dataset, sink_config)]
+    client = configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
+    try:
+        test_dataset = data_source.read(include_source=True).persist()
+        npartitions = max(1, round(test_dataset.count().compute() / batch_size))
 
-    prediction_elapsed_time = time.time() - prediction_start_time
-    formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
-    _logger.info("Prediction and indexing time: %s", formatted_time)
+        predicted_dataset = (
+            test_dataset.repartition(npartitions=npartitions)
+            .map_partitions(predict_partition)
+            .persist()
+        )
 
-    return sink_config['index']
+        [
+            _logger.info(result)
+            for result in store_dataset(predicted_dataset, sink_config)
+        ]
 
+        prediction_elapsed_time = time.time() - prediction_start_time
+        formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
+        _logger.info("Prediction and indexing time: %s", formatted_time)
+
+        client.close()
+
+        if not to_sink:
+            es_index = sink_config["index"]
+            es_hosts = sink_config["es_hosts"]
+            register_biome_prediction(
+                project=None, name=es_index, created_index=es_index, es_hosts=es_hosts
+            )
+            return es_index
+        return None
+    finally:
+        client.close()
+
+
+def register_biome_prediction(
+    project: str, name: str, created_index: str, es_hosts: str, **kargs
+):
+
+    metadata_index = f"{BIOME_METADATA_INDEX}"
+    es = Elasticsearch(hosts=es_hosts)
+    es.indices.create(
+        index=metadata_index,
+        body={"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}},
+        ignore=400,
+    )
+
+    es.update(
+        index=metadata_index,
+        id=created_index,
+        body={
+            "doc": dict(
+                project=project, name=name, created_at=datetime.datetime.now(), **kargs
+            ),
+            "doc_as_upsert": True,
+        },
+    )
+    del es

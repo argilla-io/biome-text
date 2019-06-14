@@ -29,11 +29,11 @@ def test_predict_json(predictor):
 
     for json_input in inputs[:2]:
         results = predictor.predict_json(json_input)
-        for key in ["input", "annotation"]:
+        for key in ["tokens", "annotation"]:
             assert key in results.keys()
 
         # These asserts should maybe go to the SequenceClassifier model test, there we define the output ...
-        for key in ["logits", "classes", "max_class", "max_class_prob"]:
+        for key in ["classes", "max_class", "max_class_prob"]:
             assert key in results["annotation"].keys()
 
         assert results["annotation"]["max_class"] == "english"

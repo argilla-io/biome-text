@@ -1,6 +1,6 @@
 import logging
 import os.path
-from typing import Dict, Optional, TypeVar, Type, Callable, Any
+from typing import Dict, TypeVar, Type, Callable, Any
 
 import deprecated
 import yaml
@@ -55,9 +55,6 @@ class DataSource:
         "parquet": (from_parquet, dict()),
     }
 
-    @deprecated.deprecated(
-        reason="forward dict will be removed from initializer since is not needed here"
-    )
     def __init__(self, format: str, forward: Dict = None, **kwargs):
         try:
             source_reader, arguments = self.SUPPORTED_FORMATS[format]
@@ -110,9 +107,8 @@ class DataSource:
         return self.to_bag()
 
     def to_dataframe(self) -> DataFrame:
-        return self._df.persist()
+        return self._df
 
-    @deprecated.deprecated(reason="Use to_dataframe method instead")
     def to_bag(self) -> Bag:
         """Reads in the data source and returns it as dicts in a `dask.Bag`
 
@@ -154,4 +150,4 @@ class DataSource:
         with open(file_path) as yaml_file:
             cfg_dict = yaml.safe_load(yaml_file)
 
-        return cls.from_config(cfg_dict, file_path)
+        return DataSource.from_cfg(cfg_dict, file_path)

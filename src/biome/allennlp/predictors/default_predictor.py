@@ -1,6 +1,5 @@
 from typing import List
 
-import numpy as np
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance, DatasetReader
@@ -24,7 +23,11 @@ class DefaultBasePredictor(Predictor):
 
         # check if instance is valid and print out meaningful error message
         if instance is None:
-            raise ValueError("Input {} could not be converted to an instance. No prediction possible.".format(inputs))
+            raise ValueError(
+                "Input {} could not be converted to an instance. No prediction possible.".format(
+                    inputs
+                )
+            )
 
         output = self.predict_instance(instance)
         return self._to_prediction(inputs, output)
@@ -36,14 +39,21 @@ class DefaultBasePredictor(Predictor):
         # This fails: np.array(instances)
 
         # skip examples that failed to be converted to instances! For example (and maybe solely) empty strings
-        input_and_instances = [(input, instance) for input, instance in zip(inputs, instances)
-                               if instance is not None]
+        input_and_instances = [
+            (input, instance)
+            for input, instance in zip(inputs, instances)
+            if instance is not None
+        ]
 
         # check if there are instances left and print out meaningful error message
         if not input_and_instances:
-            raise IndexError("No instances found in batch. Check input or make batch size bigger.")
+            raise IndexError(
+                "No instances found in batch. Check input or make batch size bigger."
+            )
 
-        outputs = self._model.forward_on_instances([instance[1] for instance in input_and_instances])
+        outputs = self._model.forward_on_instances(
+            [instance[1] for instance in input_and_instances]
+        )
 
         return [
             self._to_prediction(input[0], output)
@@ -51,8 +61,9 @@ class DefaultBasePredictor(Predictor):
         ]
 
     @staticmethod
-    def _to_prediction(inputs, output):
-        return dict(input=inputs, annotation=sanitize(output))
+    def _to_prediction(input, output):
+        output.pop("logits")
+        return {**input, "annotation": sanitize(output)}
 
 
 @Predictor.register("sequence_classifier")

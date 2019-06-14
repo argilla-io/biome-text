@@ -34,6 +34,9 @@ class _ForwardConfiguration:
             tokens = [tokens]
 
         self._tokens = tokens
+        self._label = None
+        self._default_label = None
+        self._metadata = None
 
         if target and not label:
             label = target
@@ -126,37 +129,43 @@ class SequenceClassifierDatasetReader(DatasetReader):
         """
         data_source, forward = get_reader_configuration(file_path)
 
-        ds_key = id(data_source)
+        ds_key = file_path
         dataset = self._cached_datasets.get(ds_key)
-        if dataset:
+        if dataset is not None:
             logger.debug("Loaded cached dataset {}".format(file_path))
+            return dataset
         else:
             logger.debug("Read dataset from {}".format(file_path))
-            dataset = data_source.read().persist()
-            self._cached_datasets[ds_key] = dataset
-
-        df = data_source.to_dataframe()
-        df["tokens"] = df[forward.tokens].apply(
-            lambda r: " ".join(r.values.astype(str)), axis=1
-        )
-        df["label"] = (
-            df[forward.label].astype(str).map_partitions(self.sanitize_label, forward)
-        )
-
-        instances = df.apply(self.example_to_instance, axis=1).persist()
-        return (instance for idx, instance in instances.iteritems() if instance)
+            dataset = data_source.to_dataframe().compute()
+            dataset["tokens"] = (
+                dataset[forward.tokens]
+                .astype(str)
+                .apply(lambda r: " ".join(r.values), axis=1)
+            )
+            dataset["label"] = (
+                dataset[forward.label]
+                .astype(str)
+                .apply(self.sanitize_label, forward=forward)
+            )
+            instances = (
+                dataset[["tokens", "label"]]
+                .astype(str)
+                .apply(self.example_to_instance, axis=1)
+            )
+            self._cached_datasets[ds_key] = instances
+            return (instance for idx, instance in instances.iteritems() if instance)
 
     def sanitize_label(
-        self, series: pandas.Series, forward: _ForwardConfiguration
+        self, label: str, forward: _ForwardConfiguration
     ) -> pandas.Series:
 
-        series = series.map(lambda s: s.strip())
+        label = label.strip()
         if forward.default_label:
-            series = series.map(lambda s: s if s else forward.default_label)
+            label = label if label else forward.default_label
         if forward.metadata:
-            series = series.map(lambda s: forward.metadata.get(s, s))
+            label = forward.metadata.get(label, label)
 
-        return series
+        return label
 
     def example_to_instance_df(self, df: pandas.DataFrame) -> pandas.DataFrame:
         return df.apply(self.example_to_instance)

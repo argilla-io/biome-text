@@ -2,7 +2,6 @@ from typing import Dict, Optional, Any, List
 
 import deprecated
 from biome.data.utils import get_nested_property_from_data
-
 from numpy import number
 
 GOLD_LABEL_DEFINITION_FIELD = "target"
@@ -131,5 +130,7 @@ class ExamplePreparator(object):
 
         if not example:
             example = source
+        elif include_source:
+            example = {**example, SOURCE_FIELD: source}
 
-        return example if not include_source else {**example, SOURCE_FIELD: source}
+        return example
