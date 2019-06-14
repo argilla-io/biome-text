@@ -143,7 +143,7 @@ def learn(
     train_cfg: str = "",
     validation_cfg: str = "",
     test_cfg: Optional[str] = None,
-    workers: int = multiprocessing.cpu_count(),
+    workers: int = 1,
 ) -> Model:
 
     if not model_binary and not model_spec:
