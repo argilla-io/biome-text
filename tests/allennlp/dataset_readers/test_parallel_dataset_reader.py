@@ -21,7 +21,7 @@ reader = SequenceClassifierDatasetReader()
 class ParallelDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name("sequence_classifier")
-        self.assertEquals(SequenceClassifierDatasetReader, dataset_reader)
+        self.assertEqual(SequenceClassifierDatasetReader, dataset_reader)
 
     def test_read_csv(self):
         expected_length = 9
