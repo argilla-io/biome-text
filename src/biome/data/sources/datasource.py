@@ -12,6 +12,7 @@ from biome.data.sources.readers import (
 )
 from biome.data.sources.utils import make_paths_relative
 from dask.bag import Bag
+
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
 from dask.dataframe import DataFrame
 
@@ -57,11 +58,15 @@ class DataSource:
         try:
             source_reader, arguments = self.SUPPORTED_FORMATS[format]
             df = source_reader(**{**arguments, **kwargs}).dropna(how="all")
-            self._df = df.rename(
+            df = df.rename(
                 columns={
                     column: column.strip() for column in df.columns.astype(str).values
                 }
             )
+            if "id" in df.columns:
+                df = df.set_index("id")
+
+            self._df = df
         except KeyError:
             raise TypeError(
                 f"Format {format} not supported. Supported formats are: {', '.join(self.SUPPORTED_FORMATS)}"
