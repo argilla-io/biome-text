@@ -156,9 +156,15 @@ def from_elasticsearch(
     return dask.dataframe.from_delayed(index_scan)
 
 
+import flatdict
+
+
 def _elasticsearch_scan(client_cls, client_kwargs, **params) -> pandas.DataFrame:
     def map_to_source(x: Dict) -> Dict:
-        return dict(id=x["_id"], resource=x["_index"], **x["_source"])
+        flat = flatdict.FlatDict(
+            {**x["_source"], **dict(id=x["_id"], resource=x["_index"])}, delimiter="."
+        )
+        return dict(flat)
 
     # This method is executed in the worker's process and here we instantiate
     # the ES client as it cannot be serialized.
