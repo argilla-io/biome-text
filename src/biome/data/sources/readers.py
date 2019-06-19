@@ -162,6 +162,7 @@ def _elasticsearch_scan(client_cls, client_kwargs, **params) -> pandas.DataFrame
 
     # This method is executed in the worker's process and here we instantiate
     # the ES client as it cannot be serialized.
+    # TODO check empty DataFrame
     client = client_cls(**(client_kwargs or {}))
     return pandas.DataFrame(
         (map_to_source(document) for document in scan(client, **params))
