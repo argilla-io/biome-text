@@ -2,6 +2,7 @@ import atexit
 import logging
 import os
 import re
+import tempfile
 from multiprocessing.pool import ThreadPool
 
 import dask
@@ -108,6 +109,7 @@ def configure_dask_cluster(
                     }
                 )
 
+                worker_space = tempfile.mkdtemp(prefix=".dask.", dir=os.getcwd())
                 cluster = LocalCluster(
                     n_workers=workers,
                     threads_per_worker=1,
@@ -115,6 +117,7 @@ def configure_dask_cluster(
                     scheduler_port=8786,  # TODO configurable
                     memory_limit=worker_mem,
                     silence_logs=logging.ERROR,
+                    local_dir=worker_space,
                 )
                 return Client(cluster)
         else:
