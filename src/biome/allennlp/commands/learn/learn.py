@@ -20,6 +20,7 @@ which to write the results.
 """
 import argparse
 import logging
+import shutil
 from typing import Optional, Callable
 
 from allennlp.commands import Subcommand
@@ -168,6 +169,8 @@ def learn(
         if model_binary:
             archive = load_archive(model_binary)
             _logger.info(archive.config.as_dict())
+            # Force clean folder for run fine tuning properly
+            shutil.rmtree(output, ignore_errors=True)
 
             return fine_tune_model(
                 model=archive.model,
@@ -180,7 +183,7 @@ def learn(
                     }
                 ),
                 serialization_dir=output,
-                extend_vocab=False,
+                extend_vocab=True,
                 file_friendly_logging=True,
             )
         else:
