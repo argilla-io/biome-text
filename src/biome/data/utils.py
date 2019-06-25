@@ -51,7 +51,7 @@ def default_elasticsearch_sink(
     source_config: str, binary_path: str, es_batch_size: int
 ) -> Dict:
     def sanizite_index(index_name: str) -> str:
-        return re.sub("\W", "_", index_name)
+        return re.sub(r"\W", "_", index_name)
 
     file_name = os.path.basename(source_config)
     model_name = os.path.dirname(binary_path)
@@ -109,7 +109,10 @@ def configure_dask_cluster(
                     }
                 )
 
-                worker_space = tempfile.mkdtemp(prefix=".dask.", dir=os.getcwd())
+                dask_data = os.path.join(os.getcwd(), ".dask")
+                os.makedirs(dask_data,exist_ok=True)
+
+                worker_space = tempfile.mkdtemp(dir=dask_data)
                 cluster = LocalCluster(
                     n_workers=workers,
                     threads_per_worker=1,
