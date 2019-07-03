@@ -250,7 +250,7 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         self._cached_datasets = dict()
 
 
-@DatasetReader.register("bert_classifier")
+@DatasetReader.register("bert_for_classification")
 class BertClassifierDatasetReader(SequenceClassifierDatasetReader):
     def __init__(
         self,
