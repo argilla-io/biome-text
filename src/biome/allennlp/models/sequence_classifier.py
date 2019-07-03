@@ -48,7 +48,7 @@ class SequenceClassifier(Model):
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
         decoder: FeedForward,
-        encoder: Optional[Seq2VecEncoder] = None,
+        encoder: Seq2VecEncoder,
         pre_encoder: Optional[FeedForward] = None,
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
@@ -69,7 +69,7 @@ class SequenceClassifier(Model):
 
         self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
 
-        self.__check_configuration()
+        self._check_configuration()
         self.metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
@@ -117,12 +117,11 @@ class SequenceClassifier(Model):
         """
         embedded_text_input = self.text_field_embedder(tokens)
         mask = get_text_field_mask(tokens)
+
         if self.pre_encoder:
             embedded_text_input = self.pre_encoder(embedded_text_input)
-        if self.encoder:
-            encoded_text = self.encoder(embedded_text_input, mask)
-        else:
-            encoded_text = embedded_text_input[:, 0]  # Bert
+            
+        encoded_text = self.encoder(embedded_text_input, mask)
 
         decoded_text = self.decoder(encoded_text)
 
@@ -212,21 +211,19 @@ class SequenceClassifier(Model):
 
         return all_metrics
 
-    def __check_configuration(self):
+    def _check_configuration(self):
         """Some basic checks of the architecture."""
         encoder = self.encoder
-        if encoder:
-            if self.pre_encoder:
-                encoder = self.pre_encoder
-            if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
-                raise ConfigurationError(
-                    "The output dimension of the text_field_embedder must match the "
-                    "input dimension of the sequence encoder. Found {} and {}, "
-                    "respectively.".format(
-                        self.text_field_embedder.get_output_dim(),
-                        encoder.get_input_dim(),
-                    )
+        if self.pre_encoder:
+            encoder = self.pre_encoder
+        if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
+            raise ConfigurationError(
+                "The output dimension of the text_field_embedder must match the "
+                "input dimension of the sequence encoder. Found {} and {}, "
+                "respectively.".format(
+                    self.text_field_embedder.get_output_dim(),
+                    encoder.get_input_dim(),
                 )
-        else:
-            # TODO: Add more checks
-            pass
+            )
+        # TODO: Add more checks
+        return
