@@ -56,7 +56,8 @@ class DataSource:
 
     def __init__(self, format: str, forward: Dict = None, **kwargs):
         try:
-            source_reader, arguments = self.SUPPORTED_FORMATS[format]
+            clean_format = format.lower().strip()
+            source_reader, arguments = self.SUPPORTED_FORMATS[clean_format]
             df = source_reader(**{**arguments, **kwargs}).dropna(how="all")
             df = df.rename(
                 columns={
