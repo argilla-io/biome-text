@@ -22,7 +22,7 @@ if __name__ == "__main__":
             "requests<=2.21.0",  # avoid version conflicts
             "allennlp>=0.8.0",
             "cachey",  # Needed to use the Cache class in dask
-            "dask[complete]>=1.0,<2.0",
+            "dask[complete]~=2.0.0",
             # interactive console input
             "inquirer>=2.5.1,<2.6.0",
             "smart-open>=1.7.0",
