@@ -13,9 +13,9 @@ from biome.data.sources.readers import (
 from biome.data.sources.utils import make_paths_relative
 from dask.bag import Bag
 
-# https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
 from dask.dataframe import DataFrame
 
+# https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
 T = TypeVar("T")
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name

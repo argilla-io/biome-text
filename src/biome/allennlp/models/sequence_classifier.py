@@ -120,7 +120,7 @@ class SequenceClassifier(Model):
 
         if self.pre_encoder:
             embedded_text_input = self.pre_encoder(embedded_text_input)
-            
+
         encoded_text = self.encoder(embedded_text_input, mask)
 
         decoded_text = self.decoder(encoded_text)
