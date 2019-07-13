@@ -27,7 +27,7 @@ if __name__ == "__main__":
             "inquirer>=2.5.1,<2.6.0",
             "smart-open>=1.7.0",
             "coloredlogs~=10.0",
-            "PyYAML<=3.13,>=3.10",  # github complains that pyyaml <4.0 is a security risk!
+            "PyYAML>=3.10,<=5.1",  # github complains that pyyaml <4.0 is a security risk!
             "ujson~=1.35",
             "spacy~=2.1.0",
             "pandas~=0.24.0",
