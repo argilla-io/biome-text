@@ -6,9 +6,9 @@ from tempfile import mkdtemp
 from typing import Optional
 
 from allennlp.commands import Subcommand
-from biome.data.utils import ENV_ES_HOSTS
 from gevent.pywsgi import WSGIServer
 
+from biome.data.utils import ENV_ES_HOSTS
 from .app import make_app
 
 # TODO centralize configuration
