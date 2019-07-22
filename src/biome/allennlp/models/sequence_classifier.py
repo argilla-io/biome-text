@@ -6,7 +6,7 @@ import torch
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import Seq2VecEncoder, TextFieldEmbedder, FeedForward
+from allennlp.modules import Seq2VecEncoder, TextFieldEmbedder, FeedForward, Seq2SeqEncoder
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure, Metric
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @Model.register("sequence_classifier")
 class SequenceClassifier(Model):
     """
-    This ``SequenceClassifier`` simply encodes a sequence of allennlp_2 with a ``Seq2VecEncoder``, then
+    This ``SequenceClassifier`` simply encodes a sequence with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
     Parameters
@@ -30,13 +30,20 @@ class SequenceClassifier(Model):
         and passed on to the :class:`~allennlp_2.models.model.Model` class.
     text_field_embedder
         Used to embed the tokens we get as input to the model.
-    decoder
-        The decoder that will decode the final answer of the model
     pre_encoder
-        Feedforward layer to be applied to embedded tokens.
+        Feedforward layer to be applied to embedded tokens. Useful if you use pre-trained word embeddings.
+    seq2seq
+        A sequence-to-sequence encoder to be applied to the embedded tokens, or pre-encoded tokens.
     encoder
-        The encoder that we will use in between embedding tokens
-        and predicting output tags.
+        A sequence-to-vector encoder to be applied to the embedded tokens, pre-encoded tokens or the output of the
+        sequence-to-sequence encoder
+    dropout
+        Dropout applied to the encoded vector
+    decoder
+        A FeedForward network that will decode the final answer of the model,
+        before passing the vector on to the classification layer.
+    accuracy
+        Type of accuracy to be computed. By defautl we compute the Top-1 `CategoricalAccuracy()`
     initializer
         Used to initialize the model parameters.
     regularizer
@@ -47,35 +54,58 @@ class SequenceClassifier(Model):
         self,
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
-        decoder: FeedForward,
         encoder: Seq2VecEncoder,
+        dropout: float = None,
+        decoder: Optional[FeedForward] = None,
         pre_encoder: Optional[FeedForward] = None,
+        seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
+        accuracy: Optional[Metric] = None,
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
-        accuracy: Optional[Metric] = None,
-        model_location: Optional[str] = None,
     ) -> None:
         super().__init__(
             vocab, regularizer
         )  # Passing on kwargs does not work because of the 'from_params' machinery
 
-        self.text_field_embedder = text_field_embedder
-        self.num_classes = self.vocab.get_vocab_size("labels")
-        self.pre_encoder = pre_encoder
-        self.encoder = encoder
-        self.decoder = decoder
         self.initializer = initializer or InitializerApplicator()
-        self._accuracy = accuracy or CategoricalAccuracy()
 
-        self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
+        # embedding
+        self.text_field_embedder = text_field_embedder
 
+        # encoding
+        self.pre_encoder = pre_encoder
+        self.seq2seq_encoder = seq2seq_encoder
+        self.encoder = encoder
+
+        # dropout for encoded vector
+        if dropout:
+            self._dropout = torch.nn.Dropout(dropout)
+        else:
+            self._dropout = None
+
+        # decoding
+        self.decoder = decoder
+
+        # classification layer
+        self.num_classes = self.vocab.get_vocab_size("labels")
+        if self.decoder:
+            self._classification_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
+        else:
+            self._classification_layer = Linear(self.encoder.get_input_dim(), self.num_classes)
+
+        # check basic model configuration
         self._check_configuration()
+
+        # metrics
+        self.accuracy = accuracy or CategoricalAccuracy()
         self.metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
                 "labels"
             ).items()
         }
+
+        # loss function for training
         self._loss = torch.nn.CrossEntropyLoss()
 
         self.initializer(self)
@@ -115,25 +145,35 @@ class SequenceClassifier(Model):
         loss : :class:`~torch.Tensor`, optional
             A scalar loss to be optimised.
         """
+        # embed tokens
         embedded_text_input = self.text_field_embedder(tokens)
         mask = get_text_field_mask(tokens)
 
+        # encode tokens
         if self.pre_encoder:
             embedded_text_input = self.pre_encoder(embedded_text_input)
-
+        if self.seq2seq_encoder:
+            embedded_text_input = self.seq2seq_encoder(embedded_text_input)
         encoded_text = self.encoder(embedded_text_input, mask)
 
-        decoded_text = self.decoder(encoded_text)
+        # apply dropout to encoded vector
+        if self._dropout:
+            encoded_text = self._dropout(encoded_text)
 
-        logits = self.output_layer(decoded_text)
+        # pass encoded vector through a FeedForward, kind of decoding
+        if self.decoder:
+            encoded_text = self.decoder(encoded_text)
 
+        # get logits and probs
+        logits = self._classification_layer(encoded_text)
         class_probabilities = softmax(logits, dim=1)
+
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
 
         if label is not None:
             loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self._accuracy(logits, label)
+            self.accuracy(logits, label)
             for name, metric in self.metrics.items():
                 metric(logits, label)
 
@@ -207,13 +247,15 @@ class SequenceClassifier(Model):
         all_metrics["average/f1"] = total_f1 / num_metrics
         all_metrics["average/precision"] = total_precision / num_metrics
         all_metrics["average/recall"] = total_recall / num_metrics
-        all_metrics["accuracy"] = self._accuracy.get_metric(reset)
+        all_metrics["accuracy"] = self.accuracy.get_metric(reset)
 
         return all_metrics
 
     def _check_configuration(self):
         """Some basic checks of the architecture."""
         encoder = self.encoder
+        if self.seq2seq_encoder:
+            encoder = self.seq2seq_encoder
         if self.pre_encoder:
             encoder = self.pre_encoder
         if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
