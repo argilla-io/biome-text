@@ -8,6 +8,8 @@ from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
+
+from biome.allennlp.dataset_readers import LABEL_TOKEN
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
@@ -158,7 +160,11 @@ def predict(
             es_index = sink_config["index"]
             es_hosts = sink_config["es_hosts"]
             register_biome_prediction(
-                project=None, name=es_index, created_index=es_index, es_hosts=es_hosts
+                project=None,
+                ds=data_source,
+                name=es_index,
+                created_index=es_index,
+                es_hosts=es_hosts,
             )
             return es_index
         return None
@@ -167,7 +173,7 @@ def predict(
 
 
 def register_biome_prediction(
-    project: str, name: str, created_index: str, es_hosts: str, **kargs
+    project: str, ds: DataSource, name: str, created_index: str, es_hosts: str, **kargs
 ):
 
     metadata_index = f"{BIOME_METADATA_INDEX}"
@@ -183,7 +189,11 @@ def register_biome_prediction(
         id=created_index,
         body={
             "doc": dict(
-                project=project, name=name, created_at=datetime.datetime.now(), **kargs
+                project=project,
+                name=name,
+                created_at=datetime.datetime.now(),
+                inputs=[input for input in ds.forward.keys() if input != LABEL_TOKEN],
+                **kargs,
             ),
             "doc_as_upsert": True,
         },

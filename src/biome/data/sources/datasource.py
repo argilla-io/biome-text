@@ -66,12 +66,16 @@ class DataSource:
             )
             if "id" in df.columns:
                 df = df.set_index("id")
-
+            self._forward = forward
             self._df = df
         except KeyError:
             raise TypeError(
                 f"Format {format} not supported. Supported formats are: {', '.join(self.SUPPORTED_FORMATS)}"
             )
+
+    @property
+    def forward(self) -> dict:
+        return self._forward
 
     @classmethod
     def add_supported_format(

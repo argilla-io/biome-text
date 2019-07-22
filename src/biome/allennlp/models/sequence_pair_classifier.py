@@ -1,14 +1,11 @@
 import logging
 from typing import Dict, Optional
+from overrides import overrides
 
 import torch
-from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import Seq2VecEncoder
-from allennlp.modules import TextFieldEmbedder
-from allennlp.nn import InitializerApplicator, RegularizerApplicator
-from overrides import overrides
-from torch.nn.modules.linear import Linear
+from allennlp.nn.util import get_text_field_mask
+from torch.nn.functional import softmax
 
 from . import SequenceClassifier
 
@@ -17,43 +14,17 @@ logger = logging.getLogger(__name__)
 
 @Model.register("sequence_pair_classifier")
 class SequencePairClassifier(SequenceClassifier):
-    """
-    This ``SequenceClassifier`` simply encodes a sequence of allennlp_2 with a ``Seq2VecEncoder``, then
-    predicts a label for the sequence.
-
-    Parameters
-    ----------
-    vocab : ``Vocabulary``, required
-        A Vocabulary, required in order to compute sizes for input/output projections.
-    text_field_embedder : ``TextFieldEmbedder``, required
-        Used to embed the ``tokens`` ``TextField`` we get as input to the model.
-    encoder : ``Seq2VecEncoder``
-        The encoder  that we will use in between embedding tokens
-        and predicting output tags.
-    initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
-        Used to initialize the model parameters.
-    regularizer : ``RegularizerApplicator``, optional (default=``None``)
-    """
-
-    def __init__(self, vocab: Vocabulary,
-                 text_field_embedder: TextFieldEmbedder,
-                 encoder: Seq2VecEncoder,
-                 initializer: InitializerApplicator = InitializerApplicator(),
-                 regularizer: Optional[RegularizerApplicator] = None) -> None:
-
-        super(SequencePairClassifier, self).__init__(vocab, text_field_embedder, encoder, initializer, regularizer)
-        self.projection_layer = Linear(self.encoder.get_output_dim() * 2, self.num_classes)
 
     @overrides
     def forward(self,  # type: ignore
-                record_1: Dict[str, torch.Tensor],
-                record_2: Dict[str, torch.Tensor],
-                gold_label: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+                record1: Dict[str, torch.Tensor],
+                record2: Dict[str, torch.Tensor],
+                label: torch.Tensor = None) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
         Parameters
         ----------
-        record_1 : Dict[str, torch.LongTensor], required
+        record1 : Dict[str, torch.LongTensor], required
             The output of ``TextField.as_array()``, which should typically be passed directly to a
             ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
             tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
@@ -62,7 +33,7 @@ class SequencePairClassifier(SequenceClassifier):
             sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
             which knows how to combine different word representations into a single vector per
             token in your input.
-        record_2 : Dict[str, torch.LongTensor], required
+        record2 : Dict[str, torch.LongTensor], required
             The output of ``TextField.as_array()``, which should typically be passed directly to a
             ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
             tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
@@ -71,7 +42,7 @@ class SequencePairClassifier(SequenceClassifier):
             sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
             which knows how to combine different word representations into a single vector per
             token in your input.
-        gold_label : torch.LongTensor, optional (default = None)
+        label : torch.LongTensor, optional (default = None)
             A torch tensor representing the sequence of integer gold class label of shape
             ``(batch_size, num_classes)``.
 
@@ -88,27 +59,29 @@ class SequencePairClassifier(SequenceClassifier):
             A scalar loss to be optimised.
 
         """
-        encoded_record_1 = self.encode_tokens(record_1)
-        encoded_record_2 = self.encode_tokens(record_2)
+        embedded_text_input_record1 = self.text_field_embedder(record1)
+        embedded_text_input_record2 = self.text_field_embedder(record2)
+        mask_record1 = get_text_field_mask(record1)
+        mask_record2 = get_text_field_mask(record2)
+        if self.pre_encoder:
+            embedded_text_input_record1 = self.pre_encoder(embedded_text_input_record1)
+            embedded_text_input_record2 = self.pre_encoder(embedded_text_input_record2)
+        if self.encoder:
+            encoded_record1 = self.encoder(embedded_text_input_record1, mask_record1)
+            encoded_record2 = self.encoder(embedded_text_input_record2, mask_record2)
 
-        aggregated_records = torch.cat([encoded_record_1, encoded_record_2], dim=-1)
-        logits = self.projection_layer(aggregated_records)
+        aggregated_records = torch.cat([encoded_record1, encoded_record2], dim=-1)
+        decoded_text = self.decoder(aggregated_records)
 
-        class_probabilities = self.get_class_probabilities(logits)
+        logits = self.output_layer(decoded_text)
+        class_probabilities = softmax(logits, dim=1)
 
-        output_dict = {
-            "logits": logits,
-            "class_probabilities": class_probabilities,
-            "encoded_record_1": encoded_record_1,
-            "encoded_record_2": encoded_record_2
-        }
+        output_dict = {"logits": logits, "class_probabilities": class_probabilities}
 
-        if gold_label is not None:
-            loss = self._loss(logits, gold_label.long().view(-1))
+        if label is not None:
+            loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-
-            self._accuracy(logits, gold_label)
+            self._accuracy(logits, label)
             for name, metric in self.metrics.items():
-                metric(logits, gold_label.squeeze(-1))
-
+                metric(logits, label)
         return output_dict
