@@ -51,7 +51,7 @@ class SimilarityClassifier(Model):
             seq2seq_encoder: Seq2SeqEncoder = None,
             dropout: float = None,
             similarity: SimilarityFunction = None,
-            initializer: Optional[InitializerApplicator] = None,
+            initializer: InitializerApplicator = InitializerApplicator(),
             regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
         super().__init__(
@@ -72,26 +72,29 @@ class SimilarityClassifier(Model):
         else:
             self._dropout = None
 
+        self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()*2
+        self._num_labels = vocab.get_vocab_size(namespace="labels")
+        self._classification_layer = torch.nn.Linear(self._classifier_input_dim, self._num_labels)
+
         self.similarity = similarity or CosineSimilarity()
 
         self._accuracy = CategoricalAccuracy()
         self._loss = torch.nn.CrossEntropyLoss()
+
         initializer(self)
 
     @overrides
     def forward(
             self,  # type: ignore
-            tokens1: Dict[str, torch.LongTensor],
-            tokens2: Dict[str, torch.LongTensor],
+            record1: Dict[str, torch.LongTensor],
+            record2: Dict[str, torch.LongTensor],
             label: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
         Parameters
         ----------
-        tokens : Dict[str, torch.LongTensor]
-            From a ``TextField``
-        tokens1
+        record1
             The first input tokens.
             The dictionary is the output of a ``TextField.as_array()``. It gives names to the tensors created by
             the ``TokenIndexer``s.
@@ -102,7 +105,7 @@ class SimilarityClassifier(Model):
             ``TokenEmbedder`` for each key in the dictionary (except you set `allow_unmatched_keys` in the
             ``TextFieldEmbedder`` to False) and knows how to combine different word/character representations into a
             single vector per token in your input.
-        tokens2
+        record2
             The second input tokens.
         label
             A torch tensor indicating if the two set of input tokens are similar or not (dim: ``(batch_size, 2)``).
@@ -116,12 +119,12 @@ class SimilarityClassifier(Model):
             A scalar loss to be optimised.
         """
         embedded_texts = []
-        for tokens in [tokens1, tokens2]:
+        for tokens in [record1, record2]:
             embedded_text = self._text_field_embedder(tokens)
             mask = get_text_field_mask(tokens).float()
 
             if self._seq2seq_encoder:
-                embedded_text = self._seq2seq_encoder(embedded_text1, mask=mask1)
+                embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
             embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
 
@@ -130,19 +133,32 @@ class SimilarityClassifier(Model):
 
             embedded_texts.append(embedded_text)
 
-        similarity = self.similarity(embedded_texts[0], embedded_texts[1])
-        probs = torch.nn.functional.softmax(similarity, dim=-1)
+        aggregated_records = torch.cat(embedded_texts, dim=-1)
+        logits = self._classification_layer(aggregated_records)
+        probs = torch.nn.functional.softmax(logits, dim=-1)
 
-        print(similarity)
-
-        output_dict = {"similarity": similarity, "probs": probs}
+        output_dict = {"logits": logits, "probs": probs}
 
         if label is not None:
-            loss = self._loss(similarity, label.long().view(-1))
+            loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss
-            self._accuracy(similarity, label)
+            self._accuracy(logits, label)
 
         return output_dict
+
+        # similarity : torch.Tensor = self.similarity(embedded_texts[0], embedded_texts[1])  # dim(batch_size)
+        # similarity = similarity.reshape(len(similarity), 1)
+        #
+        # logits = torch.cat([similarity, 1-similarity], dim=1)  # "fake logits" ...
+        #
+        # output_dict = {"similarity": similarity}
+        #
+        # if label is not None:
+        #     loss = self._loss(logits, label.long().view(-1))
+        #     output_dict["loss"] = loss
+        #     self._accuracy(logits, label)
+        #
+        # return output_dict
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
