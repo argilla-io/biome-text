@@ -89,9 +89,9 @@ class SequenceClassifier(Model):
         # classification layer
         self.num_classes = self.vocab.get_vocab_size("labels")
         if self.decoder:
-            self._classification_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
+            self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
         else:
-            self._classification_layer = Linear(self.encoder.get_input_dim(), self.num_classes)
+            self.output_layer = Linear(self.encoder.get_input_dim(), self.num_classes)
 
         # check basic model configuration
         self._check_configuration()
@@ -165,7 +165,7 @@ class SequenceClassifier(Model):
             encoded_text = self.decoder(encoded_text)
 
         # get logits and probs
-        logits = self._classification_layer(encoded_text)
+        logits = self.output_layer(encoded_text)
         class_probabilities = softmax(logits, dim=1)
 
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
