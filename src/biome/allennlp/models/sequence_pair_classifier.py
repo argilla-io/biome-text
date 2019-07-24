@@ -81,7 +81,7 @@ class SequencePairClassifier(SequenceClassifier):
         if label is not None:
             loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self._accuracy(logits, label)
+            self.accuracy(logits, label)
             for name, metric in self.metrics.items():
                 metric(logits, label)
         return output_dict
