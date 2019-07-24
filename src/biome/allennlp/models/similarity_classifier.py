@@ -55,7 +55,7 @@ class SimilarityClassifier(SequenceClassifier):
             initializer: InitializerApplicator = InitializerApplicator(),
             regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
-        super().__init__(
+        super(SequenceClassifier, self).__init__(
             vocab, regularizer
         )  # Passing on kwargs does not work because of the 'from_params' machinery
 
