@@ -1,19 +1,19 @@
 from typing import Dict, Optional
 
-from overrides import overrides
 import torch
-
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder, SimilarityFunction
-from allennlp.modules.similarity_functions import CosineSimilarity
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder, FeedForward
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+from overrides import overrides
+
+from . import SequenceClassifier
 
 
 @Model.register("similarity_classifier")
-class SimilarityClassifier(Model):
+class SimilarityClassifier(SequenceClassifier):
     """
     This ``SimilarityClassifier`` uses a siamese network architecture to perform a binary classification task:
     are two inputs similar or not?
@@ -49,8 +49,9 @@ class SimilarityClassifier(Model):
             text_field_embedder: TextFieldEmbedder,
             seq2vec_encoder: Seq2VecEncoder,
             seq2seq_encoder: Seq2SeqEncoder = None,
+            feed_forward: Optional[FeedForward] = None,
             dropout: float = None,
-            similarity: SimilarityFunction = None,
+            concat: bool = True,
             initializer: InitializerApplicator = InitializerApplicator(),
             regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
@@ -72,14 +73,30 @@ class SimilarityClassifier(Model):
         else:
             self._dropout = None
 
-        self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()*2
+        self._feed_forward = feed_forward
+
+        if self._feed_forward:
+            self._classifier_input_dim = self._feed_forward.get_output_dim()
+        else:
+            self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
+
+        self._concat = concat
+
+        if self._concat:
+            self._classifier_input_dim *= 2
+
         self._num_labels = vocab.get_vocab_size(namespace="labels")
         self._classification_layer = torch.nn.Linear(self._classifier_input_dim, self._num_labels)
 
-        self.similarity = similarity or CosineSimilarity()
-
         self._accuracy = CategoricalAccuracy()
         self._loss = torch.nn.CrossEntropyLoss()
+
+        self.metrics = {
+            label: F1Measure(index)
+            for index, label in self.vocab.get_index_to_token_vocabulary(
+                "labels"
+            ).items()
+        }
 
         initializer(self)
 
@@ -131,13 +148,20 @@ class SimilarityClassifier(Model):
             if self._dropout:
                 embedded_text = self._dropout(embedded_text)
 
+            if self._feed_forward:
+                embedded_text = self._feed_forward(embedded_text)
+
             embedded_texts.append(embedded_text)
 
-        aggregated_records = torch.cat(embedded_texts, dim=-1)
-        logits = self._classification_layer(aggregated_records)
+        if self._concat:
+            combined_records = torch.cat(embedded_texts, dim=-1)
+        else:
+            combined_records = embedded_texts[0] - embedded_texts[1]
+
+        logits = self._classification_layer(combined_records)
         probs = torch.nn.functional.softmax(logits, dim=-1)
 
-        output_dict = {"logits": logits, "probs": probs}
+        output_dict = {"logits": logits, "class_probabilities": probs}
 
         if label is not None:
             loss = self._loss(logits, label.long().view(-1))
@@ -159,9 +183,4 @@ class SimilarityClassifier(Model):
         #     self._accuracy(logits, label)
         #
         # return output_dict
-
-    @overrides
-    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        metrics = {'accuracy': self._accuracy.get_metric(reset)}
-        return metrics
 
