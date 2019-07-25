@@ -91,7 +91,7 @@ class SimilarityClassifier(SequenceClassifier):
         self._accuracy = CategoricalAccuracy()
         self._loss = torch.nn.CrossEntropyLoss()
 
-        self.metrics = {
+        self._metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
                 "labels"
@@ -167,6 +167,8 @@ class SimilarityClassifier(SequenceClassifier):
             loss = self._loss(logits, label.long().view(-1))
             output_dict["loss"] = loss
             self._accuracy(logits, label)
+            for name, metric in self._metrics.items():
+                metric(logits, label)
 
         return output_dict
 

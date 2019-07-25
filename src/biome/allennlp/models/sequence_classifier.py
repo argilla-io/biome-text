@@ -97,8 +97,8 @@ class SequenceClassifier(Model):
         self._check_configuration()
 
         # metrics
-        self.accuracy = accuracy or CategoricalAccuracy()
-        self.metrics = {
+        self._accuracy = accuracy or CategoricalAccuracy()
+        self._metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
                 "labels"
@@ -176,8 +176,8 @@ class SequenceClassifier(Model):
         if label is not None:
             loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self.accuracy(logits, label)
-            for name, metric in self.metrics.items():
+            self._accuracy(logits, label)
+            for name, metric in self._metrics.items():
                 metric(logits, label)
 
         return output_dict
@@ -235,7 +235,7 @@ class SequenceClassifier(Model):
         total_f1 = 0.0
         total_precision = 0.0
         total_recall = 0.0
-        for metric_name, metric in self.metrics.items():
+        for metric_name, metric in self._metrics.items():
             precision, recall, f1 = metric.get_metric(
                 reset
             )  # pylint: disable=invalid-name
@@ -246,11 +246,11 @@ class SequenceClassifier(Model):
             all_metrics[metric_name + "/precision"] = precision
             all_metrics[metric_name + "/recall"] = recall
 
-        num_metrics = len(self.metrics)
+        num_metrics = len(self._metrics)
         all_metrics["average/f1"] = total_f1 / num_metrics
         all_metrics["average/precision"] = total_precision / num_metrics
         all_metrics["average/recall"] = total_recall / num_metrics
-        all_metrics["accuracy"] = self.accuracy.get_metric(reset)
+        all_metrics["accuracy"] = self._accuracy.get_metric(reset)
 
         return all_metrics
 
