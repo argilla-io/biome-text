@@ -3,13 +3,21 @@ from typing import Dict, Optional
 import torch
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder, FeedForward
+from allennlp.modules import (
+    Seq2SeqEncoder,
+    Seq2VecEncoder,
+    TextFieldEmbedder,
+    FeedForward,
+)
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 from overrides import overrides
 
 from . import SequenceClassifier
+
+from torch.nn.modules import Module
+from torch.nn import CosineEmbeddingLoss
 
 
 @Model.register("similarity_classifier")
@@ -37,6 +45,12 @@ class SimilarityClassifier(SequenceClassifier):
         of the `text_field_embedder`.
     dropout
         Dropout percentage to use on the output of the Seq2VecEncoder
+    feed_forward
+        A feed forward layer applied to the encoded inputs.
+    verification
+        Include a term in the loss function that rewards similar encoded vectors for similar inputs.
+        Make sure that the label "same" is indexed as 0, and the label "different" as 1.
+        (Deep Learning Face Representation by Joint Identification-Verification, https://arxiv.org/pdf/1406.4773.pdf)
     initializer
         Used to initialize the model parameters.
     regularizer
@@ -44,16 +58,16 @@ class SimilarityClassifier(SequenceClassifier):
     """
 
     def __init__(
-            self,
-            vocab: Vocabulary,
-            text_field_embedder: TextFieldEmbedder,
-            seq2vec_encoder: Seq2VecEncoder,
-            seq2seq_encoder: Seq2SeqEncoder = None,
-            feed_forward: Optional[FeedForward] = None,
-            dropout: float = None,
-            concat: bool = True,
-            initializer: InitializerApplicator = InitializerApplicator(),
-            regularizer: Optional[RegularizerApplicator] = None,
+        self,
+        vocab: Vocabulary,
+        text_field_embedder: TextFieldEmbedder,
+        seq2vec_encoder: Seq2VecEncoder,
+        seq2seq_encoder: Seq2SeqEncoder = None,
+        feed_forward: Optional[FeedForward] = None,
+        dropout: float = None,
+        verification: bool = False,
+        initializer: InitializerApplicator = InitializerApplicator(),
+        regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
         super(SequenceClassifier, self).__init__(
             vocab, regularizer
@@ -80,16 +94,19 @@ class SimilarityClassifier(SequenceClassifier):
         else:
             self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
 
-        self._concat = concat
-
-        if self._concat:
-            self._classifier_input_dim *= 2
+        # Due to the concatenation of the two input vectors
+        self._classifier_input_dim *= 2
 
         self._num_labels = vocab.get_vocab_size(namespace="labels")
-        self._classification_layer = torch.nn.Linear(self._classifier_input_dim, self._num_labels)
+        self._classification_layer = torch.nn.Linear(
+            self._classifier_input_dim, self._num_labels
+        )
 
         self._accuracy = CategoricalAccuracy()
         self._loss = torch.nn.CrossEntropyLoss()
+        self._loss_sim = CosineEmbeddingLoss(margin=0.5) if verification else None
+        # The value 0.5 for the margin is a recommended conservative value, see:
+        # https://pytorch.org/docs/stable/nn.html#cosineembeddingloss
 
         self._metrics = {
             label: F1Measure(index)
@@ -102,10 +119,10 @@ class SimilarityClassifier(SequenceClassifier):
 
     @overrides
     def forward(
-            self,  # type: ignore
-            record1: Dict[str, torch.LongTensor],
-            record2: Dict[str, torch.LongTensor],
-            label: torch.Tensor = None,
+        self,  # type: ignore
+        record1: Dict[str, torch.LongTensor],
+        record2: Dict[str, torch.LongTensor],
+        label: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
@@ -153,10 +170,7 @@ class SimilarityClassifier(SequenceClassifier):
 
             embedded_texts.append(embedded_text)
 
-        if self._concat:
-            combined_records = torch.cat(embedded_texts, dim=-1)
-        else:
-            combined_records = embedded_texts[0] - embedded_texts[1]
+        combined_records = torch.cat(embedded_texts, dim=-1)
 
         logits = self._classification_layer(combined_records)
         probs = torch.nn.functional.softmax(logits, dim=-1)
@@ -165,24 +179,79 @@ class SimilarityClassifier(SequenceClassifier):
 
         if label is not None:
             loss = self._loss(logits, label.long().view(-1))
+
+            if self._loss_sim:
+                # we need to transform the labels, see:
+                # https://pytorch.org/docs/stable/nn.html#cosineembeddingloss
+                label_transformed = torch.where(
+                    label == 0, torch.ones_like(label), -1 * torch.ones_like(label)
+                )
+                loss += self._loss_sim(
+                    embedded_texts[0], embedded_texts[1], label_transformed.float()
+                )
+
             output_dict["loss"] = loss
             self._accuracy(logits, label)
             for name, metric in self._metrics.items():
                 metric(logits, label)
 
+        """
+        This was an idea of a similarity classifier, solely based on the distance of the vectors
+        if self._distance:
+            diff = embedded_texts[0] - embedded_texts[1]
+            distance = torch.norm(diff, dim=-1, keepdim=True)
+            m = 0.5 # This value should be optimized during training!!
+            # The idea is to make a quick scan and choose the value that maximizes the accuracy!
+
+            # This part should be replaced by a calibrated probability based on the distance
+            logits = torch.cat([(distance < m).float(), (distance >= m).float()], dim=1)
+            probs = torch.nn.functional.softmax(logits, dim=-1)
+
+            output_dict = {
+                "logits": logits,
+                "class_probabilities": probs,
+                "distance": distance,
+            }
+
+            if label is not None:
+                loss = self._loss(distance.view(-1), label.float().view(-1), m)  # using the ContrastiveLoss()
+                output_dict["loss"] = loss
+                self._accuracy(logits, label)
+                for name, metric in self._metrics.items():
+                    metric(logits, label)
+        """
+
         return output_dict
 
-        # similarity : torch.Tensor = self.similarity(embedded_texts[0], embedded_texts[1])  # dim(batch_size)
-        # similarity = similarity.reshape(len(similarity), 1)
-        #
-        # logits = torch.cat([similarity, 1-similarity], dim=1)  # "fake logits" ...
-        #
-        # output_dict = {"similarity": similarity}
-        #
-        # if label is not None:
-        #     loss = self._loss(logits, label.long().view(-1))
-        #     output_dict["loss"] = loss
-        #     self._accuracy(logits, label)
-        #
-        # return output_dict
 
+class ContrastiveLoss(Module):
+    """Computes a contrastive loss given a distance."""
+
+    def forward(self, distance, label, margin):
+        """Compute the loss.
+
+        Important: Make sure label = 0 corresponds to the same case, label = 1 to the different case!
+
+        Parameters
+        ----------
+        distance
+            Distance between the two input vectors
+        label
+            Label if the two input vectors belong to the same or different class.
+        margin
+            If the distance is larger than the margin, the distance of different class vectors
+            does not contribute to the loss.
+
+        Returns
+        -------
+        loss
+
+        """
+        loss_same = (1 - label) * distance ** 2
+        loss_diff = (
+            label * torch.max(torch.zeros_like(distance), margin - distance) ** 2
+        )
+
+        loss = loss_same.sum() + loss_diff.sum()
+
+        return loss
