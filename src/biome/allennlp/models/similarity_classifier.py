@@ -13,11 +13,10 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 from overrides import overrides
+from torch.nn import CosineEmbeddingLoss
+from torch.nn.modules import Module
 
 from . import SequenceClassifier
-
-from torch.nn.modules import Module
-from torch.nn import CosineEmbeddingLoss
 
 
 @Model.register("similarity_classifier")
@@ -25,10 +24,11 @@ class SimilarityClassifier(SequenceClassifier):
     """
     This ``SimilarityClassifier`` uses a siamese network architecture to perform a binary classification task:
     are two inputs similar or not?
-    The two input sequences are encoded with a Seq2VecEncoder, the resulting vectors are concatenated andgg
+    The two input sequences are encoded with two single vectors, the resulting vectors are concatenated and fed to a
+    linear classification layer.
 
-    simply encodes a sequence of allennlp_2 with a ``Seq2VecEncoder``, then
-    predicts a label for the sequence.
+    Apart from the CrossEntropy loss, you can add an additional loss term by setting the "verification" parameter to
+    true. This will drive the network to create vector clusters for each "class" in the data.
 
     Parameters
     ----------
@@ -50,6 +50,7 @@ class SimilarityClassifier(SequenceClassifier):
     verification
         Include a term in the loss function that rewards similar encoded vectors for similar inputs.
         Make sure that the label "same" is indexed as 0, and the label "different" as 1.
+        Also, when using this loss term, make sure the dropout of the FeedForward layer is set to 0 in the last layer.
         (Deep Learning Face Representation by Joint Identification-Verification, https://arxiv.org/pdf/1406.4773.pdf)
     initializer
         Used to initialize the model parameters.
@@ -126,6 +127,10 @@ class SimilarityClassifier(SequenceClassifier):
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
+        The architecture is basically:
+        Embedding -> Seq2Seq -> Seq2Vec -> Dropout -> FeedForward -> Concatenation -> Classification layer
+
+
         Parameters
         ----------
         record1
@@ -225,8 +230,10 @@ class SimilarityClassifier(SequenceClassifier):
 
 
 class ContrastiveLoss(Module):
-    """Computes a contrastive loss given a distance."""
+    """Computes a contrastive loss given a distance.
 
+    We do not use it at the moment, i leave it here just in case.
+    """
     def forward(self, distance, label, margin):
         """Compute the loss.
 
