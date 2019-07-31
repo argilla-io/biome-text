@@ -67,12 +67,14 @@ class SimilarityClassifier(SequenceClassifier):
         feed_forward: Optional[FeedForward] = None,
         dropout: float = None,
         verification: bool = False,
-        initializer: InitializerApplicator = InitializerApplicator(),
+        initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
         super(SequenceClassifier, self).__init__(
             vocab, regularizer
         )  # Passing on kwargs does not work because of the 'from_params' machinery
+
+        self._initializer = initializer or InitializerApplicator()
 
         self._text_field_embedder = text_field_embedder
 
@@ -116,7 +118,7 @@ class SimilarityClassifier(SequenceClassifier):
             ).items()
         }
 
-        initializer(self)
+        self._initializer(self)
 
     @overrides
     def forward(
@@ -157,7 +159,7 @@ class SimilarityClassifier(SequenceClassifier):
         loss : :class:`~torch.Tensor`, optional
             A scalar loss to be optimised.
         """
-        embedded_texts = []
+        encoded_texts = []
         for tokens in [record1, record2]:
             embedded_text = self._text_field_embedder(tokens)
             mask = get_text_field_mask(tokens).float()
@@ -165,17 +167,17 @@ class SimilarityClassifier(SequenceClassifier):
             if self._seq2seq_encoder:
                 embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
 
-            embedded_text = self._seq2vec_encoder(embedded_text, mask=mask)
+            encoded_text = self._seq2vec_encoder(embedded_text, mask=mask)
 
             if self._dropout:
-                embedded_text = self._dropout(embedded_text)
+                encoded_text = self._dropout(encoded_text)
 
             if self._feed_forward:
-                embedded_text = self._feed_forward(embedded_text)
+                encoded_text = self._feed_forward(encoded_text)
 
-            embedded_texts.append(embedded_text)
+            encoded_texts.append(encoded_text)
 
-        combined_records = torch.cat(embedded_texts, dim=-1)
+        combined_records = torch.cat(encoded_texts, dim=-1)
 
         logits = self._classification_layer(combined_records)
         probs = torch.nn.functional.softmax(logits, dim=-1)
@@ -192,7 +194,7 @@ class SimilarityClassifier(SequenceClassifier):
                     label == 0, torch.ones_like(label), -1 * torch.ones_like(label)
                 )
                 loss += self._loss_sim(
-                    embedded_texts[0], embedded_texts[1], label_transformed.float()
+                    encoded_texts[0], encoded_texts[1], label_transformed.float()
                 )
 
             output_dict["loss"] = loss

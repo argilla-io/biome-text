@@ -67,15 +67,15 @@ class SequenceClassifier(Model):
             vocab, regularizer
         )  # Passing on kwargs does not work because of the 'from_params' machinery
 
-        self.initializer = initializer or InitializerApplicator()
+        self._initializer = initializer or InitializerApplicator()
 
         # embedding
-        self.text_field_embedder = text_field_embedder
+        self._text_field_embedder = text_field_embedder
 
         # encoding
-        self.pre_encoder = pre_encoder
-        self.seq2seq_encoder = seq2seq_encoder
-        self.encoder = encoder
+        self._pre_encoder = pre_encoder
+        self._seq2seq_encoder = seq2seq_encoder
+        self._encoder = encoder
 
         # dropout for encoded vector
         if dropout:
@@ -84,14 +84,14 @@ class SequenceClassifier(Model):
             self._dropout = None
 
         # decoding
-        self.decoder = decoder
+        self._decoder = decoder
 
         # classification layer
         self.num_classes = self.vocab.get_vocab_size("labels")
-        if self.decoder:
-            self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
+        if self._decoder:
+            self._output_layer = Linear(self._decoder.get_output_dim(), self.num_classes)
         else:
-            self.output_layer = Linear(self.encoder.get_input_dim(), self.num_classes)
+            self._output_layer = Linear(self._encoder.get_input_dim(), self.num_classes)
 
         # check basic model configuration
         self._check_configuration()
@@ -108,7 +108,7 @@ class SequenceClassifier(Model):
         # loss function for training
         self._loss = torch.nn.CrossEntropyLoss()
 
-        self.initializer(self)
+        self._initializer(self)
 
     @overrides
     def forward(
@@ -149,26 +149,27 @@ class SequenceClassifier(Model):
             A scalar loss to be optimised.
         """
         # embed tokens
-        embedded_text_input = self.text_field_embedder(tokens)
+        embedded_text_input = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens)
 
         # encode tokens
-        if self.pre_encoder:
-            embedded_text_input = self.pre_encoder(embedded_text_input)
-        if self.seq2seq_encoder:
-            embedded_text_input = self.seq2seq_encoder(embedded_text_input)
-        encoded_text = self.encoder(embedded_text_input, mask)
+        if self._pre_encoder:
+            embedded_text_input = self._pre_encoder(embedded_text_input)
+        if self._seq2seq_encoder:
+            embedded_text_input = self._seq2seq_encoder(embedded_text_input, mask=mask)
+
+        encoded_text = self._encoder(embedded_text_input, mask=mask)
 
         # apply dropout to encoded vector
         if self._dropout:
             encoded_text = self._dropout(encoded_text)
 
         # pass encoded vector through a FeedForward, kind of decoding
-        if self.decoder:
-            encoded_text = self.decoder(encoded_text)
+        if self._decoder:
+            encoded_text = self._decoder(encoded_text)
 
         # get logits and probs
-        logits = self.output_layer(encoded_text)
+        logits = self._output_layer(encoded_text)
         class_probabilities = softmax(logits, dim=1)
 
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
@@ -256,17 +257,17 @@ class SequenceClassifier(Model):
 
     def _check_configuration(self):
         """Some basic checks of the architecture."""
-        encoder = self.encoder
-        if self.seq2seq_encoder:
-            encoder = self.seq2seq_encoder
-        if self.pre_encoder:
-            encoder = self.pre_encoder
-        if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
+        encoder = self._encoder
+        if self._seq2seq_encoder:
+            encoder = self._seq2seq_encoder
+        if self._pre_encoder:
+            encoder = self._pre_encoder
+        if self._text_field_embedder.get_output_dim() != encoder.get_input_dim():
             raise ConfigurationError(
                 "The output dimension of the text_field_embedder must match the "
                 "input dimension of the sequence encoder. Found {} and {}, "
                 "respectively.".format(
-                    self.text_field_embedder.get_output_dim(),
+                    self._text_field_embedder.get_output_dim(),
                     encoder.get_input_dim(),
                 )
             )
