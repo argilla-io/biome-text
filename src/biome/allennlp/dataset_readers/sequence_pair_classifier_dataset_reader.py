@@ -45,7 +45,9 @@ class _ForwardConfiguration:
             if isinstance(label, str):
                 self._label = label
             else:
-                self._label = label.get("name", label.get("gold_label"))
+                self._label = label.get("name") or label.get("label") or label.get("gold_label")
+                if not self._label:
+                    raise RuntimeError("I am missing the label name!")
                 self._default_label = label.get(
                     "default", label.get("use_missing_label")
                 )
