@@ -67,15 +67,15 @@ class SequenceClassifier(Model):
             vocab, regularizer
         )  # Passing on kwargs does not work because of the 'from_params' machinery
 
-        self.initializer = initializer or InitializerApplicator()
+        self._initializer = initializer or InitializerApplicator()
 
         # embedding
-        self.text_field_embedder = text_field_embedder
+        self._text_field_embedder = text_field_embedder
 
         # encoding
-        self.pre_encoder = pre_encoder
-        self.seq2seq_encoder = seq2seq_encoder
-        self.encoder = encoder
+        self._pre_encoder = pre_encoder
+        self._seq2seq_encoder = seq2seq_encoder
+        self._encoder = encoder
 
         # dropout for encoded vector
         if dropout:
@@ -84,21 +84,21 @@ class SequenceClassifier(Model):
             self._dropout = None
 
         # decoding
-        self.decoder = decoder
+        self._decoder = decoder
 
         # classification layer
         self.num_classes = self.vocab.get_vocab_size("labels")
-        if self.decoder:
-            self.output_layer = Linear(self.decoder.get_output_dim(), self.num_classes)
+        if self._decoder:
+            self._output_layer = Linear(self._decoder.get_output_dim(), self.num_classes)
         else:
-            self.output_layer = Linear(self.encoder.get_input_dim(), self.num_classes)
+            self._output_layer = Linear(self._encoder.get_input_dim(), self.num_classes)
 
         # check basic model configuration
         self._check_configuration()
 
         # metrics
-        self.accuracy = accuracy or CategoricalAccuracy()
-        self.metrics = {
+        self._accuracy = accuracy or CategoricalAccuracy()
+        self._metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
                 "labels"
@@ -108,7 +108,7 @@ class SequenceClassifier(Model):
         # loss function for training
         self._loss = torch.nn.CrossEntropyLoss()
 
-        self.initializer(self)
+        self._initializer(self)
 
     @overrides
     def forward(
@@ -121,14 +121,17 @@ class SequenceClassifier(Model):
         Parameters
         ----------
         tokens
-            The output of ``TextField.as_array()``, which should typically be passed directly to a
-            ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
-            tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
-            Tensor(batch_size, num_tokens)}``. This dictionary will have the same keys as were used
-            for the ``TokenIndexers`` when you created the ``TextField`` representing your
-            sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
-            which knows how to combine different word representations into a single vector per
-            token in your input.
+            The input tokens.
+            The dictionary is the output of a ``TextField.as_array()``. It gives names to the tensors created by
+            the ``TokenIndexer``s.
+            In its most basic form, using a ``SingleIdTokenIndexer``, the dictionary is composed of:
+            ``{"tokens": Tensor(batch_size, num_tokens)}``.
+            The keys of the dictionary are defined in the `model.yml` input.
+            The dictionary is designed to be passed on directly to a ``TextFieldEmbedder``, that has a
+            ``TokenEmbedder`` for each key in the dictionary (except you set `allow_unmatched_keys` in the
+            ``TextFieldEmbedder`` to False) and knows how to combine different word/character representations into a
+            single vector per token in your input.
+
         label
             A torch tensor representing the sequence of integer gold class label of shape
             ``(batch_size, num_classes)``.
@@ -146,26 +149,27 @@ class SequenceClassifier(Model):
             A scalar loss to be optimised.
         """
         # embed tokens
-        embedded_text_input = self.text_field_embedder(tokens)
+        embedded_text_input = self._text_field_embedder(tokens)
         mask = get_text_field_mask(tokens)
 
         # encode tokens
-        if self.pre_encoder:
-            embedded_text_input = self.pre_encoder(embedded_text_input)
-        if self.seq2seq_encoder:
-            embedded_text_input = self.seq2seq_encoder(embedded_text_input)
-        encoded_text = self.encoder(embedded_text_input, mask)
+        if self._pre_encoder:
+            embedded_text_input = self._pre_encoder(embedded_text_input)
+        if self._seq2seq_encoder:
+            embedded_text_input = self._seq2seq_encoder(embedded_text_input, mask=mask)
+
+        encoded_text = self._encoder(embedded_text_input, mask=mask)
 
         # apply dropout to encoded vector
         if self._dropout:
             encoded_text = self._dropout(encoded_text)
 
         # pass encoded vector through a FeedForward, kind of decoding
-        if self.decoder:
-            encoded_text = self.decoder(encoded_text)
+        if self._decoder:
+            encoded_text = self._decoder(encoded_text)
 
         # get logits and probs
-        logits = self.output_layer(encoded_text)
+        logits = self._output_layer(encoded_text)
         class_probabilities = softmax(logits, dim=1)
 
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
@@ -173,8 +177,8 @@ class SequenceClassifier(Model):
         if label is not None:
             loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self.accuracy(logits, label)
-            for name, metric in self.metrics.items():
+            self._accuracy(logits, label)
+            for name, metric in self._metrics.items():
                 metric(logits, label)
 
         return output_dict
@@ -232,7 +236,7 @@ class SequenceClassifier(Model):
         total_f1 = 0.0
         total_precision = 0.0
         total_recall = 0.0
-        for metric_name, metric in self.metrics.items():
+        for metric_name, metric in self._metrics.items():
             precision, recall, f1 = metric.get_metric(
                 reset
             )  # pylint: disable=invalid-name
@@ -243,27 +247,27 @@ class SequenceClassifier(Model):
             all_metrics[metric_name + "/precision"] = precision
             all_metrics[metric_name + "/recall"] = recall
 
-        num_metrics = len(self.metrics)
+        num_metrics = len(self._metrics)
         all_metrics["average/f1"] = total_f1 / num_metrics
         all_metrics["average/precision"] = total_precision / num_metrics
         all_metrics["average/recall"] = total_recall / num_metrics
-        all_metrics["accuracy"] = self.accuracy.get_metric(reset)
+        all_metrics["accuracy"] = self._accuracy.get_metric(reset)
 
         return all_metrics
 
     def _check_configuration(self):
         """Some basic checks of the architecture."""
-        encoder = self.encoder
-        if self.seq2seq_encoder:
-            encoder = self.seq2seq_encoder
-        if self.pre_encoder:
-            encoder = self.pre_encoder
-        if self.text_field_embedder.get_output_dim() != encoder.get_input_dim():
+        encoder = self._encoder
+        if self._seq2seq_encoder:
+            encoder = self._seq2seq_encoder
+        if self._pre_encoder:
+            encoder = self._pre_encoder
+        if self._text_field_embedder.get_output_dim() != encoder.get_input_dim():
             raise ConfigurationError(
                 "The output dimension of the text_field_embedder must match the "
                 "input dimension of the sequence encoder. Found {} and {}, "
                 "respectively.".format(
-                    self.text_field_embedder.get_output_dim(),
+                    self._text_field_embedder.get_output_dim(),
                     encoder.get_input_dim(),
                 )
             )

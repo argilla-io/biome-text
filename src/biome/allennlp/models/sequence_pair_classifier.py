@@ -24,24 +24,19 @@ class SequencePairClassifier(SequenceClassifier):
         """
         Parameters
         ----------
-        record1 : Dict[str, torch.LongTensor], required
-            The output of ``TextField.as_array()``, which should typically be passed directly to a
-            ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
-            tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
-            Tensor(batch_size, num_tokens)}``. This dictionary will have the same keys as were used
-            for the ``TokenIndexers`` when you created the ``TextField`` representing your
-            sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
-            which knows how to combine different word representations into a single vector per
-            token in your input.
-        record2 : Dict[str, torch.LongTensor], required
-            The output of ``TextField.as_array()``, which should typically be passed directly to a
-            ``TextFieldEmbedder``. This output is a dictionary mapping keys to ``TokenIndexer``
-            tensors.  At its most basic, using a ``SingleIdTokenIndexer`` this is: ``{"tokens":
-            Tensor(batch_size, num_tokens)}``. This dictionary will have the same keys as were used
-            for the ``TokenIndexers`` when you created the ``TextField`` representing your
-            sequence.  The dictionary is designed to be passed directly to a ``TextFieldEmbedder``,
-            which knows how to combine different word representations into a single vector per
-            token in your input.
+        record1
+            The first input tokens.
+            The dictionary is the output of a ``TextField.as_array()``. It gives names to the tensors created by
+            the ``TokenIndexer``s.
+            In its most basic form, using a ``SingleIdTokenIndexer``, the dictionary is composed of:
+            ``{"tokens": Tensor(batch_size, num_tokens)}``.
+            The keys of the dictionary are defined in the `model.yml` input.
+            The dictionary is designed to be passed on directly to a ``TextFieldEmbedder``, that has a
+            ``TokenEmbedder`` for each key in the dictionary (except you set `allow_unmatched_keys` in the
+            ``TextFieldEmbedder`` to False) and knows how to combine different word/character representations into a
+            single vector per token in your input.
+        record2
+            The second input tokens.
         label : torch.LongTensor, optional (default = None)
             A torch tensor representing the sequence of integer gold class label of shape
             ``(batch_size, num_classes)``.
@@ -59,21 +54,30 @@ class SequencePairClassifier(SequenceClassifier):
             A scalar loss to be optimised.
 
         """
-        embedded_text_input_record1 = self.text_field_embedder(record1)
-        embedded_text_input_record2 = self.text_field_embedder(record2)
-        mask_record1 = get_text_field_mask(record1)
-        mask_record2 = get_text_field_mask(record2)
-        if self.pre_encoder:
-            embedded_text_input_record1 = self.pre_encoder(embedded_text_input_record1)
-            embedded_text_input_record2 = self.pre_encoder(embedded_text_input_record2)
-        if self.encoder:
-            encoded_record1 = self.encoder(embedded_text_input_record1, mask_record1)
-            encoded_record2 = self.encoder(embedded_text_input_record2, mask_record2)
+        encoded_texts = []
+        for tokens in [record1, record2]:
+            embedded_text = self._text_field_embedder(tokens)
+            mask = get_text_field_mask(tokens).float()
 
-        aggregated_records = torch.cat([encoded_record1, encoded_record2], dim=-1)
-        decoded_text = self.decoder(aggregated_records)
+            if self._pre_encoder:
+                embedded_text = self._pre_encoder(embedded_text)
 
-        logits = self.output_layer(decoded_text)
+            if self._seq2seq_encoder:
+                embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
+
+            encoded_text = self._encoder(embedded_text, mask=mask)
+
+            # apply dropout to encoded vector
+            if self._dropout:
+                encoded_text = self._dropout(encoded_text)
+
+            encoded_texts.append(encoded_text)
+
+        aggregated_records = torch.cat(encoded_texts, dim=-1)
+
+        decoded_text = self._decoder(aggregated_records)
+
+        logits = self._output_layer(decoded_text)
         class_probabilities = softmax(logits, dim=1)
 
         output_dict = {"logits": logits, "class_probabilities": class_probabilities}
@@ -81,7 +85,7 @@ class SequencePairClassifier(SequenceClassifier):
         if label is not None:
             loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self.accuracy(logits, label)
-            for name, metric in self.metrics.items():
+            self._accuracy(logits, label)
+            for name, metric in self._metrics.items():
                 metric(logits, label)
         return output_dict
