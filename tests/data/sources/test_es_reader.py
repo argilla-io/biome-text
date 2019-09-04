@@ -1,11 +1,13 @@
+import os
+
 from biome.data.sources.readers import from_elasticsearch
 from dask.dataframe import DataFrame
 
 from tests.test_support import DaskSupportTest
 
 NPARTITIONS = 4
-ES_HOST = "http://34.242.123.170:9200/"
-ES_INDEX = "another-classifier::test-explore"
+ES_HOST = os.getenv("ES_HOST", "http://localhost:9200")
+ES_INDEX = os.getenv("ES_INDEX", "test-index")
 
 
 class ElasticsearchReaderTest(DaskSupportTest):

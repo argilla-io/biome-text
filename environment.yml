@@ -1,0 +1,27 @@
+name: biome
+
+channels:
+- pytorch
+- conda-forge
+
+dependencies:
+- python~=3.6
+- pip~=19.1.0
+## pytorch CPU only
+- pytorch~=1.1.0
+- cpuonly
+## pyYaml dependency restriction
+- PyYaml<5.1
+## spaCy package
+- spacy~=2.1.0
+- jupyterlab
+- tensorboard~=1.6
+## shared dependencies
+- ujson~=1.35
+- psutil~=5.6.2
+- dask~=2.0
+## allennlp built deps
+- regex
+- jsonnet
+- pip:
+  - allennlp~=0.8.0
