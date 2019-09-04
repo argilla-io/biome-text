@@ -6,6 +6,7 @@ from biome.allennlp.predictors import get_predictor_from_archive
 
 from tests.test_context import TEST_RESOURCES
 
+# TODO update model package to fix tests
 MODEL_PATH = os.path.join(
     TEST_RESOURCES, "resources/models/eng_es_word_classifier/model.tar.gz"
 )
