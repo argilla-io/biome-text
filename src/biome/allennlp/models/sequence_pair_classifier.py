@@ -14,12 +14,13 @@ logger = logging.getLogger(__name__)
 
 @Model.register("sequence_pair_classifier")
 class SequencePairClassifier(SequenceClassifier):
-
     @overrides
-    def forward(self,  # type: ignore
-                record1: Dict[str, torch.Tensor],
-                record2: Dict[str, torch.Tensor],
-                label: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(
+        self,  # type: ignore
+        record1: Dict[str, torch.Tensor],
+        record2: Dict[str, torch.Tensor],
+        label: torch.Tensor = None,
+    ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
         Parameters
@@ -56,8 +57,9 @@ class SequencePairClassifier(SequenceClassifier):
         """
         encoded_texts = []
         for tokens in [record1, record2]:
-            embedded_text = self._text_field_embedder(tokens)
-            mask = get_text_field_mask(tokens).float()
+            # TODO dynamic num_wrapping_dims calculation from tokens tensor shape
+            mask = get_text_field_mask(tokens, num_wrapping_dims=1).float()
+            embedded_text = self._text_field_embedder(tokens, mask=mask)
 
             if self._pre_encoder:
                 embedded_text = self._pre_encoder(embedded_text)

@@ -4,14 +4,11 @@ from biome.allennlp.dataset_readers import SequenceClassifierDatasetReader
 from biome.allennlp.dataset_readers.utils import get_reader_configuration
 from biome.allennlp.models import SequencePairClassifier
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
-
-import logging
 from inspect import signature
 from typing import Dict, Iterable, Optional, Union, List
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
-from allennlp.data.fields import TextField, LabelField
+from allennlp.data.fields import TextField, LabelField, ListField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer
 from dask.dataframe import Series
@@ -45,7 +42,9 @@ class _ForwardConfiguration:
             if isinstance(label, str):
                 self._label = label
             else:
-                self._label = label.get("name") or label.get("label") or label.get("gold_label")
+                self._label = (
+                    label.get("name") or label.get("label") or label.get("gold_label")
+                )
                 if not self._label:
                     raise RuntimeError("I am missing the label name!")
                 self._default_label = label.get(
@@ -152,28 +151,34 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         else:
             logger.debug("Read dataset from {}".format(file_path))
             dataset = data_source.to_dataframe().compute()
-            dataset["record1"] = (
-                dataset[forward.record1]
-                .astype(str)
-                .apply(lambda r: " ".join(r.values), axis=1)
+            dataset["record1"] = dataset[forward.record1].apply(
+                lambda x: x.to_dict(), axis=1
             )
-            dataset["record2"] = (
-                dataset[forward.record2]
-                .astype(str)
-                .apply(lambda r: " ".join(r.values), axis=1)
+            dataset["record2"] = dataset[forward.record2].apply(
+                lambda x: x.to_dict(), axis=1
             )
             dataset["label"] = (
                 dataset[forward.label]
                 .astype(str)
                 .apply(self.sanitize_label, forward=forward)
             )
-            instances = (
-                dataset[["record1", "record2", "label"]]
-                .astype(str)
-                .apply(self.example_to_instance, axis=1)
+            instances = dataset[["record1", "record2", "label"]].apply(
+                self.example_to_instance, axis=1
             )
             self._cached_datasets[ds_key] = instances
             return (instance for idx, instance in instances.iteritems() if instance)
+
+    def _build_text_field(self, data: dict) -> Optional[ListField]:
+        if not data:
+            return None
+
+        text_fields = [
+            TextField(self.tokenizer.tokenize(str(field_value)), self.token_indexers)
+            for field_name, field_value in data.items()
+            if field_value
+        ]
+
+        return ListField(text_fields) if len(text_fields) > 0 else None
 
     def example_to_instance(self, example: Union[dict, Series]) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
@@ -188,18 +193,19 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         instance
             Returns `None` if the example could not be transformed to an Instance.
         """
-        record1 = example["record1"]
-        record2 = example["record2"]
-        label = example.get("label", None)
 
-        if not record1 or not record2:
-            logger.warning(f"'record1 or record2' probably contains an empty string!")
+        # `record1` and `record2` must be a dictionary with original
+        # data values defined in forward configuration
+        record1_field = self._build_text_field(example["record1"])
+        record2_field = self._build_text_field(example["record2"])
+
+        if not record1_field or not record2_field:
+            logger.warning(f"'record1 or record2' probably contains no info")
             return None
 
-        fields = {
-            "record1": TextField(self.tokenizer.tokenize(record1), self.token_indexers),
-            "record2": TextField(self.tokenizer.tokenize(record2), self.token_indexers),
-        }
+        fields = {"record1": record1_field, "record2": record2_field}
+
+        label = example.get("label", None)
         if label:
             fields["label"] = LabelField(label)
 
