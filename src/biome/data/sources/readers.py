@@ -41,15 +41,37 @@ def from_csv(
     return dd.read_csv(path, include_path_column=True, **params)
 
 
-def from_json(path: Union[str, List[str]], **params) -> DataFrame:
+def from_json(
+    path: Union[str, List[str]], flatten: bool = False, **params
+) -> DataFrame:
     """
     Creates a dask.Bag of dict objects from a collection of json files
 
     :param path: The path
+    :param flatten: If true (default false), flatten json nested data
     :param params: extra arguments passed to pandas.read_json
     :return: dask.bag.Bag
     """
-    ddf = dd.read_json(path, **params)
+
+    def flatten_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+        c_dicts = [c for c in df.columns if isinstance(df[c].values[0], dict)]
+
+        if len(c_dicts) == 0:
+            return df
+
+        dfs = [df[[c for c in df if c not in c_dicts]]]
+        for c in c_dicts:
+            c_df = pd.DataFrame([md for md in df[c]])
+            c_df.columns = [f"{c}.{cc}" for cc in c_df.columns]
+            dfs.append(c_df)
+
+        return flatten_dataframe(pd.concat(dfs, axis=1))
+
+    def json_engine(*args, flatten: bool = False, **kwargs) -> pd.DataFrame:
+        df = pd.read_json(*args, **kwargs)
+        return flatten_dataframe(df) if flatten else df
+
+    ddf = dd.read_json(path, flatten=flatten, engine=json_engine, **params)
     ddf["path"] = path
 
     return ddf
@@ -92,7 +114,7 @@ def from_elasticsearch(
     client_cls: Optional = None,
     client_kwargs=None,
     source_only: Optional[bool] = None,
-    **kwargs
+    **kwargs,
 ) -> DataFrame:
     """Reads documents from Elasticsearch.
 
