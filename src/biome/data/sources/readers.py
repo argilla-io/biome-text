@@ -63,7 +63,7 @@ def from_parquet(path: Union[str, List[str]], **params) -> DataFrame:
     :param params: extra arguments passed to pandas.read_json
     :return: dask.bag.Bag
     """
-    ddf = dd.read_parquet(path, **params)
+    ddf = dd.read_parquet(path, **params, engine="pyarrow")
     ddf["path"] = path
 
     return ddf
