@@ -13,6 +13,8 @@ from dask.dataframe import DataFrame
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 
+from biome.data.sources.utils import flatten_dataframe
+
 _logger = logging.getLogger(__name__)
 # TODO: The idea is to make the readers a class and define a metaclass that they have to follow.
 #       For now, all reader methods have to return a dask.Bag of dicts
@@ -42,7 +44,7 @@ def from_csv(
 
 
 def from_json(
-    path: Union[str, List[str]], flatten: bool = False, **params
+    path: Union[str, List[str]], flatten: bool = True, **params
 ) -> DataFrame:
     """
     Creates a dask.Bag of dict objects from a collection of json files
@@ -52,20 +54,6 @@ def from_json(
     :param params: extra arguments passed to pandas.read_json
     :return: dask.bag.Bag
     """
-
-    def flatten_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-        c_dicts = [c for c in df.columns if isinstance(df[c].values[0], dict)]
-
-        if len(c_dicts) == 0:
-            return df
-
-        dfs = [df[[c for c in df if c not in c_dicts]]]
-        for c in c_dicts:
-            c_df = pd.DataFrame([md for md in df[c]])
-            c_df.columns = [f"{c}.{cc}" for cc in c_df.columns]
-            dfs.append(c_df)
-
-        return flatten_dataframe(pd.concat(dfs, axis=1))
 
     def json_engine(*args, flatten: bool = False, **kwargs) -> pd.DataFrame:
         df = pd.read_json(*args, **kwargs)
