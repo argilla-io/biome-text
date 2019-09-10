@@ -98,12 +98,17 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         By default we use a WordTokenizer with the SpacyWordSplitter
     token_indexers
         By default we use a SingleIdTokenIndexer for all token fields
+    as_text_field
+        False by default, if enabled, the ``Instances`` generated will contains
+        the input text fields as a concatenation of input fields in a single ``TextField``.
+        By default, the reader will use a ``ListField`` of ``TextField`` for input representation
     """
 
     def __init__(
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
+        as_text_field: bool = False,
     ) -> None:
 
         super(SequencePairClassifierDatasetReader, self).__init__()
@@ -121,6 +126,7 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         }
 
         self._cached_datasets = dict()
+        self._as_text_field = as_text_field
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
@@ -168,10 +174,18 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
             self._cached_datasets[ds_key] = instances
             return (instance for idx, instance in instances.iteritems() if instance)
 
-    def _build_text_field(self, data: dict) -> Optional[ListField]:
+    def _build_text_field(
+        self, data: dict, as_text_field: bool
+    ) -> Optional[Union[ListField, TextField]]:
         if not data:
             return None
 
+        if as_text_field:
+            return TextField(
+                self.tokenizer.tokenize(" ".join(data.values())), self.token_indexers
+            )
+
+        # TODO evaluate field value type for stringfy properly
         text_fields = [
             TextField(self.tokenizer.tokenize(str(field_value)), self.token_indexers)
             for field_name, field_value in data.items()
@@ -196,8 +210,8 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
 
         # `record1` and `record2` must be a dictionary with original
         # data values defined in forward configuration
-        record1_field = self._build_text_field(example["record1"])
-        record2_field = self._build_text_field(example["record2"])
+        record1_field = self._build_text_field(example["record1"], self._as_text_field)
+        record2_field = self._build_text_field(example["record2"], self._as_text_field)
 
         if not record1_field or not record2_field:
             logger.warning(f"'record1 or record2' probably contains no info")
