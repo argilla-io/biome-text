@@ -1,27 +1,25 @@
 import logging
 from typing import Dict, Optional
-
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 from overrides import overrides
 
 import torch
-from allennlp.data import Vocabulary
+
 from allennlp.modules import (
     Seq2SeqEncoder,
     Seq2VecEncoder,
     TextFieldEmbedder,
     FeedForward,
+    TimeDistributed,
 )
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.models.model import Model
 from allennlp.nn.util import get_text_field_mask
+from allennlp.data.vocabulary import Vocabulary
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 from . import SequenceClassifier
 
-from allennlp.common import Params
-from allennlp.data.vocabulary import Vocabulary
-from allennlp.modules.seq2vec_encoders.seq2vec_encoder import Seq2VecEncoder
-from allennlp.modules.time_distributed import TimeDistributed
+from biome.allennlp.models.utils import compute_and_set_layer_input_dim
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +102,13 @@ class SequencePairClassifier(SequenceClassifier):
         if doc_seq2vec_encoder:
             # If we want to use multi-field input we need to:
 
+            # 0. if char encoder in text field embedder we wrap it in TimeDistributed
+            for embedder in self._text_field_embedder._token_embedders:
+                if embedder == "token_characters":
+                    token_characters_embedder = self._text_field_embedder._token_embedders[embedder]
+                    token_characters_embedder._encoder = TimeDistributed(token_characters_embedder._encoder)
+                    self._text_field_embedder._token_embedders[embedder] = token_characters_embedder
+
             # 1. setup num_wrapping_dims to 1
             self._num_wrapping_dims = 1
 
@@ -151,7 +156,6 @@ class SequencePairClassifier(SequenceClassifier):
         self._loss = torch.nn.CrossEntropyLoss()
 
         self._initializer(self)
-        print(self)
 
     @overrides
     def forward(
@@ -212,7 +216,7 @@ class SequencePairClassifier(SequenceClassifier):
                 encoded_text = self._dropout(encoded_text)
 
             # seq2seq encoding for each field vector
-            # TODO: we need to mask properly
+            # TODO: Does not work, we need to mask properly
             if self._doc_seq2seq_encoder:
                 encoded_text = self._doc_seq2seq_encoder(encoded_text)
 
@@ -243,62 +247,3 @@ class SequencePairClassifier(SequenceClassifier):
             for name, metric in self._metrics.items():
                 metric(logits, label)
         return output_dict
-
-
-    @classmethod
-    def from_params(cls, vocab: Vocabulary, params: Params) -> 'SequencePairClassifier':  # type: ignore
-        # pylint: disable=arguments-differ
-        text_field_embedder_params : Params = params.pop("text_field_embedder")
-
-        text_field_embedder = TextFieldEmbedder.from_params(params=text_field_embedder_params, vocab=vocab)
-
-        seq2seq_encoder = Seq2SeqEncoder.from_params(params.pop("seq2seq_encoder", None))
-
-        ## Example of computing input dims
-        seq2vec_input_dim = text_field_embedder.get_output_dim()
-        seq2vec_encoder_params = params.pop("seq2vec_encoder")
-        ## Different types of seq2vec have different params for input dims:
-        ## (1) bags have embedding dim, (2) rnns have input_size, etc.
-        ## Also, if seq2seq is set, the input to seq2vec will be the output_dim of seq2seq
-        if not seq2vec_encoder_params.get("embedding_dim", None):
-            seq2vec_encoder_params.setdefault("embedding_dim", seq2vec_input_dim)
-
-        seq2vec_encoder = Seq2VecEncoder.from_params(seq2vec_encoder_params)
-
-
-        doc_seq2vec_encoder = Seq2VecEncoder.from_params(params.pop("doc_seq2vec_encoder", None))
-
-        doc_seq2seq_encoder = Seq2SeqEncoder.from_params(params.pop("doc_seq2seq_encoder", None))
-
-        # If doc level encoders are set, we need to time distribute character encoding (if set)
-        # This should go somewhere else: utils?
-        if doc_seq2vec_encoder:
-            for embedder in text_field_embedder._token_embedders:
-                if embedder == "token_characters":
-                    token_characters_embedder = text_field_embedder._token_embedders[embedder]
-                    token_characters_embedder._encoder = TimeDistributed(token_characters_embedder._encoder)
-                    text_field_embedder._token_embedders[embedder] = token_characters_embedder
-
-
-        feed_forward = FeedForward.from_params(params.pop("feed_forward", None))
-
-        dropout = params.pop_float("dropout", 0.0)
-        doc_dropout = params.pop_float("doc_dropout", 0.0)
-
-        initializer = InitializerApplicator.from_params(params.pop("initializer", []))
-        regularizer = RegularizerApplicator.from_params(params.pop("regularizer", []))
-
-        params.assert_empty(cls.__name__)
-
-        return cls(vocab,
-                   text_field_embedder,
-                   seq2vec_encoder,
-                   seq2seq_encoder,
-                   doc_seq2vec_encoder,
-                   doc_seq2seq_encoder,
-                   feed_forward,
-                   dropout,
-                   doc_dropout,
-                   initializer,
-                   regularizer,
-                   )
