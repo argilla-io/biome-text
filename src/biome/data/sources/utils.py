@@ -181,9 +181,9 @@ def flatten_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         dfs.append(c_df)
 
     for c in c_dicts:
-        c_df = pd.DataFrame([md for md in df[c]])
+        c_df = pd.DataFrame([md if md else {} for md in df[c]])
         c_df.columns = [f"{c}.{cc}" for cc in c_df.columns]
         dfs.append(c_df)
 
     flatten = flatten_dataframe(pd.concat(dfs, axis=1))
-    return pd.concat([df[[c for c in c_unmodified]], flatten], axis=1)
+    return pd.concat([df[c_unmodified], flatten], axis=1)
