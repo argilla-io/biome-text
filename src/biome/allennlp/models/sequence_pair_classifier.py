@@ -19,8 +19,6 @@ from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 from . import SequenceClassifier
 
-from biome.allennlp.models.utils import compute_and_set_layer_input_dim
-
 logger = logging.getLogger(__name__)
 
 @Model.register("sequence_pair_classifier")
