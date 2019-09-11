@@ -1,9 +1,9 @@
 import logging
 from typing import Dict, Optional
-from overrides import overrides
 
 import torch
-
+from allennlp.data.vocabulary import Vocabulary
+from allennlp.models.model import Model
 from allennlp.modules import (
     Seq2SeqEncoder,
     Seq2VecEncoder,
@@ -12,14 +12,14 @@ from allennlp.modules import (
     TimeDistributed,
 )
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
-from allennlp.models.model import Model
 from allennlp.nn.util import get_text_field_mask
-from allennlp.data.vocabulary import Vocabulary
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+from overrides import overrides
 
 from . import SequenceClassifier
 
 logger = logging.getLogger(__name__)
+
 
 @Model.register("sequence_pair_classifier")
 class SequencePairClassifier(SequenceClassifier):
@@ -50,11 +50,11 @@ class SequencePairClassifier(SequenceClassifier):
         Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
         will pool its output. Otherwise, this encoder will operate directly on the output
         of the `text_field_embedder`.
-    doc_seq2vec_encoder
+    multifield_seq2vec_encoder
         Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
         will pool its output. Otherwise, this encoder will operate directly on the output
         of the `seq2vec_encoder`.
-    doc_seq2seq_encoder
+    multifield_seq2seq_encoder
         Optional Seq2Seq encoder layer for the encoded fields/sentences.
     dropout
         Dropout percentage to use on the output of the Seq2VecEncoder
@@ -67,71 +67,70 @@ class SequencePairClassifier(SequenceClassifier):
     regularizer
         Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
     """
+
     @overrides
     def __init__(
         self,
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
-        seq2seq_encoder: Seq2SeqEncoder = None,
-        doc_seq2vec_encoder: Seq2VecEncoder = None,
-        doc_seq2seq_encoder: Seq2SeqEncoder = None,
+        seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
+        multifield_seq2vec_encoder: Optional[Seq2VecEncoder] = None,
+        multifield_seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feed_forward: Optional[FeedForward] = None,
-        dropout: float = None,
-        doc_dropout: float = None,
+        dropout: Optional[float] = None,
+        doc_dropout: Optional[float] = None,
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
-        super(SequenceClassifier, self).__init__(
-            vocab, regularizer
-        )  # Passing on kwargs does not work because of the 'from_params' machinery
+        # Passing on kwargs does not work because of the 'from_params' machinery
+        super(SequenceClassifier, self).__init__(vocab, regularizer)
+
         self._initializer = initializer or InitializerApplicator()
-
         self._text_field_embedder = text_field_embedder
-
-        # token sequence level encoders
-        self._seq2seq_encoder = seq2seq_encoder # can be None
-        self._seq2vec_encoder = seq2vec_encoder
 
         # default value for wrapping dimensions for masking = 0 (single field)
         self._num_wrapping_dims = 0
 
-        # doc level encoders
-        if doc_seq2vec_encoder:
-            # If we want to use multi-field input we need to:
-
-            # 0. if char encoder in text field embedder we wrap it in TimeDistributed
-            for embedder in self._text_field_embedder._token_embedders:
-                if embedder == "token_characters":
-                    token_characters_embedder = self._text_field_embedder._token_embedders[embedder]
-                    token_characters_embedder._encoder = TimeDistributed(token_characters_embedder._encoder)
-                    self._text_field_embedder._token_embedders[embedder] = token_characters_embedder
-
+        if multifield_seq2vec_encoder:
             # 1. setup num_wrapping_dims to 1
             self._num_wrapping_dims = 1
 
             # 2. Wrap the seq2vec and seq2seq encoders in TimeDistributed to account for the extra dimension num_fields
             self._seq2vec_encoder = TimeDistributed(seq2vec_encoder)
-            self._seq2seq_encoder = TimeDistributed(seq2seq_encoder) if seq2seq_encoder else None
+            self._seq2seq_encoder = (
+                TimeDistributed(seq2seq_encoder) if seq2seq_encoder else None
+            )
 
-            # 3. setup doc_seq2vec_encoder
-            self._doc_seq2vec_encoder = doc_seq2vec_encoder
+            # 3. setup multifield_seq2vec_encoder
+            self._multifield_seq2vec_encoder = multifield_seq2vec_encoder
 
-            # 4. (Optionally) setup doc_seq2seq_encoder
-            self._doc_seq2seq_encoder = doc_seq2seq_encoder if doc_seq2seq_encoder else None
+            # 4. (Optionally) setup multifield_seq2seq_encoder
+            self._multifield_seq2seq_encoder = (
+                multifield_seq2seq_encoder if multifield_seq2seq_encoder else None
+            )
+        else:
+            # token sequence level encoders
+            self._seq2seq_encoder = seq2seq_encoder
+            self._seq2vec_encoder = seq2vec_encoder
+            self._multifield_seq2vec_encoder = None
+            self._multifield_seq2seq_encoder = None
 
         # token vector dropout
         self._dropout = torch.nn.Dropout(dropout) if dropout else None
-
         # doc vector dropout
         self._doc_dropout = torch.nn.Dropout(doc_dropout) if dropout else None
 
         self._feed_forward = feed_forward
-
         if self._feed_forward:
             self._classifier_input_dim = self._feed_forward.get_output_dim()
         else:
-            self._classifier_input_dim = self._doc_seq2vec_encoder.get_output_dim() if self._doc_seq2vec_encoder else self._seq2vec_encoder.get_input_dim()
+            self._classifier_input_dim = (
+                self._multifield_seq2vec_encoder.get_output_dim()
+                if self._multifield_seq2vec_encoder
+                # TODO why not  self._seq2vec_encoder.get_output_dim() ????
+                else self._seq2vec_encoder.get_input_dim()
+            )
 
         # Due to the concatenation of the two input vectors
         self._classifier_input_dim *= 2
@@ -146,13 +145,12 @@ class SequencePairClassifier(SequenceClassifier):
         self._metrics = {
             label: F1Measure(index)
             for index, label in self.vocab.get_index_to_token_vocabulary(
-            "labels"
-        ).items()
+                "labels"
+            ).items()
         }
 
         # loss function for training
         self._loss = torch.nn.CrossEntropyLoss()
-
         self._initializer(self)
 
     @overrides
@@ -199,9 +197,13 @@ class SequencePairClassifier(SequenceClassifier):
         encoded_texts = []
         for tokens in [record1, record2]:
             # TODO: This will probably not work for single field input, we need to check the shape of record 1 and 2.
-            mask = get_text_field_mask(tokens, num_wrapping_dims=self._num_wrapping_dims).float()
+            mask = get_text_field_mask(
+                tokens, num_wrapping_dims=self._num_wrapping_dims
+            ).float()
 
-            embedded_text = self._text_field_embedder(tokens, mask=mask)
+            embedded_text = self._text_field_embedder(
+                tokens, mask=mask, num_wrapping_dims=self._num_wrapping_dims
+            )
 
             # seq2seq encoding for each token in field
             if self._seq2seq_encoder:
@@ -215,15 +217,15 @@ class SequencePairClassifier(SequenceClassifier):
 
             # seq2seq encoding for each field vector
             # TODO: Does not work, we need to mask properly
-            if self._doc_seq2seq_encoder:
-                encoded_text = self._doc_seq2seq_encoder(encoded_text)
+            if self._multifield_seq2seq_encoder:
+                encoded_text = self._multifield_seq2seq_encoder(encoded_text)
 
             if self._doc_dropout:
                 encoded_text = self._doc_dropout(encoded_text)
 
             # seq2vec encoding for field --> record vector
-            if self._doc_seq2vec_encoder:
-                encoded_text = self._doc_seq2vec_encoder(encoded_text)
+            if self._multifield_seq2vec_encoder:
+                encoded_text = self._multifield_seq2vec_encoder(encoded_text)
 
             if self._feed_forward:
                 encoded_text = self._feed_forward(encoded_text)
@@ -231,11 +233,8 @@ class SequencePairClassifier(SequenceClassifier):
             encoded_texts.append(encoded_text)
 
         combined_records = torch.cat(encoded_texts, dim=-1)
-
         logits = self._classification_layer(combined_records)
-
         probs = torch.nn.functional.softmax(logits, dim=-1)
-
         output_dict = {"logits": logits, "class_probabilities": probs}
 
         if label is not None:
@@ -244,4 +243,5 @@ class SequencePairClassifier(SequenceClassifier):
             self._accuracy(logits, label)
             for name, metric in self._metrics.items():
                 metric(logits, label)
+
         return output_dict
