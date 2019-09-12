@@ -44,7 +44,7 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         Optional Seq2Seq encoder layer for the encoded fields/sentences.
     dropout
         Dropout percentage to use on the output of the Seq2VecEncoder
-    doc_dropout
+    multifield_dropout
         Dropout percentage to use on the output of the doc Seq2VecEncoder
     feed_forward
         A feed forward layer applied to the encoded inputs.
@@ -69,7 +69,7 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         multifield_seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
         feed_forward: Optional[FeedForward] = None,
         dropout: Optional[float] = None,
-        doc_dropout: Optional[float] = None,
+        multifield_dropout: Optional[float] = None,
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
@@ -81,8 +81,6 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         self._text_field_embedder = text_field_embedder
         # dropout for encoded vector
         self._dropout = Dropout(dropout) if dropout else None
-        # doc vector dropout
-        self._doc_dropout = Dropout(doc_dropout) if dropout else None
         # metrics
         self._accuracy = CategoricalAccuracy()
         self._metrics = {
@@ -110,12 +108,15 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
             self._multifield_seq2seq_encoder = (
                 multifield_seq2seq_encoder if multifield_seq2seq_encoder else None
             )
+            # doc vector dropout
+            self._multifield_dropout = Dropout(multifield_dropout) if multifield_dropout else None
         else:
             # token sequence level encoders
             self._seq2seq_encoder = seq2seq_encoder
             self._seq2vec_encoder = seq2vec_encoder
             self._multifield_seq2vec_encoder = None
             self._multifield_seq2seq_encoder = None
+            self._multifield_dropout = None
 
         self._feed_forward = feed_forward
         if self._feed_forward:
@@ -175,12 +176,12 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         if self._multifield_seq2seq_encoder:
             encoded_text = self._multifield_seq2seq_encoder(encoded_text)
 
-        if self._doc_dropout:
-            encoded_text = self._doc_dropout(encoded_text)
-
         # seq2vec encoding for field --> record vector
         if self._multifield_seq2vec_encoder:
             encoded_text = self._multifield_seq2vec_encoder(encoded_text)
+
+        if self._multifield_dropout:
+            encoded_text = self._multifield_dropout(encoded_text)
 
         if self._feed_forward:
             encoded_text = self._feed_forward(encoded_text)
