@@ -68,18 +68,23 @@ class SequencePairClassifierDatasetReader(
         """
         data_source = DataSource.from_yaml(file_path)
 
-        # get cached data set
-        dataset = self.get(file_path)
-        if dataset is not None:
+        # get cached instances of the data set
+        instances = self.get(file_path)
+        if instances is not None:
             logger.debug("Loaded cached data set {}".format(file_path))
         else:
             logger.debug("Read data set from {}".format(file_path))
             dataset = data_source.read_as_forward_dataset()
-            # cache data set
-            self.set(file_path, dataset)
+            instances = dataset.apply(self.text_to_instance, axis=1)
 
-        for example in dataset.itertuples(index=False):
-            yield self.text_to_instance(example)
+            # cache instances of the data set
+            self.set(file_path, instances)
+
+            # If memory is an issue maybe we should only cache the dataset and yield instances:
+            # for example in dataset.itertuples(index=False):
+            #     yield self.text_to_instance(example)
+
+        return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance(
             self, example: Dict[str, str], exclude_optional: bool = False
