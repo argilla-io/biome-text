@@ -1,17 +1,15 @@
 import logging
-from typing import Dict, Iterable, Optional, Union
+from inspect import signature, Parameter
+from typing import Dict, Iterable, Optional, Union, Any
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
-from allennlp.data.fields import LabelField
+from allennlp.data.fields import LabelField, TextField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from overrides import overrides
 
+from biome.allennlp.models import SequenceClassifier
 from biome.data.sources import DataSource
-from .forward.sequence_classifier_forward_configuration import (
-    SequenceClassifierForwardConfiguration,
-)
 from .mixins import TextFieldBuilderMixin, CacheableMixin
-from .utils import get_reader_configuration
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -48,6 +46,9 @@ class SequenceClassifierDatasetReader(
             as_text_field=as_text_field,
         )
 
+        # The keys of the Instances have to match the signature of the forward method of the model
+        self.forward_params = signature(SequenceClassifier.forward).parameters
+
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
         """An generator that yields `Instance`s that are fed to the model
@@ -65,40 +66,28 @@ class SequenceClassifierDatasetReader(
         instance
             An `Instance` that is fed to the model
         """
-        data_source, forward = get_reader_configuration(
-            file_path, SequenceClassifierForwardConfiguration
-        )
+        data_source = DataSource.from_yaml(file_path)
 
-        ds_key = file_path
-        dataset = self.get(ds_key)
-        if dataset is not None:
-            logger.debug(f"Loaded cached dataset {file_path}")
-            return dataset
+        # get cached instances of the data set
+        instances = self.get(file_path)
+        if instances is not None:
+            logger.debug("Loaded cached data set {}".format(file_path))
         else:
-            logger.debug(f"Read dataset from {file_path}")
-            dataset = self._read_as_forward_dataset(data_source, forward)
-            instances = dataset[["tokens", "label"]].apply(
-                self.text_to_instance, axis=1
-            )
-            self.set(ds_key, instances)
-            return (instance for idx, instance in instances.iteritems() if instance)
+            logger.debug("Read data set from {}".format(file_path))
+            dataset = data_source.read_as_forward_dataset()
+            instances = dataset.apply(self.text_to_instance, axis=1)
 
-    @staticmethod
-    def _read_as_forward_dataset(
-        data_source: DataSource, forward: SequenceClassifierForwardConfiguration
-    ):
-        dataset = data_source.to_dataframe().compute()
+            # cache instances of the data set
+            self.set(file_path, instances)
 
-        dataset["tokens"] = dataset[forward.tokens].apply(lambda x: x.to_dict(), axis=1)
-        dataset["label"] = (
-            dataset[forward.label].astype(str).apply(forward.sanitize_label)
-        )
+            # If memory is an issue maybe we should only cache the dataset and yield instances:
+            # for example in dataset.itertuples(index=False):
+            #     yield self.text_to_instance(example)
 
-        return dataset
+        return (instance for idx, instance in instances.iteritems() if instance)
 
-    @overrides
     def text_to_instance(
-        self, example: Dict[str, Union[Dict[str, str], str]]
+            self, example: Dict[str, str], exclude_optional: bool = False
     ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
@@ -106,20 +95,52 @@ class SequenceClassifierDatasetReader(
         ----------
         example
             The keys of this dictionary should match the arguments of the `forward` method of your model.
+        exclude_optional
+            Only extract the mandatory parameters of the model's forward method.
 
         Returns
         -------
         instance
             Returns `None` if the example could not be transformed to an Instance.
         """
+        fields = {}
+        try:
+            for param_name, param in self.forward_params.items():
+                if param_name == "self":
+                    continue
+                # if desired, skip optional parameters, like the label for example
+                if exclude_optional and param.default is not Parameter.empty:
+                    continue
 
-        tokens_field = self.build_textfield(example["tokens"])
-        if not tokens_field:
-            logger.warning(f"'tokens' probably contains an empty string!")
+                value = getattr(example, param_name)
+                if not value:
+                    raise ValueError(f"{param_name} probably contains an empty string!")
+                fields[param_name] = self._value_to_field(param_name, value)
+        except ValueError as e:
+            logger.warning(e)
             return None
 
-        fields = {"tokens": tokens_field}
-        label = example.get("label", None)
-        if label:
-            fields["label"] = LabelField(label)
         return Instance(fields)
+
+    def _value_to_field(
+            self, field_type: str, value: Any
+    ) -> Union[LabelField, TextField]:
+        """Embeds the value in one of the `allennlp.data.fields`
+
+        Parameters
+        ----------
+        field_type
+            Name of the field, must match one of the parameters in the `forward` method of your model.
+        value
+            Value of the field.
+
+        Returns
+        -------
+        Returns either a `LabelField` or a `TextField` depending on the `field_type` parameter.
+        """
+        param = self.forward_params.get(field_type)
+        # the label must be optional in a classification model, otherwise no predict is possible
+        if param.default is not Parameter.empty:
+            return LabelField(value)
+        else:
+            return self.build_textfield(value)
