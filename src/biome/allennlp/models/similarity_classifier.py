@@ -16,11 +16,11 @@ from overrides import overrides
 from torch.nn import CosineEmbeddingLoss
 from torch.nn.modules import Module
 
-from . import SequenceClassifier
+from . import BaseModelClassifier
 
 
 @Model.register("similarity_classifier")
-class SimilarityClassifier(SequenceClassifier):
+class SimilarityClassifier(BaseModelClassifier):
     """
     This ``SimilarityClassifier`` uses a siamese network architecture to perform a binary classification task:
     are two inputs similar or not?
@@ -70,7 +70,7 @@ class SimilarityClassifier(SequenceClassifier):
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
     ) -> None:
-        super(SequenceClassifier, self).__init__(
+        super(BaseModelClassifier, self).__init__(
             vocab, regularizer
         )  # Passing on kwargs does not work because of the 'from_params' machinery
 
