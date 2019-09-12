@@ -15,7 +15,7 @@ DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, "resources/dataset_readers/defin
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierDatasetReader()
+reader = SequenceClassifierDatasetReader(as_text_field=True)
 
 
 class ParallelDatasetReaderTest(DaskSupportTest):
