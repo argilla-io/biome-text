@@ -130,17 +130,6 @@ class DataSource:
         )
 
     @classmethod
-    def from_cfg(cls: Type[T], cfg: dict, cfg_file: str) -> T:
-        """ Create a data source from a dictionary configuration"""
-        # File system paths are usually specified relative to the yaml config file -> they have to be modified
-        path_keys = [
-            "path",
-            "metadata_file",
-        ]  # specifying the dict keys is a safer choice ...
-        make_paths_relative(os.path.dirname(cfg_file), cfg, path_keys=path_keys)
-        return cls(**cfg)
-
-    @classmethod
     def from_yaml(cls: Type[T], file_path: str) -> T:
         """Create a data source from a yaml file.
 
@@ -158,4 +147,13 @@ class DataSource:
         with open(file_path) as yaml_file:
             cfg_dict = yaml.safe_load(yaml_file)
 
-        return DataSource.from_cfg(cfg_dict, file_path)
+        # File system paths are usually specified relative to the yaml config file -> they have to be modified
+        # path_keys is not necessary, but specifying the dict keys
+        # (for which we check for relative paths) is a safer choice
+        path_keys = [
+            "path",
+            "metadata_file",
+        ]
+        make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
+
+        return DataSource.from_dict(cfg_dict)

@@ -73,10 +73,8 @@ def make_paths_relative(
         if path_keys and k not in path_keys:
             continue
 
-        # is_relative_file_system_path(v) returns False if v is not a str
-        cfg_dict[k] = (
-            os.path.join(yaml_dirname, v) if is_relative_file_system_path(v) else v
-        )
+        if is_relative_file_system_path(v):  # returns False if v is not a str
+            cfg_dict[k] = os.path.join(yaml_dirname, v)
 
         # cover lists as well
         if isinstance(v, list):
