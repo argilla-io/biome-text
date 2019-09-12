@@ -110,7 +110,7 @@ def configure_dask_cluster(
                 )
 
                 dask_data = os.path.join(os.getcwd(), ".dask")
-                os.makedirs(dask_data,exist_ok=True)
+                os.makedirs(dask_data, exist_ok=True)
 
                 worker_space = tempfile.mkdtemp(dir=dask_data)
                 cluster = LocalCluster(

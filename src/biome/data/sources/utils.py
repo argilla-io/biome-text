@@ -22,7 +22,9 @@ def row2dict(
     data = dict([(ID, id)] + list(zip(sanitized_columns, data)))
 
     # DataFrame.read_csv allows include path column called `path`
-    data[RESOURCE] = data.get(RESOURCE, data.get(_DASK_PATH_COLUMN_NAME, str(default_path)))
+    data[RESOURCE] = data.get(
+        RESOURCE, data.get(_DASK_PATH_COLUMN_NAME, str(default_path))
+    )
 
     return data
 

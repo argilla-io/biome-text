@@ -130,13 +130,15 @@ class BiomeConfig:
             A dict in the right format containing the AllenNLP parameters
         """
         allennlp_params = dict(
-            **self.model_dict,
-            **self.trainer_dict,
-            **self.vocab_dict,
+            **self.model_dict, **self.trainer_dict, **self.vocab_dict
         )
 
         # add data fields
-        data_fields = [self.TRAIN_DATA_FIELD, self.VALIDATION_DATA_FIELD, self.TEST_DATA_FIELD]
+        data_fields = [
+            self.TRAIN_DATA_FIELD,
+            self.VALIDATION_DATA_FIELD,
+            self.TEST_DATA_FIELD,
+        ]
         data_paths = [self.train_path, self.validation_path, self.test_path]
         for field, path in zip(data_fields, data_paths):
             if path:

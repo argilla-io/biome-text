@@ -109,7 +109,9 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
                 multifield_seq2seq_encoder if multifield_seq2seq_encoder else None
             )
             # doc vector dropout
-            self._multifield_dropout = Dropout(multifield_dropout) if multifield_dropout else None
+            self._multifield_dropout = (
+                Dropout(multifield_dropout) if multifield_dropout else None
+            )
         else:
             # token sequence level encoders
             self._seq2seq_encoder = seq2seq_encoder
@@ -152,6 +154,7 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         A ``Tensor``
 
         """
+
         # TODO: This will probably not work for single field input, we need to check the shape of record 1 and 2.
         mask = get_text_field_mask(
             tokens, num_wrapping_dims=self._num_wrapping_dims

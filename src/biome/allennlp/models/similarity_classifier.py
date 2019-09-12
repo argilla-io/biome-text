@@ -236,6 +236,7 @@ class ContrastiveLoss(Module):
 
     We do not use it at the moment, i leave it here just in case.
     """
+
     def forward(self, distance, label, margin):
         """Compute the loss.
 
