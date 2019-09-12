@@ -72,7 +72,6 @@ class SequencePairClassifierDatasetReader(
         dataset = self.get(file_path)
         if dataset is not None:
             logger.debug("Loaded cached data set {}".format(file_path))
-            return dataset
         else:
             logger.debug("Read data set from {}".format(file_path))
             dataset = data_source.read_as_forward_dataset()
