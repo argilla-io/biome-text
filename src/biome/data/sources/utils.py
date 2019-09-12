@@ -1,6 +1,6 @@
 from typing import Tuple, List, Optional, Dict, Any, Union
 import os.path
-
+import pandas as pd
 
 ID = "id"
 RESOURCE = "resource"
@@ -22,7 +22,9 @@ def row2dict(
     data = dict([(ID, id)] + list(zip(sanitized_columns, data)))
 
     # DataFrame.read_csv allows include path column called `path`
-    data[RESOURCE] = data.get(RESOURCE, data.get(_DASK_PATH_COLUMN_NAME, str(default_path)))
+    data[RESOURCE] = data.get(
+        RESOURCE, data.get(_DASK_PATH_COLUMN_NAME, str(default_path))
+    )
 
     return data
 
@@ -114,3 +116,72 @@ def is_relative_file_system_path(string: str) -> bool:
     if os.path.isabs(string):
         return False
     return True
+
+
+def _dict_to_list(row: List[Dict]) -> Optional[dict]:
+    """ Converts a list of structured data into a dict of list, where every dict key
+        is the list aggregation for every key in original dict
+
+        For example:
+
+        l = [{"name": "Frank", "lastName":"Ocean"},{"name":"Oliver","lastName":"Sacks"]
+        _dict_to_list(l)
+        {"name":["Frank","Oliver"], "lastName":["Ocean", "Sacks"]}
+    """
+    try:
+        for r in row:
+            if isinstance(r, list):
+                row = r
+        return pd.DataFrame(row).to_dict(orient="list")
+    except (ValueError, TypeError):
+        return None
+
+
+def _columns_analysis(df: pd.DataFrame) -> Tuple[List[str], List[str], List[str]]:
+    dicts = []
+    lists = []
+    unmodified = []
+
+    def is_dict(e) -> bool:
+        return isinstance(e, dict)
+
+    def is_list_of_structured_data(e) -> bool:
+        if isinstance(e, list):
+            for x in e:
+                if isinstance(x, (dict, list)):
+                    return True
+        return False
+
+    for c in df.columns:
+        column_data = df[c].dropna()
+        element = column_data.iloc[0] if not column_data.empty else None
+
+        current_list = unmodified
+        if is_dict(element):
+            current_list = dicts
+        elif is_list_of_structured_data(element):
+            current_list = lists
+        current_list.append(c)
+
+    return dicts, lists, unmodified
+
+
+def flatten_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    c_dicts, c_lists, c_unmodified = _columns_analysis(df)
+
+    if len(df.columns) == len(c_unmodified):
+        return df
+
+    dfs = []
+    for c in c_lists:
+        c_df = pd.DataFrame([d for d in df[c].apply(_dict_to_list) if d])
+        c_df.columns = [f"{c}.*.{cc}" for cc in c_df.columns]
+        dfs.append(c_df)
+
+    for c in c_dicts:
+        c_df = pd.DataFrame([md if md else {} for md in df[c]])
+        c_df.columns = [f"{c}.{cc}" for cc in c_df.columns]
+        dfs.append(c_df)
+
+    flatten = flatten_dataframe(pd.concat(dfs, axis=1))
+    return pd.concat([df[c_unmodified], flatten], axis=1)
