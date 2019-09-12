@@ -23,7 +23,7 @@ JSON_PATH = os.path.abspath(
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierDatasetReader()
+reader = SequenceClassifierDatasetReader(as_text_field=True)
 
 
 class SequenceClassifierDatasetReaderTest(DaskSupportTest):
