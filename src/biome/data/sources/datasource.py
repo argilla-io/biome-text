@@ -1,6 +1,6 @@
 import logging
 import os.path
-from typing import Dict, TypeVar, Type, Callable, Any
+from typing import Dict, TypeVar, Type, Callable, Any, Union, List
 
 import yaml
 from biome.data.sources.readers import (
@@ -58,20 +58,22 @@ class DataSource:
         try:
             clean_format = format.lower().strip()
             source_reader, arguments = self.SUPPORTED_FORMATS[clean_format]
-            df = source_reader(**{**arguments, **kwargs}).dropna(how="all")
-            df = df.rename(
-                columns={
-                    column: column.strip() for column in df.columns.astype(str).values
-                }
-            )
-            if "id" in df.columns:
-                df = df.set_index("id")
-            self._forward = forward
-            self._df = df
         except KeyError:
             raise TypeError(
                 f"Format {format} not supported. Supported formats are: {', '.join(self.SUPPORTED_FORMATS)}"
             )
+
+        df = source_reader(**{**arguments, **kwargs}).dropna(how="all")
+        df = df.rename(
+            columns={
+                column: column.strip() for column in df.columns.astype(str).values
+            }
+        )
+        if "id" in df.columns:
+            df = df.set_index("id")
+
+        self._forward = ClassificationForwardConfiguration(**forward)
+        self._df = df
 
     @property
     def forward(self) -> dict:
@@ -154,3 +156,91 @@ class DataSource:
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
         return cls(**cfg_dict)
+
+    def read_as_forward_dataset(self):
+        dataset = self._df.compute()
+
+        dataset["label"] = (
+            dataset[self._forward.label].astype(str).apply(self._forward.sanitize_label)
+        )
+        for param_name, column_name in self._forward.params.items():
+            dataset[param_name] = dataset[column_name].apply(lambda x: x.to_dict(), axis=1)
+
+        return dataset
+
+
+class ClassificationForwardConfiguration(object):
+    """
+        This ``ClassificationForwardConfiguration`` represents  forward operations for label
+        configuration in classification problems.
+
+        Parameters
+        ----------
+
+        label:
+            Name of the label column in the data
+        target:
+            (deprecated) Just an alias for label
+        kwargs:
+            These kwargs match parameter names (of the model's forward method)
+            to the column names (of the data).
+    """
+    def __init__(self, label: Union[str, dict] = None, target: dict = None, **kwargs):
+        self._label = None
+        self._default_label = None
+        self._metadata = None
+
+        if target and not label:
+            label = target
+
+        if label:
+            if isinstance(label, str):
+                self._label = label
+            else:
+                self._label = (
+                        label.get("name") or label.get("label") or label.get("gold_label") or label.get("field")
+                )
+                if not self._label:
+                    raise RuntimeError("I am missing the label name!")
+                self._default_label = label.get(
+                    "default", label.get("use_missing_label")
+                )
+                self._metadata = (
+                    self.load_metadata(label.get("metadata_file"))
+                    if label.get("metadata_file")
+                    else None
+                )
+
+        self.params = kwargs
+
+    @staticmethod
+    def load_metadata(path: str) -> Dict[str, str]:
+        with open(path) as metadata_file:
+            classes = [line.rstrip("\n").rstrip() for line in metadata_file]
+
+        mapping = {idx + 1: cls for idx, cls in enumerate(classes)}
+        # mapping variant with integer numbers
+        mapping = {**mapping, **{str(key): value for key, value in mapping.items()}}
+
+        return mapping
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def default_label(self):
+        return self._default_label
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    def sanitize_label(self, label: str) -> str:
+        label = label.strip()
+        if self.default_label:
+            label = label if label else self.default_label
+        if self.metadata:
+            label = self.metadata.get(label, label)
+
+        return label
