@@ -150,10 +150,7 @@ class DataSource:
         # File system paths are usually specified relative to the yaml config file -> they have to be modified
         # path_keys is not necessary, but specifying the dict keys
         # (for which we check for relative paths) is a safer choice
-        path_keys = [
-            "path",
-            "metadata_file",
-        ]
+        path_keys = ["path", "metadata_file"]
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
         return cls(**cfg_dict)

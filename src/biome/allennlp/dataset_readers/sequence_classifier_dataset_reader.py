@@ -122,5 +122,4 @@ class SequenceClassifierDatasetReader(
         label = example.get("label", None)
         if label:
             fields["label"] = LabelField(label)
-
         return Instance(fields)

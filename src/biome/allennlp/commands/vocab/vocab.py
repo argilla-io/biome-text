@@ -52,11 +52,7 @@ def vocab_from_args(args: argparse.Namespace):
 
 
 def vocab(
-    spec: Optional[str],
-    train: str,
-    validation: str,
-    test: Optional[str],
-    output: str,
+    spec: Optional[str], train: str, validation: str, test: Optional[str], output: str
 ):
     allennlp_configuration = BiomeConfig(
         model_path=spec,

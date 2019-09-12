@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, Union, Any, Dict
 
 from allennlp.data import Tokenizer, TokenIndexer
@@ -51,6 +52,7 @@ class TextFieldBuilderMixin(object):
         self._tokenizer = tokenizer or WordTokenizer()
         self._token_indexers = token_indexers
         self._as_text_field = as_text_field
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     @staticmethod
     def _value_as_string(value):
@@ -63,20 +65,25 @@ class TextFieldBuilderMixin(object):
         if not data:
             return None
 
-        if self._as_text_field or isinstance(data, str):
-            text = data
-            if isinstance(text, dict):
-                text = " ".join(data.values())
+        if not isinstance(data, (str, dict)):
+            self._logger.warning(
+                f"Cannot process data example {data} of type {type(data)}"
+            )
+            return None
 
+        if self._as_text_field:
+            text = data
+            if isinstance(data, dict):
+                text = " ".join(data.values())
             return TextField(self._tokenizer.tokenize(text), self._token_indexers)
 
         text_fields = [
             TextField(
-                self._tokenizer.tokenize(self._value_as_string(field_value)),
+                self._tokenizer.tokenize(self._value_as_string(value)),
                 self._token_indexers,
             )
-            for field_name, field_value in data.items()
-            if field_value
+            for _, value in ([(None, data)] if isinstance(data, str) else data.items())
+            if value
         ]
 
         return ListField(text_fields) if len(text_fields) > 0 else None

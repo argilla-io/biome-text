@@ -64,4 +64,3 @@ class SequencePairClassifierPredictorTest(DaskSupportTest):
         input = {"gold_label": "duplicated", "record_1": "Herbert Brandes-Siller"}
 
         self.assertRaises(Exception, self.predictor.predict_json, input)
-
