@@ -156,4 +156,4 @@ class DataSource:
         ]
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
-        return DataSource.from_dict(cfg_dict)
+        return cls(**cfg_dict)
