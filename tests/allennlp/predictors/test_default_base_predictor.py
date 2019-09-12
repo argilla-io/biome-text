@@ -21,6 +21,7 @@ def predictor():
     )
 
 
+@pytest.mark.skip(reason="Obsolete")
 def test_predict_json(predictor):
     inputs = [
         {"tokens": "horse"},
@@ -45,6 +46,7 @@ def test_predict_json(predictor):
     assert "could not be converted to an instance. No prediction possible." in str(err)
 
 
+@pytest.mark.skip(reason="Obsolete")
 def test_predict_batch_json(predictor):
     inputs = [
         {"tokens": "horse"},

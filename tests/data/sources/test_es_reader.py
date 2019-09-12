@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from biome.data.sources.readers import from_elasticsearch
 from dask.dataframe import DataFrame
 
@@ -11,6 +13,9 @@ ES_INDEX = os.getenv("ES_INDEX", "test-index")
 
 
 class ElasticsearchReaderTest(DaskSupportTest):
+    @pytest.mark.skip(
+        reason="Must be configured. Generate some mock data before running test"
+    )
     def test_read_whole_index(self):
         es_index = from_elasticsearch(
             npartitions=NPARTITIONS, client_kwargs={"hosts": ES_HOST}, index=ES_INDEX
