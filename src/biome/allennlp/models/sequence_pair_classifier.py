@@ -28,6 +28,7 @@ class SequencePairClassifier(BaseModelClassifier):
 
     """
 
+    @property
     def n_inputs(self):
         # We need overwrite the number of inputs since this model accepts two inputs
         return 2
