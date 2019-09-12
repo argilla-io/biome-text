@@ -17,7 +17,6 @@ from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 from overrides import overrides
 from torch.nn import Dropout, Linear
-from torch.nn.modules import Module
 
 
 class BaseModelClassifier(Model, metaclass=ABCMeta):
@@ -55,7 +54,10 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
     """
 
-    N_INPUTS = 1
+    @property
+    def n_inputs(self):
+        """ This value is used for calculate the output layer dimension. Default value is 1"""
+        return 1
 
     def __init__(
         self,
@@ -127,10 +129,8 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
             )
 
         # Due to the concatenation of the n_inputs input vectors
-        self._classifier_input_dim *= self.N_INPUTS
-        self._output_layer = Linear(
-            self._classifier_input_dim, self.num_classes
-        )
+        self._classifier_input_dim *= self.n_inputs
+        self._output_layer = Linear(self._classifier_input_dim, self.num_classes)
 
         self._initializer(self)
 
@@ -139,6 +139,18 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         return self.vocab.get_vocab_size(namespace="labels")
 
     def forward_tokens(self, tokens: Dict[str, torch.Tensor]) -> torch.Tensor:
+
+        """
+            Apply the whole forward chain but last layer (output)
+        Parameters
+        ----------
+        tokens The tokens tensor
+
+        Returns
+        -------
+        A ``Tensor``
+
+        """
         # TODO: This will probably not work for single field input, we need to check the shape of record 1 and 2.
         mask = get_text_field_mask(
             tokens, num_wrapping_dims=self._num_wrapping_dims
@@ -175,7 +187,9 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
 
         return encoded_text
 
-    def output_layer(self, encoded_text, label) -> Dict[str, torch.Tensor]:
+    def output_layer(
+        self, encoded_text: torch.Tensor, label
+    ) -> Dict[str, torch.Tensor]:
         """Returns
         -------
         An output dictionary consisting of:

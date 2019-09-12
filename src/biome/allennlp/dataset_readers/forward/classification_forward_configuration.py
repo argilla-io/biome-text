@@ -1,9 +1,20 @@
 from typing import Union, Dict
 
-import pandas
-
 
 class ClassificationForwardConfiguration(object):
+    """
+        This ``ClassificationForwardConfiguration`` represents  forward operations for label
+        configuration in classification problems.
+
+        Parameters
+        ----------
+
+        label:
+            The label configuration from forward definition
+        target:
+            (deprecated) Just an alias of label
+    """
+
     def __init__(self, label: Union[str, dict] = None, target: dict = None):
         self._label = None
         self._default_label = None

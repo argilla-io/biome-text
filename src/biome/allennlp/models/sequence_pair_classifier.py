@@ -1,30 +1,17 @@
 import logging
-from inspect import signature
-from typing import Dict, Optional
+from typing import Dict
 
 import torch
-from allennlp.data.vocabulary import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import (
-    Seq2SeqEncoder,
-    Seq2VecEncoder,
-    TextFieldEmbedder,
-    FeedForward,
-    TimeDistributed,
-)
-from allennlp.nn import InitializerApplicator, RegularizerApplicator
-from allennlp.nn.util import get_text_field_mask
 from overrides import overrides
-from torch.nn import Linear, Dropout
 
-from . import SequenceClassifier
+from biome.allennlp.models.base_model_classifier import BaseModelClassifier
 
 logger = logging.getLogger(__name__)
 
 
 @Model.register("sequence_pair_classifier")
-class SequencePairClassifier(SequenceClassifier):
-    N_INPUTS = 2
+class SequencePairClassifier(BaseModelClassifier):
     """
     This ``SequencePairClassifier`` uses a siamese network architecture to perform a classification task between a pair
     of records or documents.
@@ -39,36 +26,11 @@ class SequencePairClassifier(SequenceClassifier):
     The sequences are encoded into two single vectors, the resulting vectors are concatenated and fed to a
     linear classification layer.
 
-    Parameters
-    ----------
-    vocab
-        A Vocabulary, required in order to compute sizes for input/output projections
-        and passed on to the :class:`~allennlp.models.model.Model` class.
-    text_field_embedder
-        Used to embed the input text into a ``TextField``
-    seq2seq_encoder
-        Optional Seq2Seq encoder layer for the input text.
-    seq2vec_encoder
-        Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
-        will pool its output. Otherwise, this encoder will operate directly on the output
-        of the `text_field_embedder`.
-    multifield_seq2vec_encoder
-        Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
-        will pool its output. Otherwise, this encoder will operate directly on the output
-        of the `seq2vec_encoder`.
-    multifield_seq2seq_encoder
-        Optional Seq2Seq encoder layer for the encoded fields/sentences.
-    dropout
-        Dropout percentage to use on the output of the Seq2VecEncoder
-    doc_dropout
-        Dropout percentage to use on the output of the doc Seq2VecEncoder
-    feed_forward
-        A feed forward layer applied to the encoded inputs.
-    initializer
-        Used to initialize the model parameters.
-    regularizer
-        Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
     """
+
+    def n_inputs(self):
+        # We need overwrite the number of inputs since this model accepts two inputs
+        return 2
 
     @overrides
     def forward(

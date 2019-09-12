@@ -1,34 +1,19 @@
 import logging
-from typing import Dict, Iterable, Optional, Union, List
+from typing import Dict, Iterable, Optional, Union
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
 from allennlp.data.fields import LabelField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from overrides import overrides
 
-from biome.allennlp.dataset_readers.classification_forward_configuration import (
-    ClassificationForwardConfiguration,
-)
-from biome.allennlp.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
-from biome.allennlp.dataset_readers.utils import get_reader_configuration
 from biome.data.sources import DataSource
+from .forward.sequence_classifier_forward_configuration import (
+    SequenceClassifierForwardConfiguration,
+)
+from .mixins import TextFieldBuilderMixin, CacheableMixin
+from .utils import get_reader_configuration
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
-
-
-class SequenceClassifierForwardConfiguration(ClassificationForwardConfiguration):
-    def __init__(
-        self,
-        tokens: Union[str, List[str]],
-        label: Union[str, dict] = None,
-        target: dict = None,
-    ):
-        super(SequenceClassifierForwardConfiguration, self).__init__(label, target)
-        self._tokens = [tokens] if isinstance(tokens, str) else tokens
-
-    @property
-    def tokens(self) -> List[str]:
-        return self._tokens.copy()
 
 
 @DatasetReader.register("sequence_classifier")
@@ -41,8 +26,12 @@ class SequenceClassifierDatasetReader(
     ----------
     tokenizer
         By default we use a WordTokenizer with the SpacyWordSplitter
+
     token_indexers
         By default we use the following dict {'tokens': SingleIdTokenIndexer}
+
+    as_text_field
+        Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
     """
 
     def __init__(

@@ -1,40 +1,19 @@
 import logging
-from typing import Dict, Iterable, Optional, Union, List
+from typing import Dict, Iterable, Optional, Union
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
 from allennlp.data.fields import LabelField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
-from allennlp.data.tokenizers import WordTokenizer
-from biome.allennlp.dataset_readers.classification_forward_configuration import (
-    ClassificationForwardConfiguration,
-)
-from biome.allennlp.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
-from biome.allennlp.dataset_readers.utils import get_reader_configuration
-from biome.data.sources import DataSource
 from overrides import overrides
 
+from biome.data.sources import DataSource
+from .forward.sequence_pair_classifier_forward_configuration import (
+    SequencePairClassifierForwardConfiguration,
+)
+from .mixins import TextFieldBuilderMixin, CacheableMixin
+from .utils import get_reader_configuration
+
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
-
-
-class SequencePairClassifierForwardConfiguration(ClassificationForwardConfiguration):
-    def __init__(
-        self,
-        record1: Union[str, List[str]],
-        record2: Union[str, List[str]],
-        label: Union[str, dict] = None,
-        target: dict = None,
-    ):
-        super(SequencePairClassifierForwardConfiguration, self).__init__(label, target)
-        self._record1 = [record1] if isinstance(record1, str) else record1
-        self._record2 = [record2] if isinstance(record2, str) else record2
-
-    @property
-    def record1(self) -> List[str]:
-        return self._record1
-
-    @property
-    def record2(self) -> List[str]:
-        return self._record2
 
 
 @DatasetReader.register("sequence_pair_classifier")

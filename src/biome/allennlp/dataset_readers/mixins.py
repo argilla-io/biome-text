@@ -1,23 +1,53 @@
-from typing import Optional, Union, Any
+from typing import Optional, Union, Any, Dict
 
+from allennlp.data import Tokenizer, TokenIndexer
 from allennlp.data.fields import ListField, TextField
 from allennlp.data.tokenizers import WordTokenizer
 
 
 class CacheableMixin(object):
-    _datasets_cache = dict()
+    """
+        This ``CacheableMixin`` allow in memory cache mechanism
+    """
+
+    _cache = dict()
 
     @staticmethod
     def get(key) -> Optional[Any]:
-        return CacheableMixin._datasets_cache.get(key, None)
+        """ Get a value from cache by key """
+        return CacheableMixin._cache.get(key, None)
 
     @staticmethod
     def set(key, data):
-        CacheableMixin._datasets_cache[key] = data
+        """ Set an cache entry """
+        CacheableMixin._cache[key] = data
 
 
 class TextFieldBuilderMixin(object):
-    def __init__(self, tokenizer, token_indexers, as_text_field):
+    """
+        This ``TextFieldBuilderMixin`` build ``Fields`` for inputs in classification problems
+
+        Parameters
+        ----------
+
+        tokenizer
+            The allennlp ``Tokenizer`` for text tokenization in ``TextField``
+
+        token_indexers
+            The allennlp ``TokenIndexer`` dictionary for ``TextField`` configuration
+
+        as_text_field
+            Flag indicating how to generate the ``Field``. If enabled, the output Field
+            will a ``TextField`` with text concatenation, else the result field will be
+            a ``ListField`` of ``TextField``, one per input data value
+    """
+
+    def __init__(
+        self,
+        tokenizer: Tokenizer = None,
+        token_indexers: Dict[str, TokenIndexer] = None,
+        as_text_field: bool = False,
+    ):
         self._tokenizer = tokenizer or WordTokenizer()
         self._token_indexers = token_indexers
         self._as_text_field = as_text_field
