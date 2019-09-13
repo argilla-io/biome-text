@@ -104,33 +104,37 @@ class SequenceClassifierDatasetReader(
             Returns `None` if the example could not be transformed to an Instance.
         """
         fields = {}
-        try:
-            for param_name, param in self.forward_params.items():
-                if param_name == "self":
-                    continue
-                # if desired, skip optional parameters, like the label for example
-                if exclude_optional and param.default is not Parameter.empty:
-                    continue
+        for param_name, param in self.forward_params.items():
+            if param_name == "self":
+                continue
+            # if desired, skip optional parameters, like the label for example
+            if exclude_optional and param.default is not Parameter.empty:
+                continue
 
+            try:
                 value = getattr(example, param_name)
-                if not value:
-                    raise ValueError(f"{param_name} probably contains an empty string!")
-                fields[param_name] = self._value_to_field(param_name, value)
-        except ValueError as e:
-            logger.warning(e)
-            return None
+            except AttributeError as e:
+                raise RuntimeError(
+                    e,
+                    f"Your are probably missing '{param_name}' in your forward definition of the data source.",
+                )
+
+            fields[param_name] = self._value_to_field(param_name, value)
 
         return Instance(fields)
 
     def _value_to_field(
-        self, field_type: str, value: Any
+        self, forward_param_name: str, value: Any
     ) -> Union[LabelField, TextField]:
-        """Embeds the value in one of the `allennlp.data.fields`
+        """Embeds the value in one of the `allennlp.data.fields`. The type of field is inferred like this:
+        If parameter is required in the model's forward method -> TextField
+        If parameter is optional in the model's forward method -> LabelField
+        TODO: Check how this works when introducing a MetadataField for example ...
 
         Parameters
         ----------
-        field_type
-            Name of the field, must match one of the parameters in the `forward` method of your model.
+        forward_param_name
+            Must match one of the parameters in the `forward` method of your model.
         value
             Value of the field.
 
@@ -138,7 +142,7 @@ class SequenceClassifierDatasetReader(
         -------
         Returns either a `LabelField` or a `TextField` depending on the `field_type` parameter.
         """
-        param = self.forward_params.get(field_type)
+        param = self.forward_params.get(forward_param_name)
         # the label must be optional in a classification model, otherwise no predict is possible
         if param.default is not Parameter.empty:
             return LabelField(value)

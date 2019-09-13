@@ -16,9 +16,6 @@ from biome.data.sources.readers import (
 )
 from biome.data.sources.utils import make_paths_relative
 
-# https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
-T = TypeVar("T")
-
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 from .utils import row2dict
@@ -71,12 +68,8 @@ class DataSource:
         if "id" in df.columns:
             df = df.set_index("id")
 
-        self._forward = ClassificationForwardConfiguration(**forward)
+        self.forward = ClassificationForwardConfiguration(**forward)
         self._df = df
-
-    @property
-    def forward(self) -> dict:
-        return self._forward
 
     @classmethod
     def add_supported_format(
@@ -143,26 +136,35 @@ class DataSource:
         forward_dataframe = self._df.compute()
 
         forward_dataframe["label"] = (
-            forward_dataframe[self._forward.label]
+            forward_dataframe[self.forward.label]
             .astype(str)
-            .apply(self._forward.sanitize_label)
+            .apply(self.forward.sanitize_label)
         )
-        for forward_token_name, data_column_names in self._forward.tokens.items():
-            # convert str to list, otherwise the axis=1 raises an error with the returned pd.Series
+        self._add_forward_token_columns(forward_dataframe)
+        # TODO: Remove rows that contain an empty label or empty tokens!!
+        #       Not so straight forward: what if record 1 is partially empty, does it produce empty TextFields??
+
+        return forward_dataframe
+
+    def _add_forward_token_columns(self, forward_dataframe: pd.DataFrame):
+        """Helper function to add the forward token parameters for the model's forward method"""
+        for forward_token_name, data_column_names in self.forward.tokens.items():
+            # convert str to list, otherwise the axis=1 raises an error with the returned pd.Series in the next line
             data_column_names = (
                 [data_column_names]
                 if isinstance(data_column_names, str)
                 else data_column_names
             )
+
             forward_dataframe[forward_token_name] = forward_dataframe[
                 data_column_names
             ].apply(lambda x: x.to_dict(), axis=1)
             # if the data source df already has a column with the forward_token_name, it will be replaced!
 
-        return forward_dataframe
+        return
 
     @classmethod
-    def from_yaml(cls: Type[T], file_path: str) -> T:
+    def from_yaml(cls: 'DataSource', file_path: str) -> 'DataSource':
         """Create a data source from a yaml file.
 
         The yaml file has to serialize a dict, whose keys matches the arguments of the `DataSource` class.
@@ -190,17 +192,16 @@ class DataSource:
 
 class ClassificationForwardConfiguration(object):
     """
-        This ``ClassificationForwardConfiguration`` represents  forward operations for label
-        configuration in classification problems.
+        This ``ClassificationForwardConfiguration`` contains the
+        forward transformation of the label and tokens in classification models.
 
         Parameters
         ----------
-
-        label:
+        label
             Name of the label column in the data
-        target:
+        target
             (deprecated) Just an alias for label
-        tokens:
+        tokens
             These kwargs match the token names (of the model's forward method)
             to the column names (of the data).
     """
@@ -238,6 +239,20 @@ class ClassificationForwardConfiguration(object):
 
     @staticmethod
     def load_metadata(path: str) -> Dict[str, str]:
+        """
+        Loads the "metadata_file" (should be called mapping file).
+        For now it only allows to map line number -> str.
+
+        Parameters
+        ----------
+        path
+            Path to the metadata (mapping) file
+
+        Returns
+        -------
+        mapping
+            A dict containing the mapping
+        """
         with open(path) as metadata_file:
             classes = [line.rstrip("\n").rstrip() for line in metadata_file]
 
@@ -260,6 +275,7 @@ class ClassificationForwardConfiguration(object):
         return self._metadata
 
     def sanitize_label(self, label: str) -> str:
+        """Sanitizes the label str, uses a default label (optional), maps the label to a str (optional)"""
         label = label.strip()
         if self.default_label:
             label = label if label else self.default_label
