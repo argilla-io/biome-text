@@ -127,8 +127,7 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
             self._classifier_input_dim = (
                 self._multifield_seq2vec_encoder.get_output_dim()
                 if self._multifield_seq2vec_encoder
-                # TODO why not self._seq2vec_encoder.get_output_dim() ????
-                else self._seq2vec_encoder.get_input_dim()
+                else self._seq2vec_encoder.get_output_dim()
             )
 
         # Due to the concatenation of the n_inputs input vectors
