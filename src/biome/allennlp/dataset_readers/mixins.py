@@ -74,7 +74,7 @@ class TextFieldBuilderMixin(object):
         if self._as_text_field:
             text = data
             if isinstance(data, dict):
-                text = " ".join(data.values())
+                text = " ".join(map(str, data.values()))
             return TextField(self._tokenizer.tokenize(text), self._token_indexers)
 
         text_fields = [
