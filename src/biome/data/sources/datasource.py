@@ -1,8 +1,12 @@
 import logging
 import os.path
-from typing import Dict, TypeVar, Type, Callable, Any, Union, List
+from typing import Dict, TypeVar, Type, Callable, Any, Union
 
+import pandas as pd
 import yaml
+from dask.bag import Bag
+from dask.dataframe import DataFrame
+
 from biome.data.sources.readers import (
     from_csv,
     from_json,
@@ -11,9 +15,6 @@ from biome.data.sources.readers import (
     from_parquet,
 )
 from biome.data.sources.utils import make_paths_relative
-from dask.bag import Bag
-
-from dask.dataframe import DataFrame
 
 # https://stackoverflow.com/questions/51647747/how-to-annotate-that-a-classmethod-returns-an-instance-of-that-class-python
 T = TypeVar("T")
@@ -65,9 +66,7 @@ class DataSource:
 
         df = source_reader(**{**arguments, **kwargs}).dropna(how="all")
         df = df.rename(
-            columns={
-                column: column.strip() for column in df.columns.astype(str).values
-            }
+            columns={column: column.strip() for column in df.columns.astype(str).values}
         )
         if "id" in df.columns:
             df = df.set_index("id")
@@ -131,6 +130,37 @@ class DataSource:
             row2dict, columns=[str(column).strip() for column in self._df.columns]
         )
 
+    def to_forward_dataframe(self) -> pd.DataFrame:
+        """
+        Adds columns to the DataFrame that are named after the parameter names in the model's forward method.
+        The content of these columns is specified in the forward dictionary of the data source yaml file.
+
+        Returns
+        -------
+        forward_dataframe
+            Contains additional columns corresponding to the parameter names of the model's forward method.
+        """
+        forward_dataframe = self._df.compute()
+
+        forward_dataframe["label"] = (
+            forward_dataframe[self._forward.label]
+            .astype(str)
+            .apply(self._forward.sanitize_label)
+        )
+        for forward_token_name, data_column_names in self._forward.tokens.items():
+            # convert str to list, otherwise the axis=1 raises an error with the returned pd.Series
+            data_column_names = (
+                [data_column_names]
+                if isinstance(data_column_names, str)
+                else data_column_names
+            )
+            forward_dataframe[forward_token_name] = forward_dataframe[
+                data_column_names
+            ].apply(lambda x: x.to_dict(), axis=1)
+            # if the data source df already has a column with the forward_token_name, it will be replaced!
+
+        return forward_dataframe
+
     @classmethod
     def from_yaml(cls: Type[T], file_path: str) -> T:
         """Create a data source from a yaml file.
@@ -157,17 +187,6 @@ class DataSource:
 
         return cls(**cfg_dict)
 
-    def read_as_forward_dataset(self):
-        dataset = self._df.compute()
-
-        dataset["label"] = (
-            dataset[self._forward.label].astype(str).apply(self._forward.sanitize_label)
-        )
-        for param_name, column_name in self._forward.params.items():
-            dataset[param_name] = dataset[column_name].apply(lambda x: x.to_dict(), axis=1)
-
-        return dataset
-
 
 class ClassificationForwardConfiguration(object):
     """
@@ -181,11 +200,12 @@ class ClassificationForwardConfiguration(object):
             Name of the label column in the data
         target:
             (deprecated) Just an alias for label
-        kwargs:
-            These kwargs match parameter names (of the model's forward method)
+        tokens:
+            These kwargs match the token names (of the model's forward method)
             to the column names (of the data).
     """
-    def __init__(self, label: Union[str, dict] = None, target: dict = None, **kwargs):
+
+    def __init__(self, label: Union[str, dict] = None, target: dict = None, **tokens):
         self._label = None
         self._default_label = None
         self._metadata = None
@@ -198,7 +218,10 @@ class ClassificationForwardConfiguration(object):
                 self._label = label
             else:
                 self._label = (
-                        label.get("name") or label.get("label") or label.get("gold_label") or label.get("field")
+                    label.get("name")
+                    or label.get("label")
+                    or label.get("gold_label")
+                    or label.get("field")
                 )
                 if not self._label:
                     raise RuntimeError("I am missing the label name!")
@@ -211,7 +234,7 @@ class ClassificationForwardConfiguration(object):
                     else None
                 )
 
-        self.params = kwargs
+        self.tokens = tokens
 
     @staticmethod
     def load_metadata(path: str) -> Dict[str, str]:

@@ -74,7 +74,7 @@ class SequenceClassifierDatasetReader(
             logger.debug("Loaded cached data set {}".format(file_path))
         else:
             logger.debug("Read data set from {}".format(file_path))
-            dataset = data_source.read_as_forward_dataset()
+            dataset = data_source.to_forward_dataframe()
             instances = dataset.apply(self.text_to_instance, axis=1)
 
             # cache instances of the data set
@@ -87,7 +87,7 @@ class SequenceClassifierDatasetReader(
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance(
-            self, example: Dict[str, str], exclude_optional: bool = False
+        self, example: Dict[str, str], exclude_optional: bool = False
     ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
@@ -123,7 +123,7 @@ class SequenceClassifierDatasetReader(
         return Instance(fields)
 
     def _value_to_field(
-            self, field_type: str, value: Any
+        self, field_type: str, value: Any
     ) -> Union[LabelField, TextField]:
         """Embeds the value in one of the `allennlp.data.fields`
 
