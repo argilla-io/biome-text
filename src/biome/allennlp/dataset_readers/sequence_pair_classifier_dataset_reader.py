@@ -33,9 +33,10 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         as_text_field: bool = False,
     ) -> None:
         super(SequencePairClassifierDatasetReader, self).__init__(
-            tokenizer=tokenizer, token_indexers=token_indexers, as_text_field=as_text_field
+            tokenizer=tokenizer,
+            token_indexers=token_indexers,
+            as_text_field=as_text_field,
         )
 
         # The keys of the Instances have to match the signature of the forward method of the model
         self.forward_params = self.get_forward_signature(SequencePairClassifier)
-

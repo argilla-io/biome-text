@@ -32,6 +32,9 @@ class SequenceClassifierDatasetReader(
         Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
     """
 
+    # Name of the "label parameter" in the model's forward method
+    LABEL_TAG = "label"
+
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -50,7 +53,7 @@ class SequenceClassifierDatasetReader(
         self.forward_params = self.get_forward_signature(SequenceClassifier)
 
     @staticmethod
-    def get_forward_signature(model: 'Model') -> Dict[str, "Parameter"]:
+    def get_forward_signature(model: "allennlp.models.Model") -> Dict[str, "Parameter"]:
         """Get the parameter names and `Parameter`s of the model's forward method.
 
         Returns
@@ -136,7 +139,7 @@ class SequenceClassifierDatasetReader(
         self, param_name: str, value: Any
     ) -> Union[LabelField, TextField, ListField]:
         """Embeds the value in one of the `allennlp.data.fields`.
-        For now the field type is inferred from the hardcoded parameter name ...
+        For now the field type is basically inferred from the hardcoded label tag ...
 
         Parameters
         ----------
@@ -149,7 +152,7 @@ class SequenceClassifierDatasetReader(
         -------
         Returns either a `LabelField` or a `TextField`/`ListField` depending on the `param_name`.
         """
-        if param_name == "label":
+        if param_name == self.LABEL_TAG:
             return LabelField(value)
         else:
             return self.build_textfield(value)
