@@ -156,9 +156,12 @@ class DataSource:
                 else data_column_names
             )
 
-            forward_dataframe[forward_token_name] = forward_dataframe[
-                data_column_names
-            ].apply(lambda x: x.to_dict(), axis=1)
+            try:
+                forward_dataframe[forward_token_name] = forward_dataframe[
+                    data_column_names
+                ].apply(lambda x: x.to_dict(), axis=1)
+            except KeyError as e:
+                raise KeyError(f"Did not find {data_column_names} in the data source!")
             # if the data source df already has a column with the forward_token_name, it will be replaced!
 
         return

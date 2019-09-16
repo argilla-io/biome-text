@@ -37,5 +37,5 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         )
 
         # The keys of the Instances have to match the signature of the forward method of the model
-        self.forward_params = signature(SequencePairClassifier.forward).parameters
+        self.forward_params = self.get_forward_signature(SequencePairClassifier)
 

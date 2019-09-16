@@ -77,6 +77,7 @@ class TextFieldBuilderMixin(object):
                 text = " ".join(data.values())
             return TextField(self._tokenizer.tokenize(text), self._token_indexers)
 
+        # TODO: This returns lists with different lengths if value evaluates to False !!!
         text_fields = [
             TextField(
                 self._tokenizer.tokenize(self._value_as_string(value)),

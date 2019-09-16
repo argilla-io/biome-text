@@ -3,7 +3,7 @@ from inspect import signature, Parameter
 from typing import Dict, Iterable, Optional, Union, Any
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
-from allennlp.data.fields import LabelField, TextField
+from allennlp.data.fields import LabelField, TextField, ListField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from overrides import overrides
 
@@ -47,7 +47,22 @@ class SequenceClassifierDatasetReader(
         )
 
         # The keys of the Instances have to match the signature of the forward method of the model
-        self.forward_params = signature(SequenceClassifier.forward).parameters
+        self.forward_params = self.get_forward_signature(SequenceClassifier)
+
+    @staticmethod
+    def get_forward_signature(model: 'Model') -> Dict[str, "Parameter"]:
+        """Get the parameter names and `Parameter`s of the model's forward method.
+
+        Returns
+        -------
+        parameters
+            A dict mapping the parameter name to a `Parameter` instance.
+        """
+        parameters = dict(signature(model.forward).parameters)
+        # the forward method is always a non-static method of the model class -> remove self
+        del parameters["self"]
+
+        return parameters
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
@@ -81,22 +96,20 @@ class SequenceClassifierDatasetReader(
             self.set(file_path, instances)
 
             # If memory is an issue maybe we should only cache the dataset and yield instances:
-            # for example in dataset.itertuples(index=False):
+            # for example in dataset.itertuples(index=False):  # itertuples returns `collections.namedtuple`s !!!
             #     yield self.text_to_instance(example)
 
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance(
-        self, example: Dict[str, str], exclude_optional: bool = False
+        self, example: Union["pandas.Series", "collections.namedtuple"]
     ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
         example
-            The keys of this dictionary should match the arguments of the `forward` method of your model.
-        exclude_optional
-            Only extract the mandatory parameters of the model's forward method.
+            The keys of this `pandas.Series` should match the arguments of the `forward` method of your model.
 
         Returns
         -------
@@ -105,46 +118,38 @@ class SequenceClassifierDatasetReader(
         """
         fields = {}
         for param_name, param in self.forward_params.items():
-            if param_name == "self":
-                continue
-            # if desired, skip optional parameters, like the label for example
-            if exclude_optional and param.default is not Parameter.empty:
-                continue
-
             try:
+                # getattr works for `pandas.Series` and `collections.namedtuple` !
                 value = getattr(example, param_name)
-            except AttributeError as e:
-                raise RuntimeError(
-                    e,
-                    f"Your are probably missing '{param_name}' in your forward definition of the data source.",
-                )
+                fields[param_name] = self._value_to_field(param_name, value)
 
-            fields[param_name] = self._value_to_field(param_name, value)
+            except AttributeError as e:
+                # if parameter is required by the forward method raise a meaningful error
+                if param.default is Parameter.empty:
+                    raise AttributeError(
+                        f"{e}; You are probably missing '{param_name}' in your forward definition of the data source."
+                    )
 
         return Instance(fields)
 
     def _value_to_field(
-        self, forward_param_name: str, value: Any
-    ) -> Union[LabelField, TextField]:
-        """Embeds the value in one of the `allennlp.data.fields`. The type of field is inferred like this:
-        If parameter is required in the model's forward method -> TextField
-        If parameter is optional in the model's forward method -> LabelField
-        TODO: Check how this works when introducing a MetadataField for example ...
+        self, param_name: str, value: Any
+    ) -> Union[LabelField, TextField, ListField]:
+        """Embeds the value in one of the `allennlp.data.fields`.
+        For now the field type is inferred from the hardcoded parameter name ...
 
         Parameters
         ----------
-        forward_param_name
+        param_name
             Must match one of the parameters in the `forward` method of your model.
         value
             Value of the field.
 
         Returns
         -------
-        Returns either a `LabelField` or a `TextField` depending on the `field_type` parameter.
+        Returns either a `LabelField` or a `TextField`/`ListField` depending on the `param_name`.
         """
-        param = self.forward_params.get(forward_param_name)
-        # the label must be optional in a classification model, otherwise no predict is possible
-        if param.default is not Parameter.empty:
+        if param_name == "label":
             return LabelField(value)
         else:
             return self.build_textfield(value)
