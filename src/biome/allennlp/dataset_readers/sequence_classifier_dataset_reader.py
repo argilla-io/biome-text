@@ -32,6 +32,8 @@ class SequenceClassifierDatasetReader(
         Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
     """
 
+    LABEL_TAG = "label"
+
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -50,7 +52,7 @@ class SequenceClassifierDatasetReader(
         self.forward_params = self.get_forward_signature(SequenceClassifier)
 
     @staticmethod
-    def get_forward_signature(model: 'Model') -> Dict[str, "Parameter"]:
+    def get_forward_signature(model: "Model") -> Dict[str, "Parameter"]:
         """Get the parameter names and `Parameter`s of the model's forward method.
 
         Returns
@@ -61,6 +63,9 @@ class SequenceClassifierDatasetReader(
         parameters = dict(signature(model.forward).parameters)
         # the forward method is always a non-static method of the model class -> remove self
         del parameters["self"]
+        del parameters[
+            SequenceClassifierDatasetReader.LABEL_TAG
+        ]  # `label` is the mandatory name for this kind of models
 
         return parameters
 
@@ -121,8 +126,7 @@ class SequenceClassifierDatasetReader(
             try:
                 # getattr works for `pandas.Series` and `collections.namedtuple` !
                 value = getattr(example, param_name)
-                fields[param_name] = self._value_to_field(param_name, value)
-
+                fields[param_name] = self.build_textfield(value)
             except AttributeError as e:
                 # if parameter is required by the forward method raise a meaningful error
                 if param.default is Parameter.empty:
@@ -130,26 +134,8 @@ class SequenceClassifierDatasetReader(
                         f"{e}; You are probably missing '{param_name}' in your forward definition of the data source."
                     )
 
+        label_value = getattr(example, SequenceClassifierDatasetReader.LABEL_TAG)
+        if label_value:
+            fields[SequenceClassifierDatasetReader.LABEL_TAG] = LabelField(label_value)
+
         return Instance(fields)
-
-    def _value_to_field(
-        self, param_name: str, value: Any
-    ) -> Union[LabelField, TextField, ListField]:
-        """Embeds the value in one of the `allennlp.data.fields`.
-        For now the field type is inferred from the hardcoded parameter name ...
-
-        Parameters
-        ----------
-        param_name
-            Must match one of the parameters in the `forward` method of your model.
-        value
-            Value of the field.
-
-        Returns
-        -------
-        Returns either a `LabelField` or a `TextField`/`ListField` depending on the `param_name`.
-        """
-        if param_name == "label":
-            return LabelField(value)
-        else:
-            return self.build_textfield(value)
