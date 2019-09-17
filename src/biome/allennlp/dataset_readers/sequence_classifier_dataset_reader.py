@@ -93,26 +93,22 @@ class SequenceClassifierDatasetReader(
         else:
             logger.debug("Read data set from {}".format(file_path))
             dataset = data_source.to_forward_dataframe()
-            instances = dataset.apply(self.text_to_instance, axis=1)
+            instances = dataset.apply(self.text_to_instance, axis=1, meta=(None, "object"))
 
             # cache instances of the data set
             self.set(file_path, instances)
 
-            # If memory is an issue maybe we should only cache the dataset and yield instances:
-            # for example in dataset.itertuples(index=False):  # itertuples returns `collections.namedtuple`s !!!
-            #     yield self.text_to_instance(example)
-
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance(
-        self, example: Union["pandas.Series", "collections.namedtuple"]
+        self, text: Union[Dict, "dask.Series", "pandas.Series"]
     ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
-        example
-            The keys of this `pandas.Series` should match the arguments of the `forward` method of your model.
+        text
+            The keys of this dict should contain the parameter names of the `forward` method of your model.
 
         Returns
         -------
@@ -122,14 +118,13 @@ class SequenceClassifierDatasetReader(
         fields = {}
         for param_name, param in self.forward_params.items():
             try:
-                # getattr works for `pandas.Series` and `collections.namedtuple` !
-                value = getattr(example, param_name)
+                value = text[param_name]
                 fields[param_name] = self._value_to_field(param_name, value)
 
-            except AttributeError as e:
+            except KeyError as e:
                 # if parameter is required by the forward method raise a meaningful error
                 if param.default is Parameter.empty:
-                    raise AttributeError(
+                    raise KeyError(
                         f"{e}; You are probably missing '{param_name}' in your forward definition of the data source."
                     )
 
