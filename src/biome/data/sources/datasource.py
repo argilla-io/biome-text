@@ -1,6 +1,6 @@
 import logging
 import os.path
-from typing import Dict, TypeVar, Type, Callable, Any, Union
+from typing import Dict, Callable, Any, Union
 
 import pandas as pd
 import yaml
@@ -24,16 +24,15 @@ from .utils import row2dict
 class DataSource:
     """This class takes care of reading the data source, usually specified in a yaml file.
 
-    It uses the *source readers* to extract a dask Bag of dicts,
-    From that it extracts examples via the `ExamplePreparator`.
+    It uses the *source readers* to extract a `dask.DataFrame`.
 
     Parameters
     ----------
     format
         The data format. Supported formats are listed as keys in the `SUPPORTED_FORMATS` dict of this class.
     forward
-        A dict passed on to the `ExamplePreparator`.
-        The keys of this dict must match the arguments of the model's `forward` method.
+        An instance of a `ClassificationForwardConfiguration`
+        Used to pass on the right parameters to the model's forward method.
     kwargs
         Additional kwargs are passed on to the *source readers* that depend on the format.
     """
@@ -52,7 +51,12 @@ class DataSource:
         "parquet": (from_parquet, dict()),
     }
 
-    def __init__(self, format: str, forward: Dict = None, **kwargs):
+    def __init__(
+        self,
+        format: str,
+        forward: "ClassificationForwardConfiguration" = None,
+        **kwargs,
+    ):
         try:
             clean_format = format.lower().strip()
             source_reader, arguments = self.SUPPORTED_FORMATS[clean_format]
@@ -67,9 +71,9 @@ class DataSource:
         )
         if "id" in df.columns:
             df = df.set_index("id")
-
-        self.forward = ClassificationForwardConfiguration(**forward)
         self._df = df
+
+        self.forward = forward
 
     @classmethod
     def add_supported_format(
@@ -133,6 +137,9 @@ class DataSource:
         forward_dataframe
             Contains additional columns corresponding to the parameter names of the model's forward method.
         """
+        if not self.forward:
+            raise ValueError("For a 'forward_dataframe' you need to specify a `ForwardConfiguration`!")
+
         forward_dataframe = self._df.compute()
 
         forward_dataframe["label"] = (
@@ -167,7 +174,7 @@ class DataSource:
         return
 
     @classmethod
-    def from_yaml(cls: 'DataSource', file_path: str) -> 'DataSource':
+    def from_yaml(cls: "DataSource", file_path: str) -> "DataSource":
         """Create a data source from a yaml file.
 
         The yaml file has to serialize a dict, whose keys matches the arguments of the `DataSource` class.
@@ -190,7 +197,10 @@ class DataSource:
         path_keys = ["path", "metadata_file"]
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
-        return cls(**cfg_dict)
+        forward = cfg_dict.pop("forward", None)
+        forward_config = ClassificationForwardConfiguration(**forward) if forward else None
+
+        return cls(**cfg_dict, forward=forward_config)
 
 
 class ClassificationForwardConfiguration(object):
