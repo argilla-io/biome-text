@@ -6,6 +6,7 @@ from typing import Dict, Optional, Union, List
 import dask
 import dask.dataframe as dd
 import dask.distributed
+import flatdict
 import pandas
 import pandas as pd
 from dask import delayed
@@ -17,42 +18,46 @@ from biome.data.sources.utils import flatten_dataframe
 
 _logger = logging.getLogger(__name__)
 # TODO: The idea is to make the readers a class and define a metaclass that they have to follow.
-#       For now, all reader methods have to return a dask.Bag of dicts
+#       For now, all reader methods have to return a dask.DataFrame
 
 
-def from_csv(
-    path: Union[str, List[str]], columns: List[str] = [], **params
-) -> DataFrame:
-    """Creates a dask.Bag of dict objects from a collection of csv files
+def from_csv(path: Union[str, List[str]], **params) -> DataFrame:
+    """Creates a `dask.DataFrame` from one or several csv files.
+    Includes a "path column".
 
     Parameters
     ----------
     path
-        Path to data source
-    columns
-        Column names of the csv file
+        Path to files
     params
         Extra arguments passed on to `pandas.read_csv`
 
     Returns
     -------
-    bag
-        A `dask.Bag` of dicts
+    df
+        A `dask.DataFrame`
 
     """
     return dd.read_csv(path, include_path_column=True, **params)
 
 
-def from_json(
-    path: Union[str, List[str]], flatten: bool = True, **params
-) -> DataFrame:
-    """
-    Creates a dask.Bag of dict objects from a collection of json files
+def from_json(path: Union[str, List[str]], flatten: bool = True, **params) -> DataFrame:
+    """Creates a `dask.DataFrame` from one or several json files.
+    Includes a "path column".
 
-    :param path: The path
-    :param flatten: If true (default false), flatten json nested data
-    :param params: extra arguments passed to pandas.read_json
-    :return: dask.bag.Bag
+    Parameters
+    ----------
+    path
+        Path to files
+    flatten
+        If true (default false), flatten json nested data
+    params
+        Extra arguments passed on to `pandas.read_json`
+
+    Returns
+    -------
+    df
+        A `dask.DataFrame`
     """
 
     def json_engine(*args, flatten: bool = False, **kwargs) -> pd.DataFrame:
@@ -66,12 +71,20 @@ def from_json(
 
 
 def from_parquet(path: Union[str, List[str]], **params) -> DataFrame:
-    """
-    Creates a dask.Bag of dict objects from a parquet paths
+    """Creates a `dask.DataFrame` from one or several parquet files.
+    Includes a "path column".
 
-    :param path: The path
-    :param params: extra arguments passed to pandas.read_json
-    :return: dask.bag.Bag
+    Parameters
+    ----------
+    path
+        Path to files
+    params
+        Extra arguments passed on to `pandas.read_parquet`
+
+    Returns
+    -------
+    df
+        A `dask.DataFrame`
     """
     ddf = dd.read_parquet(path, **params, engine="pyarrow")
     ddf["path"] = path
@@ -80,12 +93,20 @@ def from_parquet(path: Union[str, List[str]], **params) -> DataFrame:
 
 
 def from_excel(path: str, **params) -> DataFrame:
-    """
-    Creates a dask.Bag of dict objects from a collection excel files
+    """Creates a `dask.DataFrame` from one or several excel files.
+    Includes a "path column".
 
-    :param path: The path
-    :param params: extra arguments passed to pandas.read_json
-    :return: dask.bag.Bag
+    Parameters
+    ----------
+    path
+        Path to files
+    params
+        Extra arguments passed on to `pandas.read_excel`
+
+    Returns
+    -------
+    df
+        A `dask.DataFrame`
     """
     file_names = glob.glob(path, recursive=True)
     ddf = dd.from_pandas(
@@ -164,9 +185,6 @@ def from_elasticsearch(
     ]
 
     return dask.dataframe.from_delayed(index_scan)
-
-
-import flatdict
 
 
 def _elasticsearch_scan(client_cls, client_kwargs, **params) -> pandas.DataFrame:
