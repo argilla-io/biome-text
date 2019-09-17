@@ -1,17 +1,15 @@
 import logging
-from typing import Dict, Iterable, Optional, Union
+from inspect import signature, Parameter
+from typing import Dict, Iterable, Optional, Union, Any
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
-from allennlp.data.fields import LabelField
+from allennlp.data.fields import LabelField, TextField, ListField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from overrides import overrides
 
+from biome.allennlp.models import SequenceClassifier
 from biome.data.sources import DataSource
-from .forward.sequence_classifier_forward_configuration import (
-    SequenceClassifierForwardConfiguration,
-)
 from .mixins import TextFieldBuilderMixin, CacheableMixin
-from .utils import get_reader_configuration
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -34,6 +32,9 @@ class SequenceClassifierDatasetReader(
         Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
     """
 
+    # Name of the "label parameter" in the model's forward method
+    LABEL_TAG = "label"
+
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -47,6 +48,24 @@ class SequenceClassifierDatasetReader(
             token_indexers=token_indexers or {"tokens": SingleIdTokenIndexer()},
             as_text_field=as_text_field,
         )
+
+        # The keys of the Instances have to match the signature of the forward method of the model
+        self.forward_params = self.get_forward_signature(SequenceClassifier)
+
+    @staticmethod
+    def get_forward_signature(model: "allennlp.models.Model") -> Dict[str, "Parameter"]:
+        """Get the parameter names and `Parameter`s of the model's forward method.
+
+        Returns
+        -------
+        parameters
+            A dict mapping the parameter name to a `Parameter` instance.
+        """
+        parameters = dict(signature(model.forward).parameters)
+        # the forward method is always a non-static method of the model class -> remove self
+        del parameters["self"]
+
+        return parameters
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
@@ -65,61 +84,75 @@ class SequenceClassifierDatasetReader(
         instance
             An `Instance` that is fed to the model
         """
-        data_source, forward = get_reader_configuration(
-            file_path, SequenceClassifierForwardConfiguration
-        )
+        data_source = DataSource.from_yaml(file_path)
 
-        ds_key = file_path
-        dataset = self.get(ds_key)
-        if dataset is not None:
-            logger.debug(f"Loaded cached dataset {file_path}")
-            return dataset
+        # get cached instances of the data set
+        instances = self.get(file_path)
+        if instances is not None:
+            logger.debug("Loaded cached data set {}".format(file_path))
         else:
-            logger.debug(f"Read dataset from {file_path}")
-            dataset = self._read_as_forward_dataset(data_source, forward)
-            instances = dataset[["tokens", "label"]].apply(
-                self.text_to_instance, axis=1
-            )
-            self.set(ds_key, instances)
-            return (instance for idx, instance in instances.iteritems() if instance)
+            logger.debug("Read data set from {}".format(file_path))
+            dataset = data_source.to_forward_dataframe()
+            instances = dataset.apply(self.text_to_instance, axis=1)
 
-    @staticmethod
-    def _read_as_forward_dataset(
-        data_source: DataSource, forward: SequenceClassifierForwardConfiguration
-    ):
-        dataset = data_source.to_dataframe().compute()
+            # cache instances of the data set
+            self.set(file_path, instances)
 
-        dataset["tokens"] = dataset[forward.tokens].apply(lambda x: x.to_dict(), axis=1)
-        dataset["label"] = (
-            dataset[forward.label].astype(str).apply(forward.sanitize_label)
-        )
+            # If memory is an issue maybe we should only cache the dataset and yield instances:
+            # for example in dataset.itertuples(index=False):  # itertuples returns `collections.namedtuple`s !!!
+            #     yield self.text_to_instance(example)
 
-        return dataset
+        return (instance for idx, instance in instances.iteritems() if instance)
 
-    @overrides
     def text_to_instance(
-        self, example: Dict[str, Union[Dict[str, str], str]]
+        self, example: Union["pandas.Series", "collections.namedtuple"]
     ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
         example
-            The keys of this dictionary should match the arguments of the `forward` method of your model.
+            The keys of this `pandas.Series` should match the arguments of the `forward` method of your model.
 
         Returns
         -------
         instance
             Returns `None` if the example could not be transformed to an Instance.
         """
+        fields = {}
+        for param_name, param in self.forward_params.items():
+            try:
+                # getattr works for `pandas.Series` and `collections.namedtuple` !
+                value = getattr(example, param_name)
+                fields[param_name] = self._value_to_field(param_name, value)
 
-        tokens_field = self.build_textfield(example["tokens"])
-        if not tokens_field:
-            logger.warning(f"'tokens' probably contains an empty string!")
-            return None
+            except AttributeError as e:
+                # if parameter is required by the forward method raise a meaningful error
+                if param.default is Parameter.empty:
+                    raise AttributeError(
+                        f"{e}; You are probably missing '{param_name}' in your forward definition of the data source."
+                    )
 
-        fields = {"tokens": tokens_field}
-        label = example.get("label", None)
-        if label:
-            fields["label"] = LabelField(label)
         return Instance(fields)
+
+    def _value_to_field(
+        self, param_name: str, value: Any
+    ) -> Union[LabelField, TextField, ListField]:
+        """Embeds the value in one of the `allennlp.data.fields`.
+        For now the field type is basically inferred from the hardcoded label tag ...
+
+        Parameters
+        ----------
+        param_name
+            Must match one of the parameters in the `forward` method of your model.
+        value
+            Value of the field.
+
+        Returns
+        -------
+        Returns either a `LabelField` or a `TextField`/`ListField` depending on the `param_name`.
+        """
+        if param_name == self.LABEL_TAG:
+            return LabelField(value)
+        else:
+            return self.build_textfield(value)

@@ -11,6 +11,9 @@ METADATA_FILE_FIELD = "metadata_file"
 RESERVED_FIELD_PREFIX = "@"
 SOURCE_FIELD = "{}source".format(RESERVED_FIELD_PREFIX)
 
+# TODO: This file is not used at the moment!!! It should go away once we finished the forward refactoring and
+#       made the predict command work!
+
 
 class TransformationConfig(object):
     def __init__(
