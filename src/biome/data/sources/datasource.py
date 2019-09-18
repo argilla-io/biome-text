@@ -127,7 +127,7 @@ class DataSource:
             row2dict, columns=[str(column).strip() for column in self._df.columns]
         )
 
-    def to_forward_dataframe(self) -> pd.DataFrame:
+    def to_forward_dataframe(self) -> DataFrame:
         """
         Adds columns to the DataFrame that are named after the parameter names in the model's forward method.
         The content of these columns is specified in the forward dictionary of the data source yaml file.
@@ -140,12 +140,13 @@ class DataSource:
         if not self.forward:
             raise ValueError("For a 'forward_dataframe' you need to specify a `ForwardConfiguration`!")
 
-        forward_dataframe = self._df.compute()
+        # This is strictly a shallow copy of the underlying computational graph
+        forward_dataframe = self._df.copy()
 
         forward_dataframe["label"] = (
             forward_dataframe[self.forward.label]
             .astype(str)
-            .apply(self.forward.sanitize_label)
+            .apply(self.forward.sanitize_label, meta=("label", "object"))
         )
         self._add_forward_token_columns(forward_dataframe)
         # TODO: Remove rows that contain an empty label or empty tokens!!
@@ -153,7 +154,7 @@ class DataSource:
 
         return forward_dataframe
 
-    def _add_forward_token_columns(self, forward_dataframe: pd.DataFrame):
+    def _add_forward_token_columns(self, forward_dataframe: DataFrame):
         """Helper function to add the forward token parameters for the model's forward method"""
         for forward_token_name, data_column_names in self.forward.tokens.items():
             # convert str to list, otherwise the axis=1 raises an error with the returned pd.Series in the next line
@@ -166,9 +167,9 @@ class DataSource:
             try:
                 forward_dataframe[forward_token_name] = forward_dataframe[
                     data_column_names
-                ].apply(lambda x: x.to_dict(), axis=1)
+                ].apply(lambda x: x.to_dict(), axis=1, meta=(forward_token_name, "object"))
             except KeyError as e:
-                raise KeyError(f"Did not find {data_column_names} in the data source!")
+                raise KeyError(e, f"Did not find {data_column_names} in the data source!")
             # if the data source df already has a column with the forward_token_name, it will be replaced!
 
         return
