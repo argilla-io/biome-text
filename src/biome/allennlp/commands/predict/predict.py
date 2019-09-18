@@ -9,7 +9,6 @@ from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
-from biome.allennlp.dataset_readers import LABEL_TOKEN
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
@@ -192,7 +191,7 @@ def register_biome_prediction(
                 project=project,
                 name=name,
                 created_at=datetime.datetime.now(),
-                inputs=[input for input in ds.forward.keys() if input != LABEL_TOKEN],
+                inputs=[input for input in ds.forward.tokens.keys()],
                 **kargs,
             ),
             "doc_as_upsert": True,
