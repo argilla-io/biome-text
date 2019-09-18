@@ -23,4 +23,4 @@ class BertClassifierDatasetReader(SequenceClassifierDatasetReader):
         )
 
         # The keys of the Instances have to match the signature of the forward method of the model
-        self.forward_params = signature(BertForClassification.forward).parameters
+        self.forward_params = self.get_forward_signature(BertForClassification)
