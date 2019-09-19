@@ -114,15 +114,7 @@ def predict(
     index
         Name of the Elasticsearch index where the predictions are stored
     """
-
-    logging.getLogger("allennlp.common.params").setLevel(logging.WARNING)
-    logging.getLogger("allennlp.common").setLevel(logging.WARNING)
-
-    def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
-        predictor = _predictor_from_args(
-            archive_file=to_local_archive(binary), cuda_device=cuda_device
-        )
-        return predictor.predict_batch_json(partition)
+    logging.getLogger("allennlp").setLevel(logging.WARNING)
 
     prediction_start_time = time.time()
 
@@ -135,14 +127,15 @@ def predict(
 
     client = configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
     try:
-        test_dataset = data_source.read(include_source=True).persist()
+        test_dataset = data_source.to_forward_bag()
         npartitions = max(1, round(test_dataset.count().compute() / batch_size))
+        test_dataset = test_dataset.repartition(npartitions=npartitions)
 
-        predicted_dataset = (
-            test_dataset.repartition(npartitions=npartitions)
-            .map_partitions(predict_partition)
-            .persist()
+        predictor = _predictor_from_args(
+            archive_file=to_local_archive(binary), cuda_device=cuda_device
         )
+
+        predicted_dataset = test_dataset.map_partitions(predictor.predict_batch_json)
 
         [
             _logger.info(result)
