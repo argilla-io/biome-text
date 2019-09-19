@@ -2,22 +2,21 @@ import argparse
 import datetime
 import logging
 import time
-from typing import Dict, Iterable, Any, List, Optional
+from typing import List, Optional
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
-from biome.allennlp.dataset_readers import LABEL_TOKEN
+# TODO centralize configuration
+from elasticsearch import Elasticsearch
+
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
 from biome.data.sources import DataSource
 from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
-
-# TODO centralize configuration
-from elasticsearch import Elasticsearch
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -115,15 +114,7 @@ def predict(
     index
         Name of the Elasticsearch index where the predictions are stored
     """
-
-    logging.getLogger("allennlp.common.params").setLevel(logging.WARNING)
-    logging.getLogger("allennlp.common").setLevel(logging.WARNING)
-
-    def predict_partition(partition: Iterable) -> List[Dict[str, Any]]:
-        predictor = _predictor_from_args(
-            archive_file=to_local_archive(binary), cuda_device=cuda_device
-        )
-        return predictor.predict_batch_json(partition)
+    logging.getLogger("allennlp").setLevel(logging.WARNING)
 
     prediction_start_time = time.time()
 
@@ -136,14 +127,17 @@ def predict(
 
     client = configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
     try:
-        test_dataset = data_source.read(include_source=True).persist()
+        test_dataset = data_source.to_forward_bag()
         npartitions = max(1, round(test_dataset.count().compute() / batch_size))
+        # a persist is necessary here, otherwise it fails for npartitions == 1
+        # the reason is that with only 1 partition we pass on a generator to predict_batch_json
+        test_dataset = test_dataset.repartition(npartitions=npartitions).persist()
 
-        predicted_dataset = (
-            test_dataset.repartition(npartitions=npartitions)
-            .map_partitions(predict_partition)
-            .persist()
+        predictor = _predictor_from_args(
+            archive_file=to_local_archive(binary), cuda_device=cuda_device
         )
+
+        predicted_dataset = test_dataset.map_partitions(predictor.predict_batch_json)
 
         [
             _logger.info(result)
@@ -192,7 +186,7 @@ def register_biome_prediction(
                 project=project,
                 name=name,
                 created_at=datetime.datetime.now(),
-                inputs=[input for input in ds.forward.keys() if input != LABEL_TOKEN],
+                inputs=[input for input in ds.forward.tokens.keys()],
                 **kargs,
             ),
             "doc_as_upsert": True,

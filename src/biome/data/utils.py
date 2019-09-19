@@ -8,7 +8,6 @@ from multiprocessing.pool import ThreadPool
 import dask
 import dask.multiprocessing
 from dask.cache import Cache
-from dask.distributed import Client
 from dask.utils import parse_bytes
 from typing import Dict, Any, Union
 from typing import Optional
@@ -120,7 +119,7 @@ def configure_dask_cluster(
                     scheduler_port=8786,  # TODO configurable
                     memory_limit=worker_mem,
                     silence_logs=logging.ERROR,
-                    local_dir=worker_space,
+                    local_directory=worker_space,
                 )
                 return Client(cluster)
         else:

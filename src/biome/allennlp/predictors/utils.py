@@ -3,6 +3,7 @@ from typing import Optional
 from allennlp.data import DatasetReader
 from allennlp.models import Archive
 from allennlp.predictors import Predictor
+from allennlp.common.checks import ConfigurationError
 
 from biome.allennlp.predictors import DefaultBasePredictor
 import logging
@@ -19,11 +20,8 @@ def get_predictor_from_archive(
     predictor_name = predictor_name or model_config.get("type")
     try:
         return Predictor.from_archive(archive, predictor_name)
-    except Exception as e:
-        _logger.warning(
-            "Cannot create predictor {}, using the DefaultBasePredictor. Error: {}".format(
-                predictor_name, e
-            )
-        )
+    except ConfigurationError as e:
+        # If there is no corresponding predictor to the model, we use the DefaultBasePredictor
+        _logger.warning(f"{e}; Using the 'DefaultBasePredictor'!")
         ds_reader = DatasetReader.from_params(dataset_reader_config)
         return DefaultBasePredictor(archive.model, ds_reader)

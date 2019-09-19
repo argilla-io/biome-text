@@ -96,36 +96,36 @@ class DataSource:
 
         cls.SUPPORTED_FORMATS[format_key] = (parser, default_params)
 
-    def read(self, include_source: bool = False) -> Bag:
-        """Reads a data source and extracts the relevant information.
-
-        Parameters
-        ----------
-        include_source
-            If True, the returned dicts include a *source* key that holds the entire source dict.
-
-        Returns
-        -------
-        bag
-            A `dask.Bag` of dicts (called examples) that hold the relevant information passed on to our model
-            (for example the tokens and the label).
-        """
-        return self.to_bag()
-
-    def to_dataframe(self) -> DataFrame:
-        return self._df
-
     def to_bag(self) -> Bag:
-        """Reads in the data source and returns it as dicts in a `dask.Bag`
+        """Turns the DataFrame of the data source into a `dask.Bag` of dictionaries, one dict for each row.
+        Each dictionary has the column names as keys.
 
         Returns
         -------
         bag
             A `dask.Bag` of dicts.
         """
-        return self._df.to_bag(index=True).map(
-            row2dict, columns=[str(column).strip() for column in self._df.columns]
-        )
+        dict_keys = [str(column).strip() for column in self._df.columns]
+
+        return self._df.to_bag(index=True).map(row2dict, columns=dict_keys)
+
+    def to_forward_bag(self) -> Bag:
+        """Turns the forward DataFrame of the data source into a `dask.Bag` of dictionaries, one dict for each row.
+        Each dictionary has the column names as keys.
+
+        Returns
+        -------
+        bag
+            A `dask.Bag` of dicts.
+        """
+        forward_df = self.to_forward_dataframe()
+        dict_keys = [str(column).strip() for column in forward_df.columns]
+
+        return forward_df.to_bag(index=True).map(row2dict, columns=dict_keys)
+
+    def to_dataframe(self) -> DataFrame:
+        """Returns the DataFrame of the data source"""
+        return self._df
 
     def to_forward_dataframe(self) -> DataFrame:
         """
@@ -138,7 +138,9 @@ class DataSource:
             Contains additional columns corresponding to the parameter names of the model's forward method.
         """
         if not self.forward:
-            raise ValueError("For a 'forward_dataframe' you need to specify a `ForwardConfiguration`!")
+            raise ValueError(
+                "For a 'forward_dataframe' you need to specify a `ForwardConfiguration`!"
+            )
 
         # This is strictly a shallow copy of the underlying computational graph
         forward_dataframe = self._df.copy()
@@ -167,9 +169,13 @@ class DataSource:
             try:
                 forward_dataframe[forward_token_name] = forward_dataframe[
                     data_column_names
-                ].apply(lambda x: x.to_dict(), axis=1, meta=(forward_token_name, "object"))
+                ].apply(
+                    lambda x: x.to_dict(), axis=1, meta=(forward_token_name, "object")
+                )
             except KeyError as e:
-                raise KeyError(e, f"Did not find {data_column_names} in the data source!")
+                raise KeyError(
+                    e, f"Did not find {data_column_names} in the data source!"
+                )
             # if the data source df already has a column with the forward_token_name, it will be replaced!
 
         return
@@ -199,7 +205,9 @@ class DataSource:
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
         forward = cfg_dict.pop("forward", None)
-        forward_config = ClassificationForwardConfiguration(**forward) if forward else None
+        forward_config = (
+            ClassificationForwardConfiguration(**forward) if forward else None
+        )
 
         return cls(**cfg_dict, forward=forward_config)
 

@@ -2,16 +2,12 @@ from typing import List
 
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
-from allennlp.data import Instance, DatasetReader
-from allennlp.models import Model
+from allennlp.data import Instance
 from allennlp.predictors import Predictor
 from overrides import overrides
 
 
 class DefaultBasePredictor(Predictor):
-    def __init__(self, model: Model, reader: DatasetReader) -> None:
-        super(DefaultBasePredictor, self).__init__(model, reader)
-
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
         instance = self._dataset_reader.text_to_instance(json_dict)
@@ -39,6 +35,7 @@ class DefaultBasePredictor(Predictor):
         # This fails: np.array(instances)
 
         # skip examples that failed to be converted to instances! For example (and maybe solely) empty strings
+        # !this results in an empty list if `inputs` is a generator!
         input_and_instances = [
             (input, instance)
             for input, instance in zip(inputs, instances)
