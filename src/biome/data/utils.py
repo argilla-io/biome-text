@@ -119,7 +119,7 @@ def configure_dask_cluster(
                     scheduler_port=8786,  # TODO configurable
                     memory_limit=worker_mem,
                     silence_logs=logging.ERROR,
-                    local_dir=worker_space,
+                    local_directory=worker_space,
                 )
                 return Client(cluster)
         else:
