@@ -2,21 +2,21 @@ import argparse
 import datetime
 import logging
 import time
-from typing import Dict, Iterable, Any, List, Optional
+from typing import List, Optional
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
+# TODO centralize configuration
+from elasticsearch import Elasticsearch
+
 from biome.allennlp.models import to_local_archive
 from biome.allennlp.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
 from biome.data.sources import DataSource
 from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
-
-# TODO centralize configuration
-from elasticsearch import Elasticsearch
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)

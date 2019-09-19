@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
