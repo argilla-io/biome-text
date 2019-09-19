@@ -129,7 +129,9 @@ def predict(
     try:
         test_dataset = data_source.to_forward_bag()
         npartitions = max(1, round(test_dataset.count().compute() / batch_size))
-        test_dataset = test_dataset.repartition(npartitions=npartitions)
+        # a persist is necessary here, otherwise it fails for npartitions == 1
+        # the reason is that with only 1 partition we pass on a generator to predict_batch_json
+        test_dataset = test_dataset.repartition(npartitions=npartitions).persist()
 
         predictor = _predictor_from_args(
             archive_file=to_local_archive(binary), cuda_device=cuda_device

@@ -35,6 +35,7 @@ class DefaultBasePredictor(Predictor):
         # This fails: np.array(instances)
 
         # skip examples that failed to be converted to instances! For example (and maybe solely) empty strings
+        # !this results in an empty list if `inputs` is a generator!
         input_and_instances = [
             (input, instance)
             for input, instance in zip(inputs, instances)
