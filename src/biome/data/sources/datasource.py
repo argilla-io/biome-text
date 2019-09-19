@@ -160,11 +160,8 @@ class DataSource:
         """Helper function to add the forward token parameters for the model's forward method"""
         for forward_token_name, data_column_names in self.forward.tokens.items():
             # convert str to list, otherwise the axis=1 raises an error with the returned pd.Series in the next line
-            data_column_names = (
-                [data_column_names]
-                if isinstance(data_column_names, str)
-                else data_column_names
-            )
+            if isinstance(data_column_names, str):
+                data_column_names = [data_column_names]
 
             try:
                 forward_dataframe[forward_token_name] = forward_dataframe[
