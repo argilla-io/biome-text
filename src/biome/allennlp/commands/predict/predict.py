@@ -96,7 +96,7 @@ def predict(
     worker_mem: int = 2e9,
     batch_size: int = 1000,
     cuda_device: int = -1,
-    to_sink: dict = None,
+    to_sink: Optional[dict] = None,
 ) -> Optional[str]:
     """
 
@@ -108,6 +108,7 @@ def predict(
     worker_mem
     batch_size
     cuda_device
+    to_sink
 
     Returns
     -------
