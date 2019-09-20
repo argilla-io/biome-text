@@ -11,6 +11,7 @@ install: ## install package
 	@pip install .
 
 dev: ## install package in development mode
+	@pip install git+https://github.com/recognai/biome-data.git
 	@pip install --upgrade -e .[testing]
 
 .PHONY: help
