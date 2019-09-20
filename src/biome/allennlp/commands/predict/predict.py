@@ -181,6 +181,7 @@ def register_biome_prediction(
 
     es.update(
         index=metadata_index,
+        doc_type="_doc",
         id=created_index,
         body={
             "doc": dict(
