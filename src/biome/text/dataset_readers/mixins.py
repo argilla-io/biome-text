@@ -62,9 +62,19 @@ class TextFieldBuilderMixin(object):
     def build_textfield(
         self, data: Union[str, dict]
     ) -> Optional[Union[ListField, TextField]]:
-        if not data:
-            return None
+        """Embeds the record in a TextField or ListField depending on the _as_text_field parameter.
 
+        Parameters
+        ----------
+        data
+            Record to be embedded.
+
+        Returns
+        -------
+        field
+            Either a TextField or a ListField containing the record.
+            Returns None if `data` is not a str or a dict.
+        """
         if not isinstance(data, (str, dict)):
             self._logger.warning(
                 f"Cannot process data example {data} of type {type(data)}"
@@ -75,9 +85,9 @@ class TextFieldBuilderMixin(object):
             text = data
             if isinstance(data, dict):
                 text = " ".join(map(str, data.values()))
-            return TextField(self._tokenizer.tokenize(text), self._token_indexers)
+            return TextField(self._tokenizer.tokenize(self._value_as_string(text)), self._token_indexers)
 
-        # TODO: This returns lists with different lengths if value evaluates to False !!!
+        # text_fields of different lengths are allowed, they will be sorted by the trainer and padded adequately
         text_fields = [
             TextField(
                 self._tokenizer.tokenize(self._value_as_string(value)),
@@ -87,4 +97,4 @@ class TextFieldBuilderMixin(object):
             if value
         ]
 
-        return ListField(text_fields) if len(text_fields) > 0 else None
+        return ListField(text_fields)
