@@ -51,7 +51,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     def test_reader_with_another_forward_definition(self):
         with open(MULTIPLE_INPUT_READER_DEFINITION) as yml_config:
             reader = SequenceClassifierDatasetReader.from_params(
-                params=Params(yaml.load(yml_config))
+                params=Params(yaml.safe_load(yml_config))
             )
             read_config = dict(
                 path=JSON_PATH,
@@ -76,7 +76,7 @@ class DatasetReaderForwardTest(DaskSupportTest):
     def test_reader_with_optional_params(self):
         with open(DS_READER_DEFINITION) as yml_config:
             reader = SequenceClassifierDatasetReader.from_params(
-                params=Params(yaml.load(yml_config))
+                params=Params(yaml.safe_load(yml_config))
             )
             read_config = dict(
                 path=NOLABEL_JSON_PATH,

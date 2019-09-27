@@ -38,7 +38,7 @@ if __name__ == "__main__":
         packages=find_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=0.8",
+            "allennlp~=0.9",
             "smart_open~=1.8",
             "biome-data@git+https://github.com/recognai/biome-data.git"
         ],
