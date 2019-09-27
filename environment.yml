@@ -1,4 +1,4 @@
-name: biome-2
+name: biome
 
 channels:
 - pytorch
