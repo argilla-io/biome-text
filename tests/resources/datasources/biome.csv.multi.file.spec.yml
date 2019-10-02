@@ -1,0 +1,11 @@
+format: csv
+path:
+- ../data/dataset_source.1.csv
+- ../data/dataset_source.2.csv
+delimiter: ","
+forward:
+  tokens:
+  - age
+  target:
+    gold_label: job
+

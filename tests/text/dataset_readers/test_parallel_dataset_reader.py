@@ -10,7 +10,6 @@ from tests.test_support import DaskSupportTest
 
 CSV_PATH = os.path.join(TEST_RESOURCES, "resources/data/dataset_source.csv")
 JSON_PATH = os.path.join(TEST_RESOURCES, "resources/data/dataset_source.jsonl")
-DEFINITIONS_PATH = os.path.join(TEST_RESOURCES, "resources/dataset_readers/definitions")
 
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"

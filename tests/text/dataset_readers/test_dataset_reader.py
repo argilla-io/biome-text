@@ -1,5 +1,6 @@
 import os
 import tempfile
+import unittest
 from typing import Iterable
 
 import yaml
@@ -44,7 +45,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
         expected_inputs = ["44", "53", "28", "39", "55", "30", "37", "36"]
 
         yaml_config = os.path.join(
-            TEST_RESOURCES, "resources/datasets/biome.csv.spec.yml"
+            TEST_RESOURCES, "resources/datasources/biome.csv.spec.yml"
         )
         dataset = reader.read(yaml_config)
         self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
@@ -318,7 +319,3 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
         )
         for example in dataset:
             print(example.__dict__)
-
-
-if __name__ == "__main__":
-    unittest.main()

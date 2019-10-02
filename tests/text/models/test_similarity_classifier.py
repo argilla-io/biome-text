@@ -8,7 +8,7 @@ from tests.text.models.test_sequence_pair_classifier import SequencePairClassifi
 logging.basicConfig(level=logging.DEBUG)
 
 BASE_CONFIG_PATH = os.path.join(
-    TEST_RESOURCES, "resources/definitions/similarity_classifier"
+    TEST_RESOURCES, "resources/models/similarity_classifier"
 )
 
 
