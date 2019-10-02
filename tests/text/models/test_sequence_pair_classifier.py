@@ -17,18 +17,9 @@ from tests.test_support import DaskSupportTest
 
 logging.basicConfig(level=logging.DEBUG)
 
-DEFINITION_TRAIN = os.path.join(
-    TEST_RESOURCES,
-    "resources/definitions/sequence_pair_classifier/train_sequence_pair_classifier.yml",
-)
-TRAINER_PATH = os.path.join(
-    TEST_RESOURCES, "resources/definitions/sequence_pair_classifier/trainer.yml"
-)
-TRAIN_DATA_PATH = os.path.join(
-    TEST_RESOURCES, "resources/definitions/sequence_pair_classifier/train.data.yml"
-)
-VALIDATION_DATA_PATH = os.path.join(
-    TEST_RESOURCES, "resources/definitions/sequence_pair_classifier/validation.data.yml"
+
+BASE_CONFIG_PATH = os.path.join(
+    TEST_RESOURCES, "resources/definitions/sequence_pair_classifier"
 )
 
 
@@ -36,30 +27,36 @@ class SequencePairClassifierTest(DaskSupportTest):
     output_dir = tempfile.mkdtemp()
     model_archive = os.path.join(output_dir, "model.tar.gz")
 
+    name = "sequence_pair_classifier"
+    model_path = os.path.join(BASE_CONFIG_PATH, "model.yml")
+    trainer_path = os.path.join(BASE_CONFIG_PATH, "trainer.yml")
+    training_data = os.path.join(BASE_CONFIG_PATH, "train.data.yml")
+    validation_data = os.path.join(BASE_CONFIG_PATH, "validation.data.yml")
+
     def test_model_workflow(self):
-        self.check_train()
+        self.check_train(SequencePairClassifier)
         self.check_predict()
         self.check_serve()
 
-    def check_train(self):
+    def check_train(self, cls_type):
 
         _ = learn(
-            model_spec=DEFINITION_TRAIN,
+            model_spec=self.model_path,
             output=self.output_dir,
-            train_cfg=TRAIN_DATA_PATH,
-            validation_cfg=VALIDATION_DATA_PATH,
-            trainer_path=TRAINER_PATH,
+            train_cfg=self.training_data,
+            validation_cfg=self.validation_data,
+            trainer_path=self.trainer_path,
         )
         archive = load_archive(self.model_archive)
         self.assertTrue(archive.model is not None)
-        self.assertIsInstance(archive.model, SequencePairClassifier)
+        self.assertIsInstance(archive.model, cls_type)
 
     def check_predict(self):
-        index = "sequence_classifier_prediction"
+        index = self.name
         es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
         predict(
             binary=self.model_archive,
-            from_source=VALIDATION_DATA_PATH,
+            from_source=self.validation_data,
             to_sink=dict(
                 index=index,
                 index_recreate=True,

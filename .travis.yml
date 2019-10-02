@@ -1,12 +1,15 @@
 language: python
+
+services:
+  - elasticsearch
+
 python:
   - "3.6"
   - "3.7"
-# command to install dependencies
+
+
 install:
   - pip install -U pip six
   - make dev
+
 script: make test
-#branches:
-#  only:
-#    - master
