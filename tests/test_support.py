@@ -1,6 +1,5 @@
 import unittest
 
-from distributed import LocalCluster
 import dask
 import dask.threaded
 
