@@ -1,0 +1,17 @@
+iterator:
+  batch_size: 64
+  cache_instances: 'true'
+  max_instances_in_memory: 200000
+  sorting_keys:
+  - - record1
+    - num_tokens
+  type: bucket
+trainer:
+  num_epochs: 10
+  optimizer:
+    amsgrad: 'true'
+    type: adam
+  validation_metric: +accuracy
+  patience: 2
+  num_serialized_models_to_keep: 1
+  cuda_device: -1

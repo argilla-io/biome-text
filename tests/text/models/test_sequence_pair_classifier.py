@@ -12,6 +12,7 @@ from biome.text.commands.learn.learn import learn
 from biome.text.commands.predict.predict import predict
 from biome.text.commands.serve.serve import serve
 from biome.text.models import SequencePairClassifier, load_archive
+from biome.text.predictors import get_predictor_from_archive
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
@@ -37,6 +38,7 @@ class SequencePairClassifierTest(DaskSupportTest):
         self.check_train(SequencePairClassifier)
         self.check_predict()
         self.check_serve()
+        self.check_predictor()
 
     def check_train(self, cls_type):
 
@@ -84,3 +86,54 @@ class SequencePairClassifierTest(DaskSupportTest):
             json={"record1": "mike Farrys", "record2": "Mike Farris"},
         )
         self.assertTrue(response.json() is not None)
+
+    def check_predictor(self):
+        predictor = get_predictor_from_archive(load_archive(self.model_archive))
+
+        def test_batch_input(self):
+            inputs = [
+                {
+                    "record1": "Herbert Brandes-Siller",
+                    "record2": "Herbert Brandes-Siller",
+                    "label": "duplicate",
+                }
+            ]
+
+            results = predictor.predict_batch_json(inputs)
+            result = results[0]
+            annotation = result.get("annotation")
+            classes = annotation.get("classes")
+
+            for the_class in ["duplicate", "not_duplicate"]:
+                self.assertIn(the_class, classes)
+
+            self.assertTrue(all(prob > 0 for _, prob in classes.items()))
+            self.assertEqual(1, len(results))
+
+        def test_label_input(self):
+            inputs = {
+                "record1": "Herbert Brandes-Siller",
+                "record2": "Herbert Brandes-Siller",
+                "label": "duplicate",
+            }
+
+            result = predictor.predict_json(inputs)
+
+            annotation = result.get("annotation")
+            classes = annotation.get("classes")
+
+            for the_class in ["duplicate", "not_duplicate"]:
+                self.assertIn(the_class, classes)
+
+            assert all(prob > 0 for _, prob in classes.items())
+
+        def test_input_that_make_me_cry(self):
+            self.assertRaises(
+                Exception,
+                predictor.predict_json,
+                {"label": "duplicate", "record1": "Herbert Brandes-Siller"},
+            )
+
+        test_batch_input(self)
+        test_input_that_make_me_cry(self)
+        test_label_input(self)
