@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 BASE_CONFIG_PATH = os.path.join(
-    TEST_RESOURCES, "resources/definitions/sequence_pair_classifier"
+    TEST_RESOURCES, "resources/models/sequence_pair_classifier"
 )
 
 

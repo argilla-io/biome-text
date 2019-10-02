@@ -1,4 +1,0 @@
-forward:
-  r1: TextField
-  r2: TextField
-  gold: LabelField
