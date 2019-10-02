@@ -1,8 +1,10 @@
 import argparse
 import datetime
 import logging
+import os
+import re
 import time
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.util import import_submodules
@@ -16,7 +18,7 @@ from biome.text.models import to_local_archive
 from biome.text.predictors.utils import get_predictor_from_archive
 from biome.data.sinks import store_dataset
 from biome.data.sources import DataSource
-from biome.data.utils import configure_dask_cluster, default_elasticsearch_sink
+from biome.data.utils import configure_dask_cluster, ENV_ES_HOSTS
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -121,7 +123,7 @@ def predict(
 
     data_source = DataSource.from_yaml(from_source)
     sink_config = (
-        default_elasticsearch_sink(from_source, binary, batch_size)
+        _default_elasticsearch_sink(from_source, binary, batch_size)
         if not to_sink
         else to_sink
     )
@@ -168,7 +170,12 @@ def predict(
 
 
 def register_biome_prediction(
-    project: str, ds: DataSource, name: str, created_index: str, es_hosts: str, **kargs
+    project: Optional[str],
+    ds: DataSource,
+    name: str,
+    created_index: str,
+    es_hosts: str,
+    **kargs,
 ):
 
     metadata_index = f"{BIOME_METADATA_INDEX}"
@@ -195,3 +202,25 @@ def register_biome_prediction(
         },
     )
     del es
+
+
+def _default_elasticsearch_sink(
+    source_config: str, binary_path: str, es_batch_size: int
+) -> Dict:
+    def sanizite_index(index_name: str) -> str:
+        return re.sub(r"\W", "_", index_name)
+
+    file_name = os.path.basename(source_config)
+    model_name = os.path.dirname(binary_path)
+    if not model_name:
+        model_name = binary_path
+
+    return dict(
+        index=sanizite_index(
+            "prediction {} with {}".format(file_name, model_name).lower()
+        ),
+        index_recreate=True,
+        type="_doc",
+        es_hosts=os.getenv(ENV_ES_HOSTS, "http://localhost:9200"),
+        es_batch_size=es_batch_size,
+    )

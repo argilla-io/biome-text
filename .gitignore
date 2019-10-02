@@ -110,3 +110,5 @@ generated*
 *venv
 
 .DS_Store
+
+.dask
