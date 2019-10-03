@@ -8,7 +8,6 @@ from .commands import BiomeExplore
 from .commands import BiomeLearn
 from .commands import BiomePredict
 from .commands import BiomeRestAPI
-from .commands import BiomeVocab
 
 
 def configure_colored_logging(loglevel):
@@ -42,7 +41,6 @@ def main() -> None:
         "explore": BiomeExplore(),
         "serve": BiomeRestAPI(),
         "learn": BiomeLearn(),
-        "vocab": BiomeVocab(),
     }
 
     for name, subcommand in subcommands.items():
