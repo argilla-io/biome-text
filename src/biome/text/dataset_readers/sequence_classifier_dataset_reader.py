@@ -93,7 +93,9 @@ class SequenceClassifierDatasetReader(
         else:
             logger.debug("Read data set from {}".format(file_path))
             dataset = data_source.to_forward_dataframe()
-            instances = dataset.apply(self.text_to_instance, axis=1, meta=(None, "object"))
+            instances = dataset.apply(
+                self.text_to_instance, axis=1, meta=(None, "object")
+            ).dropna()
 
             # cache instances of the data set
             self.set(file_path, instances)
@@ -128,11 +130,12 @@ class SequenceClassifierDatasetReader(
                         f"{e}; You are probably missing '{param_name}' in your forward definition of the data source."
                     )
 
-        return Instance(fields)
+        fields = {k: v for k, v in fields.items() if v}
+        return Instance(fields) if fields and len(fields) > 0 else None
 
     def _value_to_field(
         self, param_name: str, value: Any
-    ) -> Union[LabelField, TextField, ListField]:
+    ) -> Optional[Union[LabelField, TextField, ListField]]:
         """Embeds the value in one of the `allennlp.data.fields`.
         For now the field type is basically inferred from the hardcoded label tag ...
 
@@ -147,6 +150,9 @@ class SequenceClassifierDatasetReader(
         -------
         Returns either a `LabelField` or a `TextField`/`ListField` depending on the `param_name`.
         """
+        if not value:
+            return None
+
         if param_name == self.LABEL_TAG:
             return LabelField(value)
         else:
@@ -162,4 +168,5 @@ class BertForClassificationDatasetReader(SequenceClassifierDatasetReader):
     We just register it with the same name as the model, to be consistent with our approach:
     Each model needs it own DatasetReader -> no need to specify the DatasetReader type in the model.yml
     """
+
     pass
