@@ -154,7 +154,7 @@ class SequenceClassifierDatasetReader(
 
 
 @DatasetReader.register("bert_for_classification")
-class BertClassifierDatasetReader(SequenceClassifierDatasetReader):
+class BertForClassificationDatasetReader(SequenceClassifierDatasetReader):
     """A DatasetReader for the BertForClassification model.
 
     Since the forward signature is the same for our SequenceClassifier and the BertForClassification,
