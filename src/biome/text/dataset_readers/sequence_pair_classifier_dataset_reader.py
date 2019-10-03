@@ -40,3 +40,15 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
 
         # The keys of the Instances have to match the signature of the forward method of the model
         self.forward_params = self.get_forward_signature(SequencePairClassifier)
+
+
+@DatasetReader.register("similarity_classifier")
+class SimilarityClassifierDatasetReader(SequencePairClassifierDatasetReader):
+    """A DatasetReader for the SimilarityClassifier model.
+
+    Since the forward signature is the same for the SequencePairClassifier and the SimilarityClassifier,
+    we can just use the DatasetReader for the former model.
+    We just register it with the same name as the model, to be consistent with our approach:
+    Each model needs it own DatasetReader -> no need to specify the DatasetReader type in the model.yml
+    """
+    pass

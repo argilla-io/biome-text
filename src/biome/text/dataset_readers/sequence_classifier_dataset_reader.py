@@ -151,3 +151,15 @@ class SequenceClassifierDatasetReader(
             return LabelField(value)
         else:
             return self.build_textfield(value)
+
+
+@DatasetReader.register("bert_for_classification")
+class BertForClassificationDatasetReader(SequenceClassifierDatasetReader):
+    """A DatasetReader for the BertForClassification model.
+
+    Since the forward signature is the same for our SequenceClassifier and the BertForClassification,
+    we can just use the DatasetReader for the former model.
+    We just register it with the same name as the model, to be consistent with our approach:
+    Each model needs it own DatasetReader -> no need to specify the DatasetReader type in the model.yml
+    """
+    pass
