@@ -140,7 +140,11 @@ def predict(
             archive_file=to_local_archive(binary), cuda_device=cuda_device
         )
 
-        predicted_dataset = test_dataset.map_partitions(predictor.predict_batch_json)
+        predicted_dataset = test_dataset.map_partitions(
+            predictor.predict_batch_json
+        ).map(
+            lambda d: {"label": "", **d}
+        )  # Workaround: allow compatibility for explore unlabelled datasources
 
         [
             _logger.info(result)
