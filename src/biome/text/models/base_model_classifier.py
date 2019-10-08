@@ -20,7 +20,7 @@ from torch.nn import Dropout, Linear
 
 
 class BaseModelClassifier(Model, metaclass=ABCMeta):
-    """This ``BaseModelClassifier`` simply encodes a sequence with a ``Seq2VecEncoder``, then
+    """In the most simple form this ``BaseModelClassifier`` encodes a sequence with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
     Parameters
@@ -36,14 +36,14 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
         will pool its output. Otherwise, this encoder will operate directly on the output
         of the `text_field_embedder`.
-    multifield_seq2vec_encoder
-        Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
-        will pool its output. Otherwise, this encoder will operate directly on the output
-        of the `seq2vec_encoder`.
-    multifield_seq2seq_encoder
-        Optional Seq2Seq encoder layer for the encoded fields/sentences.
     dropout
         Dropout percentage to use on the output of the Seq2VecEncoder
+    multifield_seq2seq_encoder
+        Optional Seq2Seq encoder layer for the encoded fields.
+    multifield_seq2vec_encoder
+        If we use `ListField`s, this Seq2Vec encoder is required.
+        If `multifield_seq2seq_encoder` is provided, this encoder will pool its output.
+        Otherwise, this encoder will operate directly on the output of the `seq2vec_encoder`.
     multifield_dropout
         Dropout percentage to use on the output of the doc Seq2VecEncoder
     feed_forward
@@ -65,8 +65,8 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
         seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
-        multifield_seq2vec_encoder: Optional[Seq2VecEncoder] = None,
         multifield_seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
+        multifield_seq2vec_encoder: Optional[Seq2VecEncoder] = None,
         feed_forward: Optional[FeedForward] = None,
         dropout: Optional[float] = None,
         multifield_dropout: Optional[float] = None,
@@ -98,16 +98,16 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
             # 1. setup num_wrapping_dims to 1
             self._num_wrapping_dims = 1
             # 2. Wrap the seq2vec and seq2seq encoders in TimeDistributed to account for the extra dimension num_fields
-            self._seq2vec_encoder = TimeDistributed(seq2vec_encoder)
             self._seq2seq_encoder = (
                 TimeDistributed(seq2seq_encoder) if seq2seq_encoder else None
             )
-            # 3. setup multifield_seq2vec_encoder
+            self._seq2vec_encoder = TimeDistributed(seq2vec_encoder)
+            # 3. (Optionally) setup multifield_seq2seq_encoder
+            if multifield_seq2seq_encoder:
+                raise NotImplementedError("A multifield_seq2seq still does not work, we need to mask properly!")
+            self._multifield_seq2seq_encoder = None
+            # 4. setup multifield_seq2vec_encoder
             self._multifield_seq2vec_encoder = multifield_seq2vec_encoder
-            # 4. (Optionally) setup multifield_seq2seq_encoder
-            self._multifield_seq2seq_encoder = (
-                multifield_seq2seq_encoder if multifield_seq2seq_encoder else None
-            )
             # doc vector dropout
             self._multifield_dropout = (
                 Dropout(multifield_dropout) if multifield_dropout else None
@@ -116,19 +116,19 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
             # token sequence level encoders
             self._seq2seq_encoder = seq2seq_encoder
             self._seq2vec_encoder = seq2vec_encoder
+
             self._multifield_seq2vec_encoder = None
             self._multifield_seq2seq_encoder = None
             self._multifield_dropout = None
 
+        # (Optional) Apply a feed forward before the classification layer
         self._feed_forward = feed_forward
         if self._feed_forward:
             self._classifier_input_dim = self._feed_forward.get_output_dim()
+        elif self._multifield_seq2vec_encoder:
+            self._classifier_input_dim = self._multifield_seq2vec_encoder.get_output_dim()
         else:
-            self._classifier_input_dim = (
-                self._multifield_seq2vec_encoder.get_output_dim()
-                if self._multifield_seq2vec_encoder
-                else self._seq2vec_encoder.get_output_dim()
-            )
+            self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
 
         # Due to the concatenation of the n_inputs input vectors
         self._classifier_input_dim *= self.n_inputs
