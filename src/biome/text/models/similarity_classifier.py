@@ -1,4 +1,5 @@
-from typing import Dict, Optional
+import logging
+from typing import Dict, Optional, List
 
 import torch
 from allennlp.data import Vocabulary
@@ -10,13 +11,13 @@ from allennlp.modules import (
     FeedForward,
 )
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
-from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 from overrides import overrides
 from torch.nn import CosineEmbeddingLoss
 from torch.nn.modules import Module
 
 from . import BaseModelClassifier
+
+logger = logging.getLogger(__name__)
 
 
 @Model.register("similarity_classifier")
@@ -27,111 +28,79 @@ class SimilarityClassifier(BaseModelClassifier):
     The two input sequences are encoded with two single vectors, the resulting vectors are concatenated and fed to a
     linear classification layer.
 
-    Apart from the CrossEntropy loss, you can add an additional loss term by setting the "verification" parameter to
-    true. This will drive the network to create vector clusters for each "class" in the data.
+    Apart from the CrossEntropy loss, this model includes a CosineEmbedding loss
+    (https://pytorch.org/docs/stable/nn.html#cosineembeddingloss) that will drive the network to create
+    vector clusters for each "class" in the data.
+    Make sure that the label "same" is indexed as 0, and the label "different" as 1!!!
+    Make sure that the dropout of the last Seq2Vec or the last FeedForward layer is set to 0!!!
+    (Deep Learning Face Representation by Joint Identification-Verification, https://arxiv.org/pdf/1406.4773.pdf)
 
     Parameters
     ----------
-    vocab
-        A Vocabulary, required in order to compute sizes for input/output projections
-        and passed on to the :class:`~allennlp.models.model.Model` class.
-    text_field_embedder
-        Used to embed the input text into a ``TextField``
-    seq2seq_encoder
-        Optional Seq2Seq encoder layer for the input text.
-    seq2vec_encoder
-        Required Seq2Vec encoder layer. If `seq2seq_encoder` is provided, this encoder
-        will pool its output. Otherwise, this encoder will operate directly on the output
-        of the `text_field_embedder`.
-    dropout
-        Dropout percentage to use on the output of the Seq2VecEncoder
-    feed_forward
-        A feed forward layer applied to the encoded inputs.
-    verification
-        Include a term in the loss function that rewards similar encoded vectors for similar inputs.
-        Make sure that the label "same" is indexed as 0, and the label "different" as 1.
-        Also, when using this loss term, make sure the dropout of the FeedForward layer is set to 0 in the last layer.
-        (Deep Learning Face Representation by Joint Identification-Verification, https://arxiv.org/pdf/1406.4773.pdf)
-    initializer
-        Used to initialize the model parameters.
-    regularizer
-        Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
+    kwargs
+        See the `BaseModelClassifier` for a description of the parameters.
+    margin
+        This parameter is passed on to the CosineEmbedding loss. It provides a margin,
+        at which dissimilar vectors are not driven further apart.
+        Can be between -1 (always drive apart) and 1 (never drive apart).
     """
+
+    @property
+    def n_inputs(self):
+        # We need overwrite the number of inputs since this model accepts two inputs
+        return 2
 
     def __init__(
         self,
         vocab: Vocabulary,
         text_field_embedder: TextFieldEmbedder,
         seq2vec_encoder: Seq2VecEncoder,
-        seq2seq_encoder: Seq2SeqEncoder = None,
+        seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
+        multifield_seq2seq_encoder: Optional[Seq2SeqEncoder] = None,
+        multifield_seq2vec_encoder: Optional[Seq2VecEncoder] = None,
         feed_forward: Optional[FeedForward] = None,
-        dropout: float = None,
-        verification: bool = False,
+        dropout: Optional[float] = None,
+        multifield_dropout: Optional[float] = None,
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
-    ) -> None:
-        super(BaseModelClassifier, self).__init__(
-            vocab, regularizer
+        margin: float = 0.5,
+    ):
+        super().__init__(
+            vocab=vocab,
+            text_field_embedder=text_field_embedder,
+            seq2vec_encoder=seq2vec_encoder,
+            seq2seq_encoder=seq2seq_encoder,
+            multifield_seq2seq_encoder=multifield_seq2seq_encoder,
+            multifield_seq2vec_encoder=multifield_seq2vec_encoder,
+            feed_forward=feed_forward,
+            dropout=dropout,
+            multifield_dropout=multifield_dropout,
+            initializer=initializer,
+            regularizer=regularizer,
         )  # Passing on kwargs does not work because of the 'from_params' machinery
-
-        self._initializer = initializer or InitializerApplicator()
-
-        self._text_field_embedder = text_field_embedder
-
-        if seq2seq_encoder:
-            self._seq2seq_encoder = seq2seq_encoder
-        else:
-            self._seq2seq_encoder = None
-
-        self._seq2vec_encoder = seq2vec_encoder
-
-        if dropout:
-            self._dropout = torch.nn.Dropout(dropout)
-        else:
-            self._dropout = None
-
-        self._feed_forward = feed_forward
-
-        if self._feed_forward:
-            self._classifier_input_dim = self._feed_forward.get_output_dim()
-        else:
-            self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
-
-        # Due to the concatenation of the two input vectors
-        self._classifier_input_dim *= 2
-
-        self._num_labels = vocab.get_vocab_size(namespace="labels")
-        self._classification_layer = torch.nn.Linear(
-            self._classifier_input_dim, self._num_labels
+        logger.warning(
+            "Make sure that the label 'same' is indexed as 0, and the label 'different' as 1."
+        )
+        logger.warning(
+            "Make sure that the dropout of the last Seq2Vec or the last FeedForward layer is set to 0."
         )
 
-        self._accuracy = CategoricalAccuracy()
-        self._loss = torch.nn.CrossEntropyLoss()
-        self._loss_sim = CosineEmbeddingLoss(margin=0.5) if verification else None
+        self._loss_sim = CosineEmbeddingLoss(margin=margin)
         # The value 0.5 for the margin is a recommended conservative value, see:
         # https://pytorch.org/docs/stable/nn.html#cosineembeddingloss
-
-        self._metrics = {
-            label: F1Measure(index)
-            for index, label in self.vocab.get_index_to_token_vocabulary(
-                "labels"
-            ).items()
-        }
-
-        self._initializer(self)
 
     @overrides
     def forward(
         self,  # type: ignore
-        record1: Dict[str, torch.LongTensor],
-        record2: Dict[str, torch.LongTensor],
+        record1: Dict[str, torch.Tensor],
+        record2: Dict[str, torch.Tensor],
         label: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
         """
         The architecture is basically:
-        Embedding -> Seq2Seq -> Seq2Vec -> Dropout -> FeedForward -> Concatenation -> Classification layer
-
+        Embedding -> Seq2Seq -> Seq2Vec -> Dropout -> (Optional: MultiField stuff) -> FeedForward
+        -> Concatenation -> Classification layer
 
         Parameters
         ----------
@@ -148,44 +117,51 @@ class SimilarityClassifier(BaseModelClassifier):
             single vector per token in your input.
         record2
             The second input tokens.
-        label
-            A torch tensor indicating if the two set of input tokens are similar or not (dim: ``(batch_size, 2)``).
+        label : torch.LongTensor, optional (default = None)
+            A torch tensor representing the sequence of integer gold class label of shape
+            ``(batch_size, num_classes)``.
 
         Returns
         -------
         An output dictionary consisting of:
-        logits
-        class_probabilities
-        loss : :class:`~torch.Tensor`, optional
+        logits : torch.FloatTensor
+            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
+            unnormalised log probabilities of the tag classes.
+        class_probabilities : torch.FloatTensor
+            A tensor of shape ``(batch_size, num_tokens, tag_vocab_size)`` representing
+            a distribution of the tag classes per word.
+        loss : torch.FloatTensor, optional
             A scalar loss to be optimised.
+
         """
-        encoded_texts = []
-        for tokens in [record1, record2]:
-            embedded_text = self._text_field_embedder(tokens)
-            mask = get_text_field_mask(tokens).float()
+        encoded_texts = [self.forward_tokens(tokens) for tokens in [record1, record2]]
 
-            if self._seq2seq_encoder:
-                embedded_text = self._seq2seq_encoder(embedded_text, mask=mask)
+        return self.output_layer(encoded_texts, label)
 
-            encoded_text = self._seq2vec_encoder(embedded_text, mask=mask)
-
-            if self._dropout:
-                encoded_text = self._dropout(encoded_text)
-
-            if self._feed_forward:
-                encoded_text = self._feed_forward(encoded_text)
-
-            encoded_texts.append(encoded_text)
-
+    @overrides
+    def output_layer(
+        self, encoded_texts: List[torch.Tensor], label
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Returns
+        -------
+        An output dictionary consisting of:
+        logits : :class:`~torch.Tensor`
+            A tensor of shape ``(batch_size, num_classes)`` representing
+            the logits of the classifier model.
+        class_probabilities : :class:`~torch.Tensor`
+            A tensor of shape ``(batch_size, num_classes)`` representing
+            the softmax probabilities of the classes.
+        loss : :class:`~torch.Tensor`, optional
+            A scalar loss to be optimised."""
+        # get logits and probs
         combined_records = torch.cat(encoded_texts, dim=-1)
-
-        logits = self._classification_layer(combined_records)
-        probs = torch.nn.functional.softmax(logits, dim=-1)
-
-        output_dict = {"logits": logits, "class_probabilities": probs}
+        logits = self._output_layer(combined_records)
+        class_probabilities = torch.softmax(logits, dim=1)
+        output_dict = {"logits": logits, "class_probabilities": class_probabilities}
 
         if label is not None:
-            loss = self._loss(logits, label.long().view(-1))
+            loss = self._loss(logits, label.long())
 
             if self._loss_sim:
                 # we need to transform the labels, see:
@@ -201,7 +177,6 @@ class SimilarityClassifier(BaseModelClassifier):
             self._accuracy(logits, label)
             for name, metric in self._metrics.items():
                 metric(logits, label)
-
         """
         This was an idea of a similarity classifier, solely based on the distance of the vectors
         if self._distance:
