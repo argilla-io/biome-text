@@ -1,7 +1,8 @@
 import logging
-from typing import Dict
+from typing import Dict, Optional, Union, List
 
-from allennlp.data import DatasetReader, TokenIndexer, Tokenizer
+from allennlp.data import DatasetReader, TokenIndexer, Tokenizer, Instance
+from allennlp.data.fields import LabelField
 
 from biome.text.models import SequencePairClassifier
 from .sequence_classifier_dataset_reader import SequenceClassifierDatasetReader
@@ -37,5 +38,35 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
             as_text_field=as_text_field,
         )
 
-        # The keys of the Instances have to match the signature of the forward method of the model
-        self.forward_params = self.get_forward_signature(SequencePairClassifier)
+    def text_to_instance(
+        self,
+        record1: Union[str, List[str], dict],
+        record2: Union[str, List[str], dict],
+        label: Optional[str] = None,
+        **metadata
+    ) -> Optional[Instance]:
+
+        fields = {}
+
+        record1_field = self.build_textfield(record1)
+        record2_field = self.build_textfield(record2)
+        label_field = LabelField(label) if label else None
+
+        if record1_field:
+            fields["record1"] = record1_field
+
+        if record2_field:
+            fields["record2"] = record2_field
+
+        if label_field:
+            fields["label"] = label_field
+
+        return Instance(fields) if fields or len(fields) > 0 else None
+
+
+@DatasetReader.register("similarity_classifier")
+class SimilarityClassifierDatasetReader(SequencePairClassifierDatasetReader):
+    """A DatasetReader for the SimilarityClassifier model.
+    """
+
+    pass

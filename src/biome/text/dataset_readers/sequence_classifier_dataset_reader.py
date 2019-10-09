@@ -1,14 +1,12 @@
 import logging
-from inspect import signature, Parameter
-from typing import Dict, Iterable, Optional, Union, Any
+from typing import Dict, Iterable, Optional, Union, Any, List
 
 from allennlp.data import DatasetReader, Instance, TokenIndexer, Tokenizer
 from allennlp.data.fields import LabelField, TextField, ListField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
+from biome.data.sources import DataSource
 from overrides import overrides
 
-from biome.text.models import SequenceClassifier
-from biome.data.sources import DataSource
 from .mixins import TextFieldBuilderMixin, CacheableMixin
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -32,9 +30,6 @@ class SequenceClassifierDatasetReader(
         Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
     """
 
-    # Name of the "label parameter" in the model's forward method
-    LABEL_TAG = "label"
-
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -45,27 +40,10 @@ class SequenceClassifierDatasetReader(
         TextFieldBuilderMixin.__init__(
             self,
             tokenizer=tokenizer,
+            # TODO check if we can change arbritary the "tokens" key name without affecting the pipeline
             token_indexers=token_indexers or {"tokens": SingleIdTokenIndexer()},
             as_text_field=as_text_field,
         )
-
-        # The keys of the Instances have to match the signature of the forward method of the model
-        self.forward_params = self.get_forward_signature(SequenceClassifier)
-
-    @staticmethod
-    def get_forward_signature(model: "allennlp.models.Model") -> Dict[str, "Parameter"]:
-        """Get the parameter names and `Parameter`s of the model's forward method.
-
-        Returns
-        -------
-        parameters
-            A dict mapping the parameter name to a `Parameter` instance.
-        """
-        parameters = dict(signature(model.forward).parameters)
-        # the forward method is always a non-static method of the model class -> remove self
-        del parameters["self"]
-
-        return parameters
 
     @overrides
     def _read(self, file_path: str) -> Iterable[Instance]:
@@ -94,7 +72,11 @@ class SequenceClassifierDatasetReader(
             logger.debug("Read data set from {}".format(file_path))
             dataset = data_source.to_forward_dataframe()
             instances = dataset.apply(
-                self.text_to_instance, axis=1, meta=(None, "object")
+                lambda d: self.text_to_instance(
+                    **{str(k): v for k, v in d.to_dict().items()}
+                ),
+                axis=1,
+                meta=(None, "object")
             ).dropna()
 
             # cache instances of the data set
@@ -103,60 +85,37 @@ class SequenceClassifierDatasetReader(
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance(
-        self, text: Union[Dict, "dask.Series", "pandas.Series"]
+        self,
+        tokens: Union[str, List[str], dict],
+        label: Optional[str] = None,
+        # TODO we can use the extra args for metadata build. Not used for now but required
+        **extra_args
     ) -> Optional[Instance]:
         """Extracts the forward parameters from the example and transforms them to an `Instance`
 
         Parameters
         ----------
-        text
-            The keys of this dict should contain the parameter names of the `forward` method of your model.
+        tokens
+            The input tokens key,values (or the text string)
+        label
+            The label value
 
         Returns
         -------
         instance
-            Returns `None` if the example could not be transformed to an Instance.
+            Returns `None` if cannot generate an new Instance.
         """
         fields = {}
-        for param_name, param in self.forward_params.items():
-            try:
-                value = text[param_name]
-                fields[param_name] = self._value_to_field(param_name, value)
 
-            except KeyError as e:
-                # if parameter is required by the forward method raise a meaningful error
-                if param.default is Parameter.empty:
-                    raise KeyError(
-                        f"{e}; You are probably missing '{param_name}' in your forward definition of the data source."
-                    )
+        tokens_field = self.build_textfield(tokens)
+        label_field = LabelField(label) if label else None
 
-        fields = {k: v for k, v in fields.items() if v}
+        if tokens_field:
+            fields["tokens"] = tokens_field
+        if label_field:
+            fields["label"] = label_field
+
         return Instance(fields) if fields and len(fields) > 0 else None
-
-    def _value_to_field(
-        self, param_name: str, value: Any
-    ) -> Optional[Union[LabelField, TextField, ListField]]:
-        """Embeds the value in one of the `allennlp.data.fields`.
-        For now the field type is basically inferred from the hardcoded label tag ...
-
-        Parameters
-        ----------
-        param_name
-            Must match one of the parameters in the `forward` method of your model.
-        value
-            Value of the field.
-
-        Returns
-        -------
-        Returns either a `LabelField` or a `TextField`/`ListField` depending on the `param_name`.
-        """
-        if not value:
-            return None
-
-        if param_name == self.LABEL_TAG:
-            return LabelField(value)
-        else:
-            return self.build_textfield(value)
 
 
 @DatasetReader.register("bert_for_classification")
