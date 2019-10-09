@@ -21,6 +21,12 @@ JSON_PATH = os.path.abspath(
     os.path.join(TEST_RESOURCES, "resources/data/dataset_source.jsonl")
 )
 
+JSON_WITH_EMPTY_VALUES = os.path.abspath(
+    os.path.join(
+        TEST_RESOURCES, "resources/data/dataset_source_with_empty_values.jsonl"
+    )
+)
+
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
@@ -319,3 +325,17 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
         )
         for example in dataset:
             print(example.__dict__)
+
+    def test_read_empty_values(self):
+        ds = reader.read(
+            create_temp_configuration(
+                {
+                    "format": "json",
+                    "path": JSON_WITH_EMPTY_VALUES,
+                    "forward": {"tokens": ["reviewText"], "label": "overall"},
+                }
+            )
+        )
+
+        ds = list(ds)
+        self.assertTrue(len(ds) == 0, f"Expected no data {ds}")
