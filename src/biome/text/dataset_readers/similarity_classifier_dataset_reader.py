@@ -3,15 +3,15 @@ from typing import Dict
 
 from allennlp.data import DatasetReader, TokenIndexer, Tokenizer
 
-from biome.text.models import SequencePairClassifier
+from biome.text.models import SimilarityClassifier
 from .sequence_classifier_dataset_reader import SequenceClassifierDatasetReader
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
-@DatasetReader.register("sequence_pair_classifier")
-class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
-    """A DatasetReader for the SequencePairClassifier model.
+@DatasetReader.register("similarity_classifier")
+class SimilarityClassifierDatasetReader(SequenceClassifierDatasetReader):
+    """A DatasetReader for the SimilarityClassifier model.
 
     Parameters
     ----------
@@ -23,7 +23,7 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         False by default, if enabled, the ``Instances`` generated will contains
         the input text fields as a concatenation of input fields in a single ``TextField``.
         By default, the reader will use a ``ListField`` of ``TextField`` for input representation
-    """
+"""
 
     def __init__(
         self,
@@ -31,11 +31,11 @@ class SequencePairClassifierDatasetReader(SequenceClassifierDatasetReader):
         token_indexers: Dict[str, TokenIndexer] = None,
         as_text_field: bool = False,
     ) -> None:
-        super(SequencePairClassifierDatasetReader, self).__init__(
+        super().__init__(
             tokenizer=tokenizer,
             token_indexers=token_indexers,
             as_text_field=as_text_field,
         )
 
         # The keys of the Instances have to match the signature of the forward method of the model
-        self.forward_params = self.get_forward_signature(SequencePairClassifier)
+        self.forward_params = self.get_forward_signature(SimilarityClassifier)
