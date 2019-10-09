@@ -10,8 +10,7 @@ from overrides import overrides
 class DefaultBasePredictor(Predictor):
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
-        instance = self._dataset_reader.text_to_instance(json_dict)
-        return instance
+        return self._dataset_reader.text_to_instance(**json_dict)
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> JsonDict:
