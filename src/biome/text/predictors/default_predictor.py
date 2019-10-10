@@ -1,16 +1,23 @@
-from typing import List
+from typing import List, cast
 
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance
+from allennlp.models import Model
 from allennlp.predictors import Predictor
 from overrides import overrides
 
+from biome.text.dataset_readers.datasource_reader import DataSourceReader
+
 
 class DefaultBasePredictor(Predictor):
+    def __init__(self, model: Model, dataset_reader: DataSourceReader):
+        super(DefaultBasePredictor, self).__init__(model, dataset_reader)
+        self._dataset_reader = cast(DataSourceReader, self._dataset_reader)
+
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
-        return self._dataset_reader.text_to_instance(**json_dict)
+        return self._dataset_reader.text_to_instance_with_data_filter(json_dict)
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> JsonDict:
