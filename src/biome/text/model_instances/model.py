@@ -1,8 +1,8 @@
 import logging
 import os
 import re
-from tempfile import mkdtemp, mktemp
-from typing import cast
+from tempfile import mktemp
+from typing import cast, Type
 
 import allennlp
 import yaml
@@ -11,14 +11,10 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.data import DatasetReader, Instance
 from allennlp.models import Archive
 from allennlp.predictors import Predictor
-from biome.data.utils import yaml_to_dict
-
+from overrides import overrides
 import biome
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
-
-from overrides import overrides
-
 
 class BaseModelInstance(Predictor):
     """
@@ -124,6 +120,12 @@ class BaseModelInstance(Predictor):
         s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
         return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
+    @staticmethod
+    def yaml_to_dict(filepath: str):
+        with open(filepath) as yaml_content:
+            config = yaml.safe_load(yaml_content)
+        return config
+
     @classmethod
     def from_config(cls, path: str) -> "BaseModelInstance":
         """
@@ -140,14 +142,16 @@ class BaseModelInstance(Predictor):
             ``allennlp.models.Model`` needs a Vocabulary for the initialization
 
         """
-        name = cls.__to_snake_case(cls.__name__)
-        data = yaml_to_dict(path)
-
+        data = cls.yaml_to_dict(path)
         # backward compatibility
         if data.get("topology"):
             data = data["topology"]
+        main_class = cast(
+            Type[BaseModelInstance], Predictor.by_name(data.get("type", cls.__name__))
+        )
+        name = cls.__to_snake_case(main_class.__name__)
 
-        model = cls(
+        model = main_class(
             model=None,
             reader=cast(
                 DataSourceReader,

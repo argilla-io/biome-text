@@ -1,6 +1,6 @@
 import os
 import tempfile
-import threading
+import multiprocessing
 import unittest
 from time import sleep
 
@@ -8,7 +8,7 @@ import requests
 from biome.data.utils import ENV_ES_HOSTS
 from elasticsearch import Elasticsearch
 
-import biome
+from biome.text import BaseModelInstance
 from biome.text.commands.predict.predict import predict
 from biome.text.commands.serve.serve import serve
 from biome.text.model_instances.sequence_classifier import SequenceClassifier
@@ -28,14 +28,16 @@ class SequenceClassifierTest(unittest.TestCase):
     validation_data = os.path.join(BASE_CONFIG_PATH, "validation.data.yml")
 
     def test_model_workflow(self):
-        self.check_train(biome.text.models.SequenceClassifier)
+        self.check_train(SequenceClassifier)
         self.check_predict()
         self.check_serve()
         self.check_predictor()
 
     def check_train(self, cls_type):
 
-        classifier = SequenceClassifier.from_config(self.model_path)
+        classifier = BaseModelInstance.from_config(self.model_path)
+        self.assertIsInstance(classifier, cls_type)
+
         classifier.learn(
             trainer=self.trainer_path,
             train=self.training_data,
@@ -44,7 +46,6 @@ class SequenceClassifierTest(unittest.TestCase):
         )
 
         self.assertTrue(classifier.architecture is not None)
-        self.assertIsInstance(classifier.architecture, cls_type)
 
         prediction = classifier.predict("mike Farrys")
         self.assertTrue("logits" in prediction, f"Not in {prediction}")
@@ -71,16 +72,18 @@ class SequenceClassifierTest(unittest.TestCase):
 
     def check_serve(self):
         port = 8000
-        thread = threading.Thread(
+        process = multiprocessing.Process(
             target=serve, daemon=True, kwargs=dict(binary=self.model_archive, port=port)
         )
-        thread.start()
+        process.start()
         sleep(5)
 
         response = requests.post(
             f"http://localhost:{port}/predict", json={"tokens": "Mike Farrys"}
         )
         self.assertTrue(response.json() is not None)
+        process.terminate()
+        sleep(2)
 
     def check_predictor(self):
         predictor = SequenceClassifier.load(self.model_archive)
@@ -99,10 +102,7 @@ class SequenceClassifierTest(unittest.TestCase):
             self.assertEqual(1, len(results))
 
         def test_label_input():
-            inputs = {
-                "tokens": "Herbert Brandes-Siller",
-                "label": "duplicate",
-            }
+            inputs = {"tokens": "Herbert Brandes-Siller", "label": "duplicate"}
 
             result = predictor.predict_json(inputs)
             classes = result.get("classes")

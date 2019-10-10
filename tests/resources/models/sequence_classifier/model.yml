@@ -1,4 +1,4 @@
-type: sequence_classifier
+type: biome.text.model_instances.sequence_classifier.SequenceClassifier
 
 architecture:
   seq2vec_encoder:
