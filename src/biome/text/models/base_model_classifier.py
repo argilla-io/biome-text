@@ -249,6 +249,7 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         return {
             "logits": output_dict.get("logits"),
             "classes": output_map_probs,
+            "loss": output_dict.get("loss"),
             "max_class": max_classes,
             "max_class_prob": max_classes_prob,
         }

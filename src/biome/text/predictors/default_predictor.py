@@ -1,9 +1,14 @@
-from typing import List
+from copy import deepcopy
+from typing import List, Dict
+
+import numpy
 
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance
 from allennlp.predictors import Predictor
+from allennlp.data.fields import LabelField
+#from allennlp.interpret.saliency_interpreters import SaliencyInterpreter, SimpleGradient
 from overrides import overrides
 
 
@@ -31,6 +36,7 @@ class DefaultBasePredictor(Predictor):
     @overrides
     def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
         instances = self._batch_json_to_instances(inputs)
+        
         # I tried to work with numpy arrays here to elegantly mask the Nones ... does not work with instances!!!
         # This fails: np.array(instances)
 
@@ -61,6 +67,17 @@ class DefaultBasePredictor(Predictor):
     def _to_prediction(input, output):
         output.pop("logits")
         return {**input, "annotation": sanitize(output)}
+    
+    @overrides
+    def predictions_to_labeled_instances(
+        self, instance: Instance, outputs: Dict[str, numpy.ndarray]
+    ) -> List[Instance]:
+        
+        new_instance = deepcopy(instance)
+        label = numpy.argmax(outputs["logits"])
+        new_instance.add_field("label", LabelField(int(label), skip_indexing=True))
+
+        return [new_instance]
 
 
 @Predictor.register("sequence_classifier")
