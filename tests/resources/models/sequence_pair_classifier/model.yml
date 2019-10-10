@@ -10,7 +10,6 @@ topology:
       tokens:
         embedding_dim: 300
         type: embedding
-
     type: sequence_pair_classifier
   pipeline:
     tokenizer:
