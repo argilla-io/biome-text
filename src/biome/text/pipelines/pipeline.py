@@ -9,16 +9,17 @@ import yaml
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import DatasetReader, Instance
-from allennlp.models import Archive
+from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
 from overrides import overrides
-import biome
+
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 
-class BaseModelInstance(Predictor):
+
+class Pipeline(Predictor):
     """
-    This class combine the different allennlp components that make possible a "BaseModelInstance",
+    This class combine the different allennlp components that make possible a ``Pipeline`,
     understanding as a model, not only the definition of the neural network architecture,
     but also the transformation of the input data to Instances and the evaluation of
     predictions on new data
@@ -28,8 +29,8 @@ class BaseModelInstance(Predictor):
 
     Parameters
     ----------
-    model
-        The class:~allennlp.models.BaseModelInstance architecture
+    model`
+        The class:~allennlp.models.Model architecture
 
     reader
         The class:allennlp.data.DatasetReader
@@ -42,13 +43,35 @@ class BaseModelInstance(Predictor):
     logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 
     def __init__(self, model: allennlp.models.model.Model, reader: DataSourceReader):
-        super(BaseModelInstance, self).__init__(model, reader)
+        super(Pipeline, self).__init__(model, reader)
         self.__config = {}
 
-    @property
-    def pipeline(self) -> "biome.text.dataset_readers.DataSourceReader":
+    @classmethod
+    def reader_class(cls) -> Type[DataSourceReader]:
         """
-        The data pipeline (AKA ``DatasetReader``)
+        Must be implemented by subclasses
+
+        Returns
+        -------
+            The class of ``DataSourceReader`` used in the model instance
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def model_class(cls) -> Type[allennlp.models.Model]:
+        """
+        Must be implemented by subclasses
+
+        Returns
+        -------
+            The class of ``allennlp.models.Model`` used in the model instance
+        """
+        raise NotImplementedError
+
+    @property
+    def reader(self) -> DataSourceReader:
+        """
+        The data reader (AKA ``DatasetReader``)
 
         Returns
         -------
@@ -58,13 +81,13 @@ class BaseModelInstance(Predictor):
         return self._dataset_reader
 
     @property
-    def architecture(self) -> allennlp.models.Model:
+    def model(self) -> allennlp.models.Model:
         """
-        The model architecture (AKA ``allennlp.models.BaseModelInstance``)
+        The model (AKA ``allennlp.models.Model``)
 
         Returns
         -------
-            The configured ``allennlp.models.BaseModelInstance``
+            The configured ``allennlp.models.Model``
         """
         return self._model
 
@@ -84,22 +107,27 @@ class BaseModelInstance(Predictor):
         return self.predict_json(inputs)
 
     @classmethod
-    def load(cls, path: str, **kwargs) -> "BaseModelInstance":
+    def load(cls, path: str, **kwargs) -> "Pipeline":
         name = cls.__to_snake_case(cls.__name__)
+
+        # We register automatically the required components by allennlp
         Predictor.register(name, exist_ok=True)(cls)
+        Model.register(name, exist_ok=True)(cls.model_class())
+        DatasetReader.register(name, exist_ok=True)(cls.reader_class())
+
         archive = load_archive(path, **kwargs)
         return cls.from_archive(archive, predictor_name=name)
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
-        return self.pipeline.text_to_instance_with_data_filter(json_dict)
+        return self.reader.text_to_instance_with_data_filter(json_dict)
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         from allennlp.common.util import sanitize
 
         instance = self._json_to_instance(inputs)
-        output = self.architecture.forward_on_instance(instance)
+        output = self.model.forward_on_instance(instance)
         return sanitize(output)
 
     @staticmethod
@@ -127,9 +155,9 @@ class BaseModelInstance(Predictor):
         return config
 
     @classmethod
-    def from_config(cls, path: str) -> "BaseModelInstance":
+    def from_config(cls, path: str) -> "Pipeline":
         """
-        Read a ``BaseModelInstance`` subclass instance by reading a configuration file
+        Read a ``Pipeline`` subclass instance by reading a configuration file
 
         Parameters
         ----------
@@ -138,7 +166,7 @@ class BaseModelInstance(Predictor):
 
         Returns
         -------
-            An instance of ``BaseModelInstance`` with no architecture, since the internal
+            An instance of ``Pipeline`` with no architecture, since the internal
             ``allennlp.models.Model`` needs a Vocabulary for the initialization
 
         """
@@ -146,9 +174,10 @@ class BaseModelInstance(Predictor):
         # backward compatibility
         if data.get("topology"):
             data = data["topology"]
-        main_class = cast(
-            Type[BaseModelInstance], Predictor.by_name(data.get("type", cls.__name__))
-        )
+
+        data.get("class", cls.__name__)
+
+        main_class = cls.__get_main_class(data)
         name = cls.__to_snake_case(main_class.__name__)
 
         model = main_class(
@@ -166,6 +195,28 @@ class BaseModelInstance(Predictor):
         }
 
         return model
+
+    @classmethod
+    def __get_main_class(cls, config: dict) -> Type["Pipeline"]:
+        """
+        If we don't known the target class to load, we need keep class info in data configuarion.
+
+        Parameters
+        ----------
+        config
+
+        Returns
+        -------
+
+        """
+        if cls != Pipeline:
+            return cls
+
+        if not config.get("class"):
+            raise ConfigurationError("Cannot load")
+
+        the_class = Predictor.by_name(config.get("class"))
+        return cast(Type[Pipeline], the_class)
 
     def learn(self, trainer: str, train: str, validation: str, output: str):
         """
@@ -204,8 +255,8 @@ class BaseModelInstance(Predictor):
 
         model = self.load(os.path.join(output, "model.tar.gz"))
 
-        self._model = model.architecture
-        self._dataset_reader = model.pipeline
+        self._model = model.model
+        self._dataset_reader = model.reader
 
     @classmethod
     def _load_callback(cls, archive: Archive, reader: DatasetReader):

@@ -14,4 +14,4 @@ except pkg_resources.DistributionNotFound:
 # This is necessary, since the from_param machinery needs our classes to be registered!
 from . import dataset_readers, models, predictors
 
-from biome.text.model_instances.model import BaseModelInstance
+from biome.text.pipelines.pipeline import Pipeline

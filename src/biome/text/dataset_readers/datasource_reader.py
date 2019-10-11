@@ -105,4 +105,4 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         return self.text_to_instance(**inputs)
 
     def text_to_instance(self, **inputs) -> Instance:
-        raise NotImplemented
+        raise NotImplementedError

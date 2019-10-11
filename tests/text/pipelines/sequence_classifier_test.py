@@ -8,10 +8,9 @@ import requests
 from biome.data.utils import ENV_ES_HOSTS
 from elasticsearch import Elasticsearch
 
-from biome.text import BaseModelInstance
 from biome.text.commands.predict.predict import predict
 from biome.text.commands.serve.serve import serve
-from biome.text.model_instances.sequence_classifier import SequenceClassifier
+from biome.text.pipelines.sequence_classifier import SequenceClassifier
 from tests.test_context import TEST_RESOURCES
 
 BASE_CONFIG_PATH = os.path.join(TEST_RESOURCES, "resources/models/sequence_classifier")
@@ -28,15 +27,15 @@ class SequenceClassifierTest(unittest.TestCase):
     validation_data = os.path.join(BASE_CONFIG_PATH, "validation.data.yml")
 
     def test_model_workflow(self):
-        self.check_train(SequenceClassifier)
+        self.check_train()
         self.check_predict()
         self.check_serve()
         self.check_predictor()
 
-    def check_train(self, cls_type):
+    def check_train(self):
 
-        classifier = BaseModelInstance.from_config(self.model_path)
-        self.assertIsInstance(classifier, cls_type)
+        classifier = SequenceClassifier.from_config(self.model_path)
+        self.assertIsInstance(classifier, SequenceClassifier)
 
         classifier.learn(
             trainer=self.trainer_path,
@@ -45,7 +44,7 @@ class SequenceClassifierTest(unittest.TestCase):
             output=self.output_dir,
         )
 
-        self.assertTrue(classifier.architecture is not None)
+        self.assertTrue(classifier.model is not None)
 
         prediction = classifier.predict("mike Farrys")
         self.assertTrue("logits" in prediction, f"Not in {prediction}")
