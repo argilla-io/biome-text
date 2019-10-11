@@ -6,43 +6,20 @@ topology:
       num_layers: 3
       dropout: 0.6
       type: gru
-    # seq2seq_encoder:
-    #   hidden_size: 300
-    #   input_size: 300
-    #   type: gru
     text_field_embedder:
       tokens:
         embedding_dim: 300
         type: embedding
-        #pretrained_file: https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.vec.gz
-        #trainable: true
-      # token_characters:
-      #   type: character_encoding
-      #   embedding:
-      #     num_embeddings: 260
-      #     embedding_dim: 8
-      #   encoder:
-      #     type: gru
-      #     bidirectional: true
-      #     input_size: 8
-      #     hidden_size: 16
-      #   dropout: 0.5
+
     type: sequence_pair_classifier
   pipeline:
     tokenizer:
       type: word
       word_splitter:
         type: spacy
-        #language: en_core_web_sm
     token_indexers:
       tokens:
         type: single_id
         lowercase_tokens: true
-      # token_characters:
-      #   type: characters
-      #   min_padding_length: 5
-      #   character_tokenizer:
-      #     byte_encoding: utf-8
-          #lowercase_characters: true
     as_text_field: True
     type: sequence_pair_classifier
