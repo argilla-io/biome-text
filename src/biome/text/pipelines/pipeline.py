@@ -108,15 +108,23 @@ class Pipeline(Predictor):
 
     @classmethod
     def load(cls, path: str, **kwargs) -> "Pipeline":
-        name = cls.__to_snake_case(cls.__name__)
-
-        # We register automatically the required components by allennlp
+        assert cls != Pipeline, "Cannot load a model with the base pipeline class"
+        '\nIf you known the pipeline class to use load using this class (MyPipeline.load("model.tar.gz"),'
+        "\notherwise, you can initialize the pipeline from configuration and then load the pipeline"
+        name = cls.__registrable_name(cls)
+        # TODO From now, we cannot pass the fully qualified class name as type parameter. We have an open PR for that.
+        #  See (https://github.com/allenai/allennlp/pull/3344)
+        #  So, we register the required components by allennlp before load them
         Predictor.register(name, exist_ok=True)(cls)
         Model.register(name, exist_ok=True)(cls.model_class())
         DatasetReader.register(name, exist_ok=True)(cls.reader_class())
 
         archive = load_archive(path, **kwargs)
         return cls.from_archive(archive, predictor_name=name)
+
+    @classmethod
+    def __registrable_name(cls, _class: Type["Pipeline"]) -> str:
+        return cls.__to_snake_case(_class.__name__)
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
@@ -175,20 +183,14 @@ class Pipeline(Predictor):
         if data.get("topology"):
             data = data["topology"]
 
-        data.get("class", cls.__name__)
+        pipeline_class = cls.__get_pipeline_class(data)
+        name = cls.__registrable_name(pipeline_class)
 
-        main_class = cls.__get_main_class(data)
-        name = cls.__to_snake_case(main_class.__name__)
-
-        model = main_class(
-            model=None,
-            reader=cast(
-                DataSourceReader,
-                DatasetReader.from_params(
-                    Params({**data["pipeline"], "type": name}.copy())
-                ),
-            ),
-        )
+        # Creating an empty pipeline
+        model = pipeline_class(model=None, reader=None)
+        # Include pipeline configuration
+        # TODO This configuration will fail if the reader and model are registered with other names than the calculated
+        #  registrable_name
         model.__config = {
             "dataset_reader": {**data["pipeline"], "type": name},
             "model": {**data["architecture"], "type": name},
@@ -197,9 +199,9 @@ class Pipeline(Predictor):
         return model
 
     @classmethod
-    def __get_main_class(cls, config: dict) -> Type["Pipeline"]:
+    def __get_pipeline_class(cls, config: dict) -> Type["Pipeline"]:
         """
-        If we don't known the target class to load, we need keep class info in data configuarion.
+        If we don't known the target class to load, we need keep class info in data configuration.
 
         Parameters
         ----------
@@ -207,15 +209,20 @@ class Pipeline(Predictor):
 
         Returns
         -------
-
+            The real ``Pipeline`` subclass to be instantiated
         """
         if cls != Pipeline:
             return cls
 
-        if not config.get("class"):
-            raise ConfigurationError("Cannot load")
+        class_name = config.get("class")
+        if not class_name:
+            raise ConfigurationError(
+                "Cannot load the pipeline: No pipeline class found in file."
+                "\nPlease, include the class property in your file or try to load configuration "
+                "with your class directly: MyPipeline.from_config(config_file)"
+            )
 
-        the_class = Predictor.by_name(config.get("class"))
+        the_class = Predictor.by_name(class_name)
         return cast(Type[Pipeline], the_class)
 
     def learn(self, trainer: str, train: str, validation: str, output: str):
