@@ -3,22 +3,16 @@ import datetime
 import logging
 import os
 import re
-import time
-from typing import List, Optional, Dict
 
 from allennlp.commands.subcommand import Subcommand
-from allennlp.common.util import import_submodules
-from allennlp.models.archival import load_archive
-from allennlp.predictors import Predictor
-
+from allennlp.common.checks import ConfigurationError
+from biome.data.sources import DataSource
+from biome.data.utils import ENV_ES_HOSTS
+from dask_elk.client import DaskElasticClient
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
 
-from biome.text.models import to_local_archive
-from biome.text.predictors.utils import get_predictor_from_archive
-from biome.data.sinks import store_dataset
-from biome.data.sources import DataSource
-from biome.data.utils import configure_dask_cluster, ENV_ES_HOSTS
+from biome.text.pipelines.pipeline import Pipeline
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -69,162 +63,140 @@ class BiomePredict(Subcommand):
         return subparser
 
 
-def _predictor_from_args(
-    archive_file: str, cuda_device: int, include_package: List[str] = []
-) -> Predictor:
-    for package_name in include_package:
-        import_submodules(package_name)
-
-    archive = load_archive(archive_file, cuda_device=cuda_device)
-
-    # Matching predictor name with model name
-    return get_predictor_from_archive(archive)
-
-
 def _predict(args: argparse.Namespace) -> None:
+    def sanizite_index(index_name: str) -> str:
+        return re.sub(r"\W", "_", index_name)
+
+    ds_name = os.path.basename(args.binary)
+    model_name = os.path.dirname(args.from_source)
+    index = sanizite_index("{}_{}".format(model_name, ds_name).lower())
+
     predict(
-        binary=args.binary,
-        from_source=args.from_source,
-        cuda_device=args.cuda_device,
-        workers=args.workers,
+        args.binary,
+        source_path=args.from_source,
+        es_host=os.getenv(ENV_ES_HOSTS, "http://localhost:9200"),
+        es_index=index,
     )
-    exit(0)
 
 
 def predict(
-    binary: str,
-    from_source: str,
-    workers: int = 1,
-    worker_mem: int = 2e9,
-    batch_size: int = 1000,
-    cuda_device: int = -1,
-    to_sink: Optional[dict] = None,
-) -> Optional[str]:
+    binary: str, source_path: str, es_host: str, es_index: str, batch_size: int = 500
+) -> None:
     """
+    Read a data source and tries to apply a model predictions to the whole data source. The
+    results will be persisted into an elasticsearch index for further data exploration
 
     Parameters
     ----------
     binary
-    from_source
-    workers
-    worker_mem
+        The model.tar.gz file
+    source_path
+        The input data source
+    es_host
+        The elasticsearch host where publish the data
+    es_index
+        The elasticsearch index where publish the data
     batch_size
-    cuda_device
-    to_sink
+        The batch size for model predictions
 
-    Returns
-    -------
-    index
-        Name of the Elasticsearch index where the predictions are stored
     """
-    logging.getLogger("allennlp").setLevel(logging.WARNING)
 
-    prediction_start_time = time.time()
+    pipeline = Pipeline.load(binary)
 
-    data_source = DataSource.from_yaml(from_source)
-    sink_config = (
-        _default_elasticsearch_sink(from_source, binary, batch_size)
-        if not to_sink
-        else to_sink
-    )
-
-    client = configure_dask_cluster(n_workers=workers, worker_memory=worker_mem)
-    try:
-        test_dataset = data_source.to_forward_bag()
-        npartitions = max(1, round(test_dataset.count().compute() / batch_size))
-        # a persist is necessary here, otherwise it fails for npartitions == 1
-        # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-        test_dataset = test_dataset.repartition(npartitions=npartitions).persist()
-
-        predictor = _predictor_from_args(
-            archive_file=to_local_archive(binary), cuda_device=cuda_device
+    if not isinstance(pipeline, Pipeline):
+        raise ConfigurationError(
+            f"Cannot load a biome Pipeline from {binary}"
+            "\nPlease, be sure your pipeline class is registered as an allennlp.predictos.Predictor"
+            "\nwith the same name that your model."
         )
 
-        predicted_dataset = test_dataset.map_partitions(
-            predictor.predict_batch_json
-        ).map(
-            lambda d: {"label": "", **d}
-        )  # Workaround: allow compatibility for explore unlabelled datasources
+    es_client = DaskElasticClient(
+        host=es_host, retry_on_timeout=True, http_compress=True
+    )
 
-        [
-            _logger.info(result)
-            for result in store_dataset(predicted_dataset, sink_config)
-        ]
+    ds = DataSource.from_yaml(source_path)
+    ddf = ds.to_forward_dataframe()
+    npartitions = max(1, round(len(ddf) / batch_size))
+    # a persist is necessary here, otherwise it fails for npartitions == 1
+    # the reason is that with only 1 partition we pass on a generator to predict_batch_json
+    ddf = ddf.repartition(npartitions=npartitions).persist()
+    ddf["annotation"] = ddf.apply(pipeline.predict_json, axis=1, meta=object)
+    ddf = es_client.save(ddf, index=es_index, doc_type="_doc")
 
-        prediction_elapsed_time = time.time() - prediction_start_time
-        formatted_time = str(datetime.timedelta(seconds=int(prediction_elapsed_time)))
-        _logger.info("Prediction and indexing time: %s", formatted_time)
+    register_biome_prediction(
+        name=es_index,
+        created_index=es_index,
+        es_hosts=es_host,
+        # extra metadata must be normalized
+        pipeline=pipeline.name,
+        signature=pipeline.reader.signature,
+        # TODO remove when ui is adapted
+        inputs=pipeline.reader.signature,  # backward compatibility
+        columns=ddf.columns.values.tolist(),
+        type="explore",
+    )
 
-        client.close()
-
-        if not to_sink:
-            es_index = sink_config["index"]
-            es_hosts = sink_config["es_hosts"]
-            register_biome_prediction(
-                project=None,
-                ds=data_source,
-                name=es_index,
-                created_index=es_index,
-                es_hosts=es_hosts,
-            )
-            return es_index
-        return None
-    finally:
-        client.close()
+    __prepare_es_index(es_index, es_host)
+    ddf.persist()
 
 
-def register_biome_prediction(
-    project: Optional[str],
-    ds: DataSource,
-    name: str,
-    created_index: str,
-    es_hosts: str,
-    **kargs,
-):
+def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kwargs):
+    """
+    Creates a new metadata entry for the incoming prediction
+
+    Parameters
+    ----------
+    name
+        A descriptive prediction name
+    created_index
+        The elasticsearch index created for the prediction
+    es_hosts
+        The elasticsearch host where publish the new entry
+    kwargs
+        Extra arguments passed as extra metadata info
+
+    """
 
     metadata_index = f"{BIOME_METADATA_INDEX}"
-    es = Elasticsearch(hosts=es_hosts)
-    es.indices.create(
+    es_client = Elasticsearch(hosts=es_hosts, retry_on_timeout=True, http_compress=True)
+    es_client.indices.create(
         index=metadata_index,
         body={"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}},
         ignore=400,
     )
 
-    es.update(
+    es_client.update(
         index=metadata_index,
         doc_type="_doc",
         id=created_index,
         body={
-            "doc": dict(
-                project=project,
-                name=name,
-                created_at=datetime.datetime.now(),
-                inputs=[input for input in ds.forward.tokens.keys()],
-                **kargs,
-            ),
+            "doc": dict(name=name, created_at=datetime.datetime.now(), **kwargs),
             "doc_as_upsert": True,
         },
     )
-    del es
+    del es_client
 
 
-def _default_elasticsearch_sink(
-    source_config: str, binary_path: str, es_batch_size: int
-) -> Dict:
-    def sanizite_index(index_name: str) -> str:
-        return re.sub(r"\W", "_", index_name)
+def __prepare_es_index(index: str, es_hosts: str):
+    es_client = Elasticsearch(hosts=es_hosts, retry_on_timeout=True, http_compress=True)
 
-    file_name = os.path.basename(source_config)
-    model_name = os.path.dirname(binary_path)
-    if not model_name:
-        model_name = binary_path
+    dynamic_templates = [
+        {
+            data_type: {
+                "match_mapping_type": data_type,
+                "path_match": path_match,
+                "mapping": {
+                    "type": "text",
+                    "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                },
+            }
+        }
+        for data_type, path_match in [("*", "*.value"), ("string", "*")]
+    ]
 
-    return dict(
-        index=sanizite_index(
-            "prediction {} with {}".format(file_name, model_name).lower()
-        ),
-        index_recreate=True,
-        type="_doc",
-        es_hosts=os.getenv(ENV_ES_HOSTS, "http://localhost:9200"),
-        es_batch_size=es_batch_size,
+    es_client.indices.delete(index=index, ignore=[400, 404])
+    es_client.indices.create(
+        index=index,
+        body={"mappings": {"_doc": {"dynamic_templates": dynamic_templates}}},
+        ignore=400,
     )
