@@ -63,7 +63,6 @@ class BasePairClassifierTest(DaskSupportTest):
             source_path=self.validation_data,
             es_host=es_host,
             es_index=index,
-            es_doc="doc"
         )
 
         client = Elasticsearch(hosts=es_host, http_compress=True)
