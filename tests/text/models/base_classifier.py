@@ -60,14 +60,9 @@ class BasePairClassifierTest(DaskSupportTest):
         es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
         predict(
             binary=self.model_archive,
-            from_source=self.validation_data,
-            to_sink=dict(
-                index=index,
-                index_recreate=True,
-                type="doc",
-                es_hosts=es_host,
-                es_batch_size=100,
-            ),
+            source_path=self.validation_data,
+            es_host=es_host,
+            es_index=index,
         )
 
         client = Elasticsearch(hosts=es_host, http_compress=True)
@@ -104,8 +99,7 @@ class BasePairClassifierTest(DaskSupportTest):
             ]
 
             results = predictor.predict_batch_json(inputs)
-            result = results[0]
-            annotation = result.get("annotation")
+            annotation = results[0]
             classes = annotation.get("classes")
 
             for the_class in ["duplicate", "not_duplicate"]:
@@ -121,9 +115,7 @@ class BasePairClassifierTest(DaskSupportTest):
                 "label": "duplicate",
             }
 
-            result = predictor.predict_json(inputs)
-
-            annotation = result.get("annotation")
+            annotation = predictor.predict_json(inputs)
             classes = annotation.get("classes")
 
             for the_class in ["duplicate", "not_duplicate"]:
