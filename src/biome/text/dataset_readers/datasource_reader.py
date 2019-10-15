@@ -52,6 +52,17 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
 
     logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
+    @property
+    def signature(self):
+        """
+        Describe de input signature for the pipeline predictions
+
+        Returns
+        -------
+            A list of expected input names
+        """
+        return self._signature.copy()
+
     def _read(self, file_path: str) -> Iterable[Instance]:
         """An generator that yields `Instance`s that are fed to the model
 
