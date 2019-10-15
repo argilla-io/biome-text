@@ -9,6 +9,7 @@ from allennlp.common.checks import ConfigurationError
 from biome.data.sources import DataSource
 from biome.data.utils import ENV_ES_HOSTS
 from dask_elk.client import DaskElasticClient
+
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
 
@@ -39,23 +40,23 @@ class BiomePredict(Subcommand):
             help="the archived model to make predictions with",
             required=True,
         )
+
         subparser.add_argument(
             "--from-source",
             type=str,
             help="datasource source definition",
             required=True,
         )
+
         subparser.add_argument(
             "--batch-size",
             type=int,
             default=100,
             help="The batch size to use for processing",
         )
+
         subparser.add_argument(
             "--cuda-device", type=int, default=-1, help="id of GPU to use (if any)"
-        )
-        subparser.add_argument(
-            "--workers", type=int, default=1, help="Workers for dask local cluster"
         )
 
         subparser.set_defaults(func=_predict)
@@ -166,6 +167,8 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
 
     metadata_index = f"{BIOME_METADATA_INDEX}"
     es_client = Elasticsearch(hosts=es_hosts, retry_on_timeout=True, http_compress=True)
+    es_version = int(es_client.info()["version"]["number"].split(".")[0])
+
     es_client.indices.create(
         index=metadata_index,
         body={"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}},
@@ -174,7 +177,7 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
 
     es_client.update(
         index=metadata_index,
-        doc_type="_doc",
+        doc_type="_doc" if es_version >= 6 else "doc",
         id=created_index,
         body={
             "doc": dict(name=name, created_at=datetime.datetime.now(), **kwargs),
