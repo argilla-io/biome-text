@@ -206,29 +206,26 @@ class Pipeline(Predictor):
             model=None,
             reader=cast(
                 DataSourceReader,
-                DatasetReader.from_params(Pipeline.__get_reader_params(data)),
+                DatasetReader.from_params(Pipeline.__get_reader_params(data, name)),
             ),
         )
         # Include pipeline configuration
         # TODO This configuration will fail if the reader and model are registered with other names than the calculated
         #  registrable_name
         model.__config = {
-            "dataset_reader": {
-                **Pipeline.__get_reader_params(data).as_dict(),
-                "type": name,
-            },
-            "model": {**Pipeline.__get_model_params(data).as_dict(), "type": name},
+            "dataset_reader": Pipeline.__get_reader_params(data, name).as_dict(),
+            "model": Pipeline.__get_model_params(data, name).as_dict(),
         }
 
         return model
 
     @classmethod
-    def __get_reader_params(cls, data) -> Params:
-        return Params(data["pipeline"].copy())
+    def __get_reader_params(cls, data: dict, name: str) -> Params:
+        return Params({**data["pipeline"], "type": name}.copy())
 
     @classmethod
-    def __get_model_params(cls, data) -> Params:
-        return Params(data["architecture"].copy())
+    def __get_model_params(cls, data: dict, name: str) -> Params:
+        return Params({**data["architecture"], "type": name}.copy())
 
     @classmethod
     def __get_pipeline_class(cls, config: dict) -> Type["Pipeline"]:
