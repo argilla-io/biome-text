@@ -141,7 +141,7 @@ def predict(
         # TODO remove when ui is adapted
         inputs=pipeline.reader.signature,  # backward compatibility
         columns=ddf.columns.values.tolist(),
-        type="explore",
+        kind="explore",
     )
 
     __prepare_es_index(es_host, es_index, es_doc)
