@@ -80,7 +80,12 @@ def _predict(args: argparse.Namespace) -> None:
 
 
 def predict(
-    binary: str, source_path: str, es_host: str, es_index: str, batch_size: int = 500
+    binary: str,
+    source_path: str,
+    es_host: str,
+    es_index: str,
+    es_doc: str = "_doc",
+    batch_size: int = 500,
 ) -> None:
     """
     Read a data source and tries to apply a model predictions to the whole data source. The
@@ -96,6 +101,8 @@ def predict(
         The elasticsearch host where publish the data
     es_index
         The elasticsearch index where publish the data
+    es_doc
+        The mapping type where publish the data
     batch_size
         The batch size for model predictions
 
@@ -121,7 +128,7 @@ def predict(
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
     ddf = ddf.repartition(npartitions=npartitions).persist()
     ddf["annotation"] = ddf.apply(pipeline.predict_json, axis=1, meta=object)
-    ddf = es_client.save(ddf, index=es_index, doc_type="_doc")
+    ddf = es_client.save(ddf, index=es_index, doc_type=es_doc)
 
     register_biome_prediction(
         name=es_index,
@@ -136,7 +143,7 @@ def predict(
         type="explore",
     )
 
-    __prepare_es_index(es_index, es_host)
+    __prepare_es_index(es_host, es_index, es_doc)
     ddf.persist()
 
 
@@ -177,7 +184,7 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
     del es_client
 
 
-def __prepare_es_index(index: str, es_hosts: str):
+def __prepare_es_index(es_hosts: str, index: str, doc_type: str):
     es_client = Elasticsearch(hosts=es_hosts, retry_on_timeout=True, http_compress=True)
 
     dynamic_templates = [
@@ -197,6 +204,6 @@ def __prepare_es_index(index: str, es_hosts: str):
     es_client.indices.delete(index=index, ignore=[400, 404])
     es_client.indices.create(
         index=index,
-        body={"mappings": {"_doc": {"dynamic_templates": dynamic_templates}}},
+        body={"mappings": {doc_type: {"dynamic_templates": dynamic_templates}}},
         ignore=400,
     )
