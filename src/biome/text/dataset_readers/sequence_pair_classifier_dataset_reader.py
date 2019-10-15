@@ -1,12 +1,9 @@
 import logging
-from typing import Dict, Optional, Union, List
+from typing import Optional, Union, List
 
-from allennlp.data import DatasetReader, TokenIndexer, Tokenizer, Instance
+from allennlp.data import DatasetReader, Instance
 from allennlp.data.fields import LabelField
-
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.models import SequencePairClassifier
-from .sequence_classifier_dataset_reader import SequenceClassifierDatasetReader
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
