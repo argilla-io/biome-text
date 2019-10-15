@@ -81,12 +81,7 @@ def _predict(args: argparse.Namespace) -> None:
 
 
 def predict(
-    binary: str,
-    source_path: str,
-    es_host: str,
-    es_index: str,
-    es_doc: str = "_doc",
-    batch_size: int = 500,
+    binary: str, source_path: str, es_host: str, es_index: str, batch_size: int = 500
 ) -> None:
     """
     Read a data source and tries to apply a model predictions to the whole data source. The
@@ -102,8 +97,6 @@ def predict(
         The elasticsearch host where publish the data
     es_index
         The elasticsearch index where publish the data
-    es_doc
-        The mapping type where publish the data
     batch_size
         The batch size for model predictions
 
@@ -118,9 +111,8 @@ def predict(
             "\nwith the same name that your model."
         )
 
-    es_client = DaskElasticClient(
-        host=es_host, retry_on_timeout=True, http_compress=True
-    )
+    client = Elasticsearch(hosts=es_host, retry_on_timeout=True, http_compress=True)
+    doc_type = get_compatible_doc_type(client)
 
     ds = DataSource.from_yaml(source_path)
     ddf = ds.to_forward_dataframe()
@@ -129,12 +121,14 @@ def predict(
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
     ddf = ddf.repartition(npartitions=npartitions).persist()
     ddf["annotation"] = ddf.apply(pipeline.predict_json, axis=1, meta=object)
-    ddf = es_client.save(ddf, index=es_index, doc_type=es_doc)
+    ddf = DaskElasticClient(
+        host=es_host, retry_on_timeout=True, http_compress=True
+    ).save(ddf, index=es_index, doc_type=doc_type)
 
     register_biome_prediction(
         name=es_index,
-        created_index=es_index,
         es_hosts=es_host,
+        created_index=es_index,
         # extra metadata must be normalized
         pipeline=pipeline.name,
         signature=pipeline.reader.signature,
@@ -144,8 +138,25 @@ def predict(
         kind="explore",
     )
 
-    __prepare_es_index(es_host, es_index, es_doc)
+    __prepare_es_index(client, es_index, doc_type)
     ddf.persist()
+
+
+def get_compatible_doc_type(client: Elasticsearch) -> str:
+    """
+    Find a compatible name for doc type by checking the cluster info
+    Parameters
+    ----------
+    client
+        The elasticsearch client
+
+    Returns
+    -------
+        A compatible name for doc type in function of cluster version
+    """
+
+    es_version = int(client.info()["version"]["number"].split(".")[0])
+    return "_doc" if es_version >= 6 else "doc"
 
 
 def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kwargs):
@@ -167,7 +178,6 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
 
     metadata_index = f"{BIOME_METADATA_INDEX}"
     es_client = Elasticsearch(hosts=es_hosts, retry_on_timeout=True, http_compress=True)
-    es_version = int(es_client.info()["version"]["number"].split(".")[0])
 
     es_client.indices.create(
         index=metadata_index,
@@ -177,7 +187,7 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
 
     es_client.update(
         index=metadata_index,
-        doc_type="_doc" if es_version >= 6 else "doc",
+        doc_type=get_compatible_doc_type(es_client),
         id=created_index,
         body={
             "doc": dict(name=name, created_at=datetime.datetime.now(), **kwargs),
@@ -187,9 +197,7 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
     del es_client
 
 
-def __prepare_es_index(es_hosts: str, index: str, doc_type: str):
-    es_client = Elasticsearch(hosts=es_hosts, retry_on_timeout=True, http_compress=True)
-
+def __prepare_es_index(es_client: Elasticsearch, index: str, doc_type: str):
     dynamic_templates = [
         {
             data_type: {
