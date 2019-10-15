@@ -1,11 +1,12 @@
 from typing import Union, List, Type
 
 import allennlp
+from allennlp.predictors import Predictor
 
 import biome
 from biome.text.dataset_readers import SequenceClassifierDatasetReader
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.pipelines.pipeline import Pipeline
+from .pipeline import Pipeline
 
 
 class SequenceClassifier(Pipeline):
@@ -31,3 +32,6 @@ class SequenceClassifier(Pipeline):
 
         """
         return super(SequenceClassifier, self).predict(tokens=features)
+
+
+Predictor.register("sequence_classifier")(SequenceClassifier)

@@ -9,14 +9,14 @@ from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from .pipeline import Pipeline
 
 
-class SequencePairClassifier(Pipeline):
+class SimilarityClassifier(Pipeline):
     @classmethod
     def reader_class(cls) -> Type[DataSourceReader]:
         return SequencePairClassifierDatasetReader
 
     @classmethod
     def model_class(cls) -> Type[allennlp.models.Model]:
-        return biome.text.models.SequencePairClassifier
+        return biome.text.models.SimilarityClassifier
 
     def predict(
         self, record1: Union[str, List[str], dict], record2: Union[str, List[str], dict]
@@ -25,5 +25,5 @@ class SequencePairClassifier(Pipeline):
         return self.model.forward_on_instance(instance)
 
 
-Predictor.register("sequence_pair_classifier")(SequencePairClassifier)
-Predictor.register(SequencePairClassifier.__name__)(SequencePairClassifier)
+Predictor.register("similarity_classifier")(SimilarityClassifier)
+Predictor.register(SimilarityClassifier.__name__)(SimilarityClassifier)
