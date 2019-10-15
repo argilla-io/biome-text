@@ -6,7 +6,7 @@ from typing import cast, Type
 
 import allennlp
 import yaml
-from allennlp.common import JsonDict
+from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import DatasetReader, Instance
 from allennlp.models import Archive, Model
@@ -202,16 +202,33 @@ class Pipeline(Predictor):
         name = cls.__registrable_name(pipeline_class)
 
         # Creating an empty pipeline
-        model = pipeline_class(model=None, reader=None)
+        model = pipeline_class(
+            model=None,
+            reader=cast(
+                DataSourceReader,
+                DatasetReader.from_params(Pipeline.__get_reader_params(data)),
+            ),
+        )
         # Include pipeline configuration
         # TODO This configuration will fail if the reader and model are registered with other names than the calculated
         #  registrable_name
         model.__config = {
-            "dataset_reader": {**data["pipeline"], "type": name},
-            "model": {**data["architecture"], "type": name},
+            "dataset_reader": {
+                **Pipeline.__get_reader_params(data).as_dict(),
+                "type": name,
+            },
+            "model": {**Pipeline.__get_model_params(data).as_dict(), "type": name},
         }
 
         return model
+
+    @classmethod
+    def __get_reader_params(cls, data) -> Params:
+        return Params(data["pipeline"].copy())
+
+    @classmethod
+    def __get_model_params(cls, data) -> Params:
+        return Params(data["architecture"].copy())
 
     @classmethod
     def __get_pipeline_class(cls, config: dict) -> Type["Pipeline"]:
@@ -229,7 +246,7 @@ class Pipeline(Predictor):
         if cls != Pipeline:
             return cls
 
-        class_name = config.get("class")
+        class_name = config.get("class", cls.__get_model_params(config)["type"])
         if not class_name:
             raise ConfigurationError(
                 "Cannot load the pipeline: No pipeline class found in file."
