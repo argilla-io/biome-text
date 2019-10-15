@@ -60,7 +60,7 @@ class TextFieldBuilderMixin(object):
         return str(value)
 
     def build_textfield(
-        self, data: Union[str, dict]
+        self, data: Union[str, list, dict]
     ) -> Optional[Union[ListField, TextField]]:
         """Embeds the record in a TextField or ListField depending on the _as_text_field parameter.
 

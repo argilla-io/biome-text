@@ -1,0 +1,7 @@
+path: ../../data/dedup_100_de_test.csv
+format: csv
+forward:
+  label: target
+  tokens:
+  - record1_firstname
+  - record1_lastname
