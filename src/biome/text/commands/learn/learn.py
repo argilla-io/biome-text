@@ -33,6 +33,9 @@ from biome.text.commands.helpers import BiomeConfig
 from biome.text.models import load_archive
 from biome.data.utils import configure_dask_cluster
 
+logger = logging.getLogger("allennlp")
+logger.setLevel(logging.INFO)
+
 for logger_name in [
        "allennlp.training.tensorboard_writer",
        "allennlp.common.params",
