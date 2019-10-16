@@ -40,7 +40,6 @@ class Pipeline(Predictor):
     _logger = logging.getLogger(__name__)
 
     # Disable allennlp logging
-    logging.getLogger("allennlp").setLevel(logging.WARNING)
     logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 
     def __init__(self, model: allennlp.models.model.Model, reader: DataSourceReader):
