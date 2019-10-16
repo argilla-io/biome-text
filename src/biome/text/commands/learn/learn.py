@@ -33,7 +33,14 @@ from biome.text.commands.helpers import BiomeConfig
 from biome.text.models import load_archive
 from biome.data.utils import configure_dask_cluster
 
-logging.getLogger("allennlp.training.tensorboard_writer").setLevel(logging.WARNING)
+logging.getLogger("allennlp.training.tensorboard_writer").disabled = True
+logging.getLogger('allennlp.common.params').disabled = True
+logging.getLogger('allennlp.common.from_params').disabled = True
+logging.getLogger('allennlp.nn.initializers').disabled = True
+logging.getLogger('allennlp.training.trainer_pieces').disabled = True
+logging.getLogger('allennlp.common.registrable').disabled = True
+# logging.getLogger('allennlp.modules.token_embedders.embedding').setLevel(logging.INFO)
+# logging.getLogger('urllib3.connectionpool').disabled = True
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -144,7 +151,7 @@ def learn(
     test_cfg: Optional[str] = None,
     workers: int = 1,
 ) -> Model:
-
+    _logger.info('Starting up learning process.')
     if not model_binary and not model_spec:
         raise ConfigurationError("Missing parameter --spec/--binary")
 
