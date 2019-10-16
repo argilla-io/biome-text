@@ -21,6 +21,11 @@ _logger = logging.getLogger(__name__)
 BIOME_METADATA_INDEX = ".biome"
 
 
+# This is the biome explore UI endpoint, used for show information
+# about explorations once the data is persisted
+EXPLORE_APP_ENDPOINT = os.getenv("BIOME_EXPLORE_ENDPOINT", "http://localhost:8080")
+
+
 class BiomeExplore(Subcommand):
     def add_subparser(
         self, name: str, parser: argparse._SubParsersAction
@@ -29,9 +34,7 @@ class BiomeExplore(Subcommand):
         description = """Apply a batch predictions over a dataset and make accessible through the explore UI"""
 
         subparser = parser.add_parser(
-            name,
-            description=description,
-            help="Allow data exploration with prediction",
+            name, description=description, help="Allow data exploration with prediction"
         )
 
         subparser.add_argument(
@@ -75,6 +78,7 @@ def explore_with_args(args: argparse.Namespace) -> None:
     explore(
         args.binary,
         source_path=args.from_source,
+        # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
         es_host=os.getenv(ENV_ES_HOSTS, "http://localhost:9200"),
         es_index=index,
     )
@@ -140,6 +144,10 @@ def explore(
 
     __prepare_es_index(client, es_index, doc_type)
     ddf.persist()
+    _logger.info(
+        "Data annotated successfully. You can explore your data here:"
+        f"{EXPLORE_APP_ENDPOINT}/explore/{es_index}"
+    )
 
 
 def get_compatible_doc_type(client: Elasticsearch) -> str:
