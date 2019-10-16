@@ -33,14 +33,16 @@ from biome.text.commands.helpers import BiomeConfig
 from biome.text.models import load_archive
 from biome.data.utils import configure_dask_cluster
 
-logging.getLogger("allennlp.training.tensorboard_writer").disabled = True
-logging.getLogger('allennlp.common.params').disabled = True
-logging.getLogger('allennlp.common.from_params').disabled = True
-logging.getLogger('allennlp.nn.initializers').disabled = True
-logging.getLogger('allennlp.training.trainer_pieces').disabled = True
-logging.getLogger('allennlp.common.registrable').disabled = True
-# logging.getLogger('allennlp.modules.token_embedders.embedding').setLevel(logging.INFO)
-# logging.getLogger('urllib3.connectionpool').disabled = True
+for logger_name in [
+       "allennlp.training.tensorboard_writer",
+       "allennlp.common.params",
+       "allennlp.common.from_params",
+       "allennlp.nn.initializers",
+       "allennlp.training.trainer_pieces",
+       "allennlp.common.registrable",
+   ]:
+       logger = logging.getLogger(logger_name)
+       logger.setLevel(logging.WARNING)
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
