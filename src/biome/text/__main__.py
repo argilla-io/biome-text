@@ -4,9 +4,8 @@ import logging
 import coloredlogs
 from allennlp.common.util import import_submodules
 
-from .commands import BiomeExplore
 from .commands import BiomeLearn
-from .commands import BiomePredict
+from .commands import BiomeExplore
 from .commands import BiomeRestAPI
 
 
@@ -37,7 +36,6 @@ def main() -> None:
     subparsers = parser.add_subparsers(title="Commands", metavar="")
 
     subcommands = {
-        "predict": BiomePredict(),
         "explore": BiomeExplore(),
         "serve": BiomeRestAPI(),
         "learn": BiomeLearn(),

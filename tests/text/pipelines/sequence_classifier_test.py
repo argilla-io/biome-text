@@ -8,7 +8,7 @@ import requests
 from biome.data.utils import ENV_ES_HOSTS
 from elasticsearch import Elasticsearch
 
-from biome.text.commands.predict.predict import predict
+from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.pipelines.sequence_classifier import SequenceClassifier
 from tests.test_context import TEST_RESOURCES
@@ -52,7 +52,7 @@ class SequenceClassifierTest(unittest.TestCase):
     def check_predict(self):
         index = self.name
         es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
-        predict(
+        explore(
             binary=self.model_archive,
             source_path=self.validation_data,
             es_host=es_host,

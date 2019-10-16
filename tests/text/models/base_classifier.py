@@ -9,7 +9,7 @@ from biome.data.utils import ENV_ES_HOSTS
 from elasticsearch import Elasticsearch
 
 from biome.text.commands.learn.learn import learn
-from biome.text.commands.predict.predict import predict
+from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.models import SequencePairClassifier, load_archive
 from biome.text.predictors import get_predictor_from_archive
@@ -58,7 +58,7 @@ class BasePairClassifierTest(DaskSupportTest):
     def check_predict(self):
         index = self.__class__.__name__.lower()
         es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
-        predict(
+        explore(
             binary=self.model_archive,
             source_path=self.validation_data,
             es_host=es_host,
