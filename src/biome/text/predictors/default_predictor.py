@@ -68,7 +68,3 @@ class DefaultBasePredictor(Predictor):
         output.pop("logits")
         return {**input, "annotation": sanitize(output)}
 
-
-@Predictor.register("sequence_classifier")
-class SequenceClassifierPredictor(DefaultBasePredictor):
-    pass

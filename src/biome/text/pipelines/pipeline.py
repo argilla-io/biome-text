@@ -15,6 +15,7 @@ from overrides import overrides
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
+from biome.text.predictors import get_predictor_from_archive
 
 
 class Pipeline(Predictor):
@@ -39,7 +40,6 @@ class Pipeline(Predictor):
     _logger = logging.getLogger(__name__)
 
     # Disable allennlp logging
-    logging.getLogger("allennlp").setLevel(logging.WARNING)
     logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 
     def __init__(self, model: allennlp.models.model.Model, reader: DataSourceReader):
@@ -92,6 +92,17 @@ class Pipeline(Predictor):
         return self._model
 
     @property
+    def name(self) -> str:
+        """
+        Get the pipeline name
+
+        Returns
+        -------
+            The fully qualified pipeline class name
+        """
+        return f"{self.__module__}.{self.__class__.__name__}"
+
+    @property
     def allennlp_config(self) -> dict:
         """
         A representation of reader and model in a properties defined way
@@ -108,19 +119,22 @@ class Pipeline(Predictor):
 
     @classmethod
     def load(cls, path: str, **kwargs) -> "Pipeline":
-        assert cls != Pipeline, "Cannot load a model with the base pipeline class"
-        '\nIf you known the pipeline class to use load using this class (MyPipeline.load("model.tar.gz"),'
-        "\notherwise, you can initialize the pipeline from configuration and then load the pipeline"
-        name = cls.__registrable_name(cls)
-        # TODO From now, we cannot pass the fully qualified class name as type parameter. We have an open PR for that.
-        #  See (https://github.com/allenai/allennlp/pull/3344)
-        #  So, we register the required components by allennlp before load them
-        Predictor.register(name, exist_ok=True)(cls)
-        Model.register(name, exist_ok=True)(cls.model_class())
-        DatasetReader.register(name, exist_ok=True)(cls.reader_class())
+        name = None
+        # TODO resolve load from Pipeline.class. By now, you must decorate your own
+        #  pipeline classes as an :class:~`allennlp.predictors.Predictor`
+        if cls != Pipeline:
+            name = cls.__registrable_name(cls)
+            # TODO From now, we cannot pass the fully qualified class name as type parameter. We have an open
+            #  PR for that. See (https://github.com/allenai/allennlp/pull/3344)
+            #  So, we register the required components by allennlp before load them
+            Predictor.register(name, exist_ok=True)(cls)
+            Model.register(name, exist_ok=True)(cls.model_class())
+            DatasetReader.register(name, exist_ok=True)(cls.reader_class())
 
         archive = load_archive(path, **kwargs)
-        return cls.from_archive(archive, predictor_name=name)
+        predictor = get_predictor_from_archive(archive, predictor_name=name)
+
+        return cast(Pipeline, predictor)
 
     @classmethod
     def __registrable_name(cls, _class: Type["Pipeline"]) -> str:
@@ -187,16 +201,30 @@ class Pipeline(Predictor):
         name = cls.__registrable_name(pipeline_class)
 
         # Creating an empty pipeline
-        model = pipeline_class(model=None, reader=None)
+        model = pipeline_class(
+            model=None,
+            reader=cast(
+                DataSourceReader,
+                DatasetReader.from_params(Pipeline.__get_reader_params(data, name)),
+            ),
+        )
         # Include pipeline configuration
         # TODO This configuration will fail if the reader and model are registered with other names than the calculated
         #  registrable_name
         model.__config = {
-            "dataset_reader": {**data["pipeline"], "type": name},
-            "model": {**data["architecture"], "type": name},
+            "dataset_reader": Pipeline.__get_reader_params(data, name).as_dict(),
+            "model": Pipeline.__get_model_params(data, name).as_dict(),
         }
 
         return model
+
+    @classmethod
+    def __get_reader_params(cls, data: dict, name: str) -> Params:
+        return Params({**data["pipeline"], "type": name}.copy())
+
+    @classmethod
+    def __get_model_params(cls, data: dict, name: str) -> Params:
+        return Params({**data["architecture"], "type": name}.copy())
 
     @classmethod
     def __get_pipeline_class(cls, config: dict) -> Type["Pipeline"]:
@@ -214,7 +242,7 @@ class Pipeline(Predictor):
         if cls != Pipeline:
             return cls
 
-        class_name = config.get("class")
+        class_name = config.get("class", cls.__get_model_params(config)["type"])
         if not class_name:
             raise ConfigurationError(
                 "Cannot load the pipeline: No pipeline class found in file."

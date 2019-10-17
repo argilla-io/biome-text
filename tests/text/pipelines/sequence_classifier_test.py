@@ -1,6 +1,6 @@
+import multiprocessing
 import os
 import tempfile
-import multiprocessing
 import unittest
 from time import sleep
 
@@ -8,7 +8,7 @@ import requests
 from biome.data.utils import ENV_ES_HOSTS
 from elasticsearch import Elasticsearch
 
-from biome.text.commands.predict.predict import predict
+from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.pipelines.sequence_classifier import SequenceClassifier
 from tests.test_context import TEST_RESOURCES
@@ -20,7 +20,7 @@ class SequenceClassifierTest(unittest.TestCase):
     output_dir = tempfile.mkdtemp()
     model_archive = os.path.join(output_dir, "model.tar.gz")
 
-    name = "sequence_pair_classifier"
+    name = "sequence_classifier"
     model_path = os.path.join(BASE_CONFIG_PATH, "model.yml")
     trainer_path = os.path.join(BASE_CONFIG_PATH, "trainer.yml")
     training_data = os.path.join(BASE_CONFIG_PATH, "train.data.yml")
@@ -52,16 +52,11 @@ class SequenceClassifierTest(unittest.TestCase):
     def check_predict(self):
         index = self.name
         es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
-        predict(
+        explore(
             binary=self.model_archive,
-            from_source=self.validation_data,
-            to_sink=dict(
-                index=index,
-                index_recreate=True,
-                type="doc",
-                es_hosts=es_host,
-                es_batch_size=100,
-            ),
+            source_path=self.validation_data,
+            es_host=es_host,
+            es_index=index,
         )
 
         client = Elasticsearch(hosts=es_host, http_compress=True)
@@ -82,7 +77,6 @@ class SequenceClassifierTest(unittest.TestCase):
         )
         self.assertTrue(response.json() is not None)
         process.terminate()
-        sleep(2)
 
     def check_predictor(self):
         predictor = SequenceClassifier.load(self.model_archive)
