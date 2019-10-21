@@ -25,7 +25,7 @@ class SequencePairClassifierDatasetReader(DataSourceReader):
 
         record1_field = self.build_textfield(record1)
         record2_field = self.build_textfield(record2)
-        label_field = LabelField(label.strip()) if label else None
+        label_field = LabelField(label) if label else None
 
         if record1_field:
             fields["record1"] = record1_field

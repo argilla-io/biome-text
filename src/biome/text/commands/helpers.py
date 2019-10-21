@@ -85,7 +85,7 @@ class BiomeConfig:
                 ),
             )
         # In general the dataset reader should be of the same type as the model
-        # (we use the signature of the model's forward method in the dataset reader)
+        # (the DatasetReader's text_to_instance matches the model's forward method)
         if "type" not in self.model_dict["dataset_reader"]:
             self.model_dict["dataset_reader"]["type"] = self.model_dict["model"]["type"]
 

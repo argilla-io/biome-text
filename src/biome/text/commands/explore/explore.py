@@ -119,7 +119,7 @@ def explore(
     doc_type = get_compatible_doc_type(client)
 
     ds = DataSource.from_yaml(source_path)
-    ddf = ds.to_forward_dataframe()
+    ddf = ds.to_mapped_dataframe()
     npartitions = max(1, round(len(ddf) / batch_size))
     # a persist is necessary here, otherwise it fails for npartitions == 1
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
