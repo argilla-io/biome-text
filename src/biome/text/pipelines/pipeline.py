@@ -250,7 +250,7 @@ class Pipeline(Predictor):
         if cls != Pipeline:
             return cls
 
-        class_name = config.get("class", cls.__get_model_params(config))
+        class_name = config.get("class", cls.__get_model_params(config).get("type"))
         if not class_name:
             raise ConfigurationError(
                 "Cannot load the pipeline: No pipeline class found in file."
