@@ -2,10 +2,9 @@ path: ../data/dataset_source.jsonl
 
 format: json
 
-forward:
+mapping:
     tokens:
     - reviewText
-    target:
-      gold_label: overall
+    label: overall
 
 encoding: UTF-8

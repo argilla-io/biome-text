@@ -2,11 +2,10 @@ import inspect
 import logging
 from typing import Iterable, Optional, Dict, Union
 
-import dask
 import pandas
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
-from biome.data.sources import DataSource
 
+from biome.data.sources import DataSource
 from biome.text.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
 
 
@@ -67,7 +66,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         """An generator that yields `Instance`s that are fed to the model
 
         This method is implicitly called when training the model.
-        The predictor uses the `self.text_to_instance` method.
+        The predictor uses the `self.text_to_instance_with_data_filter` method.
 
         Parameters
         ----------
@@ -87,7 +86,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             self.logger.debug("Loaded cached data set {}".format(file_path))
         else:
             self.logger.debug("Read data set from {}".format(file_path))
-            dataset = data_source.to_forward_dataframe()
+            dataset = data_source.to_mapped_dataframe()
             instances = dataset.apply(
                 self.text_to_instance_with_data_filter, axis=1, meta=(None, "object")
             ).dropna()
@@ -98,11 +97,11 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance_with_data_filter(
-        self, data: Union[dict, pandas.Series, dask.dataframe.Series]
+        self, data: Union[dict, pandas.Series, "dask.dataframe.Series"]
     ) -> Optional[Instance]:
         """
         The method just adjust the data to the text_to_field input parameters and then
-        call the official text_to_instance method
+        calls the official text_to_instance method
 
         Parameters
         ----------

@@ -32,7 +32,7 @@ class SequenceClassifierDatasetReader(DataSourceReader):
         fields = {}
 
         tokens_field = self.build_textfield(tokens)
-        label_field = LabelField(label.strip()) if label else None
+        label_field = LabelField(label) if label else None
 
         if tokens_field:
             fields["tokens"] = tokens_field
