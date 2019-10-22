@@ -2,11 +2,10 @@ import inspect
 import logging
 from typing import Iterable, Optional, Dict, Union
 
-import dask
 import pandas
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
-from biome.data.sources import DataSource
 
+from biome.data.sources import DataSource
 from biome.text.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
 
 
@@ -98,7 +97,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance_with_data_filter(
-        self, data: Union[dict, pandas.Series, dask.dataframe.Series]
+        self, data: Union[dict, pandas.Series, "dask.dataframe.Series"]
     ) -> Optional[Instance]:
         """
         The method just adjust the data to the text_to_field input parameters and then
