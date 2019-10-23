@@ -56,7 +56,7 @@ if __name__ == "__main__":
             "biome-data@git+https://github.com/recognai/biome-data.git",
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
-        package_data={"biome": ["text/commands/explore/ui/classifier.tar.gz"]},
+        package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,
