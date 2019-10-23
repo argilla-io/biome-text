@@ -1,6 +1,6 @@
 path: ../../data/dedup_100_de.csv
 format: csv
-forward:
+mapping:
   label: target
   tokens:
   - record1_firstname
