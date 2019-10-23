@@ -16,7 +16,7 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     CORS(app)
 
     @app.route("/elastic/<path:es_path>")
-    def es_get_proxy(es_path: str) -> Response:
+    def elasticsearch_proxy(es_path: str) -> Response:
 
         es_url = f"{es_host}/{es_path}"
 
@@ -26,6 +26,8 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
             response = requests.get(es_url)
         elif request.method == "POST":
             response = request.post(es_url, json=request.get_json())
+        elif request.method == "PUT":
+            response = request.put(es_url, json=request.get_json())
         else:
             raise TypeError(f"Method {request.method} not allowed")
 
