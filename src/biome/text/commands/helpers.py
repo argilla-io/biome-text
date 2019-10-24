@@ -5,6 +5,8 @@ from biome.data.utils import get_nested_property_from_data
 
 import yaml
 
+from ..environment import CUDA_DEVICE
+
 _logger = logging.getLogger(__name__)
 
 
@@ -118,7 +120,7 @@ class BiomeConfig:
         cuda_device
             The integer number of the CUDA device
         """
-        cuda_device = int(os.getenv(self.CUDA_DEVICE_FIELD.upper(), -1))
+        cuda_device = int(os.getenv(CUDA_DEVICE, -1))
         return cuda_device
 
     def to_allennlp_params(self) -> Dict:
