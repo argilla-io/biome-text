@@ -134,9 +134,10 @@ def explore(
         created_index=es_index,
         # extra metadata must be normalized
         pipeline=pipeline.name,
-        signature=pipeline.reader.signature,
+        signature=pipeline.signature,
+        predict_signature=pipeline.predict_signature,
         # TODO remove when ui is adapted
-        inputs=pipeline.reader.signature,  # backward compatibility
+        inputs=pipeline.predict_signature,  # backward compatibility
         columns=ddf.columns.values.tolist(),
         kind="explore",
     )
