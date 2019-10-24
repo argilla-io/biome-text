@@ -60,7 +60,13 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
 
         Returns
         -------
-            A list of expected inputs
+            A list of expected inputs with information about if input is optional or nor.
+
+            For example, for the signature
+            >>def text_to_instance(a:str,b:str, c:str=None)
+
+            This method will return:
+            >>{"a":{"optional": False},"b":{"optional": False},"c":{"optional": True}}
         """
         return self._signature.copy()
 
