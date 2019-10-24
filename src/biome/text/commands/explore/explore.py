@@ -7,7 +7,7 @@ import re
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.checks import ConfigurationError
 from biome.data.sources import DataSource
-from biome.data.utils import ENV_ES_HOSTS
+from ...environment import ES_HOST, BIOME_EXPLORE_ENDPOINT
 from dask_elk.client import DaskElasticClient
 
 # TODO centralize configuration
@@ -20,10 +20,9 @@ _logger = logging.getLogger(__name__)
 
 BIOME_METADATA_INDEX = ".biome"
 
-
 # This is the biome explore UI endpoint, used for show information
 # about explorations once the data is persisted
-EXPLORE_APP_ENDPOINT = os.getenv("BIOME_EXPLORE_ENDPOINT", "http://localhost:8080")
+EXPLORE_APP_ENDPOINT = os.getenv(BIOME_EXPLORE_ENDPOINT, "http://localhost:8080")
 
 
 class BiomeExplore(Subcommand):
@@ -79,7 +78,7 @@ def explore_with_args(args: argparse.Namespace) -> None:
         args.binary,
         source_path=args.from_source,
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
-        es_host=os.getenv(ENV_ES_HOSTS, "http://localhost:9200"),
+        es_host=os.getenv(ES_HOST, "http://localhost:9200"),
         es_index=index,
     )
 

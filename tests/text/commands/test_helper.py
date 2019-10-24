@@ -2,6 +2,7 @@ import os
 import unittest
 
 from biome.text.commands.helpers import BiomeConfig
+from biome.text.environment import CUDA_DEVICE
 
 from tests.test_context import TEST_RESOURCES
 
@@ -33,6 +34,6 @@ class TestCommandHelper(unittest.TestCase):
 
         self.assertEqual(
             trainer_cfg["cuda_device"],
-            int(os.getenv("CUDA_DEVICE")),
+            int(os.getenv(CUDA_DEVICE)),
             "Wrong cuda device expected",
         )

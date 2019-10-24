@@ -5,7 +5,7 @@ import tempfile
 from time import sleep
 
 import requests
-from biome.data.utils import ENV_ES_HOSTS
+from biome.text.environment import ES_HOST
 from elasticsearch import Elasticsearch
 
 from biome.text.commands.learn.learn import learn
@@ -57,7 +57,7 @@ class BasePairClassifierTest(DaskSupportTest):
 
     def check_predict(self):
         index = self.__class__.__name__.lower()
-        es_host = os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
+        es_host = os.getenv(ES_HOST, "http://localhost:9200")
         explore(
             binary=self.model_archive,
             source_path=self.validation_data,
