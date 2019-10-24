@@ -9,7 +9,6 @@ from allennlp.data import Instance
 from allennlp.models import Model
 from allennlp.predictors import Predictor
 from allennlp.data.fields import LabelField
-#from allennlp.interpret.saliency_interpreters import SaliencyInterpreter, SimpleGradient
 from overrides import overrides
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
@@ -78,10 +77,28 @@ class DefaultBasePredictor(Predictor):
     def predictions_to_labeled_instances(
         self, instance: Instance, outputs: Dict[str, numpy.ndarray]
     ) -> List[Instance]:
-        
+         # TODO: Check if this is necesary   
         new_instance = deepcopy(instance)
         label = numpy.argmax(outputs["logits"])
+        # TODO: Check if this is necesary   
         new_instance.add_field("label", LabelField(int(label), skip_indexing=True))
 
         return [new_instance]
+
+    @overrides
+    def json_to_labeled_instances(self, inputs: JsonDict) -> List[Instance]:
+        """
+        Converts incoming json to a :class:`~allennlp.data.instance.Instance`,
+        runs the model on the newly created instance, and adds labels to the
+        :class:`~allennlp.data.instance.Instance`s given by the model's output.
+        Returns
+        -------
+        List[instance]
+        A list of :class:`~allennlp.data.instance.Instance`
+        """
+        # pylint: disable=assignment-from-no-return
+        instance = self._json_to_instance(inputs)
+        outputs = self._model.forward_on_instance(instance)
+        new_instances = self.predictions_to_labeled_instances(instance, outputs)
+        return new_instances
 

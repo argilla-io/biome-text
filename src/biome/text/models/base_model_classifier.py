@@ -245,14 +245,17 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
 
             max_classes.append(label)
             max_classes_prob.append(label_prob)
-
-        return {
+        
+        return_dict = {
             "logits": output_dict.get("logits"),
             "classes": output_map_probs,
-            "loss": output_dict.get("loss"),
             "max_class": max_classes,
             "max_class_prob": max_classes_prob,
         }
+        # having loss == None in dict (when no label is present) fails
+        if "loss" in output_dict.keys():
+            return_dict["loss"] = output_dict.get("loss")
+        return return_dict
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
