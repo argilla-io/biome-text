@@ -2,7 +2,7 @@ import logging
 import os
 import re
 from tempfile import mktemp
-from typing import cast, Type, Optional
+from typing import cast, Type, Optional, List
 
 import allennlp
 import yaml
@@ -113,6 +113,34 @@ class Pipeline(Predictor):
             The configuration dictionary
         """
         return self.__config.copy()
+
+    @property
+    def signature(self) -> List[str]:
+        """
+        Describe de input signature for the pipeline
+
+        Returns
+        -------
+            A list of expected inputs
+        """
+        return [k for k in self._dataset_reader.signature.keys()]
+
+    @property
+    def predict_signature(self) -> List[str]:
+        """
+        Describe de input signature for the pipeline predictions.
+
+        Similar to `signature` method but just keeping the required values
+
+        Returns
+        -------
+            A list of inputs names
+        """
+        return [
+            k
+            for k, v in self._dataset_reader.signature.items()
+            if not v.get("optional")
+        ]
 
     def predict(self, **inputs) -> dict:
         return self.predict_json(inputs)
