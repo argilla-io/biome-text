@@ -3,9 +3,8 @@ path:
 - ../data/dataset_source.1.csv
 - ../data/dataset_source.2.csv
 delimiter: ","
-forward:
+mapping:
   tokens:
   - age
-  target:
-    gold_label: job
+  label: job
 

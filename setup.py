@@ -1,20 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from typing import Tuple
-from setuptools import setup, find_packages
+
 from pip import __version__ as pip_version
+from setuptools import setup, find_packages
 
 PIP_VERSION_REQUIRED = "19.1.1"
 
 
 def check_pip_version(required_version: str, version: str):
-    def version_str_2_numbers(version: str) -> Tuple[(int, int, int)]:
-        return tuple([int(n) for n in version.split(".")])
+    def version_str_2_numbers(version: str) -> Tuple[int, int, int]:
+        version_fractions = [int(n) for n in version.split(".")]
+        return tuple(
+            [
+                version_fractions[i] if i < len(version_fractions) else 0
+                for i in range(0, 3)
+            ]
+        )
 
     mayor, minor, fixes = version_str_2_numbers(version)
     req_mayor, req_minor, req_fixes = version_str_2_numbers(required_version)
 
-    if mayor >= req_mayor and minor >= req_minor and fixes >= req_fixes:
+    if (
+        mayor > req_mayor
+        or (mayor == req_mayor and minor > req_minor)
+        or (mayor == req_mayor and minor == req_minor and fixes >= fixes)
+    ):
         pass
     else:
         print(f"Minimal pip version should be {required_version}, found: {version}")
@@ -41,10 +52,11 @@ if __name__ == "__main__":
             "allennlp~=0.9",
             "smart_open~=1.8",
             "coloredlogs==10.0",
-            "biome-data@git+https://github.com/recognai/biome-data.git"
+            "dask-elk~=0.2.0",
+            "biome-data@git+https://github.com/recognai/biome-data.git",
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
-        package_data={"biome": ["text/commands/explore/ui/classifier.tar.gz"]},
+        package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,

@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/recognai/biome-text.svg?branch=master)](https://travis-ci.org/recognai/biome-text)
+
 # Biome-text
 > Biome-text is a light-weight open source Natural Language Processing tool built with AllenNLP
 

@@ -6,8 +6,8 @@ from allennlp.common.util import import_submodules
 
 from .commands import BiomeExplore
 from .commands import BiomeLearn
-from .commands import BiomePredict
 from .commands import BiomeRestAPI
+from .commands.ui import BiomeUI
 
 
 def configure_colored_logging(loglevel):
@@ -31,16 +31,17 @@ def main() -> None:
     work for them, unless you use the ``--include-package`` flag.
     """
     # pylint: disable=dangerous-default-value
+    configure_colored_logging(loglevel=logging.INFO)
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(description="Run biome", prog="biome")
 
     subparsers = parser.add_subparsers(title="Commands", metavar="")
 
     subcommands = {
-        "predict": BiomePredict(),
         "explore": BiomeExplore(),
         "serve": BiomeRestAPI(),
         "learn": BiomeLearn(),
+        "ui": BiomeUI(),
     }
 
     for name, subcommand in subcommands.items():
@@ -72,5 +73,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    configure_colored_logging(loglevel=logging.INFO)
     main()

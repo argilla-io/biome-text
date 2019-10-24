@@ -1,22 +1,28 @@
 from copy import deepcopy
-from typing import List, Dict
+from typing import List, Dict, cast
 
 import numpy
 
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance
+from allennlp.models import Model
 from allennlp.predictors import Predictor
 from allennlp.data.fields import LabelField
 #from allennlp.interpret.saliency_interpreters import SaliencyInterpreter, SimpleGradient
 from overrides import overrides
 
+from biome.text.dataset_readers.datasource_reader import DataSourceReader
+
 
 class DefaultBasePredictor(Predictor):
+    def __init__(self, model: Model, dataset_reader: DataSourceReader):
+        super(DefaultBasePredictor, self).__init__(model, dataset_reader)
+        self._dataset_reader = cast(DataSourceReader, self._dataset_reader)
+
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
-        instance = self._dataset_reader.text_to_instance(json_dict)
-        return instance
+        return self._dataset_reader.text_to_instance_with_data_filter(json_dict)
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> JsonDict:
@@ -79,7 +85,3 @@ class DefaultBasePredictor(Predictor):
 
         return [new_instance]
 
-
-@Predictor.register("sequence_classifier")
-class SequenceClassifierPredictor(DefaultBasePredictor):
-    pass

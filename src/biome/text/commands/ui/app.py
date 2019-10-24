@@ -2,15 +2,7 @@ import json
 import os
 
 import requests
-from flask import (
-    Flask,
-    request,
-    Response,
-    send_file,
-    send_from_directory,
-    jsonify,
-    logging,
-)
+from flask import Flask, request, Response, send_file, send_from_directory, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -23,9 +15,22 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     )  # sets the requester IP with the X-Forwarded-For header
     CORS(app)
 
-    @app.route("/elastic/<path:es_path>", methods=["GET"])
-    def es_get_proxy(es_path: str) -> Response:
-        response = requests.get(f"{es_host}/{es_path}")
+    @app.route("/elastic/<path:es_path>")
+    def elasticsearch_proxy(es_path: str) -> Response:
+
+        es_url = f"{es_host}/{es_path}"
+
+        if request.method == "OPTIONS":
+            return Response(response="", status=200)
+        elif request.method == "GET":
+            response = requests.get(es_url)
+        elif request.method == "POST":
+            response = request.post(es_url, json=request.get_json())
+        elif request.method == "PUT":
+            response = request.put(es_url, json=request.get_json())
+        else:
+            raise TypeError(f"Method {request.method} not allowed")
+
         return jsonify(response.json())
 
     @app.route("/elastic/<path:index>/_search", methods=["GET", "POST", "OPTIONS"])
@@ -61,6 +66,10 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     @app.route("/static/css/<path:path>")
     def static_css_proxy(path: str) -> Response:  # pylint: disable=unused-variable
         return send_from_directory(os.path.join(statics_dir, "static/css"), path)
+
+    @app.route("/public/<path:path>")
+    def public_proxy(path: str) -> Response:  # pylint: disable=unused-variable
+        return send_from_directory(statics_dir, path)
 
     @app.route("/")
     def index() -> Response:  # pylint: disable=unused-variable

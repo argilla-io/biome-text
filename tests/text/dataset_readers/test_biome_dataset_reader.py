@@ -40,8 +40,6 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         dataset = list(reader.read(yaml_config))
 
         assert len(dataset) == 5
-        for example in dataset:
-            print(example.fields)
 
     def _check_dataset(
         self,

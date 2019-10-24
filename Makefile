@@ -11,8 +11,15 @@ install: ## install package
 	@pip install .
 
 dev: ## install package in development mode
-	@pip install git+https://github.com/recognai/biome-data.git
+	@pip install -U git+https://github.com/recognai/biome-data.git
 	@pip install --upgrade -e .[testing]
+
+upgrade-classifier-ui: ## updates the biome-classifier-ui interface artifact
+	@curl \
+    --output src/biome/text/commands/ui/classifier.tar.gz \
+    -L \
+    --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+    ${GITLAB_BIOME_CLASSIFIER_UI_ARTIFACT_URL}
 
 .PHONY: help
 help:

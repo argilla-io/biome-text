@@ -5,6 +5,8 @@ from biome.data.utils import get_nested_property_from_data
 
 import yaml
 
+from ..environment import CUDA_DEVICE
+
 _logger = logging.getLogger(__name__)
 
 
@@ -85,7 +87,7 @@ class BiomeConfig:
                 ),
             )
         # In general the dataset reader should be of the same type as the model
-        # (we use the signature of the model's forward method in the dataset reader)
+        # (the DatasetReader's text_to_instance matches the model's forward method)
         if "type" not in self.model_dict["dataset_reader"]:
             self.model_dict["dataset_reader"]["type"] = self.model_dict["model"]["type"]
 
@@ -118,7 +120,7 @@ class BiomeConfig:
         cuda_device
             The integer number of the CUDA device
         """
-        cuda_device = int(os.getenv(self.CUDA_DEVICE_FIELD.upper(), -1))
+        cuda_device = int(os.getenv(CUDA_DEVICE, -1))
         return cuda_device
 
     def to_allennlp_params(self) -> Dict:

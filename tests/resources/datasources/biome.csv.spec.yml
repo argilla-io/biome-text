@@ -9,9 +9,8 @@ encoding: UTF-8
 delimiter: ","
 
 # mapping model-dataset definition
-forward:
+mapping:
   tokens:
   - age
-  target:
-    gold_label: job
+  label: job
 
