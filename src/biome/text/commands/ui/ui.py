@@ -8,7 +8,7 @@ from typing import Optional
 from allennlp.commands import Subcommand
 from gevent.pywsgi import WSGIServer
 
-from biome.data.utils import ENV_ES_HOSTS
+from biome.text.environment import ES_HOST
 from .app import make_app
 
 # TODO centralize configuration
@@ -43,7 +43,7 @@ def launch_ui_from_args(args: argparse.Namespace) -> None:
 
 
 def launch_ui(es_host: str, port: int = 9000) -> None:
-    es_host = es_host if es_host else os.getenv(ENV_ES_HOSTS, "http://localhost:9200")
+    es_host = es_host if es_host else os.getenv(ES_HOST, "http://localhost:9200")
 
     flask_app = make_app(
         es_host=es_host, statics_dir=temporal_static_path("classifier")
