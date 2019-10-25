@@ -25,7 +25,14 @@ class SequencePairClassifierDatasetReader(DataSourceReader):
 
         record1_field = self.build_textfield(record1)
         record2_field = self.build_textfield(record2)
-        label_field = LabelField(label) if label else None
+        label_field = None
+        # TODO: This is ugly as f***, should go into a decorator that checks/transforms the input
+        if label is not None:
+            # skipp example
+            if str(label).strip() == "":
+                return None
+            else:
+                label_field = LabelField(str(label).strip())
 
         if record1_field:
             fields["record1"] = record1_field

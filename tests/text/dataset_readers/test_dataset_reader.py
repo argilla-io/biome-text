@@ -213,7 +213,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             format="csv",
             path=local_data_path,
             sep=";",
-            forward={
+            mapping={
                 "tokens": ["name"],
                 "target": {
                     "gold_label": "category of institution",
@@ -308,9 +308,9 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 {
                     "format": "json",
                     "path": JSON_PATH,
-                    "forward": {
+                    "mapping": {
                         "tokens": ["reviewText"],
-                        "target": {"gold_label": "overall"},
+                        "label": "overall",
                     },
                 }
             )
@@ -324,7 +324,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 {
                     "format": "json",
                     "path": JSON_WITH_EMPTY_VALUES,
-                    "forward": {"tokens": ["reviewText"], "label": "overall"},
+                    "mapping": {"tokens": ["reviewText"], "label": "overall"},
                 }
             )
         )
