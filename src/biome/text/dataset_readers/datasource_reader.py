@@ -106,23 +106,5 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
 
         return (instance for idx, instance in instances.iteritems() if instance)
 
-    def text_to_instance_with_data_filter(
-        self, data: Union[dict, "pandas.Series", "dask.dataframe.Series"]
-    ) -> Optional[Instance]:
-        """
-        The method just adjust the data to the text_to_field input parameters and then
-        calls the official text_to_instance method
-
-        Parameters
-        ----------
-        data
-            The incoming data
-        """
-        if not isinstance(data, Dict):
-            data = data.to_dict()
-
-        inputs = {str(k): v for k, v in data.items() if k in self._signature}
-        return self.text_to_instance(**inputs)
-
     def text_to_instance(self, **inputs) -> Instance:
         raise NotImplementedError
