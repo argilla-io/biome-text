@@ -7,6 +7,7 @@ import re
 import yaml
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
+from allennlp.common.util import sanitize
 from allennlp.data import DatasetReader, Instance
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
@@ -156,12 +157,26 @@ class Pipeline(Predictor):
         return self.reader.text_to_instance_with_data_filter(json_dict)
 
     @overrides
-    def predict_json(self, inputs: JsonDict) -> JsonDict:
-        from allennlp.common.util import sanitize
+    def predict_json(self, inputs: JsonDict) -> Optional[JsonDict]:
+        """Predict an input with the pipeline's model.
 
+        Parameters
+        ----------
+        inputs
+            The input features/tokens in form of a json dict
+
+        Returns
+        -------
+        output
+            The model's prediction in form of a dict.
+            Returns None if the input could not be transformed to an instance.
+        """
         instance = self._json_to_instance(inputs)
-        output = self.model.forward_on_instance(instance)
-        return sanitize(output)
+        if instance is None:
+            return None
+        else:
+            output = self.model.forward_on_instance(instance)
+            return sanitize(output)
 
     @staticmethod
     def __to_snake_case(name):
