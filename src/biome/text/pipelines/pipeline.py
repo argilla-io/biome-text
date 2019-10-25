@@ -154,7 +154,7 @@ class Pipeline(Predictor):
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
-        return self.reader.text_to_instance_with_data_filter(json_dict)
+        return self.reader.text_to_instance(**json_dict)
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> Optional[JsonDict]:

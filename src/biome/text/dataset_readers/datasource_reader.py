@@ -96,8 +96,10 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             self.logger.debug("Read data set from {}".format(file_path))
             dataset = data_source.to_mapped_dataframe()
             instances = dataset.apply(
-                self.text_to_instance_with_data_filter, axis=1, meta=(None, "object")
-            ).dropna()
+                lambda x: self.text_to_instance(**x.to_dict()),
+                axis=1,
+                meta=(None, "object"),
+            )
 
             # cache instances of the data set
             self.set(file_path, instances)
@@ -105,7 +107,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         return (instance for idx, instance in instances.iteritems() if instance)
 
     def text_to_instance_with_data_filter(
-        self, data: Union[dict, pandas.Series, "dask.dataframe.Series"]
+        self, data: Union[dict, "pandas.Series", "dask.dataframe.Series"]
     ) -> Optional[Instance]:
         """
         The method just adjust the data to the text_to_field input parameters and then

@@ -9,7 +9,7 @@ from overrides import overrides
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 
-
+# TODO: This class is deprecated and is not used at the moment! Should be removed in the near future!
 class DefaultBasePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DataSourceReader):
         super(DefaultBasePredictor, self).__init__(model, dataset_reader)
