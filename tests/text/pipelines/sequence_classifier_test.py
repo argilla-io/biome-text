@@ -7,6 +7,7 @@ from time import sleep
 import requests
 from elasticsearch import Elasticsearch
 
+from biome.data.utils import ENV_ES_HOSTS
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
