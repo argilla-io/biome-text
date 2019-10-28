@@ -155,7 +155,6 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 dataset, expected_length, expected_inputs, ["1", "2", "3"]
             )
 
-    @pytest.mark.xfail
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
         expected_inputs = ["Dufils", "Anne", "Pierre", "Jousseaume", "Thierry"]
