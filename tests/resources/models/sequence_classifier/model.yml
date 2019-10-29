@@ -2,14 +2,14 @@ type: biome.text.model_instances.sequence_classifier.SequenceClassifier
 
 architecture:
   seq2vec_encoder:
-    hidden_size: 150
-    input_size: 300
-    num_layers: 3
-    dropout: 0.6
+    hidden_size: 10
+    input_size: 10
+    num_layers: 1
+    dropout: 0.0
     type: gru
   text_field_embedder:
     tokens:
-      embedding_dim: 300
+      embedding_dim: 10
       type: embedding
 
 pipeline:

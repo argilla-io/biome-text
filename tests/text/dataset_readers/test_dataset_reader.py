@@ -155,7 +155,6 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 dataset, expected_length, expected_inputs, ["1", "2", "3"]
             )
 
-    @pytest.mark.xfail
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
         expected_inputs = ["Dufils", "Anne", "Pierre", "Jousseaume", "Thierry"]
@@ -213,7 +212,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             format="csv",
             path=local_data_path,
             sep=";",
-            forward={
+            mapping={
                 "tokens": ["name"],
                 "target": {
                     "gold_label": "category of institution",
@@ -308,9 +307,9 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 {
                     "format": "json",
                     "path": JSON_PATH,
-                    "forward": {
+                    "mapping": {
                         "tokens": ["reviewText"],
-                        "target": {"gold_label": "overall"},
+                        "label": "overall",
                     },
                 }
             )
@@ -324,7 +323,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 {
                     "format": "json",
                     "path": JSON_WITH_EMPTY_VALUES,
-                    "forward": {"tokens": ["reviewText"], "label": "overall"},
+                    "mapping": {"tokens": ["reviewText"], "label": "overall"},
                 }
             )
         )

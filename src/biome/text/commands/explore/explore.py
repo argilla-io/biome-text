@@ -4,10 +4,13 @@ import os
 import argparse
 import datetime
 import re
+import warnings
+
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.checks import ConfigurationError
 from biome.data.sources import DataSource
 from dask_elk.client import DaskElasticClient
+import dask.dataframe as dd
 
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
@@ -118,12 +121,26 @@ def explore(
     doc_type = get_compatible_doc_type(client)
 
     ds = DataSource.from_yaml(source_path)
-    ddf = ds.to_mapped_dataframe()
-    npartitions = max(1, round(len(ddf) / batch_size))
+    ddf_mapped = ds.to_mapped_dataframe()
+    # this only makes really sense when we have a predict_batch_json method implemented ...
+    npartitions = max(1, round(len(ddf_mapped) / batch_size))
     # a persist is necessary here, otherwise it fails for npartitions == 1
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-    ddf = ddf.repartition(npartitions=npartitions).persist()
-    ddf["annotation"] = ddf.apply(pipeline.predict_json, axis=1, meta=object)
+    ddf_mapped = ddf_mapped.repartition(npartitions=npartitions).persist()
+    ddf_mapped["annotation"] = ddf_mapped.apply(
+        lambda x: pipeline.predict_json(x.to_dict()), axis=1, meta=(None, object)
+    )
+
+    ddf_source = ds.to_dataframe()
+    ddf_source = ddf_source.repartition(npartitions=npartitions).persist()
+
+    # We are sure that both data frames are aligned!
+    # A 100% safe way would be to set_index of both data frames on a meaningful column.
+    # The main problem are multiple csv files (read_csv("*.csv")), where the index starts from 0 for each file ...
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ddf = dd.concat([ddf_source, ddf_mapped], axis=1)
+
     ddf = DaskElasticClient(
         host=es_host, retry_on_timeout=True, http_compress=True
     ).save(ddf, index=es_index, doc_type=doc_type)
