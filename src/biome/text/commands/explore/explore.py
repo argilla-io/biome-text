@@ -73,8 +73,8 @@ def explore_with_args(args: argparse.Namespace) -> None:
     def sanizite_index(index_name: str) -> str:
         return re.sub(r"\W", "_", index_name)
 
-    ds_name = os.path.basename(args.binary)
-    model_name = os.path.dirname(args.from_source)
+    model_name = os.path.basename(args.from_source)
+    ds_name = os.path.dirname(os.path.abspath(args.binary))
     index = sanizite_index("{}_{}".format(model_name, ds_name).lower())
 
     explore(
