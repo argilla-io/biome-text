@@ -1,11 +1,11 @@
 import inspect
 import logging
-from typing import Iterable, Optional, Dict, Union
-
+from typing import Iterable, Optional, Dict, Union, List
+from inspect import Parameter
 import pandas
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
-
 from biome.data.sources import DataSource
+
 from biome.text.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
 
 
@@ -43,22 +43,30 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             as_text_field=as_text_field,
         )
 
-        self._signature = [
-            parameter
-            for parameter in inspect.signature(self.text_to_instance).parameters.keys()
-            if parameter != "self"
-        ]
+        self._signature = {
+            name: dict(optional=value.default != Parameter.empty)
+            for name, value in inspect.signature(
+                self.text_to_instance
+            ).parameters.items()
+            if name != "self"
+        }
 
     logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
     @property
-    def signature(self):
+    def signature(self) -> dict:
         """
         Describe de input signature for the pipeline predictions
 
         Returns
         -------
-            A list of expected input names
+            A list of expected inputs with information about if input is optional or nor.
+
+            For example, for the signature
+            >>def text_to_instance(a:str,b:str, c:str=None)
+
+            This method will return:
+            >>{"a":{"optional": False},"b":{"optional": False},"c":{"optional": True}}
         """
         return self._signature.copy()
 

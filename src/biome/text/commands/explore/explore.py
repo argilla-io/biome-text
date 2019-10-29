@@ -1,18 +1,18 @@
-import argparse
-import datetime
 import logging
 import os
-import re
 
+import argparse
+import datetime
+import re
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.checks import ConfigurationError
 from biome.data.sources import DataSource
-from ...environment import ES_HOST, BIOME_EXPLORE_ENDPOINT
 from dask_elk.client import DaskElasticClient
 
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
 
+from biome.text.environment import ES_HOST, BIOME_EXPLORE_ENDPOINT
 from biome.text.pipelines.pipeline import Pipeline
 
 logging.basicConfig(level=logging.INFO)
@@ -132,13 +132,10 @@ def explore(
         name=es_index,
         es_hosts=es_host,
         created_index=es_index,
-        # extra metadata must be normalized
-        pipeline=pipeline.name,
-        signature=pipeline.reader.signature,
-        # TODO remove when ui is adapted
-        inputs=pipeline.reader.signature,  # backward compatibility
         columns=ddf.columns.values.tolist(),
         kind="explore",
+        # extra metadata must be normalized
+        pipeline=pipeline,
     )
 
     __prepare_es_index(client, es_index, doc_type)
@@ -166,7 +163,9 @@ def get_compatible_doc_type(client: Elasticsearch) -> str:
     return "_doc" if es_version >= 6 else "doc"
 
 
-def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kwargs):
+def register_biome_prediction(
+    name: str, pipeline: Pipeline, es_hosts: str, created_index: str, **kwargs
+):
     """
     Creates a new metadata entry for the incoming prediction
 
@@ -174,13 +173,14 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
     ----------
     name
         A descriptive prediction name
+    pipeline
+        The pipeline used for the prediction batch
     created_index
         The elasticsearch index created for the prediction
     es_hosts
         The elasticsearch host where publish the new entry
     kwargs
         Extra arguments passed as extra metadata info
-
     """
 
     metadata_index = f"{BIOME_METADATA_INDEX}"
@@ -192,12 +192,24 @@ def register_biome_prediction(name: str, es_hosts: str, created_index: str, **kw
         ignore=400,
     )
 
+    predict_signature = [
+        k for k, v in pipeline.signature.items() if not v.get("optional")
+    ]
+    parameters = {
+        **kwargs,
+        "pipeline": pipeline.name,
+        "signature": [k for k in pipeline.signature.keys()],
+        "predict_signature": predict_signature,
+        # TODO remove when ui is adapted
+        "inputs": predict_signature,  # backward compatibility
+    }
+
     es_client.update(
         index=metadata_index,
         doc_type=get_compatible_doc_type(es_client),
         id=created_index,
         body={
-            "doc": dict(name=name, created_at=datetime.datetime.now(), **kwargs),
+            "doc": dict(name=name, created_at=datetime.datetime.now(), **parameters),
             "doc_as_upsert": True,
         },
     )

@@ -1,10 +1,9 @@
 import logging
 import os
-import re
 from tempfile import mktemp
-from typing import cast, Type, Optional
 
 import allennlp
+import re
 import yaml
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
@@ -12,6 +11,7 @@ from allennlp.data import DatasetReader, Instance
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
 from overrides import overrides
+from typing import cast, Type, Optional, List
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
@@ -113,6 +113,17 @@ class Pipeline(Predictor):
             The configuration dictionary
         """
         return self.__config.copy()
+
+    @property
+    def signature(self) -> dict:
+        """
+        Describe de input signature for the pipeline
+
+        Returns
+        -------
+            A dict of expected inputs
+        """
+        return self._dataset_reader.signature
 
     def predict(self, **inputs) -> dict:
         return self.predict_json(inputs)
