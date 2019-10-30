@@ -2,7 +2,7 @@ import os
 from typing import Iterable
 
 from allennlp.data.fields import TextField, LabelField
-from biome.text.dataset_readers import SequenceClassifierDatasetReader
+from biome.text.dataset_readers import SequenceClassifierReader
 
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
@@ -10,7 +10,7 @@ from tests.test_support import DaskSupportTest
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierDatasetReader(as_text_field=True)
+reader = SequenceClassifierReader(as_text_field=True)
 
 
 class BiomeDatasetReaderTest(DaskSupportTest):
