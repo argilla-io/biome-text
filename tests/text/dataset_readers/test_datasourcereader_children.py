@@ -8,8 +8,8 @@ from allennlp.data.tokenizers import WordTokenizer
 from allennlp.models import Model, BertForClassification
 
 from biome.text.dataset_readers import (
-    SequenceClassifierDatasetReader,
-    SequencePairClassifierDatasetReader,
+    SequenceClassifierReader,
+    SequencePairClassifierReader,
 )
 from biome.text.models import (
     SequenceClassifier,
@@ -23,21 +23,21 @@ import_submodules("biome.text")
 @pytest.mark.parametrize(
     "name, model, dataset_reader",
     [
-        ("sequence_classifier", SequenceClassifier, SequenceClassifierDatasetReader),
+        ("sequence_classifier", SequenceClassifier, SequenceClassifierReader),
         (
             "bert_for_classification",
             BertForClassification,
-            SequenceClassifierDatasetReader,
+            SequenceClassifierReader,
         ),
         (
             "sequence_pair_classifier",
             SequencePairClassifier,
-            SequencePairClassifierDatasetReader,
+            SequencePairClassifierReader,
         ),
         (
             "similarity_classifier",
             SimilarityClassifier,
-            SequencePairClassifierDatasetReader,
+            SequencePairClassifierReader,
         ),
     ],
 )
@@ -51,24 +51,24 @@ def test_name_consistency(name, model, dataset_reader):
     "dataset_reader, model, text_input",
     [
         (
-            SequenceClassifierDatasetReader,
-            SequenceClassifier,
-            {"tokens": "a", "label": "b"},
+                SequenceClassifierReader,
+                SequenceClassifier,
+                {"tokens": "a", "label": "b"},
         ),
         (
-            SequenceClassifierDatasetReader,
-            BertForClassification,
-            {"tokens": "a", "label": "b"},
+                SequenceClassifierReader,
+                BertForClassification,
+                {"tokens": "a", "label": "b"},
         ),
         (
-            SequencePairClassifierDatasetReader,
-            SequencePairClassifier,
-            {"record1": "a", "record2": "b", "label": "c"},
+                SequencePairClassifierReader,
+                SequencePairClassifier,
+                {"record1": "a", "record2": "b", "label": "c"},
         ),
         (
-            SequencePairClassifierDatasetReader,
-            SimilarityClassifier,
-            {"record1": "a", "record2": "b", "label": "c"},
+                SequencePairClassifierReader,
+                SimilarityClassifier,
+                {"record1": "a", "record2": "b", "label": "c"},
         ),
     ],
 )

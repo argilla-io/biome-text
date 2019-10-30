@@ -6,7 +6,7 @@ import pytest
 import yaml
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
-from biome.text.dataset_readers import SequenceClassifierDatasetReader
+from biome.text.dataset_readers import SequenceClassifierReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 
 from tests.test_support import DaskSupportTest
@@ -30,13 +30,13 @@ JSON_WITH_EMPTY_VALUES = os.path.abspath(
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierDatasetReader(as_text_field=True)
+reader = SequenceClassifierReader(as_text_field=True)
 
 
 class SequenceClassifierDatasetReaderTest(DaskSupportTest):
     def test_dataset_reader_registration(self):
         dataset_reader = DatasetReader.by_name("sequence_classifier")
-        self.assertEqual(SequenceClassifierDatasetReader, dataset_reader)
+        self.assertEqual(SequenceClassifierReader, dataset_reader)
 
     def test_read_input_csv(self):
         expected_length = 9

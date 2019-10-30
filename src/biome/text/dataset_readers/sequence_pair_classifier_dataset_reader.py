@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 @DatasetReader.register("sequence_pair_classifier")
-class SequencePairClassifierDatasetReader(DataSourceReader):
+class SequencePairClassifierReader(DataSourceReader):
     """
     A DatasetReader for the SequencePairClassifier model.
     """
@@ -47,4 +47,4 @@ class SequencePairClassifierDatasetReader(DataSourceReader):
 
 
 # Register an alias for this reader
-DatasetReader.register("similarity_classifier")(SequencePairClassifierDatasetReader)
+DatasetReader.register("similarity_classifier")(SequencePairClassifierReader)
