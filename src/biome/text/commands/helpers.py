@@ -145,7 +145,11 @@ class BiomeConfig:
         for field, path in zip(data_fields, data_paths):
             if path:
                 allennlp_params[field] = path
-        if self.test_path:
+        # This is not possible using the callback trainer
+        if (
+            self.test_path
+            and self.trainer_dict.get("trainer", {}).get("type") != "callback"
+        ):
             allennlp_params[self.EVALUATE_ON_TEST_FIELD] = True
 
         return allennlp_params
