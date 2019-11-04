@@ -32,9 +32,13 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
 from allennlp.models.archival import CONFIG_NAME
 from allennlp.models.model import Model
+from biome.data.utils import configure_dask_cluster
+
 from biome.text.commands.helpers import BiomeConfig
 from biome.text.models import load_archive
-from biome.data.utils import configure_dask_cluster
+from biome.text.pipelines.learn.callbacks import LoggingCallback, EvaluateCallback
+
+__alias__ = [LoggingCallback, EvaluateCallback]
 
 logger = logging.getLogger("allennlp")
 logger.setLevel(logging.INFO)
