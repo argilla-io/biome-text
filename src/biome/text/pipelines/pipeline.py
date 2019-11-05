@@ -1,18 +1,22 @@
 import logging
 import os
 from tempfile import mktemp
+from copy import deepcopy
 
 import allennlp
 import re
 import yaml
+import numpy
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import sanitize
 from allennlp.data import DatasetReader, Instance
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
+from allennlp.data.fields import LabelField
+from allennlp.data.dataset import Batch
 from overrides import overrides
-from typing import cast, Type, Optional, List
+from typing import cast, Type, Optional, List, Dict, Tuple, Any
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
@@ -155,6 +159,82 @@ class Pipeline(Predictor):
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
         return self.reader.text_to_instance(**json_dict)
+
+    @overrides
+    def predictions_to_labeled_instances(
+        self, instance: Instance, outputs: Dict[str, numpy.ndarray]
+    ) -> List[Instance]:
+     
+        new_instance = deepcopy(instance)
+        label = numpy.argmax(outputs["logits"])   
+        new_instance.add_field("label", LabelField(int(label), skip_indexing=True))
+
+        return [new_instance]
+
+    @overrides
+    def get_gradients(self,
+                      instances: List[Instance]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Gets the gradients of the loss with respect to the model inputs.
+
+        Parameters
+        ----------
+        instances: List[Instance]
+
+        Returns
+        -------
+        Tuple[Dict[str, Any], Dict[str, Any]]
+        The first item is a Dict of gradient entries for each input.
+        The keys have the form  ``{grad_input_1: ..., grad_input_2: ... }``
+        up to the number of inputs given. The second item is the model's output.
+
+        Notes
+        -----
+        Takes a ``JsonDict`` representing the inputs of the model and converts
+        them to :class:`~allennlp.data.instance.Instance`s, sends these through
+        the model :func:`forward` function after registering hooks on the embedding
+        layer of the model. Calls :func:`backward` on the loss and then removes the
+        hooks.
+        """
+        embedding_gradients: List[Tensor] = []
+        hooks: List[RemovableHandle] = self._register_embedding_gradient_hooks(embedding_gradients)
+
+        dataset = Batch(instances)
+        dataset.index_instances(self._model.vocab)
+        outputs = self._model.decode(self._model.forward(**dataset.as_tensor_dict()))
+
+        loss = outputs['loss']
+        self._model.zero_grad()
+        loss.backward()
+
+        for hook in hooks:
+            hook.remove()
+        
+        embedding_gradients.reverse()
+
+        grads = [
+            grad.detach().cpu().numpy() 
+            for grad in embedding_gradients
+        ]
+        return grads, outputs
+
+    @overrides
+    def json_to_labeled_instances(self, inputs: JsonDict) -> List[Instance]:
+        """
+        Converts incoming json to a :class:`~allennlp.data.instance.Instance`,
+        runs the model on the newly created instance, and adds labels to the
+        :class:`~allennlp.data.instance.Instance`s given by the model's output.
+        Returns
+        -------
+        List[instance]
+        A list of :class:`~allennlp.data.instance.Instance`
+        """
+        # pylint: disable=assignment-from-no-return
+        instance = self._json_to_instance(inputs)
+        outputs = self._model.forward_on_instance(instance)
+        new_instances = self.predictions_to_labeled_instances(instance, outputs)
+        return new_instances
+
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> Optional[JsonDict]:

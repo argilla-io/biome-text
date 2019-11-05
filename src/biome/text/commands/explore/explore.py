@@ -17,6 +17,7 @@ from elasticsearch import Elasticsearch
 
 from biome.text.environment import ES_HOST, BIOME_EXPLORE_ENDPOINT
 from biome.text.pipelines.pipeline import Pipeline
+from biome.text.interpreters import IntegratedGradient
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -109,6 +110,7 @@ def explore(
     """
 
     pipeline = Pipeline.load(binary)
+    interpreter = IntegratedGradient(pipeline)
 
     if not isinstance(pipeline, Pipeline):
         raise ConfigurationError(
@@ -127,9 +129,15 @@ def explore(
     # a persist is necessary here, otherwise it fails for npartitions == 1
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
     ddf_mapped = ddf_mapped.repartition(npartitions=npartitions).persist()
+
+    ddf_mapped["interpretations"] = ddf_mapped.apply(
+        lambda x: interpreter.saliency_interpret_from_json(x.to_dict()), axis=1, meta=(None, object)
+    )
+    
     ddf_mapped["annotation"] = ddf_mapped.apply(
         lambda x: pipeline.predict_json(x.to_dict()), axis=1, meta=(None, object)
     )
+
 
     ddf_source = ds.to_dataframe()
     ddf_source = ddf_source.repartition(npartitions=npartitions).persist()
