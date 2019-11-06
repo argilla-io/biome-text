@@ -25,7 +25,7 @@ class IntegratedGradient(IntegratedGradient):
         # Convert inputs to labeled instances
         labeled_instances = self.predictor.json_to_labeled_instances(inputs)
 
-        instances_with_grads = dict()
+        instances_with_grads : List = []
         for idx, instance in enumerate(labeled_instances):
             # Run integrated gradients
             grads = self._integrate_gradients(instance)
@@ -35,7 +35,7 @@ class IntegratedGradient(IntegratedGradient):
             # TODO: We might move this responsibility to the Predictor 
             # or pass the order of fields when calling interpret.
             grads = self._pack_with_field_tokens(instance, grads)
-            instances_with_grads['instance_' + str(idx + 1)] = grads
+            instances_with_grads.append(grads)
 
         return sanitize(instances_with_grads)
 
