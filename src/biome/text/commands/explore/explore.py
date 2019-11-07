@@ -6,6 +6,8 @@ import datetime
 import re
 import warnings
 
+import dask
+
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.checks import ConfigurationError
 from biome.data.sources import DataSource
@@ -27,6 +29,8 @@ BIOME_METADATA_INDEX = ".biome"
 # This is the biome explore UI endpoint, used for show information
 # about explorations once the data is persisted
 EXPLORE_APP_ENDPOINT = os.getenv(BIOME_EXPLORE_ENDPOINT, "http://localhost:8080")
+
+DEFAULT_INTERPRETER_CLS = IntegratedGradient
 
 
 class BiomeExplore(Subcommand):
@@ -62,6 +66,12 @@ class BiomeExplore(Subcommand):
         )
 
         subparser.add_argument(
+            "--interpret",
+            action="store_true",
+            help="Add interpretation information to classifier predictions",
+        )
+
+        subparser.add_argument(
             "--cuda-device", type=int, default=-1, help="id of GPU to use (if any)"
         )
 
@@ -82,13 +92,19 @@ def explore_with_args(args: argparse.Namespace) -> None:
         args.binary,
         source_path=args.from_source,
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
-        es_host=os.getenv(ES_HOST, "http://localhost:9200"),
+        es_host= os.getenv(ES_HOST, "http://localhost:9200"),
         es_index=index,
+        interpret=args.interpret
     )
 
 
 def explore(
-    binary: str, source_path: str, es_host: str, es_index: str, batch_size: int = 500
+    binary: str, 
+    source_path: str, 
+    es_host: str, 
+    es_index: str, 
+    batch_size: int = 500, 
+    interpret: bool = False
 ) -> None:
     """
     Read a data source and tries to apply a model predictions to the whole data source. The
@@ -110,7 +126,6 @@ def explore(
     """
 
     pipeline = Pipeline.load(binary)
-    interpreter = IntegratedGradient(pipeline)
 
     if not isinstance(pipeline, Pipeline):
         raise ConfigurationError(
@@ -126,18 +141,21 @@ def explore(
     ddf_mapped = ds.to_mapped_dataframe()
     # this only makes really sense when we have a predict_batch_json method implemented ...
     npartitions = max(1, round(len(ddf_mapped) / batch_size))
+    
     # a persist is necessary here, otherwise it fails for npartitions == 1
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
     ddf_mapped = ddf_mapped.repartition(npartitions=npartitions).persist()
 
-    ddf_mapped["interpretations"] = ddf_mapped.apply(
-        lambda x: interpreter.saliency_interpret_from_json(x.to_dict()), axis=1, meta=(None, object)
-    )
-    
+ 
     ddf_mapped["annotation"] = ddf_mapped.apply(
         lambda x: pipeline.predict_json(x.to_dict()), axis=1, meta=(None, object)
     )
-
+    
+    # TODO use map_partitions
+    if interpret:
+        ddf_mapped["interpretations"] = ddf_mapped.apply(
+            _interpret, args=[pipeline], axis=1, meta=(None, object)
+        )
 
     ddf_source = ds.to_dataframe()
     ddf_source = ddf_source.repartition(npartitions=npartitions).persist()
@@ -165,11 +183,19 @@ def explore(
 
     __prepare_es_index(client, es_index, doc_type)
     ddf.persist()
+    # TODO: The explore APP endpoint returns localhost:8080, running biome ui defaults to
     _logger.info(
         "Data annotated successfully. You can explore your data here:"
         f"{EXPLORE_APP_ENDPOINT}/explore/{es_index}"
     )
 
+def _interpret(x, pipeline):
+    x = x.to_dict()    
+    interpreter = DEFAULT_INTERPRETER_CLS(pipeline)
+    # TODO This is not needed if we use 2 separate dfs
+    x.pop("annotation")
+    # TODO return dict when len(list) == 0
+    return interpreter.saliency_interpret_from_json(x)
 
 def get_compatible_doc_type(client: Elasticsearch) -> str:
     """
