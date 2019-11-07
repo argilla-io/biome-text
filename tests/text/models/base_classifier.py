@@ -38,7 +38,7 @@ class BasePairClassifierTest(DaskSupportTest):
 
     def model_workflow(self):
         self.check_train(SequencePairClassifier)
-        self.check_predict()
+        self.check_explore()
         self.check_serve()
         self.check_predictor()
 
@@ -55,7 +55,7 @@ class BasePairClassifierTest(DaskSupportTest):
         self.assertTrue(archive.model is not None)
         self.assertIsInstance(archive.model, cls_type)
 
-    def check_predict(self):
+    def check_explore(self):
         index = self.__class__.__name__.lower()
         es_host = os.getenv(ES_HOST, "http://localhost:9200")
         explore(
@@ -63,6 +63,7 @@ class BasePairClassifierTest(DaskSupportTest):
             source_path=self.validation_data,
             es_host=es_host,
             es_index=index,
+            interpret=True,  # Enable interpret
         )
 
         client = Elasticsearch(hosts=es_host, http_compress=True)
