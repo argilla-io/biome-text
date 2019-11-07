@@ -1,25 +1,24 @@
-import logging
-import os
-
 import argparse
 import datetime
+import logging
+import os
 import re
 import warnings
+from typing import Type, Union, List
 
-import dask
-
+import dask.dataframe as dd
+import pandas as pd
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.checks import ConfigurationError
+from allennlp.interpret import SaliencyInterpreter
 from biome.data.sources import DataSource
 from dask_elk.client import DaskElasticClient
-import dask.dataframe as dd
-
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
 
 from biome.text.environment import ES_HOST, BIOME_EXPLORE_ENDPOINT
-from biome.text.pipelines.pipeline import Pipeline
 from biome.text.interpreters import IntegratedGradient
+from biome.text.pipelines.pipeline import Pipeline
 
 logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
@@ -92,19 +91,19 @@ def explore_with_args(args: argparse.Namespace) -> None:
         args.binary,
         source_path=args.from_source,
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
-        es_host= os.getenv(ES_HOST, "http://localhost:9200"),
+        es_host=os.getenv(ES_HOST, "http://localhost:9200"),
         es_index=index,
-        interpret=args.interpret
+        interpret=args.interpret,
     )
 
 
 def explore(
-    binary: str, 
-    source_path: str, 
-    es_host: str, 
-    es_index: str, 
-    batch_size: int = 500, 
-    interpret: bool = False
+    binary: str,
+    source_path: str,
+    es_host: str,
+    es_index: str,
+    batch_size: int = 500,
+    interpret: bool = False,
 ) -> None:
     """
     Read a data source and tries to apply a model predictions to the whole data source. The
@@ -122,7 +121,8 @@ def explore(
         The elasticsearch index where publish the data
     batch_size
         The batch size for model predictions
-
+    interpret: bool
+        If true, include interpret information for every prediction
     """
 
     pipeline = Pipeline.load(binary)
@@ -140,25 +140,26 @@ def explore(
     ds = DataSource.from_yaml(source_path)
     ddf_mapped = ds.to_mapped_dataframe()
     # this only makes really sense when we have a predict_batch_json method implemented ...
-    npartitions = max(1, round(len(ddf_mapped) / batch_size))
-    
-    # a persist is necessary here, otherwise it fails for npartitions == 1
-    # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-    ddf_mapped = ddf_mapped.repartition(npartitions=npartitions).persist()
+    n_partitions = max(1, round(len(ddf_mapped) / batch_size))
 
- 
-    ddf_mapped["annotation"] = ddf_mapped.apply(
+    # a persist is necessary here, otherwise it fails for n_partitions == 1
+    # the reason is that with only 1 partition we pass on a generator to predict_batch_json
+    ddf_mapped = ddf_mapped.repartition(npartitions=n_partitions).persist()
+    ddf_mapped_columns = ddf_mapped.columns
+
+    ddf_mapped["annotation"] = ddf_mapped[ddf_mapped_columns].apply(
         lambda x: pipeline.predict_json(x.to_dict()), axis=1, meta=(None, object)
     )
-    
-    # TODO use map_partitions
+
     if interpret:
-        ddf_mapped["interpretations"] = ddf_mapped.apply(
-            _interpret, args=[pipeline], axis=1, meta=(None, object)
+        # TODO we should apply the same mechanism for the model predictions. Creating a new pipeline
+        #  for every partition
+        ddf_mapped["interpretations"] = ddf_mapped[ddf_mapped_columns].map_partitions(
+            _interpret_dataframe, binary_path=binary, meta=(None, object)
         )
 
     ddf_source = ds.to_dataframe()
-    ddf_source = ddf_source.repartition(npartitions=npartitions).persist()
+    ddf_source = ddf_source.repartition(npartitions=n_partitions).persist()
 
     # We are sure that both data frames are aligned!
     # A 100% safe way would be to set_index of both data frames on a meaningful column.
@@ -189,13 +190,47 @@ def explore(
         f"{EXPLORE_APP_ENDPOINT}/explore/{es_index}"
     )
 
-def _interpret(x, pipeline):
-    x = x.to_dict()    
-    interpreter = DEFAULT_INTERPRETER_CLS(pipeline)
-    # TODO This is not needed if we use 2 separate dfs
-    x.pop("annotation")
-    # TODO return dict when len(list) == 0
-    return interpreter.saliency_interpret_from_json(x)
+
+def _interpret_dataframe(
+    df: pd.DataFrame,
+    binary_path: str,
+    interpreter_klass: Type = DEFAULT_INTERPRETER_CLS,
+) -> pd.Series:
+    """
+    Apply a model interpretation to every partition dataframe
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        The partition DataFrame
+    binary_path: str
+        The model binary path
+    interpreter_klass: Type
+        The used interpreted class
+
+    Returns
+    -------
+
+    A pandas Series representing the interpretations
+
+    """
+
+    def interpret_row(
+        row: pd.Series, interpreter: SaliencyInterpreter
+    ) -> Union[dict, List[dict]]:
+        """Interpret a incoming dataframe row"""
+        data = row.to_dict()
+        interpretation = interpreter.saliency_interpret_from_json(data)
+        if len(interpretation) == 0:
+            return {}
+        if len(interpretation) == 1:
+            return interpretation[0]
+        return interpretation
+
+    pipeline = Pipeline.load(binary_path)
+    interpreter = interpreter_klass(pipeline)
+    return df.apply(interpret_row, interpreter=interpreter, axis=1)
+
 
 def get_compatible_doc_type(client: Elasticsearch) -> str:
     """
