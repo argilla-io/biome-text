@@ -181,7 +181,6 @@ def explore(
         es_hosts=es_host,
         created_index=es_index,
         columns=ddf.columns.values.tolist(),
-        kind="explore",
         # extra metadata must be normalized
         pipeline=pipeline,
         **(prediction_metadata or {}),
