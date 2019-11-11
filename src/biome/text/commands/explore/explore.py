@@ -13,6 +13,7 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.interpret import SaliencyInterpreter
 from biome.data.sources import DataSource
 from dask_elk.client import DaskElasticClient
+
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
 
@@ -104,6 +105,7 @@ def explore(
     es_index: str,
     batch_size: int = 500,
     interpret: bool = False,
+    **prediction_metadata,
 ) -> None:
     """
     Read a data source and tries to apply a model predictions to the whole data source. The
@@ -123,6 +125,8 @@ def explore(
         The batch size for model predictions
     interpret: bool
         If true, include interpret information for every prediction
+    prediction_metadata: keyed arguments
+        Extra arguments included as prediction metadata
     """
 
     pipeline = Pipeline.load(binary)
@@ -180,6 +184,7 @@ def explore(
         kind="explore",
         # extra metadata must be normalized
         pipeline=pipeline,
+        **(prediction_metadata or {}),
     )
 
     __prepare_es_index(client, es_index, doc_type)
