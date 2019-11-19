@@ -1,10 +1,11 @@
-import os
 import logging
-from typing import Dict, Any
-from biome.data.utils import get_nested_property_from_data
+import os
 
 import yaml
+from biome.data.utils import get_nested_property_from_data
+from typing import Dict, Any
 
+from biome.text.pipelines.learn.default_callback_trainer import DefaultCallbackTrainer
 from ..environment import CUDA_DEVICE
 
 _logger = logging.getLogger(__name__)
@@ -145,11 +146,9 @@ class BiomeConfig:
         for field, path in zip(data_fields, data_paths):
             if path:
                 allennlp_params[field] = path
+        allennlp_params[self.TRAINER_FIELD]["type"] = DefaultCallbackTrainer.__name__
         # This is not possible using the callback trainer
-        if (
-            self.test_path
-            and self.trainer_dict.get("trainer", {}).get("type") != "callback"
-        ):
+        if self.test_path:
             allennlp_params[self.EVALUATE_ON_TEST_FIELD] = True
 
         return allennlp_params

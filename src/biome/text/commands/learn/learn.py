@@ -18,13 +18,12 @@ which to write the results.
     -s SERIALIZATION_DIR, --serialization-dir SERIALIZATION_DIR
                             directory in which to save the model and its logs
 """
-import argparse
 import glob
 import logging
 import os
-import shutil
-from typing import Optional, Callable
 
+import argparse
+import shutil
 from allennlp.commands import Subcommand
 from allennlp.commands.fine_tune import fine_tune_model
 from allennlp.commands.train import train_model
@@ -33,12 +32,13 @@ from allennlp.common.params import Params
 from allennlp.models.archival import CONFIG_NAME
 from allennlp.models.model import Model
 from biome.data.utils import configure_dask_cluster
+from typing import Optional, Callable
 
 from biome.text.commands.helpers import BiomeConfig
 from biome.text.models import load_archive
-from biome.text.pipelines.learn.callbacks import LoggingCallback, EvaluateCallback
+from biome.text.pipelines.learn.default_callback_trainer import DefaultCallbackTrainer
 
-__alias__ = [LoggingCallback, EvaluateCallback]
+__alias__ = [DefaultCallbackTrainer]
 
 logger = logging.getLogger("allennlp")
 logger.setLevel(logging.INFO)
