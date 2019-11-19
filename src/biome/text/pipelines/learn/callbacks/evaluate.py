@@ -21,7 +21,7 @@ class EvaluateCallback(Callback):
         The experiment folder
     """
 
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, serialization_dir: str):
         params = Params.from_file(os.path.join(serialization_dir, CONFIG_NAME))
@@ -45,7 +45,7 @@ class EvaluateCallback(Callback):
             The main callback trainer
         """
         if not self._evaluation_dataset:
-            self.__LOGGER.warning("No test data found")
+            self._LOGGER.warning("No test data found")
             return
 
         test_metrics = evaluate(

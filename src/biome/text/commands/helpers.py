@@ -149,9 +149,6 @@ class BiomeConfig:
 
         trainer_cfg = allennlp_params[self.TRAINER_FIELD]
         if not trainer_cfg.get("type"):  # Just in case of default trainer
-            allennlp_params[self.TRAINER_FIELD][
-                "type"
-            ] = DefaultCallbackTrainer.__name__
-
+            trainer_cfg["type"] = DefaultCallbackTrainer.__name__
             allennlp_params[self.EVALUATE_ON_TEST_FIELD] = False
         return allennlp_params
