@@ -37,19 +37,20 @@ logger = logging.getLogger("allennlp")
 logger.setLevel(logging.INFO)
 
 for logger_name in [
-       "allennlp.training.tensorboard_writer",
-       "allennlp.common.params",
-       "allennlp.common.from_params",
-       "allennlp.nn.initializers",
-       "allennlp.training.trainer_pieces",
-       "allennlp.common.registrable",
-   ]:
-       logger = logging.getLogger(logger_name)
-       logger.setLevel(logging.WARNING)
+    "allennlp.training.tensorboard_writer",
+    "allennlp.common.params",
+    "allennlp.common.from_params",
+    "allennlp.nn.initializers",
+    "allennlp.training.trainer_pieces",
+    "allennlp.common.registrable",
+]:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.WARNING)
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 DATASET_READER_FIELD_NAME = "dataset_reader"
+MODEL_FIELD_NAME = "model"
 
 
 class BiomeLearn(Subcommand):
@@ -156,7 +157,7 @@ def learn(
     test_cfg: Optional[str] = None,
     workers: int = 1,
 ) -> Model:
-    _logger.info('Starting up learning process.')
+    _logger.info("Starting up learning process.")
     if not model_binary and not model_spec:
         raise ConfigurationError("Missing parameter --spec/--binary")
 
@@ -180,20 +181,26 @@ def learn(
         allennlp_configuration = allennlp_configuration.copy()
         if model_binary:
             archive = load_archive(model_binary)
-            _logger.info(archive.config.as_dict())
+            _logger.info(f"Loading '{MODEL_FIELD_NAME}' config: {archive.config.as_dict()[MODEL_FIELD_NAME]}")
+            _logger.info(
+                f"Loading '{DATASET_READER_FIELD_NAME}' config: {archive.config.as_dict()[DATASET_READER_FIELD_NAME]}"
+            )
+            _logger.info(f"Provided configs: {allennlp_configuration}")
+            # The model params are ignored by the `fine_tune_model` method
+            fine_tune_params = Params(
+                {
+                    DATASET_READER_FIELD_NAME: archive.config.get(
+                        DATASET_READER_FIELD_NAME
+                    ).as_dict(),
+                    **allennlp_configuration,
+                }
+            )
             # Force clean folder for run fine tuning properly
             shutil.rmtree(output, ignore_errors=True)
 
             return fine_tune_model(
                 model=archive.model,
-                params=Params(
-                    {
-                        DATASET_READER_FIELD_NAME: archive.config.get(
-                            DATASET_READER_FIELD_NAME
-                        ).as_dict(),
-                        **allennlp_configuration,
-                    }
-                ),
+                params=fine_tune_params,
                 serialization_dir=output,
                 extend_vocab=True,
                 file_friendly_logging=True,

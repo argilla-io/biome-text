@@ -57,8 +57,11 @@ class BiomeConfig:
         self.test_path = test_path
 
         # Read yaml configs
-        self.model_dict = self.yaml_to_dict(self.model_path)
-        self._model_to_new_format()  # for backward compatibility
+        if self.model_path:
+            self.model_dict = self.yaml_to_dict(self.model_path)
+            self._model_to_new_format()  # for backward compatibility
+        else:
+            self.model_dict = {}
         self.vocab_dict = self.yaml_to_dict(self.vocab_path)
         self.trainer_dict = self.yaml_to_dict(self.trainer_path)
         # Add cuda device if necessary
