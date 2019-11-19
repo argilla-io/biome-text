@@ -1,25 +1,13 @@
 """This module includes the default biome callback trainer and some extra functions/classes for this purpose"""
 import logging
 
-import torch
 from allennlp.common import Params
-from allennlp.common.checks import parse_cuda_device
-from allennlp.data import Instance, DataIterator
-from allennlp.models import Model
 from allennlp.training import CallbackTrainer, TrainerBase
-from allennlp.training.callbacks import (
-    Callback,
-    GradientNormAndClip,
-    Checkpoint,
-    TrackMetrics,
-    Validate,
-    LogToTensorboard,
-)
-from allennlp.training.optimizers import Optimizer
-from allennlp.training.trainer_pieces import TrainerPieces
-from typing import Iterable, Optional, Union, List
+from typing import Optional, List
 
-from .callbacks import EvaluateCallback, LoggingCallback
+from .callbacks import LoggingCallback, EvaluateCallback
+
+__alias__ = [LoggingCallback, EvaluateCallback]
 
 
 class DefaultCallbackTrainer(CallbackTrainer):
@@ -30,14 +18,21 @@ class DefaultCallbackTrainer(CallbackTrainer):
     _LOGGER = logging.getLogger(__name__)
 
     @staticmethod
-    def _callbacks_configuration(
-        patience: Optional[int],
-        validation_metric: str,
-        num_serialized_models_to_keep: int,
-        should_log_learning_rate: bool,
-    ) -> List[dict]:
+    def _callbacks_configuration(trainer_params: Params) -> List[dict]:
 
-        return [
+        patience = trainer_params.pop("patience", None)
+        validation_metric = trainer_params.pop("validation_metric", "-loss")
+        num_serialized_models_to_keep = trainer_params.pop(
+            "num_serialized_models_to_keep", 1
+        )
+        should_log_learning_rate = trainer_params.pop("should_log_learning_rate", False)
+        learning_rate_scheduler_params = trainer_params.pop(
+            "learning_rate_scheduler", None
+        )
+        if learning_rate_scheduler_params:
+            learning_rate_scheduler_params = learning_rate_scheduler_params.as_dict()
+
+        callbacks = [
             dict(type="gradient_norm_and_clip", grad_norm=True),
             dict(
                 type="checkpoint",
@@ -60,6 +55,16 @@ class DefaultCallbackTrainer(CallbackTrainer):
             "logging",
         ]
 
+        if learning_rate_scheduler_params:
+            callbacks.append(
+                dict(
+                    type="update_learning_rate",
+                    learning_rate_scheduler=learning_rate_scheduler_params,
+                )
+            )
+
+        return callbacks
+
     @classmethod
     def from_params(
         cls,  # type: ignore
@@ -71,19 +76,8 @@ class DefaultCallbackTrainer(CallbackTrainer):
     ) -> CallbackTrainer:
         trainer_params = params["trainer"]
 
-        patience = trainer_params.pop("patience", None)
-        validation_metric = trainer_params.pop("validation_metric", "-loss")
-        num_serialized_models_to_keep = trainer_params.pop(
-            "num_serialized_models_to_keep", 1
-        )
-        should_log_learning_rate = trainer_params.pop("should_log_learning_rate", False)
+        trainer_params["callbacks"] = cls._callbacks_configuration(trainer_params)
 
-        trainer_params["callbacks"] = cls._callbacks_configuration(
-            patience,
-            validation_metric,
-            num_serialized_models_to_keep,
-            should_log_learning_rate,
-        )
         return CallbackTrainer.from_params(
             params, serialization_dir, recover, cache_directory, cache_prefix
         )
