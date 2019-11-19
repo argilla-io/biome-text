@@ -28,7 +28,7 @@ class SequenceClassifierTest(unittest.TestCase):
 
     def test_model_workflow(self):
         self.check_train()
-        self.check_predict()
+        self.check_explore()
         self.check_serve()
         self.check_predictor()
 
@@ -49,7 +49,7 @@ class SequenceClassifierTest(unittest.TestCase):
         prediction = classifier.predict("mike Farrys")
         self.assertTrue("logits" in prediction, f"Not in {prediction}")
 
-    def check_predict(self):
+    def check_explore(self):
         index = self.name
         es_host = os.getenv(ES_HOST, "http://localhost:9200")
         explore(
@@ -57,11 +57,12 @@ class SequenceClassifierTest(unittest.TestCase):
             source_path=self.validation_data,
             es_host=es_host,
             es_index=index,
+            interpret=True,  # Enable interpret
         )
 
         client = Elasticsearch(hosts=es_host, http_compress=True)
         data = client.search(index)
-        self.assertIn("hits", data, msg=f"Must exists hits in es response {data}")
+        self.assertIn("hits", data, msg=f"Must exist hits in es response {data}")
         self.assertTrue(len(data["hits"]) > 0, "No data indexed")
 
     def check_serve(self):

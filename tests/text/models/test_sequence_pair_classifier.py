@@ -15,6 +15,6 @@ class SequencePairClassifierTest(BasePairClassifierTest):
 
     def test_model_workflow(self):
         self.check_train(SequencePairClassifier)
-        self.check_predict()
+        self.check_explore()
         self.check_serve()
         self.check_predictor()

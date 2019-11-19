@@ -19,7 +19,9 @@ which to write the results.
                             directory in which to save the model and its logs
 """
 import argparse
+import glob
 import logging
+import os
 import shutil
 from typing import Optional, Callable
 
@@ -28,6 +30,7 @@ from allennlp.commands.fine_tune import fine_tune_model
 from allennlp.commands.train import train_model
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.params import Params
+from allennlp.models.archival import CONFIG_NAME
 from allennlp.models.model import Model
 from biome.text.commands.helpers import BiomeConfig
 from biome.text.models import load_archive
@@ -157,6 +160,7 @@ def learn(
     test_cfg: Optional[str] = None,
     workers: int = 1,
 ) -> Model:
+
     _logger.info("Starting up learning process.")
     if not model_binary and not model_spec:
         raise ConfigurationError("Missing parameter --spec/--binary")
@@ -206,12 +210,27 @@ def learn(
                 file_friendly_logging=True,
             )
         else:
+            params = Params(allennlp_configuration)
+            prepare_output_folder(output, params)
             return train_model(
-                params=Params(allennlp_configuration),
+                params=params,
                 serialization_dir=output,
                 file_friendly_logging=True,
-                recover=False,
-                force=True,
+                recover=True,
             )
     finally:
         client.close()
+
+
+def prepare_output_folder(output: str, params: Params):
+    """Allows reuse the generated vocab if something went wrong in previous executions"""
+    [
+        os.remove(file)
+        for pattern in [
+            os.path.join(output, "*.th"),
+            os.path.join(output, "*.json"),
+            os.path.join(output, "**/events.out*"),
+        ]
+        for file in glob.glob(pattern, recursive=True)
+    ]
+    params.to_file(os.path.join(output, CONFIG_NAME))

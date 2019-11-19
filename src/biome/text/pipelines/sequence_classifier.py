@@ -4,7 +4,7 @@ import allennlp
 from allennlp.predictors import Predictor
 
 import biome
-from biome.text.dataset_readers import SequenceClassifierDatasetReader
+from biome.text.dataset_readers import SequenceClassifierReader
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from .pipeline import Pipeline
 
@@ -12,7 +12,7 @@ from .pipeline import Pipeline
 class SequenceClassifier(Pipeline):
     @classmethod
     def reader_class(cls) -> Type[DataSourceReader]:
-        return SequenceClassifierDatasetReader
+        return SequenceClassifierReader
 
     @classmethod
     def model_class(cls) -> Type[allennlp.models.Model]:

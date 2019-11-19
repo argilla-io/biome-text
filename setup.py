@@ -53,6 +53,7 @@ if __name__ == "__main__":
             "smart_open~=1.8",
             "coloredlogs==10.0",
             "dask-elk~=0.2.0",
+            "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
             "biome-data@git+https://github.com/recognai/biome-data.git",
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},

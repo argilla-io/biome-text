@@ -15,26 +15,26 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     )  # sets the requester IP with the X-Forwarded-For header
     CORS(app)
 
-    @app.route("/elastic/<path:es_path>")
-    def elasticsearch_proxy(es_path: str) -> Response:
-
+    @app.route("/elastic/<path:es_path>", methods=["GET", "OPTIONS"])
+    def es_info_proxy(es_path: str) -> Response:
         es_url = f"{es_host}/{es_path}"
 
         if request.method == "OPTIONS":
             return Response(response="", status=200)
-        elif request.method == "GET":
-            response = requests.get(es_url)
-        elif request.method == "POST":
-            response = request.post(es_url, json=request.get_json())
-        elif request.method == "PUT":
-            response = request.put(es_url, json=request.get_json())
-        else:
-            raise TypeError(f"Method {request.method} not allowed")
 
+        response = requests.get(es_url)
+        return jsonify(response.json())
+
+    @app.route("/elastic/<path:es_path>/_update", methods=["POST", "OPTIONS"])
+    def es_update_proxy(es_path: str) -> Response:
+        es_url = f"{es_host}/{es_path}/_update"
+        response = requests.post(es_url, json=request.get_json())
         return jsonify(response.json())
 
     @app.route("/elastic/<path:index>/_search", methods=["GET", "POST", "OPTIONS"])
-    def search_proxy(index: str = None) -> Response:  # pylint: disable=unused-variable
+    def es_search_proxy(
+        index: str = None
+    ) -> Response:  # pylint: disable=unused-variable
         if request.method == "OPTIONS":
             return Response(response="", status=200)
 

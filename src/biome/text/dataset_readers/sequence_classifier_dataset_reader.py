@@ -7,7 +7,7 @@ from biome.text.dataset_readers.datasource_reader import DataSourceReader
 
 
 @DatasetReader.register("sequence_classifier")
-class SequenceClassifierDatasetReader(DataSourceReader):
+class SequenceClassifierReader(DataSourceReader):
     """
     A DatasetReader for the SequenceClassifier model.
     """
@@ -50,4 +50,4 @@ class SequenceClassifierDatasetReader(DataSourceReader):
 
 
 # Register an alias for this reader
-DatasetReader.register("bert_for_classification")(SequenceClassifierDatasetReader)
+DatasetReader.register("bert_for_classification")(SequenceClassifierReader)
