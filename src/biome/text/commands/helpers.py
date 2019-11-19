@@ -146,9 +146,12 @@ class BiomeConfig:
         for field, path in zip(data_fields, data_paths):
             if path:
                 allennlp_params[field] = path
-        allennlp_params[self.TRAINER_FIELD]["type"] = DefaultCallbackTrainer.__name__
-        # This is not possible using the callback trainer
-        if self.test_path:
-            allennlp_params[self.EVALUATE_ON_TEST_FIELD] = True
 
+        trainer_cfg = allennlp_params[self.TRAINER_FIELD]
+        if not trainer_cfg.get("type"):  # Just in case of default trainer
+            allennlp_params[self.TRAINER_FIELD][
+                "type"
+            ] = DefaultCallbackTrainer.__name__
+
+            allennlp_params[self.EVALUATE_ON_TEST_FIELD] = False
         return allennlp_params
