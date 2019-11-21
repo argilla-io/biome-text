@@ -211,26 +211,47 @@ def learn(
             )
         else:
             params = Params(allennlp_configuration)
-            prepare_output_folder(output, params)
+            is_recovered = recover_output_folder(output, params)
             return train_model(
                 params=params,
                 serialization_dir=output,
                 file_friendly_logging=True,
-                recover=True,
+                recover=is_recovered,
             )
     finally:
         client.close()
 
 
-def prepare_output_folder(output: str, params: Params):
-    """Allows reuse the generated vocab if something went wrong in previous executions"""
-    [
-        os.remove(file)
-        for pattern in [
-            os.path.join(output, "*.th"),
-            os.path.join(output, "*.json"),
-            os.path.join(output, "**/events.out*"),
+def recover_output_folder(output: str, params: Params) -> bool:
+    """If output folder already exists, we automatically recover the generated vocab in this folder.
+
+    Allows reuse the generated vocab if something went wrong in previous executions
+
+    Parameters
+    ----------
+    output
+        Path to the output folder
+    params
+        Parameters for the train command
+
+    Returns
+    -------
+    is_recovered
+        True if existing output folder is recovered, False if output folder does not exist.
+    """
+    if not os.path.isdir(output):
+        return False
+    else:
+        [
+            os.remove(file)
+            for pattern in [
+                os.path.join(output, "*.th"),
+                os.path.join(output, "*.json"),
+                os.path.join(output, "**/events.out*"),
+            ]
+            for file in glob.glob(pattern, recursive=True)
         ]
-        for file in glob.glob(pattern, recursive=True)
-    ]
-    params.to_file(os.path.join(output, CONFIG_NAME))
+        params.to_file(os.path.join(output, CONFIG_NAME))
+        _logger.warning(f"Using vocab from recovered output folder '{output}' if available.")
+
+        return True
