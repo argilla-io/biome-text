@@ -26,6 +26,7 @@ class DefaultCallbackTrainer(CallbackTrainer):
             "num_serialized_models_to_keep", 1
         )
         should_log_learning_rate = trainer_params.pop("should_log_learning_rate", False)
+        summary_interval = trainer_params.pop("summary_interval", 100)
         learning_rate_scheduler_params = trainer_params.pop(
             "learning_rate_scheduler", None
         )
@@ -50,6 +51,7 @@ class DefaultCallbackTrainer(CallbackTrainer):
                 type="log_to_tensorboard",
                 log_batch_size_period=10,
                 should_log_learning_rate=should_log_learning_rate,
+                summary_interval=summary_interval,
             ),  # TODO parameterize
             "evaluate",
             "logging",
