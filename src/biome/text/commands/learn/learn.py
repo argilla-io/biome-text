@@ -44,6 +44,8 @@ logger = logging.getLogger("allennlp")
 logger.setLevel(logging.INFO)
 
 for logger_name in [
+    "allennlp",
+    "allennlp.training",
     "allennlp.training.tensorboard_writer",
     "allennlp.common.params",
     "allennlp.common.from_params",
@@ -52,7 +54,7 @@ for logger_name in [
     "allennlp.common.registrable",
 ]:
     logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.ERROR)
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 

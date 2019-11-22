@@ -10,44 +10,44 @@ class LoggingCallback(Callback):
     This callbacks allows controls the logging messages during the training process
     """
 
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     @handle_event(Events.TRAINING_START)
     def on_training_starts(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Training starts...")
+        self._LOGGER.info("Training starts...")
 
     @handle_event(Events.TRAINING_END)
     def on_training_ends(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Training ends...")
+        self._LOGGER.info("Training ends...")
 
     @handle_event(Events.BATCH_START)
     def on_batch_starts(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Batch starts...")
+        pass
 
     @handle_event(Events.BATCH_END)
     def on_batch_ends(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Batch starts...")
+        pass
 
     @handle_event(Events.FORWARD)
     def on_forward(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Forward")
+        pass
 
     @handle_event(Events.BACKWARD)
     def on_backward(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Backward")
+        pass
 
     @handle_event(Events.VALIDATE)
     def on_validate(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Validate")
+        self._LOGGER.info("Validate")
 
     @handle_event(Events.ERROR)
     def on_error(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Error")
+        self._LOGGER.info(f"Error {trainer}")
 
     @handle_event(Events.EPOCH_START)
     def on_epoch_starts(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Epoch starts...")
+        self._LOGGER.info(f"Starting epoch {trainer.epoch_number}/{trainer.num_epochs}")
 
     @handle_event(Events.EPOCH_END)
     def on_epoch_end(self, trainer: CallbackTrainer):
-        self.__LOGGER.debug("Epoch starts...")
+        pass
