@@ -202,6 +202,9 @@ def learn(
                     DATASET_READER_FIELD_NAME: archive.config.get(
                         DATASET_READER_FIELD_NAME
                     ).as_dict(),
+                    MODEL_FIELD_NAME: archive.config.get(
+                        MODEL_FIELD_NAME
+                    ).as_dict(),
                     **allennlp_configuration,
                 }
             )
