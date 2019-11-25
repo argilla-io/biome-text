@@ -43,6 +43,9 @@ class SimilarityClassifier(BaseModelClassifier):
         This parameter is passed on to the CosineEmbedding loss. It provides a margin,
         at which dissimilar vectors are not driven further apart.
         Can be between -1 (always drive apart) and 1 (never drive apart).
+    verification_weight
+        Defines the weight of the verification loss in the final loss sum:
+        loss = CrossEntropy + w * CosineEmbedding
     """
 
     @property
@@ -64,6 +67,8 @@ class SimilarityClassifier(BaseModelClassifier):
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
         margin: float = 0.5,
+        verification_weight: float = 2.0,
+
     ):
         super().__init__(
             vocab=vocab,
@@ -85,6 +90,7 @@ class SimilarityClassifier(BaseModelClassifier):
             "Make sure that the dropout of the last Seq2Vec or the last FeedForward layer is set to 0."
         )
 
+        self._verification_weight = verification_weight
         self._loss_sim = CosineEmbeddingLoss(margin=margin)
         # The value 0.5 for the margin is a recommended conservative value, see:
         # https://pytorch.org/docs/stable/nn.html#cosineembeddingloss
@@ -169,7 +175,7 @@ class SimilarityClassifier(BaseModelClassifier):
                 label_transformed = torch.where(
                     label == 0, torch.ones_like(label), -1 * torch.ones_like(label)
                 )
-                loss += self._loss_sim(
+                loss += self._verification_weight * self._loss_sim(
                     encoded_texts[0], encoded_texts[1], label_transformed.float()
                 )
 
