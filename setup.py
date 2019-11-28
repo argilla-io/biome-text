@@ -55,6 +55,7 @@ if __name__ == "__main__":
             "dask-elk~=0.2.0",
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
             "biome-data@git+https://github.com/recognai/biome-data.git",
+            "python-dateutil<2.8.1",  # botocore (imported from allennlp) has this restriction
         ],
         extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint"]},
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
