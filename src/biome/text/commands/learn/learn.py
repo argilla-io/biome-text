@@ -40,21 +40,6 @@ from biome.text.pipelines.learn.default_callback_trainer import DefaultCallbackT
 
 __alias__ = [DefaultCallbackTrainer]
 
-logger = logging.getLogger("allennlp")
-logger.setLevel(logging.INFO)
-
-for logger_name in [
-    "allennlp",
-    "allennlp.training",
-    "allennlp.training.tensorboard_writer",
-    "allennlp.common.params",
-    "allennlp.common.from_params",
-    "allennlp.nn.initializers",
-    "allennlp.training.trainer_pieces",
-    "allennlp.common.registrable",
-]:
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.ERROR)
 
 _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -132,6 +117,8 @@ class BiomeLearn(Subcommand):
             "--workers", type=int, default=1, help="Workers for dask local cluster"
         )
 
+        subparser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose logs from AllenNLP.")
+
         subparser.set_defaults(func=self.command_handler())
 
         return subparser
@@ -148,6 +135,7 @@ def learn_from_args(args: argparse.Namespace):
         test_cfg=args.test,
         output=args.output,
         workers=args.workers,
+        verbose=args.verbose,
     )
 
 
@@ -165,7 +153,15 @@ def learn(
     validation_cfg: str = "",
     test_cfg: Optional[str] = None,
     workers: int = 1,
+    verbose: bool = False,
 ) -> Model:
+
+    if verbose:
+        logger = logging.getLogger("allennlp")
+        logger.setLevel(logging.INFO)
+    else:
+        logger = logging.getLogger("allennlp")
+        logger.setLevel(logging.ERROR)
 
     _logger.info("Starting up learning process.")
     if not model_binary and not model_spec:

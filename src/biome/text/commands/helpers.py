@@ -154,4 +154,8 @@ class BiomeConfig:
         if not trainer_cfg.get("type"):  # Just in case of default trainer
             trainer_cfg["type"] = DefaultCallbackTrainer.__name__
             allennlp_params[self.EVALUATE_ON_TEST_FIELD] = False
+        # There is a bug in the AllenNLP train command: when specifying explicitly `type: default`, it will fail.
+        if trainer_cfg["type"] == "default":
+            del trainer_cfg["type"]
+
         return allennlp_params
