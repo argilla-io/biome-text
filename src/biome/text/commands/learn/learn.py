@@ -117,7 +117,12 @@ class BiomeLearn(Subcommand):
             "--workers", type=int, default=1, help="Workers for dask local cluster"
         )
 
-        subparser.add_argument("-v", "--verbose", action="store_true", help="Turn on verbose logs from AllenNLP.")
+        subparser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="Turn on verbose logs from AllenNLP.",
+        )
 
         subparser.set_defaults(func=self.command_handler())
 
@@ -161,7 +166,7 @@ def learn(
         logger.setLevel(logging.INFO)
     else:
         logger = logging.getLogger("allennlp")
-        logger.setLevel(logging.ERROR)
+        logger.setLevel(logging.WARNING)
 
     _logger.info("Starting up learning process.")
     if not model_binary and not model_spec:
@@ -187,7 +192,9 @@ def learn(
         allennlp_configuration = allennlp_configuration.copy()
         if model_binary:
             archive = load_archive(model_binary)
-            _logger.info(f"Loading '{MODEL_FIELD_NAME}' config: {archive.config.as_dict()[MODEL_FIELD_NAME]}")
+            _logger.info(
+                f"Loading '{MODEL_FIELD_NAME}' config: {archive.config.as_dict()[MODEL_FIELD_NAME]}"
+            )
             _logger.info(
                 f"Loading '{DATASET_READER_FIELD_NAME}' config: {archive.config.as_dict()[DATASET_READER_FIELD_NAME]}"
             )
@@ -198,9 +205,7 @@ def learn(
                     DATASET_READER_FIELD_NAME: archive.config.get(
                         DATASET_READER_FIELD_NAME
                     ).as_dict(),
-                    MODEL_FIELD_NAME: archive.config.get(
-                        MODEL_FIELD_NAME
-                    ).as_dict(),
+                    MODEL_FIELD_NAME: archive.config.get(MODEL_FIELD_NAME).as_dict(),
                     **allennlp_configuration,
                 }
             )
@@ -257,6 +262,8 @@ def recover_output_folder(output: str, params: Params) -> bool:
             for file in glob.glob(pattern, recursive=True)
         ]
         params.to_file(os.path.join(output, CONFIG_NAME))
-        _logger.warning(f"Using vocab from recovered output folder '{output}' if available.")
+        _logger.warning(
+            f"Using vocab from recovered output folder '{output}' if available."
+        )
 
         return True
