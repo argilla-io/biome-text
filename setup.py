@@ -20,9 +20,10 @@ if __name__ == "__main__":
             "urllib3>=1.21.1,<1.25",  # avoids version conflicts
             "jsonschema~=2.6",  # avoids version conflicts
             "requests<=2.21.0",  # avoid version conflicts
-            "allennlp>=0.8.0",
+            "allennlp>=0.8.0,<0.9.0",
             "cachey",  # Needed to use the Cache class in dask
             "dask[complete]>=1.0,<2.0",
+            "distributed<2.0",
             # interactive console input
             "inquirer>=2.5.1,<2.6.0",
             "smart-open>=1.7.0",
