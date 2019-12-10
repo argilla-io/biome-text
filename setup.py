@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from typing import Tuple
+import os
 
 from pip import __version__ as pip_version
 from setuptools import setup, find_packages
+from typing import Tuple
 
 PIP_VERSION_REQUIRED = "19.1.1"
 
@@ -33,12 +34,27 @@ def check_pip_version(required_version: str, version: str):
         exit(1)
 
 
+def about_info(package: str):
+    """Fetch about info """
+    root = os.path.abspath(os.path.dirname(__file__))
+    with open(
+        os.path.join(root, "src", package.replace("-", "/"), "about.py"),
+        encoding="utf8",
+    ) as f:
+        about = {}
+        exec(f.read(), about)
+        return about
+
+
 if __name__ == "__main__":
     check_pip_version(PIP_VERSION_REQUIRED, pip_version)
 
+    package_name = "biome-text"
+    about = about_info(package_name)
+
     setup(
-        version="0.1.dev",
-        name="biome-text",
+        name=package_name,
+        version=about["__version__"],
         description="Biome-text is a light-weight open source Natural Language Processing toolbox"
         "tool built with AllenNLP",
         author="Recognai",

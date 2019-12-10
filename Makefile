@@ -4,14 +4,13 @@ default: help
 test: ## launch package tests
 	@pytest
 
-dist: ## run tests and build a package distribution
-	@pytest && python setup.py sdist bdist_wheel
+dist: test ## run tests and build a package distribution
+	@python setup.py sdist bdist_wheel
 
 install: ## install package
 	@pip install .
 
 dev: ## install package in development mode
-	@pip install -U git+https://github.com/recognai/biome-data.git
 	@pip install --upgrade -e .[testing]
 
 upgrade-classifier-ui: ## updates the biome-classifier-ui interface artifact
