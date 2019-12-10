@@ -36,14 +36,15 @@ class BiomeClassifierMixin:
     accuracy
         The accuracy you want to use. By default, we choose a categorical top-1 accuracy.
     kwargs
-        Passed on to the model
+        Passed on to the model class init
 
     Examples
     --------
+    An example of how to implement an AllenNLP model in biome-text to be able to use Biome's UIs:
     >>> from allennlp.models.bert_for_classification import BertForClassification
     >>>
     >>> @Model.register("biome_bert_classifier")
-    >>> class BiomeBertClassifier(BiomeClassifier, BertForClassification):
+    >>> class BiomeBertClassifier(BiomeClassifierMixin, BertForClassification):
     >>>     def __init__(self, vocab, bert_model, num_labels, index, label_namespace,
     >>>                  trainable, initializer, regularizer, accuracy):
     >>>         super().__init__(accuracy=accuracy, vocab=vocab, bert_model=bert_model, num_labels=num_labels,
