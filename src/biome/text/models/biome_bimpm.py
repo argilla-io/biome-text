@@ -3,7 +3,6 @@ from typing import Optional, Dict
 import torch
 from allennlp.data import Vocabulary
 from allennlp.models.bimpm import BiMpm
-from allennlp.models.model import Model
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
@@ -18,7 +17,6 @@ from overrides import overrides
 from .base_model_classifier import BiomeClassifierMixin
 
 
-@Model.register("biome_bimpm")
 class BiomeBiMpm(BiomeClassifierMixin, BiMpm):
     """
     This ``Model`` implements BiMPM model described in `Bilateral Multi-Perspective Matching

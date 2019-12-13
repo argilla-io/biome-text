@@ -1,5 +1,7 @@
 import allennlp
 from allennlp.predictors import Predictor
+from allennlp.data import DatasetReader
+from allennlp.models import Model
 
 from biome.text.dataset_readers import SequencePairClassifierReader
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
@@ -26,4 +28,8 @@ class BiomeBiMpmPipeline(Pipeline):
         return self.model.forward_on_instance(instance)
 
 
+# TODO: We register everything here, since the idea is to use the Pipeline class for all our commands
+#       -> you always have to define a pipeline class -> all components should be registered under the same name!
 Predictor.register("biome_bimpm")(BiomeBiMpmPipeline)
+Model.register("biome_bimpm")(BiomeBiMpm)
+DatasetReader.register("biome_bimpm")(SequencePairClassifierReader)

@@ -48,4 +48,3 @@ class SequencePairClassifierReader(DataSourceReader):
 
 # Register an alias for this reader
 DatasetReader.register("similarity_classifier")(SequencePairClassifierReader)
-DatasetReader.register("biome_bimpm")(SequencePairClassifierReader)
