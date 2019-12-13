@@ -57,8 +57,8 @@ class BiomeClassifierMixin:
             {
                 label: F1Measure(index)
                 for index, label in self.vocab.get_index_to_token_vocabulary(
-                "labels"
-            ).items()
+                    "labels"
+                ).items()
             }
         )
 

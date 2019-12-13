@@ -33,7 +33,7 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
 
     @app.route("/elastic/<path:index>/_search", methods=["GET", "POST", "OPTIONS"])
     def es_search_proxy(
-        index: str = None
+        index: str = None,
     ) -> Response:  # pylint: disable=unused-variable
         if request.method == "OPTIONS":
             return Response(response="", status=200)

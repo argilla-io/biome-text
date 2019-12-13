@@ -123,7 +123,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             format="csv",
             path=CSV_PATH,
             sep=",",
-            mapping={"tokens": ["age", "job", "marital"], "label": "housing"}
+            mapping={"tokens": ["age", "job", "marital"], "label": "housing"},
         )
         with tempfile.NamedTemporaryFile("w") as cfg_file:
             yaml.dump(datasource_cfg, cfg_file)
@@ -145,7 +145,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             format="csv",
             path=local_data_path,
             sep=";",
-            mapping={"tokens": "dataset id", "label": "dataset id"}
+            mapping={"tokens": "dataset id", "label": "dataset id"},
         )
         with tempfile.NamedTemporaryFile("w") as cfg_file:
             yaml.dump(datasource_cfg, cfg_file)
@@ -167,7 +167,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             format="csv",
             path=local_data_path,
             sep=";",
-            mapping={"tokens": "name", "label": "category of institution"}
+            mapping={"tokens": "name", "label": "category of institution"},
         )
         with tempfile.NamedTemporaryFile("w") as cfg_file:
             yaml.dump(datasource_cfg, cfg_file)
@@ -254,7 +254,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             format="csv",
             path=local_data_path,
             sep=";",
-            mapping={"tokens": "name", "label": "organisation name"}
+            mapping={"tokens": "name", "label": "organisation name"},
         )
         with tempfile.NamedTemporaryFile("w") as cfg_file:
             yaml.dump(datasource_cfg, cfg_file)
@@ -307,10 +307,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 {
                     "format": "json",
                     "path": JSON_PATH,
-                    "mapping": {
-                        "tokens": ["reviewText"],
-                        "label": "overall",
-                    },
+                    "mapping": {"tokens": ["reviewText"], "label": "overall",},
                 }
             )
         )
