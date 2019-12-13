@@ -152,7 +152,7 @@ class BiomeClassifierMixin:
         return all_metrics
 
 
-class BaseModelClassifier(BiomeClassifierMixin, Model):
+class SequenceClassifierBase(BiomeClassifierMixin, Model):
     """In the most simple form this ``BaseModelClassifier`` encodes a sequence with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 

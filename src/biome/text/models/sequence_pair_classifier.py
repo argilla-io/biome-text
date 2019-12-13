@@ -5,13 +5,13 @@ import torch
 from allennlp.models.model import Model
 from overrides import overrides
 
-from biome.text.models.base_model_classifier import BaseModelClassifier
+from biome.text.models.sequence_classifier_base import SequenceClassifierBase
 
 logger = logging.getLogger(__name__)
 
 
 @Model.register("sequence_pair_classifier")
-class SequencePairClassifier(BaseModelClassifier):
+class SequencePairClassifier(SequenceClassifierBase):
     """
     This ``SequencePairClassifier`` uses a siamese network architecture to perform a classification task between a pair
     of records or documents.

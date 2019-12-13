@@ -5,13 +5,13 @@ import torch
 from allennlp.models.model import Model
 from overrides import overrides
 
-from biome.text.models.base_model_classifier import BaseModelClassifier
+from biome.text.models.sequence_classifier_base import SequenceClassifierBase
 
 logger = logging.getLogger(__name__)
 
 
 @Model.register("sequence_classifier")
-class SequenceClassifier(BaseModelClassifier):
+class SequenceClassifier(SequenceClassifierBase):
     @overrides
     def forward(
         self,  # type: ignore
