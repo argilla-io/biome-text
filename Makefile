@@ -1,7 +1,11 @@
 .PHONY: default test dist install dev
 default: help
 
-test: ## launch package tests
+check: ## applies a code pylint with autopep8 reformating
+	@black .
+	@pylint --exit-zero --rcfile=setup.cfg  src
+
+test: check ## launch package tests
 	@pytest
 
 dist: test ## run tests and build a package distribution
