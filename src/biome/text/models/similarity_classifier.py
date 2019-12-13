@@ -15,13 +15,13 @@ from overrides import overrides
 from torch.nn import CosineEmbeddingLoss
 from torch.nn.modules import Module
 
-from . import BaseModelClassifier
+from . import SequenceClassifierBase
 
 logger = logging.getLogger(__name__)
 
 
 @Model.register("similarity_classifier")
-class SimilarityClassifier(BaseModelClassifier):
+class SimilarityClassifier(SequenceClassifierBase):
     """
     This ``SimilarityClassifier`` uses a siamese network architecture to perform a binary classification task:
     are two inputs similar or not?

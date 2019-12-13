@@ -1,7 +1,5 @@
-from abc import ABCMeta
 from typing import Dict, Optional
 
-import numpy as np
 import torch
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
@@ -14,12 +12,13 @@ from allennlp.modules import (
 )
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+from allennlp.training.metrics import CategoricalAccuracy
 from overrides import overrides
 from torch.nn import Dropout, Linear
+from .mixins import BiomeClassifierMixin
 
 
-class BaseModelClassifier(Model, metaclass=ABCMeta):
+class SequenceClassifierBase(BiomeClassifierMixin, Model):
     """In the most simple form this ``BaseModelClassifier`` encodes a sequence with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
@@ -52,6 +51,8 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         Used to initialize the model parameters.
     regularizer
         Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
+    accuracy
+        The accuracy you want to use. By default, we choose a categorical top-1 accuracy.
     """
 
     @property
@@ -72,23 +73,16 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         multifield_dropout: Optional[float] = None,
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
+        accuracy: Optional[CategoricalAccuracy] = None,
     ) -> None:
         # Passing on kwargs does not work because of the 'from_params' machinery
-        super(BaseModelClassifier, self).__init__(vocab, regularizer)
+        super().__init__(accuracy=accuracy, vocab=vocab, regularizer=regularizer)
 
         self._initializer = initializer or InitializerApplicator()
         # embedding
         self._text_field_embedder = text_field_embedder
         # dropout for encoded vector
         self._dropout = Dropout(dropout) if dropout else None
-        # metrics
-        self._accuracy = CategoricalAccuracy()
-        self._metrics = {
-            label: F1Measure(index)
-            for index, label in self.vocab.get_index_to_token_vocabulary(
-                "labels"
-            ).items()
-        }
         # loss function for training
         self._loss = torch.nn.CrossEntropyLoss()
         # default value for wrapping dimensions for masking = 0 (single field)
@@ -104,7 +98,9 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
             self._seq2vec_encoder = TimeDistributed(seq2vec_encoder)
             # 3. (Optionally) setup multifield_seq2seq_encoder
             if multifield_seq2seq_encoder:
-                raise NotImplementedError("A multifield_seq2seq still does not work, we need to mask properly!")
+                raise NotImplementedError(
+                    "A multifield_seq2seq still does not work, we need to mask properly!"
+                )
             self._multifield_seq2seq_encoder = None
             # 4. setup multifield_seq2vec_encoder
             self._multifield_seq2vec_encoder = multifield_seq2vec_encoder
@@ -126,7 +122,9 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         if self._feed_forward:
             self._classifier_input_dim = self._feed_forward.get_output_dim()
         elif self._multifield_seq2vec_encoder:
-            self._classifier_input_dim = self._multifield_seq2vec_encoder.get_output_dim()
+            self._classifier_input_dim = (
+                self._multifield_seq2vec_encoder.get_output_dim()
+            )
         else:
             self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
 
@@ -141,19 +139,17 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         return self.vocab.get_vocab_size(namespace="labels")
 
     def forward_tokens(self, tokens: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Apply the whole forward chain but last layer (output)
 
-        """
-            Apply the whole forward chain but last layer (output)
         Parameters
         ----------
-        tokens The tokens tensor
+        tokens
+            The tokens tensor
 
         Returns
         -------
         A ``Tensor``
-
         """
-
         # TODO: This will probably not work for single field input, we need to check the shape of record 1 and 2.
         mask = get_text_field_mask(
             tokens, num_wrapping_dims=self._num_wrapping_dims
@@ -193,7 +189,8 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
     def output_layer(
         self, encoded_text: torch.Tensor, label
     ) -> Dict[str, torch.Tensor]:
-        """Returns
+        """
+        Returns
         -------
         An output dictionary consisting of:
         logits : :class:`~torch.Tensor`
@@ -212,84 +209,13 @@ class BaseModelClassifier(Model, metaclass=ABCMeta):
         if label is not None:
             loss = self._loss(logits, label.long())
             output_dict["loss"] = loss
-            self._accuracy(logits, label)
-            for name, metric in self._metrics.items():
+            for metric in self._biome_classifier_metrics.values():
                 metric(logits, label)
 
         return output_dict
 
     @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-        """
-        Does a simple position-wise argmax over each token, converts indices to string labels, and
-        adds a ``"tags"`` key to the dictionary with the result.
-        """
-        all_predictions = output_dict["class_probabilities"]
-        if not isinstance(all_predictions, np.ndarray):
-            all_predictions = all_predictions.data.numpy()
-
-        output_map_probs = []
-        max_classes = []
-        max_classes_prob = []
-        for i, probs in enumerate(all_predictions):
-            argmax_i = np.argmax(probs)
-            label = self.vocab.get_token_from_index(argmax_i, namespace="labels")
-            label_prob = 0.0
-
-            output_map_probs.append({})
-            for j, prob in enumerate(probs):
-                label_key = self.vocab.get_token_from_index(j, namespace="labels")
-                output_map_probs[i][label_key] = prob
-                if label_key == label:
-                    label_prob = prob
-
-            max_classes.append(label)
-            max_classes_prob.append(label_prob)
-      
-        return_dict = {
-            "logits": output_dict.get("logits"),
-            "classes": output_map_probs,
-            "max_class": max_classes,
-            "max_class_prob": max_classes_prob,
-        }
-        # having loss == None in dict (when no label is present) fails
-        if "loss" in output_dict.keys():
-            return_dict["loss"] = output_dict.get("loss")
-        return return_dict
-
-    @overrides
-    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        """Get the metrics of our classifier, see :func:`~allennlp_2.models.Model.get_metrics`.
-
-        Parameters
-        ----------
-        reset
-            Reset the metrics after obtaining them?
-
-        Returns
-        -------
-        A dictionary with all metric names and values.
-        """
-        all_metrics = {}
-
-        total_f1 = 0.0
-        total_precision = 0.0
-        total_recall = 0.0
-        for metric_name, metric in self._metrics.items():
-            precision, recall, f1 = metric.get_metric(
-                reset
-            )  # pylint: disable=invalid-name
-            total_f1 += f1
-            total_precision += precision
-            total_recall += recall
-            all_metrics[metric_name + "/f1"] = f1
-            all_metrics[metric_name + "/precision"] = precision
-            all_metrics[metric_name + "/recall"] = recall
-
-        num_metrics = len(self._metrics)
-        all_metrics["average/f1"] = total_f1 / num_metrics
-        all_metrics["average/precision"] = total_precision / num_metrics
-        all_metrics["average/recall"] = total_recall / num_metrics
-        all_metrics["accuracy"] = self._accuracy.get_metric(reset)
-
-        return all_metrics
+    def forward(
+        self, *inputs
+    ) -> Dict[str, torch.Tensor]:  # pylint: disable=arguments-differ
+        raise NotImplementedError
