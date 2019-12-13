@@ -14,7 +14,7 @@ from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.training.metrics import CategoricalAccuracy
 from overrides import overrides
 
-from .sequence_classifier_base import BiomeClassifierMixin
+from .mixins import BiomeClassifierMixin
 
 
 class BiomeBiMpm(BiomeClassifierMixin, BiMpm):
