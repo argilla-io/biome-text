@@ -164,16 +164,17 @@ class Pipeline(Predictor):
     def predictions_to_labeled_instances(
         self, instance: Instance, outputs: Dict[str, numpy.ndarray]
     ) -> List[Instance]:
-     
+
         new_instance = deepcopy(instance)
-        label = numpy.argmax(outputs["logits"])   
+        label = numpy.argmax(outputs["logits"])
         new_instance.add_field("label", LabelField(int(label), skip_indexing=True))
 
         return [new_instance]
 
     @overrides
-    def get_gradients(self,
-                      instances: List[Instance]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    def get_gradients(
+        self, instances: List[Instance]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
         Gets the gradients of the loss with respect to the model inputs.
 
@@ -197,25 +198,24 @@ class Pipeline(Predictor):
         hooks.
         """
         embedding_gradients: List[Tensor] = []
-        hooks: List[RemovableHandle] = self._register_embedding_gradient_hooks(embedding_gradients)
+        hooks: List[RemovableHandle] = self._register_embedding_gradient_hooks(
+            embedding_gradients
+        )
 
         dataset = Batch(instances)
         dataset.index_instances(self._model.vocab)
         outputs = self._model.decode(self._model.forward(**dataset.as_tensor_dict()))
 
-        loss = outputs['loss']
+        loss = outputs["loss"]
         self._model.zero_grad()
         loss.backward()
 
         for hook in hooks:
             hook.remove()
-        
+
         embedding_gradients.reverse()
 
-        grads = [
-            grad.detach().cpu().numpy() 
-            for grad in embedding_gradients
-        ]
+        grads = [grad.detach().cpu().numpy() for grad in embedding_gradients]
         return grads, outputs
 
     @overrides
@@ -234,7 +234,6 @@ class Pipeline(Predictor):
         outputs = self._model.forward_on_instance(instance)
         new_instances = self.predictions_to_labeled_instances(instance, outputs)
         return new_instances
-
 
     @overrides
     def predict_json(self, inputs: JsonDict) -> Optional[JsonDict]:

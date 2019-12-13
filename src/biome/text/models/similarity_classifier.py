@@ -68,7 +68,6 @@ class SimilarityClassifier(SequenceClassifierBase):
         regularizer: Optional[RegularizerApplicator] = None,
         margin: float = 0.5,
         verification_weight: float = 2.0,
-
     ):
         super().__init__(
             vocab=vocab,

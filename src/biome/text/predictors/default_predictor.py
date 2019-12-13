@@ -67,4 +67,3 @@ class DefaultBasePredictor(Predictor):
     def _to_prediction(input, output):
         output.pop("logits")
         return {**input, "annotation": sanitize(output)}
-

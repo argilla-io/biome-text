@@ -98,10 +98,10 @@ class BiomeBiMpm(BiomeClassifierMixin, BiMpm):
 
     @overrides
     def forward(
-            self,  # type: ignore
-            record1: Dict[str, torch.LongTensor],
-            record2: Dict[str, torch.LongTensor],
-            label: torch.Tensor = None,
+        self,  # type: ignore
+        record1: Dict[str, torch.LongTensor],
+        record2: Dict[str, torch.LongTensor],
+        label: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:  # pylint: disable=arguments-differ
         output_dict = super().forward(premise=record1, hypothesis=record2, label=label)
         output_dict["class_probabilities"] = output_dict.pop("probs")

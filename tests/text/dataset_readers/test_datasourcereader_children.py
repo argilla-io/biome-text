@@ -24,21 +24,13 @@ import_submodules("biome.text")
     "name, model, dataset_reader",
     [
         ("sequence_classifier", SequenceClassifier, SequenceClassifierReader),
-        (
-            "bert_for_classification",
-            BertForClassification,
-            SequenceClassifierReader,
-        ),
+        ("bert_for_classification", BertForClassification, SequenceClassifierReader,),
         (
             "sequence_pair_classifier",
             SequencePairClassifier,
             SequencePairClassifierReader,
         ),
-        (
-            "similarity_classifier",
-            SimilarityClassifier,
-            SequencePairClassifierReader,
-        ),
+        ("similarity_classifier", SimilarityClassifier, SequencePairClassifierReader,),
     ],
 )
 def test_name_consistency(name, model, dataset_reader):
@@ -50,25 +42,21 @@ def test_name_consistency(name, model, dataset_reader):
 @pytest.mark.parametrize(
     "dataset_reader, model, text_input",
     [
+        (SequenceClassifierReader, SequenceClassifier, {"tokens": "a", "label": "b"},),
         (
-                SequenceClassifierReader,
-                SequenceClassifier,
-                {"tokens": "a", "label": "b"},
+            SequenceClassifierReader,
+            BertForClassification,
+            {"tokens": "a", "label": "b"},
         ),
         (
-                SequenceClassifierReader,
-                BertForClassification,
-                {"tokens": "a", "label": "b"},
+            SequencePairClassifierReader,
+            SequencePairClassifier,
+            {"record1": "a", "record2": "b", "label": "c"},
         ),
         (
-                SequencePairClassifierReader,
-                SequencePairClassifier,
-                {"record1": "a", "record2": "b", "label": "c"},
-        ),
-        (
-                SequencePairClassifierReader,
-                SimilarityClassifier,
-                {"record1": "a", "record2": "b", "label": "c"},
+            SequencePairClassifierReader,
+            SimilarityClassifier,
+            {"record1": "a", "record2": "b", "label": "c"},
         ),
     ],
 )
