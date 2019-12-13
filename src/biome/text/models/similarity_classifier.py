@@ -180,9 +180,9 @@ class SimilarityClassifier(SequenceClassifierBase):
                 )
 
             output_dict["loss"] = loss
-            self._accuracy(logits, label)
-            for name, metric in self._metrics.items():
+            for metric in self._biome_classifier_metrics.values():
                 metric(logits, label)
+
         """
         This was an idea of a similarity classifier, solely based on the distance of the vectors
         if self._distance:
