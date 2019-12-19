@@ -32,17 +32,20 @@ class SequenceClassifierReader(DataSourceReader):
         fields = {}
 
         tokens_field = self.build_textfield(tokens)
+        if tokens_field:
+            fields["tokens"] = tokens_field
+        # TODO: Check how this affects predictions!
+        elif self._skip_empty_tokens:
+            return None
+
         label_field = None
         # TODO: This is ugly as f***, should go into a decorator that checks/transforms the input
         if label is not None:
             # skipp example
             if str(label).strip() == "":
                 return None
-            else:
-                label_field = LabelField(str(label).strip())
+            label_field = LabelField(str(label).strip())
 
-        if tokens_field:
-            fields["tokens"] = tokens_field
         if label_field:
             fields["label"] = label_field
 

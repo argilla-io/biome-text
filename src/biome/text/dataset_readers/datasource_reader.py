@@ -1,11 +1,11 @@
 import inspect
 import logging
-from typing import Iterable, Optional, Dict, Union, List
 from inspect import Parameter
-import pandas
-from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
-from biome.data.sources import DataSource
+from typing import Iterable, Dict
 
+from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
+
+from biome.data.sources import DataSource
 from biome.text.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
 
 
@@ -33,6 +33,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
         as_text_field: bool = False,
+        skip_empty_tokens: bool = False,
     ) -> None:
         DatasetReader.__init__(self, lazy=True)
         TextFieldBuilderMixin.__init__(
@@ -42,6 +43,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             token_indexers=token_indexers,
             as_text_field=as_text_field,
         )
+        self._skip_empty_tokens = skip_empty_tokens
 
         self._signature = {
             name: dict(optional=value.default != Parameter.empty)
