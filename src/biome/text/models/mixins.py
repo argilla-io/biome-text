@@ -131,9 +131,9 @@ class BiomeClassifierMixin:
                 all_metrics[metric_name + "/precision"] = precision
                 all_metrics[metric_name + "/recall"] = recall
 
-        num_metrics = len(self._biome_classifier_metrics)
-        all_metrics["average/f1"] = total_f1 / num_metrics
-        all_metrics["average/precision"] = total_precision / num_metrics
-        all_metrics["average/recall"] = total_recall / num_metrics
+        num_classes = len(self.vocab.get_index_to_token_vocabulary("labels"))
+        all_metrics["average/f1"] = total_f1 / num_classes
+        all_metrics["average/precision"] = total_precision / num_classes
+        all_metrics["average/recall"] = total_recall / num_classes
 
         return all_metrics
