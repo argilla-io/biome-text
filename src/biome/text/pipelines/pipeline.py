@@ -1,25 +1,28 @@
+import copy
 import logging
 import os
-from tempfile import mktemp
+import re
 from copy import deepcopy
+from tempfile import mktemp
+from typing import cast, Type, Optional, List, Dict, Tuple, Any
 
 import allennlp
-import re
-import yaml
 import numpy
+import yaml
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import sanitize
 from allennlp.data import DatasetReader, Instance
+from allennlp.data.dataset import Batch
+from allennlp.data.fields import LabelField
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
-from allennlp.data.fields import LabelField
-from allennlp.data.dataset import Batch
+from biome.data.utils import configure_dask_cluster
 from overrides import overrides
-from typing import cast, Type, Optional, List, Dict, Tuple, Any
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
+from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors import get_predictor_from_archive
 
 
@@ -47,9 +50,14 @@ class Pipeline(Predictor):
     # Disable allennlp logging
     logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 
+    PIPELINE_FIELD = "pipeline"
+    ARCHITECTURE_FIELD = "architecture"
+    TYPE_FIELD = "type"
+
     def __init__(self, model: allennlp.models.model.Model, reader: DataSourceReader):
         super(Pipeline, self).__init__(model, reader)
         self.__config = {}
+        self.__binary_path = None
 
     @classmethod
     def reader_class(cls) -> Type[DataSourceReader]:
@@ -108,7 +116,7 @@ class Pipeline(Predictor):
         return f"{self.__module__}.{self.__class__.__name__}"
 
     @property
-    def allennlp_config(self) -> dict:
+    def config(self) -> dict:
         """
         A representation of reader and model in a properties defined way
         as allennlp does
@@ -134,7 +142,8 @@ class Pipeline(Predictor):
         return self.predict_json(inputs)
 
     @classmethod
-    def load(cls, path: str, **kwargs) -> "Pipeline":
+    def load(cls, binary_path: str, **kwargs) -> "Pipeline":
+        """Load a model pipeline form a binary path"""
         name = None
         # TODO resolve load from Pipeline.class. By now, you must decorate your own
         #  pipeline classes as an :class:~`allennlp.predictors.Predictor`
@@ -147,10 +156,12 @@ class Pipeline(Predictor):
             Model.register(name, exist_ok=True)(cls.model_class())
             DatasetReader.register(name, exist_ok=True)(cls.reader_class())
 
-        archive = load_archive(path, **kwargs)
+        archive = load_archive(binary_path, **kwargs)
         predictor = get_predictor_from_archive(archive, predictor_name=name)
+        pipeline = cast(Pipeline, predictor)
+        pipeline.__binary_path = binary_path
 
-        return cast(Pipeline, predictor)
+        return pipeline
 
     @classmethod
     def __registrable_name(cls, _class: Type["Pipeline"]) -> str:
@@ -174,7 +185,7 @@ class Pipeline(Predictor):
     @overrides
     def get_gradients(
         self, instances: List[Instance]
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Gets the gradients of the loss with respect to the model inputs.
 
@@ -197,10 +208,8 @@ class Pipeline(Predictor):
         layer of the model. Calls :func:`backward` on the loss and then removes the
         hooks.
         """
-        embedding_gradients: List[Tensor] = []
-        hooks: List[RemovableHandle] = self._register_embedding_gradient_hooks(
-            embedding_gradients
-        )
+        embedding_gradients = []
+        hooks = self._register_embedding_gradient_hooks(embedding_gradients)
 
         dataset = Batch(instances)
         dataset.index_instances(self._model.vocab)
@@ -214,7 +223,6 @@ class Pipeline(Predictor):
             hook.remove()
 
         embedding_gradients.reverse()
-
         grads = [grad.detach().cpu().numpy() for grad in embedding_gradients]
         return grads, outputs
 
@@ -303,41 +311,41 @@ class Pipeline(Predictor):
             data = data["topology"]
 
         pipeline_class = cls.__get_pipeline_class(data)
-        name = cls.__registrable_name(pipeline_class)
-
+        name = cls.__get_pipeline_name_from_config(data) or cls.__registrable_name(
+            pipeline_class
+        )
         # Creating an empty pipeline
         model = pipeline_class(
             model=None,
             reader=cast(
                 DataSourceReader,
-                DatasetReader.from_params(Pipeline.__get_reader_params(data, name)),
+                DatasetReader.from_params(
+                    Params(Pipeline.__get_reader_params(data, name))
+                ),
             ),
         )
         # Include pipeline configuration
         # TODO This configuration will fail if the reader and model are registered with other names than the calculated
         #  registrable_name
-        model.__config = {
-            "dataset_reader": Pipeline.__get_reader_params(data, name).as_dict(),
-            "model": Pipeline.__get_model_params(data, name).as_dict(),
-        }
-
+        config = cls.yaml_to_dict(path)
+        config[cls.PIPELINE_FIELD] = Pipeline.__get_reader_params(data, name)
+        config[cls.ARCHITECTURE_FIELD] = Pipeline.__get_model_params(data, name)
+        model.__config = config
         return model
 
     @classmethod
-    def __get_reader_params(cls, data: dict, name: Optional[str] = None) -> Params:
-        config = data["pipeline"].copy()
+    def __get_reader_params(cls, data: dict, name: Optional[str] = None) -> dict:
+        config = data[cls.PIPELINE_FIELD]
         if name:
-            config["type"] = name
-
-        return Params(config)
+            config[cls.TYPE_FIELD] = name
+        return copy.deepcopy(config)
 
     @classmethod
-    def __get_model_params(cls, data: dict, name: Optional[str] = None) -> Params:
-        config = data["architecture"].copy()
+    def __get_model_params(cls, data: dict, name: Optional[str] = None) -> dict:
+        config = data[cls.ARCHITECTURE_FIELD].copy()
         if name:
-            config["type"] = name
-
-        return Params(config)
+            config[cls.TYPE_FIELD] = name
+        return copy.deepcopy(config)
 
     @classmethod
     def __get_pipeline_class(cls, config: dict) -> Type["Pipeline"]:
@@ -355,18 +363,33 @@ class Pipeline(Predictor):
         if cls != Pipeline:
             return cls
 
-        class_name = config.get("class", cls.__get_model_params(config).get("type"))
-        if not class_name:
+        pipeline_type = cls.__get_pipeline_name_from_config(config)
+        the_class = Predictor.by_name(pipeline_type)
+        return cast(Type[Pipeline], the_class)
+
+    @classmethod
+    def __get_pipeline_name_from_config(cls, config: Dict[str, Any]):
+        pipeline_type = config.get(
+            cls.TYPE_FIELD, cls.__get_model_params(config).get(cls.TYPE_FIELD)
+        )
+        if not pipeline_type:
             raise ConfigurationError(
-                "Cannot load the pipeline: No pipeline class found in file."
+                "Cannot load the pipeline: No pipeline type found in file."
                 "\nPlease, include the class property in your file or try to load configuration "
                 "with your class directly: MyPipeline.from_config(config_file)"
             )
+        return pipeline_type
 
-        the_class = Predictor.by_name(class_name)
-        return cast(Type[Pipeline], the_class)
-
-    def learn(self, trainer: str, train: str, validation: str, output: str):
+    def learn(
+        self,
+        trainer: str,
+        train: str,
+        validation: str,
+        output: str,
+        test: Optional[str] = None,
+        vocab: Optional[str] = None,
+        workers: int = 1,
+    ):
         """
         Launch a learning process for loaded model configuration.
 
@@ -379,27 +402,39 @@ class Pipeline(Predictor):
             The trainer file path
         train
             The train datasource file path
-
         validation
             The validation datasource file path
-
         output
             The learn output path
-
+        vocab: Vocab
+            The already generated vocabulary path
+        test: str
+            The test datasource configuration
+        workers: int
+            Number of workers used for local dask cluster
         """
-        from biome.text.commands.learn import learn
 
-        spec = mktemp()
-        with open(spec, "wt") as file:
-            yaml.safe_dump(self.allennlp_config, file)
+        self._logger.info("Launching dask cluster")
+        client = configure_dask_cluster(n_workers=workers)
 
-        _ = learn.learn(
+        kwargs = dict(
+            vocab=vocab,
+            test_cfg=test,
             output=output,
-            model_spec=spec,
             trainer_path=trainer,
             train_cfg=train,
             validation_cfg=validation,
         )
+        try:
+            if self.__binary_path:
+                learn(model_binary=self.__binary_path, **kwargs)
+            else:
+                spec = mktemp()
+                with open(spec, "wt") as file:
+                    yaml.safe_dump(self.config, file)
+                _ = learn(model_spec=spec, **kwargs)
+        finally:
+            client.close()
 
         model = self.load(os.path.join(output, "model.tar.gz"))
 
