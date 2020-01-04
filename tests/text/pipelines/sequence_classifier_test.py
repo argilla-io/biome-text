@@ -7,6 +7,7 @@ from time import sleep
 import requests
 from elasticsearch import Elasticsearch
 
+from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
@@ -21,6 +22,7 @@ class SequenceClassifierTest(unittest.TestCase):
     model_archive = os.path.join(output_dir, "model.tar.gz")
 
     name = "sequence_classifier"
+
     model_path = os.path.join(BASE_CONFIG_PATH, "model.yml")
     trainer_path = os.path.join(BASE_CONFIG_PATH, "trainer.yml")
     training_data = os.path.join(BASE_CONFIG_PATH, "train.data.yml")
@@ -33,8 +35,7 @@ class SequenceClassifierTest(unittest.TestCase):
         self.check_predictor()
 
     def check_train(self):
-
-        classifier = SequenceClassifier.from_config(self.model_path)
+        classifier = Pipeline.from_config(self.model_path)
         self.assertIsInstance(classifier, SequenceClassifier)
 
         classifier.learn(

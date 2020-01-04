@@ -5,10 +5,11 @@ import tempfile
 from time import sleep
 
 import requests
+
+from biome.text import Pipeline
 from biome.text.environment import ES_HOST
 from elasticsearch import Elasticsearch
 
-from biome.text.commands.learn.learn import learn
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.models import SequencePairClassifier, load_archive
@@ -43,13 +44,12 @@ class BasePairClassifierTest(DaskSupportTest):
         self.check_predictor()
 
     def check_train(self, cls_type):
-
-        _ = learn(
-            model_spec=self.model_path,
+        pipeline = Pipeline.from_config(self.model_path)
+        _ = pipeline.learn(
             output=self.output_dir,
-            train_cfg=self.training_data,
-            validation_cfg=self.validation_data,
-            trainer_path=self.trainer_path,
+            train=self.training_data,
+            validation=self.validation_data,
+            trainer=self.trainer_path,
         )
         archive = load_archive(self.model_archive)
         self.assertTrue(archive.model is not None)
@@ -72,7 +72,7 @@ class BasePairClassifierTest(DaskSupportTest):
         self.assertTrue(len(data["hits"]) > 0, "No data indexed")
 
     def check_serve(self):
-        port = 8000
+        port = 108000
         process = multiprocessing.Process(
             target=serve, daemon=True, kwargs=dict(binary=self.model_archive, port=port)
         )
