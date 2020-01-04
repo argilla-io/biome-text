@@ -95,6 +95,7 @@ def trainer_yaml(tmpdir):
         },
         "trainer": {
             "type": "default",
+            "cuda_device": -1,
             "num_serialized_models_to_keep": 1,
             "num_epochs": 1,
             "optimizer": {
