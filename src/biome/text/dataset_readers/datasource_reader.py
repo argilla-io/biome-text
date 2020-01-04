@@ -29,6 +29,10 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
     skip_empty_tokens
         Should i silently skip empty tokens?
+    max_sequence_length
+        If you want to truncate the text input to a maximum number of characters
+    max_nr_of_sentences
+        Use only the first max_nr_of_sentences when segmenting the text into sentences
     """
 
     def __init__(
@@ -38,6 +42,8 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         segment_sentences: Union[bool, SentenceSplitter] = False,
         as_text_field: bool = False,
         skip_empty_tokens: bool = False,
+        max_sequence_length: int = None,
+        max_nr_of_sentences: int = None,
     ) -> None:
         DatasetReader.__init__(self, lazy=True)
         TextFieldBuilderMixin.__init__(
@@ -47,6 +53,8 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             token_indexers=token_indexers,
             segment_sentences=segment_sentences,
             as_text_field=as_text_field,
+            max_sequence_length=max_sequence_length,
+            max_nr_of_sentences=max_nr_of_sentences,
         )
         self._skip_empty_tokens = skip_empty_tokens
 
