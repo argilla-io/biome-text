@@ -18,6 +18,7 @@ from allennlp.data.fields import LabelField
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
 from biome.data.utils import configure_dask_cluster
+from distributed import LocalCluster
 from overrides import overrides
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
@@ -411,11 +412,8 @@ class Pipeline(Predictor):
         test: str
             The test datasource configuration
         workers: int
-            Number of workers used for local dask cluster
+            Number of workers used for local dask cluster. Obsolete
         """
-
-        self._logger.info("Launching dask cluster")
-        client = configure_dask_cluster(n_workers=workers)
 
         kwargs = dict(
             vocab=vocab,
@@ -425,25 +423,21 @@ class Pipeline(Predictor):
             train_cfg=train,
             validation_cfg=validation,
         )
-        try:
-            if self.__binary_path:
-                learn(model_binary=self.__binary_path, **kwargs)
-            else:
-                spec = mktemp()
-                with open(spec, "wt") as file:
-                    yaml.safe_dump(self.config, file)
-                _ = learn(model_spec=spec, **kwargs)
-        finally:
-            client.close()
+
+        if self.__binary_path:
+            learn(model_binary=self.__binary_path, **kwargs)
+        else:
+            spec = mktemp()
+            with open(spec, "wt") as file:
+                yaml.safe_dump(self.config, file)
+            _ = learn(model_spec=spec, **kwargs)
 
         model = self.load(os.path.join(output, "model.tar.gz"))
-
         self._model = model.model
         self._dataset_reader = model.reader
 
     @classmethod
     def _load_callback(cls, archive: Archive, reader: DatasetReader):
-
         """
         This method allow manage custom loads when the general way doesn't work
 
