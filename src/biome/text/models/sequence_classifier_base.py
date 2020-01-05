@@ -146,7 +146,6 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         -------
         A ``Tensor``
         """
-        # TODO: This will probably not work for single field input, we need to check the shape of record 1 and 2.
         mask = get_text_field_mask(
             tokens, num_wrapping_dims=self._num_wrapping_dims
         ).float()
