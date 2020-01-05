@@ -17,6 +17,6 @@ class SimilarityClassifierTest(BasePairClassifierTest):
 
     def test_model_workflow(self):
         self.check_train(SimilarityClassifier)
-        self.check_explore()
-        self.check_serve()
         self.check_predictor()
+        # self.check_serve()
+        self.check_explore()
