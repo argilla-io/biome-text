@@ -336,14 +336,16 @@ class Pipeline(Predictor):
 
     @classmethod
     def __get_reader_params(cls, data: dict, name: Optional[str] = None) -> dict:
-        config = data[cls.PIPELINE_FIELD]
+        # TODO dataset_reader will not be supported as part of configuration definition
+        config = data.get(cls.PIPELINE_FIELD, data.get("dataset_reader"))
         if name:
             config[cls.TYPE_FIELD] = name
         return copy.deepcopy(config)
 
     @classmethod
     def __get_model_params(cls, data: dict, name: Optional[str] = None) -> dict:
-        config = data[cls.ARCHITECTURE_FIELD].copy()
+        # TODO model will not be supported as part of configuration definition
+        config = data.get(cls.ARCHITECTURE_FIELD, data.get("model"))
         if name:
             config[cls.TYPE_FIELD] = name
         return copy.deepcopy(config)
