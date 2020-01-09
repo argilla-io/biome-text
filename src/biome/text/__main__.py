@@ -4,11 +4,6 @@ import logging
 import coloredlogs
 from allennlp.common.util import import_submodules
 
-from .commands import BiomeExplore
-from .commands import BiomeLearn
-from .commands import BiomeRestAPI
-from .commands.ui import BiomeUI
-
 
 def configure_colored_logging(loglevel):
     field_styles = coloredlogs.DEFAULT_FIELD_STYLES.copy()
@@ -30,6 +25,11 @@ def main() -> None:
     codebase. In particular, once you start creating your own ``Model`` s and so forth, it won't
     work for them, unless you use the ``--include-package`` flag.
     """
+    from .commands import BiomeExplore
+    from .commands import BiomeLearn
+    from .commands import BiomeRestAPI
+    from .commands.ui import BiomeUI
+
     # pylint: disable=dangerous-default-value
     configure_colored_logging(loglevel=logging.INFO)
     logger = logging.getLogger(__name__)

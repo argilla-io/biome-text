@@ -2,13 +2,15 @@ import logging
 import multiprocessing
 import os
 import tempfile
+import unittest
 from time import sleep
 
 import requests
+
+from biome.text import Pipeline
 from biome.text.environment import ES_HOST
 from elasticsearch import Elasticsearch
 
-from biome.text.commands.learn.learn import learn
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.models import SequencePairClassifier, load_archive
@@ -26,30 +28,25 @@ BASE_CONFIG_PATH = os.path.join(
 
 class BasePairClassifierTest(DaskSupportTest):
     base_config = None
+    DEFAULT_REQUEST_TIMEOUT_IN_SECONDS = 10
 
-    def setUp(self) -> None:
-        self.output_dir = tempfile.mkdtemp()
-        self.model_archive = os.path.join(self.output_dir, "model.tar.gz")
+    @classmethod
+    def setUpClass(cls):
+        cls.output_dir = tempfile.mkdtemp()
+        cls.model_archive = os.path.join(cls.output_dir, "model.tar.gz")
 
-        self.model_path = os.path.join(self.base_config, "model.yml")
-        self.trainer_path = os.path.join(self.base_config, "trainer.yml")
-        self.training_data = os.path.join(self.base_config, "train.data.yml")
-        self.validation_data = os.path.join(self.base_config, "validation.data.yml")
-
-    def model_workflow(self):
-        self.check_train(SequencePairClassifier)
-        self.check_explore()
-        self.check_serve()
-        self.check_predictor()
+        cls.trainer_path = os.path.join(cls.base_config, "trainer.yml")
+        cls.model_path = os.path.join(cls.base_config, "model.yml")
+        cls.training_data = os.path.join(cls.base_config, "train.data.yml")
+        cls.validation_data = os.path.join(cls.base_config, "validation.data.yml")
 
     def check_train(self, cls_type):
-
-        _ = learn(
-            model_spec=self.model_path,
+        pipeline = Pipeline.from_config(self.model_path)
+        _ = pipeline.learn(
             output=self.output_dir,
-            train_cfg=self.training_data,
-            validation_cfg=self.validation_data,
-            trainer_path=self.trainer_path,
+            train=self.training_data,
+            validation=self.validation_data,
+            trainer=self.trainer_path,
         )
         archive = load_archive(self.model_archive)
         self.assertTrue(archive.model is not None)
@@ -72,19 +69,21 @@ class BasePairClassifierTest(DaskSupportTest):
         self.assertTrue(len(data["hits"]) > 0, "No data indexed")
 
     def check_serve(self):
-        port = 8000
+        port = 18000
         process = multiprocessing.Process(
             target=serve, daemon=True, kwargs=dict(binary=self.model_archive, port=port)
         )
         process.start()
         sleep(5)
-
-        response = requests.post(
-            f"http://localhost:{port}/predict",
-            json={"record1": "mike Farrys", "record2": "Mike Farris"},
-        )
-        self.assertTrue(response.json() is not None)
-        process.terminate()
+        try:
+            response = requests.post(
+                f"http://localhost:{port}/predict",
+                json={"record1": "mike Farrys", "record2": "Mike Farris"},
+                timeout=self.DEFAULT_REQUEST_TIMEOUT_IN_SECONDS,
+            )
+            self.assertTrue(response.json() is not None)
+        finally:
+            process.terminate()
         sleep(2)
 
     def check_predictor(self):

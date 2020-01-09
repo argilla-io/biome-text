@@ -1,4 +1,4 @@
-type: biome.text.model_instances.sequence_classifier.SequenceClassifier
+type: sequence_classifier
 
 architecture:
   seq2vec_encoder:
@@ -13,12 +13,10 @@ architecture:
       type: embedding
 
 pipeline:
-
   tokenizer:
     type: word
     word_splitter:
       type: spacy
-
   token_indexers:
     tokens:
       type: single_id

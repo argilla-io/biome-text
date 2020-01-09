@@ -1,14 +1,10 @@
-import logging
 import os
+from typing import Dict, Any, cast
 
 import yaml
-from biome.data.utils import get_nested_property_from_data
-from typing import Dict, Any
 
+from biome.text.environment import CUDA_DEVICE
 from biome.text.pipelines.learn.default_callback_trainer import DefaultCallbackTrainer
-from ..environment import CUDA_DEVICE
-
-_logger = logging.getLogger(__name__)
 
 
 class BiomeConfig:
@@ -40,6 +36,8 @@ class BiomeConfig:
     VALIDATION_DATA_FIELD = "validation_data_path"
     TEST_DATA_FIELD = "test_data_path"
     EVALUATE_ON_TEST_FIELD = "evaluate_on_test"
+    DATASET_READER_FIELD = "dataset_reader"
+    TYPE_FIELD = "type"
 
     def __init__(
         self,
@@ -81,19 +79,22 @@ class BiomeConfig:
         model_dict
             The model configuration as a dict
         """
-        if "topology" in self.model_dict.keys():
-            self.model_dict = dict(
-                dataset_reader=get_nested_property_from_data(
-                    self.model_dict, "topology.pipeline"
-                ),
-                model=get_nested_property_from_data(
-                    self.model_dict, "topology.architecture"
-                ),
-            )
+
+        model_dict = {}
+        for _from, _to in [
+            ("pipeline", self.DATASET_READER_FIELD),
+            ("architecture", self.MODEL_FIELD),
+        ]:
+            model_dict[_to] = self.model_dict.get(_to, self.model_dict.get(_from))
+
+        self.model_dict = model_dict or self.model_dict
+
         # In general the dataset reader should be of the same type as the model
         # (the DatasetReader's text_to_instance matches the model's forward method)
-        if "type" not in self.model_dict["dataset_reader"]:
-            self.model_dict["dataset_reader"]["type"] = self.model_dict["model"]["type"]
+        if self.TYPE_FIELD not in self.model_dict.get(self.DATASET_READER_FIELD):
+            self.model_dict[self.DATASET_READER_FIELD][
+                self.TYPE_FIELD
+            ] = self.model_dict[self.MODEL_FIELD][self.TYPE_FIELD]
 
     @staticmethod
     def yaml_to_dict(path: str) -> Dict[str, Any]:
@@ -114,7 +115,8 @@ class BiomeConfig:
         with open(path) as model_file:
             return yaml.safe_load(model_file)
 
-    def get_cuda_device(self) -> int:
+    @staticmethod
+    def get_cuda_device() -> int:
         """Gets the cuda device from an environment variable.
 
         This is necessary to activate a GPU if available
@@ -124,7 +126,7 @@ class BiomeConfig:
         cuda_device
             The integer number of the CUDA device
         """
-        cuda_device = int(os.getenv(CUDA_DEVICE, -1))
+        cuda_device = int(os.getenv(CUDA_DEVICE, "-1"))
         return cuda_device
 
     def to_allennlp_params(self) -> Dict:
@@ -150,12 +152,12 @@ class BiomeConfig:
             if path:
                 allennlp_params[field] = path
 
-        trainer_cfg = allennlp_params[self.TRAINER_FIELD]
-        if not trainer_cfg.get("type"):  # Just in case of default trainer
-            trainer_cfg["type"] = DefaultCallbackTrainer.__name__
+        trainer_cfg = cast(dict, allennlp_params[self.TRAINER_FIELD])
+        if not trainer_cfg.get(self.TYPE_FIELD):  # Just in case of default trainer
+            trainer_cfg[self.TYPE_FIELD] = DefaultCallbackTrainer.__name__
             allennlp_params[self.EVALUATE_ON_TEST_FIELD] = False
         # There is a bug in the AllenNLP train command: when specifying explicitly `type: default`, it will fail.
-        if trainer_cfg["type"] == "default":
-            del trainer_cfg["type"]
+        if trainer_cfg[self.TYPE_FIELD] == "default":
+            del trainer_cfg[self.TYPE_FIELD]
 
         return allennlp_params

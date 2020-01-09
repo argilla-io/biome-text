@@ -1,17 +1,14 @@
 import os
 import unittest
 
-from biome.text.commands.helpers import BiomeConfig
 from biome.text.environment import CUDA_DEVICE
-
+from biome.text.pipelines.learn.allennlp.defs import BiomeConfig
 from tests.test_context import TEST_RESOURCES
 
 WITHOUT_CUDA_DEVICE_TRAINER_PATH = os.path.join(
     TEST_RESOURCES, "resources/no_cuda_device_trainer.yml"
 )
-SPEC_PATH = os.path.join(
-    TEST_RESOURCES, "resources/models/sequence_pair_classifier/model.yml"
-)
+SPEC_PATH = os.path.join(TEST_RESOURCES, "resources/for_config_model.yml")
 
 
 class TestCommandHelper(unittest.TestCase):
@@ -21,7 +18,7 @@ class TestCommandHelper(unittest.TestCase):
         cfg = BiomeConfig(
             model_path=SPEC_PATH, trainer_path=WITHOUT_CUDA_DEVICE_TRAINER_PATH
         ).to_allennlp_params()
-        trainer_cfg = cfg["trainer"]
+        trainer_cfg = cfg[BiomeConfig.TRAINER_FIELD]
 
         self.assertEqual(trainer_cfg["cuda_device"], -1, "Wrong cuda device expected")
 

@@ -7,20 +7,23 @@ from time import sleep
 import requests
 from elasticsearch import Elasticsearch
 
+from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
 from biome.text.pipelines.sequence_classifier import SequenceClassifier
+from tests import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
 
 BASE_CONFIG_PATH = os.path.join(TEST_RESOURCES, "resources/models/sequence_classifier")
 
 
-class SequenceClassifierTest(unittest.TestCase):
+class SequenceClassifierTest(DaskSupportTest):
     output_dir = tempfile.mkdtemp()
     model_archive = os.path.join(output_dir, "model.tar.gz")
 
     name = "sequence_classifier"
+
     model_path = os.path.join(BASE_CONFIG_PATH, "model.yml")
     trainer_path = os.path.join(BASE_CONFIG_PATH, "trainer.yml")
     training_data = os.path.join(BASE_CONFIG_PATH, "train.data.yml")
@@ -33,8 +36,7 @@ class SequenceClassifierTest(unittest.TestCase):
         self.check_predictor()
 
     def check_train(self):
-
-        classifier = SequenceClassifier.from_config(self.model_path)
+        classifier = Pipeline.from_config(self.model_path)
         self.assertIsInstance(classifier, SequenceClassifier)
 
         classifier.learn(
@@ -66,7 +68,7 @@ class SequenceClassifierTest(unittest.TestCase):
         self.assertTrue(len(data["hits"]) > 0, "No data indexed")
 
     def check_serve(self):
-        port = 8000
+        port = 18000
         process = multiprocessing.Process(
             target=serve, daemon=True, kwargs=dict(binary=self.model_archive, port=port)
         )
