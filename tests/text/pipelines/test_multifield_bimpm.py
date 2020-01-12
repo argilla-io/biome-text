@@ -35,6 +35,7 @@ def training_data_yaml(tmpdir):
 @pytest.fixture
 def pipeline_yaml(tmpdir):
     yaml_dict = {
+        "type": "multifield_bimpm",
         "pipeline": {
             "token_indexers": {
                 "tokens": {
@@ -133,7 +134,7 @@ def trainer_yaml(tmpdir):
     return str(yaml_file)
 
 
-def test_segment_sentences(training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory):
+def test_multifield_bimpm_learn(training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory):
     pipeline = MultifieldBiMpmPipeline.from_config(pipeline_yaml)
 
     pipeline.learn(
