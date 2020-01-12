@@ -1,21 +1,21 @@
-import os
 import pytest
 
-from biome.text.pipelines.sequence_classifier import SequenceClassifier
-from tests.test_context import TEST_RESOURCES
+from biome.text.pipelines.multifield_bimpm import MultifieldBiMpmPipeline
 import pandas as pd
 import yaml
-
-BASE_CONFIG_PATH = os.path.join(TEST_RESOURCES, "resources/models/sequence_classifier")
 
 
 @pytest.fixture
 def training_data_yaml(tmpdir):
-    data_file = tmpdir.join("sentences.csv")
+    data_file = tmpdir.join("multifield.csv")
     df = pd.DataFrame(
         {
-            "tokens": ["Two simple sentences. Split by a dot.", "One simple sentence."],
-            "label": [1, 0],
+            "record1_1": ["record1_1", "record1_1 test", "record1_1 test this"],
+            "record1_2": ["record1_2", "record1_2 test", "record1_2 test this"],
+            "record1_3": ["record1_3", "record1_3 test", "record1_3 test this"],
+            "record2_1": ["record2_1", "record2_1 test", "record2_1 test this"],
+            "record2_2": ["record2_2", "record2_2 test", "record2_2 test this"],
+            "label": [1, 0, 1],
         }
     )
     df.to_csv(data_file, index=False)
@@ -23,7 +23,9 @@ def training_data_yaml(tmpdir):
     yaml_file = tmpdir.join("training.yml")
     yaml_dict = {
         "source": str(data_file),
-        "mapping": {"tokens": "tokens", "label": "label"},
+        "mapping": {"record1": ["record1_1", "record1_2", "record1_3"],
+                    "record2": ["record2_1", "record2_2"],
+                    "label": "label"},
     }
     with yaml_file.open("w") as f:
         yaml.safe_dump(yaml_dict, f)
@@ -39,29 +41,61 @@ def pipeline_yaml(tmpdir):
                     "type": "single_id"
                 }
             },
-            "segment_sentences": True,
-            "as_text_field": True,
+            "as_text_field": False,
         },
         "architecture": {
             "text_field_embedder": {
                 "tokens": {
                     "type": "embedding",
-                    "embedding_dim": 2,
+                    "padding_index": 0,
+                    "embedding_dim": 10,
                 }
             },
-            "seq2vec_encoder": {
-                "type": "gru",
-                "input_size": 2,
-                "hidden_size": 2,
-                "bidirectional": False,
+            "matcher_word": {
+                "is_forward": True,
+                "hidden_dim": 10,
+                "num_perspectives": 10,
+                "with_full_match": False
             },
-            "multifield_seq2vec_encoder": {
+            "encoder": {
+                "type": "lstm",
+                "bidirectional": True,
+                "input_size": 10,
+                "hidden_size": 200,
+                "num_layers": 1
+            },
+            "matcher_forward": {
+                "is_forward": True,
+                "hidden_dim": 200,
+                "num_perspectives": 10
+            },
+            "matcher_backward": {
+                "is_forward": False,
+                "hidden_dim": 200,
+                "num_perspectives": 10
+            },
+            "aggregator": {
                 "type": "gru",
-                "input_size": 2,
-                "hidden_size": 2,
-                "bidirectional": False,
-            }
-        }
+                "bidirectional": True,
+                "input_size": 154,
+                "hidden_size": 100,
+            },
+            "classifier_feedforward": {
+                "input_dim": 400,
+                "num_layers": 1,
+                "hidden_dims": [200],
+                "activations": ["relu"],
+                "dropout": [0.0]
+            },
+            "initializer": [
+                [".*linear_layers.*weight", {"type": "xavier_normal"}],
+                [".*linear_layers.*bias", {"type": "constant", "val": 0}],
+                [".*weight_ih.*", {"type": "xavier_normal"}],
+                [".*weight_hh.*", {"type": "orthogonal"}],
+                [".*bias.*", {"type": "constant", "val": 0}],
+                [".*matcher.*match_weights.*", {"type": "kaiming_normal"}]
+            ],
+        },
     }
 
     yaml_file = tmpdir.join("pipeline.yml")
@@ -75,10 +109,8 @@ def pipeline_yaml(tmpdir):
 def trainer_yaml(tmpdir):
     yaml_dict = {
         "iterator": {
-            "batch_size": 2,
-            "cache_instances": True,
-            "max_instances_in_memory": 2,
-            "sorting_keys": [["tokens", "num_fields"]],
+            "batch_size": 3,
+            "sorting_keys": [["record1", "num_fields"]],
             "type": "bucket",
         },
         "trainer": {
@@ -102,7 +134,7 @@ def trainer_yaml(tmpdir):
 
 
 def test_segment_sentences(training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory):
-    pipeline = SequenceClassifier.from_config(pipeline_yaml)
+    pipeline = MultifieldBiMpmPipeline.from_config(pipeline_yaml)
 
     pipeline.learn(
         trainer=trainer_yaml,
