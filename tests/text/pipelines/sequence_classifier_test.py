@@ -45,6 +45,7 @@ def training_data_yaml(tmpdir):
 @pytest.fixture
 def pipeline_yaml(tmpdir):
     yaml_dict = {
+        "type": "sequence_classifier",
         "pipeline": {
             "token_indexers": {
                 "tokens": {
