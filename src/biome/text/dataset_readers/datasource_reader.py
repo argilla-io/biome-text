@@ -1,9 +1,10 @@
 import inspect
 import logging
 from inspect import Parameter
-from typing import Iterable, Dict
+from typing import Iterable, Dict, Union
 
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
+from allennlp.data.tokenizers import SentenceSplitter
 
 from biome.data.sources import DataSource
 from biome.text.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
@@ -20,20 +21,29 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
     ----------
     tokenizer
         By default we use a WordTokenizer with the SpacyWordSplitter
-
     token_indexers
         By default we use the following dict {'tokens': SingleIdTokenIndexer}
-
+    segment_sentences
+        If True, we will first segment the text into sentences using SpaCy and then tokenize words.
     as_text_field
         Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
+    skip_empty_tokens
+        Should i silently skip empty tokens?
+    max_sequence_length
+        If you want to truncate the text input to a maximum number of characters
+    max_nr_of_sentences
+        Use only the first max_nr_of_sentences when segmenting the text into sentences
     """
 
     def __init__(
         self,
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
+        segment_sentences: Union[bool, SentenceSplitter] = False,
         as_text_field: bool = False,
         skip_empty_tokens: bool = False,
+        max_sequence_length: int = None,
+        max_nr_of_sentences: int = None,
     ) -> None:
         DatasetReader.__init__(self, lazy=True)
         TextFieldBuilderMixin.__init__(
@@ -41,7 +51,10 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             tokenizer=tokenizer,
             # The token_indexers keys are directly related to the model text_field_embedder configuration
             token_indexers=token_indexers,
+            segment_sentences=segment_sentences,
             as_text_field=as_text_field,
+            max_sequence_length=max_sequence_length,
+            max_nr_of_sentences=max_nr_of_sentences,
         )
         self._skip_empty_tokens = skip_empty_tokens
 

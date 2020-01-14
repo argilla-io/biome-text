@@ -97,11 +97,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
             )
             self._seq2vec_encoder = TimeDistributed(seq2vec_encoder)
             # 3. (Optionally) setup multifield_seq2seq_encoder
-            if multifield_seq2seq_encoder:
-                raise NotImplementedError(
-                    "A multifield_seq2seq still does not work, we need to mask properly!"
-                )
-            self._multifield_seq2seq_encoder = None
+            self._multifield_seq2seq_encoder = multifield_seq2seq_encoder
             # 4. setup multifield_seq2vec_encoder
             self._multifield_seq2vec_encoder = multifield_seq2vec_encoder
             # doc vector dropout
@@ -150,7 +146,6 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         -------
         A ``Tensor``
         """
-        # TODO: This will probably not work for single field input, we need to check the shape of record 1 and 2.
         mask = get_text_field_mask(
             tokens, num_wrapping_dims=self._num_wrapping_dims
         ).float()
@@ -169,17 +164,21 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         if self._dropout:
             encoded_text = self._dropout(encoded_text)
 
-        # seq2seq encoding for each field vector
-        # TODO: Does not work, we need to mask properly
-        if self._multifield_seq2seq_encoder:
-            encoded_text = self._multifield_seq2seq_encoder(encoded_text)
-
-        # seq2vec encoding for field --> record vector
         if self._multifield_seq2vec_encoder:
-            encoded_text = self._multifield_seq2vec_encoder(encoded_text)
+            # For calculating the mask, we assume that all seq2vec encoders produce a null vector if they only receive
+            # masked input.
+            # The dict key does not matter in this case, you can give an arbitrary name, like 'encoded_text'
+            multifield_mask = get_text_field_mask({"encoded_text": encoded_text})
 
-        if self._multifield_dropout:
-            encoded_text = self._multifield_dropout(encoded_text)
+            # seq2seq encoding for each field vector
+            if self._multifield_seq2seq_encoder:
+                encoded_text = self._multifield_seq2seq_encoder(encoded_text, mask=multifield_mask)
+
+            # seq2vec encoding for field --> record vector
+            encoded_text = self._multifield_seq2vec_encoder(encoded_text, mask=multifield_mask)
+
+            if self._multifield_dropout:
+                encoded_text = self._multifield_dropout(encoded_text)
 
         if self._feed_forward:
             encoded_text = self._feed_forward(encoded_text)
