@@ -172,6 +172,10 @@ def explore(
         warnings.simplefilter("ignore")
         ddf = dd.concat([ddf_source, ddf_mapped], axis=1)
 
+    # TODO @dcfidalgo we could calculate base metrics here (F1, recall & precision) using dataframe.
+    #  And include as part of explore metadata
+    #  Does it's simple???
+
     ddf = DaskElasticClient(
         host=es_host, retry_on_timeout=True, http_compress=True
     ).save(ddf, index=es_index, doc_type=doc_type)
@@ -180,6 +184,9 @@ def explore(
         name=es_index,
         es_hosts=es_host,
         created_index=es_index,
+        datasource=source_path,
+        explore_name=es_index,  # TODO this should change when ui is normalized (action detail and action link naming)
+        model=binary,
         columns=ddf.columns.values.tolist(),
         # extra metadata must be normalized
         pipeline=pipeline,
