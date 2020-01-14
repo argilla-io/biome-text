@@ -72,7 +72,9 @@ if __name__ == "__main__":
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
             "biome-data@git+https://github.com/recognai/biome-data.git",
         ],
-        extras_require={"testing": ["pytest", "pytest-cov", "pytest-pylint", "black"]},
+        extras_require={
+            "testing": ["pytest", "pytest-cov", "pytest-pylint", "black", "GitPython"]
+        },
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP
