@@ -392,6 +392,7 @@ class Pipeline(Predictor):
         test: Optional[str] = None,
         vocab: Optional[str] = None,
         workers: int = 1,
+        verbose: bool = False,
     ):
         """
         Launch a learning process for loaded model configuration.
@@ -415,6 +416,8 @@ class Pipeline(Predictor):
             The test datasource configuration
         workers: int
             Number of workers used for local dask cluster. Obsolete
+        verbose
+            Turn on verbose logs
         """
 
         kwargs = dict(
@@ -424,6 +427,7 @@ class Pipeline(Predictor):
             trainer_path=trainer,
             train_cfg=train,
             validation_cfg=validation,
+            verbose=verbose,
         )
 
         if self.__binary_path:
