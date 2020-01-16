@@ -25,7 +25,9 @@ from typing import Callable
 from allennlp.commands import Subcommand
 
 from biome.text import Pipeline
-from biome.text.pipelines.learn.default_callback_trainer import DefaultCallbackTrainer
+from biome.text.pipelines.learn.allennlp.default_callback_trainer import (
+    DefaultCallbackTrainer,
+)
 
 __alias__ = [DefaultCallbackTrainer]
 

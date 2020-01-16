@@ -79,9 +79,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
         )
 
         dataset = reader.read(create_temp_configuration(datasource_cfg))
-        self._check_dataset(
-            dataset, expected_length, expected_inputs, expected_labels
-        )
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def test_reader_csv_with_mappings(self):
         expected_length = 9
@@ -123,9 +121,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             mapping={"tokens": ["age", "job", "marital"], "label": "housing"},
         )
         dataset = reader.read(create_temp_configuration(datasource_cfg))
-        self._check_dataset(
-            dataset, expected_length, expected_inputs, ["yes", "no"]
-        )
+        self._check_dataset(dataset, expected_length, expected_inputs, ["yes", "no"])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
         expected_length = 3
@@ -142,9 +138,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             mapping={"tokens": "dataset id", "label": "dataset id"},
         )
         dataset = reader.read(create_temp_configuration(datasource_cfg))
-        self._check_dataset(
-            dataset, expected_length, expected_inputs, ["1", "2", "3"]
-        )
+        self._check_dataset(dataset, expected_length, expected_inputs, ["1", "2", "3"])
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
@@ -211,9 +205,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
         )
 
         dataset = reader.read(create_temp_configuration(datasource_cfg))
-        self._check_dataset(
-            dataset, expected_length, expected_inputs, expected_labels
-        )
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     @pytest.mark.xfail
     def test_reader_csv_uk_data(self):
@@ -243,9 +235,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             mapping={"tokens": "name", "label": "organisation name"},
         )
         dataset = reader.read(create_temp_configuration(datasource_cfg))
-        self._check_dataset(
-            dataset, expected_length, expected_inputs, expected_labels
-        )
+        self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)
 
     def _check_dataset(
         self,

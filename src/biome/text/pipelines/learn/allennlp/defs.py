@@ -4,7 +4,6 @@ from typing import Dict, Any, cast
 import yaml
 
 from biome.text.environment import CUDA_DEVICE
-from biome.text.pipelines.learn.default_callback_trainer import DefaultCallbackTrainer
 
 
 class BiomeConfig:
@@ -38,6 +37,8 @@ class BiomeConfig:
     EVALUATE_ON_TEST_FIELD = "evaluate_on_test"
     DATASET_READER_FIELD = "dataset_reader"
     TYPE_FIELD = "type"
+
+    DEFAULT_CALLBACK_TRAINER = "DefaultCallbackTrainer"
 
     def __init__(
         self,
@@ -154,7 +155,7 @@ class BiomeConfig:
 
         trainer_cfg = cast(dict, allennlp_params[self.TRAINER_FIELD])
         if not trainer_cfg.get(self.TYPE_FIELD):  # Just in case of default trainer
-            trainer_cfg[self.TYPE_FIELD] = DefaultCallbackTrainer.__name__
+            trainer_cfg[self.TYPE_FIELD] = self.DEFAULT_CALLBACK_TRAINER
             allennlp_params[self.EVALUATE_ON_TEST_FIELD] = False
         # There is a bug in the AllenNLP train command: when specifying explicitly `type: default`, it will fail.
         if trainer_cfg[self.TYPE_FIELD] == "default":
