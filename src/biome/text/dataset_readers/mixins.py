@@ -112,19 +112,23 @@ class TextFieldBuilderMixin(object):
             sentence_splits = self._sentence_segmenter.split_sentences(
                 self._value_as_string(text)
             )
-            for sentence in sentence_splits[:self._max_nr_of_sentences]:
-                word_tokens = self._tokenizer.tokenize(sentence[:self._max_sequence_length])
+            for sentence in sentence_splits[: self._max_nr_of_sentences]:
+                word_tokens = self._tokenizer.tokenize(
+                    sentence[: self._max_sequence_length]
+                )
                 sentences.append(TextField(word_tokens, self._token_indexers))
             return ListField(sentences) if sentences else None
         elif self._as_text_field:
-            text = " ".join(map(str, data))[:self._max_sequence_length]
+            text = " ".join(map(str, data))[: self._max_sequence_length]
             word_tokens = self._tokenizer.tokenize(self._value_as_string(text))
             return TextField(word_tokens, self._token_indexers)
 
         # text_fields of different lengths are allowed, they will be sorted by the trainer and padded adequately
         text_fields = [
             TextField(
-                self._tokenizer.tokenize(self._value_as_string(value)[:self._max_sequence_length]),
+                self._tokenizer.tokenize(
+                    self._value_as_string(value)[: self._max_sequence_length]
+                ),
                 self._token_indexers,
             )
             for value in data

@@ -47,20 +47,13 @@ def pipeline_yaml(tmpdir):
     yaml_dict = {
         "type": "sequence_classifier",
         "pipeline": {
-            "token_indexers": {
-                "tokens": {
-                    "type": "single_id"
-                }
-            },
+            "token_indexers": {"tokens": {"type": "single_id"}},
             "segment_sentences": True,
             "as_text_field": True,
         },
         "architecture": {
             "text_field_embedder": {
-                "tokens": {
-                    "type": "embedding",
-                    "embedding_dim": 2,
-                }
+                "tokens": {"type": "embedding", "embedding_dim": 2,}
             },
             "seq2vec_encoder": {
                 "type": "gru",
@@ -73,8 +66,8 @@ def pipeline_yaml(tmpdir):
                 "input_size": 2,
                 "hidden_size": 2,
                 "bidirectional": False,
-            }
-        }
+            },
+        },
     }
 
     yaml_file = tmpdir.join("pipeline.yml")
@@ -99,12 +92,8 @@ def trainer_yaml(tmpdir):
             "cuda_device": -1,
             "num_serialized_models_to_keep": 1,
             "num_epochs": 1,
-            "optimizer": {
-                "type": "adam",
-                "amsgrad": True,
-                "lr": 0.01,
-            }
-        }
+            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01,},
+        },
     }
 
     yaml_file = tmpdir.join("trainer.yml")
@@ -114,7 +103,9 @@ def trainer_yaml(tmpdir):
     return str(yaml_file)
 
 
-def test_segment_sentences(training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory):
+def test_segment_sentences(
+    training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory
+):
     pipeline = SequenceClassifier.from_config(pipeline_yaml)
 
     pipeline.learn(
