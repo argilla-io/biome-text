@@ -24,7 +24,7 @@ def learn(
     vocab: Optional[str] = None,
     trainer_path: str = "",
     train_cfg: str = "",
-    validation_cfg: str = "",
+    validation_cfg: Optional[str] = None,
     test_cfg: Optional[str] = None,
     verbose: bool = False,
 ) -> Model:
