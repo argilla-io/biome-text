@@ -23,9 +23,11 @@ def training_data_yaml(tmpdir):
     yaml_file = tmpdir.join("training.yml")
     yaml_dict = {
         "source": str(data_file),
-        "mapping": {"record1": ["record1_1", "record1_2", "record1_3"],
-                    "record2": ["record2_1", "record2_2"],
-                    "label": "label"},
+        "mapping": {
+            "record1": ["record1_1", "record1_2", "record1_3"],
+            "record2": ["record2_1", "record2_2"],
+            "label": "label",
+        },
     }
     with yaml_file.open("w") as f:
         yaml.safe_dump(yaml_dict, f)
@@ -37,11 +39,7 @@ def pipeline_yaml(tmpdir):
     yaml_dict = {
         "type": "multifield_bimpm",
         "pipeline": {
-            "token_indexers": {
-                "tokens": {
-                    "type": "single_id"
-                }
-            },
+            "token_indexers": {"tokens": {"type": "single_id"}},
             "as_text_field": False,
         },
         "architecture": {
@@ -56,24 +54,24 @@ def pipeline_yaml(tmpdir):
                 "is_forward": True,
                 "hidden_dim": 10,
                 "num_perspectives": 10,
-                "with_full_match": False
+                "with_full_match": False,
             },
             "encoder": {
                 "type": "lstm",
                 "bidirectional": True,
                 "input_size": 10,
                 "hidden_size": 200,
-                "num_layers": 1
+                "num_layers": 1,
             },
             "matcher_forward": {
                 "is_forward": True,
                 "hidden_dim": 200,
-                "num_perspectives": 10
+                "num_perspectives": 10,
             },
             "matcher_backward": {
                 "is_forward": False,
                 "hidden_dim": 200,
-                "num_perspectives": 10
+                "num_perspectives": 10,
             },
             "aggregator": {
                 "type": "gru",
@@ -86,7 +84,7 @@ def pipeline_yaml(tmpdir):
                 "num_layers": 1,
                 "hidden_dims": [200],
                 "activations": ["relu"],
-                "dropout": [0.0]
+                "dropout": [0.0],
             },
             "initializer": [
                 [".*linear_layers.*weight", {"type": "xavier_normal"}],
@@ -94,7 +92,7 @@ def pipeline_yaml(tmpdir):
                 [".*weight_ih.*", {"type": "xavier_normal"}],
                 [".*weight_hh.*", {"type": "orthogonal"}],
                 [".*bias.*", {"type": "constant", "val": 0}],
-                [".*matcher.*match_weights.*", {"type": "kaiming_normal"}]
+                [".*matcher.*match_weights.*", {"type": "kaiming_normal"}],
             ],
         },
     }
@@ -119,12 +117,8 @@ def trainer_yaml(tmpdir):
             "cuda_device": -1,
             "num_serialized_models_to_keep": 1,
             "num_epochs": 1,
-            "optimizer": {
-                "type": "adam",
-                "amsgrad": True,
-                "lr": 0.01,
-            }
-        }
+            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01,},
+        },
     }
 
     yaml_file = tmpdir.join("trainer.yml")
@@ -134,7 +128,9 @@ def trainer_yaml(tmpdir):
     return str(yaml_file)
 
 
-def test_multifield_bimpm_learn(training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory):
+def test_multifield_bimpm_learn(
+    training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory
+):
     pipeline = MultifieldBiMpmPipeline.from_config(pipeline_yaml)
 
     pipeline.learn(
@@ -143,5 +139,3 @@ def test_multifield_bimpm_learn(training_data_yaml, pipeline_yaml, trainer_yaml,
         validation="",
         output=str(tmpdir.join("output")),
     )
-
-

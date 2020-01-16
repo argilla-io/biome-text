@@ -183,7 +183,13 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
         multifield_matching_mask_record2: List[torch.Tensor] = []
 
         def add_matching_result(
-            matcher, record1_values, record1_mask, record2_values, record2_mask, record1_list, record2_list
+            matcher,
+            record1_values,
+            record1_mask,
+            record2_values,
+            record2_mask,
+            record1_list,
+            record2_list,
         ):
             # utility function to get matching result and add to the result list
             matching_result = matcher(
@@ -242,17 +248,31 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
                 multifield_matching_mask_record2.append(mask_record2[:, j, :])
 
         # concat the multifield vectors and masks
-        multifield_matching_vector_cat_record1 = torch.cat(multifield_matching_vector_record1, dim=1)
-        multifield_matching_vector_cat_record2 = torch.cat(multifield_matching_vector_record2, dim=1)
-        multifield_matching_mask_cat_record1 = torch.cat(multifield_matching_mask_record1, dim=1)
-        multifield_matching_mask_cat_record2 = torch.cat(multifield_matching_mask_record2, dim=1)
+        multifield_matching_vector_cat_record1 = torch.cat(
+            multifield_matching_vector_record1, dim=1
+        )
+        multifield_matching_vector_cat_record2 = torch.cat(
+            multifield_matching_vector_record2, dim=1
+        )
+        multifield_matching_mask_cat_record1 = torch.cat(
+            multifield_matching_mask_record1, dim=1
+        )
+        multifield_matching_mask_cat_record2 = torch.cat(
+            multifield_matching_mask_record2, dim=1
+        )
 
         # aggregate the matching vectors
         aggregated_record1 = self.dropout(
-            self.aggregator(multifield_matching_vector_cat_record1, multifield_matching_mask_cat_record1)
+            self.aggregator(
+                multifield_matching_vector_cat_record1,
+                multifield_matching_mask_cat_record1,
+            )
         )
         aggregated_record2 = self.dropout(
-            self.aggregator(multifield_matching_vector_cat_record2, multifield_matching_mask_cat_record2)
+            self.aggregator(
+                multifield_matching_vector_cat_record2,
+                multifield_matching_mask_cat_record2,
+            )
         )
 
         # the final forward layer

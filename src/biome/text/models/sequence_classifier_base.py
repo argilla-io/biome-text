@@ -172,10 +172,14 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
             # seq2seq encoding for each field vector
             if self._multifield_seq2seq_encoder:
-                encoded_text = self._multifield_seq2seq_encoder(encoded_text, mask=multifield_mask)
+                encoded_text = self._multifield_seq2seq_encoder(
+                    encoded_text, mask=multifield_mask
+                )
 
             # seq2vec encoding for field --> record vector
-            encoded_text = self._multifield_seq2vec_encoder(encoded_text, mask=multifield_mask)
+            encoded_text = self._multifield_seq2vec_encoder(
+                encoded_text, mask=multifield_mask
+            )
 
             if self._multifield_dropout:
                 encoded_text = self._multifield_dropout(encoded_text)
