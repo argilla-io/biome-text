@@ -78,13 +78,10 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             mapping={"tokens": [0], "label": 1},
         )
 
-        with tempfile.NamedTemporaryFile("w") as cfg_file:
-            yaml.dump(datasource_cfg, cfg_file)
-            dataset = reader.read(cfg_file.name)
-
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, expected_labels
-            )
+        dataset = reader.read(create_temp_configuration(datasource_cfg))
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, expected_labels
+        )
 
     def test_reader_csv_with_mappings(self):
         expected_length = 9
@@ -125,13 +122,10 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             sep=",",
             mapping={"tokens": ["age", "job", "marital"], "label": "housing"},
         )
-        with tempfile.NamedTemporaryFile("w") as cfg_file:
-            yaml.dump(datasource_cfg, cfg_file)
-            dataset = reader.read(cfg_file.name)
-
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, ["yes", "no"]
-            )
+        dataset = reader.read(create_temp_configuration(datasource_cfg))
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, ["yes", "no"]
+        )
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_header(self):
         expected_length = 3
@@ -147,13 +141,10 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             sep=";",
             mapping={"tokens": "dataset id", "label": "dataset id"},
         )
-        with tempfile.NamedTemporaryFile("w") as cfg_file:
-            yaml.dump(datasource_cfg, cfg_file)
-            dataset = reader.read(cfg_file.name)
-
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, ["1", "2", "3"]
-            )
+        dataset = reader.read(create_temp_configuration(datasource_cfg))
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, ["1", "2", "3"]
+        )
 
     def test_reader_csv_with_leading_and_trailing_spaces_in_examples(self):
         expectedDatasetLength = 2
@@ -169,13 +160,10 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             sep=";",
             mapping={"tokens": "name", "label": "category of institution"},
         )
-        with tempfile.NamedTemporaryFile("w") as cfg_file:
-            yaml.dump(datasource_cfg, cfg_file)
-            dataset = reader.read(cfg_file.name)
-
-            self._check_dataset(
-                dataset, expectedDatasetLength, expected_inputs, expected_labels
-            )
+        dataset = reader.read(create_temp_configuration(datasource_cfg))
+        self._check_dataset(
+            dataset, expectedDatasetLength, expected_inputs, expected_labels
+        )
 
     @pytest.mark.xfail
     def test_reader_csv_with_missing_label_and_partial_mappings(self):
@@ -221,13 +209,11 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
                 },
             },
         )
-        with tempfile.NamedTemporaryFile("w") as cfg_file:
-            yaml.dump(datasource_cfg, cfg_file)
-            dataset = reader.read(cfg_file.name)
 
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, expected_labels
-            )
+        dataset = reader.read(create_temp_configuration(datasource_cfg))
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, expected_labels
+        )
 
     @pytest.mark.xfail
     def test_reader_csv_uk_data(self):
@@ -256,13 +242,10 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             sep=";",
             mapping={"tokens": "name", "label": "organisation name"},
         )
-        with tempfile.NamedTemporaryFile("w") as cfg_file:
-            yaml.dump(datasource_cfg, cfg_file)
-            dataset = reader.read(cfg_file.name)
-
-            self._check_dataset(
-                dataset, expected_length, expected_inputs, expected_labels
-            )
+        dataset = reader.read(create_temp_configuration(datasource_cfg))
+        self._check_dataset(
+            dataset, expected_length, expected_inputs, expected_labels
+        )
 
     def _check_dataset(
         self,
