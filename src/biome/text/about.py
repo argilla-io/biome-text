@@ -18,4 +18,4 @@ def get_commit_hash() -> str:
 
 
 if ".dev" in __version__:
-    __version__ += get_commit_hash()
+    __version__ += f"+{get_commit_hash()}"
