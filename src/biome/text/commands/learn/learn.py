@@ -133,4 +133,5 @@ def learn_from_args(args: argparse.Namespace):
         validation=args.validation,
         test=args.test,
         workers=args.workers,
+        verbose=args.verbose,
     )
