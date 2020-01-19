@@ -18,4 +18,8 @@ def get_commit_hash() -> str:
 
 
 if ".dev" in __version__:
-    __version__ += f"+{get_commit_hash()}"
+    from datetime import datetime
+
+    today = datetime.today().strftime("%Y%d%m%H%M%S")
+    __version__ += f"+{today}.{get_commit_hash()}"
+
