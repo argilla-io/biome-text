@@ -70,7 +70,7 @@ if __name__ == "__main__":
             "coloredlogs==10.0",
             "dask-elk~=0.2.0",
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
-            "biome-data@git+https://github.com/recognai/biome-data.git",
+            "biome-data~=0.2.0.dev",
         ],
         extras_require={
             "testing": ["pytest", "pytest-cov", "pytest-pylint", "black", "GitPython"]

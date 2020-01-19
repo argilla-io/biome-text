@@ -21,5 +21,4 @@ if ".dev" in __version__:
     from datetime import datetime
 
     today = datetime.today().strftime("%Y%d%m%H%M%S")
-    __version__ += f"+{today}.{get_commit_hash()}"
-
+    __version__ += f"{today}+{get_commit_hash()}"
