@@ -1,11 +1,13 @@
 import multiprocessing
 import os
 import tempfile
-import unittest
 from time import sleep
-import pytest
+from typing import Optional
 
+import pandas as pd
+import pytest
 import requests
+import yaml
 from elasticsearch import Elasticsearch
 
 from biome.text import Pipeline
@@ -15,8 +17,6 @@ from biome.text.environment import ES_HOST
 from biome.text.pipelines.sequence_classifier import SequenceClassifier
 from tests import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
-import pandas as pd
-import yaml
 
 BASE_CONFIG_PATH = os.path.join(TEST_RESOURCES, "resources/models/sequence_classifier")
 
@@ -53,7 +53,7 @@ def pipeline_yaml(tmpdir):
         },
         "architecture": {
             "text_field_embedder": {
-                "tokens": {"type": "embedding", "embedding_dim": 2,}
+                "tokens": {"type": "embedding", "embedding_dim": 2}
             },
             "seq2vec_encoder": {
                 "type": "gru",
@@ -92,7 +92,7 @@ def trainer_yaml(tmpdir):
             "cuda_device": -1,
             "num_serialized_models_to_keep": 1,
             "num_epochs": 1,
-            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01,},
+            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01},
         },
     }
 
@@ -129,7 +129,10 @@ class SequenceClassifierTest(DaskSupportTest):
 
     def test_model_workflow(self):
         self.check_train()
-        self.check_explore()
+        # Check explore metadata override
+        self.check_explore(
+            extra_metadata=dict(model="other-model", project="test-project")
+        )
         self.check_serve()
         self.check_predictor()
 
@@ -149,7 +152,7 @@ class SequenceClassifierTest(DaskSupportTest):
         prediction = classifier.predict("mike Farrys")
         self.assertTrue("logits" in prediction, f"Not in {prediction}")
 
-    def check_explore(self):
+    def check_explore(self, extra_metadata: Optional[dict] = None):
         index = self.name
         es_host = os.getenv(ES_HOST, "http://localhost:9200")
         explore(
@@ -158,6 +161,7 @@ class SequenceClassifierTest(DaskSupportTest):
             es_host=es_host,
             es_index=index,
             interpret=True,  # Enable interpret
+            **extra_metadata or {},
         )
 
         client = Elasticsearch(hosts=es_host, http_compress=True)
