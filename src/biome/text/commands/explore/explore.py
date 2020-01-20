@@ -180,17 +180,23 @@ def explore(
         host=es_host, retry_on_timeout=True, http_compress=True
     ).save(ddf, index=es_index, doc_type=doc_type)
 
+    merged_metadata = {
+        **dict(
+            datasource=source_path,
+            # TODO this should change when ui is normalized (action detail and action link naming)F
+            explore_name=es_index,
+            model=binary,
+            columns=ddf.columns.values.tolist(),
+        ),
+        **(prediction_metadata or {}),
+    }
+
     register_biome_prediction(
         name=es_index,
+        pipeline=pipeline,
         es_hosts=es_host,
         created_index=es_index,
-        datasource=source_path,
-        explore_name=es_index,  # TODO this should change when ui is normalized (action detail and action link naming)
-        model=binary,
-        columns=ddf.columns.values.tolist(),
-        # extra metadata must be normalized
-        pipeline=pipeline,
-        **(prediction_metadata or {}),
+        **merged_metadata,
     )
 
     __prepare_es_index(client, es_index, doc_type)
