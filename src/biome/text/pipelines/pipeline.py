@@ -338,7 +338,7 @@ class Pipeline(Predictor):
     def __get_reader_params(cls, data: dict, name: Optional[str] = None) -> dict:
         # TODO dataset_reader will not be supported as part of configuration definition
         config = data.get(cls.PIPELINE_FIELD, data.get("dataset_reader"))
-        if name:
+        if name and not config.get(cls.TYPE_FIELD):
             config[cls.TYPE_FIELD] = name
         return copy.deepcopy(config)
 
