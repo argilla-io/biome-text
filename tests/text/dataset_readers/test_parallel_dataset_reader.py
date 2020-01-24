@@ -14,7 +14,7 @@ JSON_PATH = os.path.join(TEST_RESOURCES, "resources/data/dataset_source.jsonl")
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierReader(as_text_field=True)
+reader = SequenceClassifierReader()
 
 
 class ParallelDatasetReaderTest(DaskSupportTest):

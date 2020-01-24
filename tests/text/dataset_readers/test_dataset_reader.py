@@ -30,7 +30,7 @@ JSON_WITH_EMPTY_VALUES = os.path.abspath(
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierReader(as_text_field=True)
+reader = SequenceClassifierReader()
 
 
 class SequenceClassifierDatasetReaderTest(DaskSupportTest):

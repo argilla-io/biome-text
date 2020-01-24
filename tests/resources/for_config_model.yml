@@ -20,6 +20,5 @@ pipeline:
     tokens:
       type: single_id
       lowercase_tokens: true
-  as_text_field: True
 
 

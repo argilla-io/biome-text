@@ -63,9 +63,7 @@ def test_name_consistency(name, model, dataset_reader):
 def test_signature_consistency(dataset_reader, model, text_input):
     """The output of the `text_to_instance` method has to match the forward signature of the model's forward method!"""
     reader = dataset_reader(
-        tokenizer=WordTokenizer(),
-        token_indexers={"tokens": SingleIdTokenIndexer()},
-        as_text_field=True,
+        tokenizer=WordTokenizer(), token_indexers={"tokens": SingleIdTokenIndexer()}
     )
     instance = reader.text_to_instance(**text_input)
     forward_parameters = list(signature(model.forward).parameters)
