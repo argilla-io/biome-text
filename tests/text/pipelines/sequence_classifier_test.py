@@ -140,6 +140,11 @@ class SequenceClassifierTest(DaskSupportTest):
         classifier = Pipeline.from_config(self.model_path)
         self.assertIsInstance(classifier, SequenceClassifier)
 
+        # learn without validation
+        classifier.learn(
+            trainer=self.trainer_path, train=self.training_data, output=self.output_dir
+        )
+
         classifier.learn(
             trainer=self.trainer_path,
             train=self.training_data,
