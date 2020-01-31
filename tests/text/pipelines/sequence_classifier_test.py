@@ -49,7 +49,6 @@ def pipeline_yaml(tmpdir):
         "pipeline": {
             "token_indexers": {"tokens": {"type": "single_id"}},
             "segment_sentences": True,
-            "as_text_field": True,
         },
         "architecture": {
             "text_field_embedder": {

@@ -10,7 +10,7 @@ from tests.test_support import DaskSupportTest
 TOKENS_FIELD = "tokens"
 LABEL_FIELD = "label"
 
-reader = SequenceClassifierReader(as_text_field=True)
+reader = SequenceClassifierReader()
 
 
 class BiomeDatasetReaderTest(DaskSupportTest):

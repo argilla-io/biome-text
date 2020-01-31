@@ -40,7 +40,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         tokenizer: Tokenizer = None,
         token_indexers: Dict[str, TokenIndexer] = None,
         segment_sentences: Union[bool, SentenceSplitter] = False,
-        as_text_field: bool = False,
+        as_text_field: bool = True,
         skip_empty_tokens: bool = False,
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
