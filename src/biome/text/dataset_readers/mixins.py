@@ -73,9 +73,10 @@ class TextFieldBuilderMixin(object):
                 "i will set as_text_field for the single sentences to true."
             )
 
-    @staticmethod
-    def _value_as_string(value):
-        # TODO evaluate field value type for stringify properly
+    def _value_as_string(self, value):
+        # TODO: evaluate field value type for stringify properly in the rest of the cases
+        if isinstance(value, list):
+            return " ".join(map(self._value_as_string, value))
         return str(value)
 
     def build_textfield(
@@ -134,5 +135,4 @@ class TextFieldBuilderMixin(object):
             for value in data
             if value
         ]
-
         return ListField(text_fields) if text_fields else None
