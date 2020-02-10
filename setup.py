@@ -73,7 +73,7 @@ if __name__ == "__main__":
             "biome-data~=0.2.0",
         ],
         extras_require={
-            "testing": ["pytest", "pytest-cov", "pytest-pylint", "black", "GitPython"]
+            "testing": ["pytest", "pytest-cov", "pytest-pylint~=0.14.0", "black", "GitPython"]
         },
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},
