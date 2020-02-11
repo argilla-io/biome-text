@@ -105,7 +105,7 @@ class TextFieldBuilderMixin(object):
             data = [data]
 
         if isinstance(data, dict):
-            data = data.values()
+            data = list(data.values())
 
         if self._sentence_segmenter:
             text = self._value_as_string(data)
@@ -119,7 +119,7 @@ class TextFieldBuilderMixin(object):
             return ListField(sentences) if sentences else None
         elif self._as_text_field:
             text = self._value_as_string(data)[: self._max_sequence_length]
-            word_tokens = self._tokenizer.tokenize(self._value_as_string(text))
+            word_tokens = self._tokenizer.tokenize(text)
             return TextField(word_tokens, self._token_indexers)
 
         # text_fields of different lengths are allowed, they will be sorted by the trainer and padded adequately
