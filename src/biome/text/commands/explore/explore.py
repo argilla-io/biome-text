@@ -11,26 +11,25 @@ import pandas as pd
 from allennlp.commands.subcommand import Subcommand
 from allennlp.common.checks import ConfigurationError
 from allennlp.interpret import SaliencyInterpreter
-from biome.data.sources import DataSource
-from dask_elk.client import DaskElasticClient
 
 # TODO centralize configuration
 from elasticsearch import Elasticsearch
 
+from biome.data.sources import DataSource
 from biome.text.environment import ES_HOST, BIOME_EXPLORE_ENDPOINT
-from biome.text.interpreters import IntegratedGradient
+from biome.text.interpreters import IntegratedGradient as DefaultInterpreterClass
 from biome.text.pipelines.pipeline import Pipeline
+from dask_elk.client import DaskElasticClient
+
 
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger(__name__)
+__LOGGER = logging.getLogger(__name__)
 
 BIOME_METADATA_INDEX = ".biome"
 
 # This is the biome explore UI endpoint, used for show information
 # about explorations once the data is persisted
 EXPLORE_APP_ENDPOINT = os.getenv(BIOME_EXPLORE_ENDPOINT, "http://localhost:8080")
-
-DEFAULT_INTERPRETER_CLS = IntegratedGradient
 
 
 class BiomeExplore(Subcommand):
@@ -202,16 +201,16 @@ def explore(
     __prepare_es_index(client, es_index, doc_type)
     ddf.persist()
     # TODO: The explore APP endpoint returns localhost:8080, running biome ui defaults to
-    _logger.info(
-        "Data annotated successfully. You can explore your data here:"
-        f"{EXPLORE_APP_ENDPOINT}/explore/{es_index}"
+    __LOGGER.info(
+        "Data annotated successfully. You can explore your data here: %s",
+        f"{EXPLORE_APP_ENDPOINT}/explore/{es_index}",
     )
 
 
 def _interpret_dataframe(
     df: pd.DataFrame,
     binary_path: str,
-    interpreter_klass: Type = DEFAULT_INTERPRETER_CLS,
+    interpreter_klass: Type = DefaultInterpreterClass,
 ) -> pd.Series:
     """
     Apply a model interpretation to every partition dataframe
@@ -292,7 +291,7 @@ def register_biome_prediction(
     es_client.indices.create(
         index=metadata_index,
         body={"settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}},
-        ignore=400,
+        params=dict(ignore=400),
     )
 
     predict_signature = [
@@ -301,9 +300,9 @@ def register_biome_prediction(
     parameters = {
         **kwargs,
         "pipeline": pipeline.name,
-        "signature": [k for k in pipeline.signature.keys()],
+        "signature": list(pipeline.signature.keys()),
         "predict_signature": predict_signature,
-        # TODO remove when ui is adapted
+        # TODO remove when ui is adapteds
         "inputs": predict_signature,  # backward compatibility
     }
 

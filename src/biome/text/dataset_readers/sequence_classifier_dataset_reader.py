@@ -12,6 +12,7 @@ class SequenceClassifierReader(DataSourceReader):
     A DatasetReader for the SequenceClassifier model.
     """
 
+    # pylint: disable=arguments-differ
     def text_to_instance(
         self, tokens: Union[str, List[str], dict], label: Optional[str] = None
     ) -> Optional[Instance]:

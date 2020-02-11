@@ -1,12 +1,12 @@
 from typing import Union, List, Type
 
-import allennlp
+from allennlp.models import Model as AllennlpModel
 from allennlp.predictors import Predictor
 
-import biome
+from biome.text.pipelines.pipeline import Pipeline
 from biome.text.dataset_readers import SequencePairClassifierReader
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from .pipeline import Pipeline
+from biome.text.models import SimilarityClassifier as TorchSimilarityClassifier
 
 
 class SimilarityClassifier(Pipeline):
@@ -15,9 +15,10 @@ class SimilarityClassifier(Pipeline):
         return SequencePairClassifierReader
 
     @classmethod
-    def model_class(cls) -> Type[allennlp.models.Model]:
-        return biome.text.models.SimilarityClassifier
+    def model_class(cls) -> Type[AllennlpModel]:
+        return TorchSimilarityClassifier
 
+    # pylint: disable=arguments-differ
     def predict(
         self, record1: Union[str, List[str], dict], record2: Union[str, List[str], dict]
     ):

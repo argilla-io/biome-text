@@ -70,10 +70,16 @@ if __name__ == "__main__":
             "coloredlogs==10.0",
             "dask-elk~=0.2.0",
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
-            "biome-data~=0.2.0.dev",
+            "biome-data~=0.2.0",
         ],
         extras_require={
-            "testing": ["pytest", "pytest-cov", "pytest-pylint~=0.14.0", "black", "GitPython"]
+            "testing": [
+                "pytest",
+                "pytest-cov",
+                "pytest-pylint~=0.14.0",
+                "black",
+                "GitPython",
+            ]
         },
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},

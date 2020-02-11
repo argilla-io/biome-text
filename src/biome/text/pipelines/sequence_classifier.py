@@ -18,6 +18,7 @@ class SequenceClassifier(Pipeline):
     def model_class(cls) -> Type[allennlp.models.Model]:
         return biome.text.models.SequenceClassifier
 
+    # pylint: disable=arguments-differ
     def predict(self, features: Union[dict, str, List[str]]):
         """
         This methods just define the api use for the model

@@ -1,4 +1,3 @@
-import logging
 from typing import Dict
 
 import torch
@@ -7,8 +6,6 @@ from overrides import overrides
 
 from biome.text.models.sequence_classifier_base import SequenceClassifierBase
 
-logger = logging.getLogger(__name__)
-
 
 @Model.register("sequence_pair_classifier")
 class SequencePairClassifier(SequenceClassifierBase):
@@ -16,7 +13,8 @@ class SequencePairClassifier(SequenceClassifierBase):
     This ``SequencePairClassifier`` uses a siamese network architecture to perform a classification task between a pair
     of records or documents.
 
-    The classifier can be configured to take into account the hierarchical structure of documents and multi-field records.
+    The classifier can be configured to take into account the hierarchical structure of documents
+    and multi-field records.
 
     A record/document can be (1) single-field (single sentence): composed of a sequence of
     tokens, or (2) multi-field (multi-sentence): a sequence of fields with each of the fields containing a sequence of

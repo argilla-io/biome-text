@@ -17,14 +17,12 @@ from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
-from biome.data.utils import configure_dask_cluster
-from distributed import LocalCluster
 from overrides import overrides
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 from biome.text.pipelines.learn.allennlp import learn
-from biome.text.predictors import get_predictor_from_archive
+from biome.text.predictors.utils import get_predictor_from_archive
 
 
 class Pipeline(Predictor):
@@ -142,9 +140,17 @@ class Pipeline(Predictor):
     def predict(self, **inputs) -> dict:
         return self.predict_json(inputs)
 
+    def _update_binary_path(self, path) -> None:
+        if not self.__binary_path:
+            self.__binary_path = path
+
+    def _update_config(self, config) -> None:
+        self.__config = config
+
     @classmethod
     def load(cls, binary_path: str, **kwargs) -> "Pipeline":
         """Load a model pipeline form a binary path"""
+        # TODO: Read labels from tar.gzs
         name = None
         # TODO resolve load from Pipeline.class. By now, you must decorate your own
         #  pipeline classes as an :class:~`allennlp.predictors.Predictor`
@@ -160,7 +166,7 @@ class Pipeline(Predictor):
         archive = load_archive(binary_path, **kwargs)
         predictor = get_predictor_from_archive(archive, predictor_name=name)
         pipeline = cast(Pipeline, predictor)
-        pipeline.__binary_path = binary_path
+        pipeline._update_binary_path(binary_path)
 
         return pipeline
 
@@ -262,9 +268,9 @@ class Pipeline(Predictor):
         instance = self._json_to_instance(inputs)
         if instance is None:
             return None
-        else:
-            output = self.model.forward_on_instance(instance)
-            return sanitize(output)
+
+        output = self.model.forward_on_instance(instance)
+        return sanitize(output)
 
     @staticmethod
     def __to_snake_case(name):
@@ -281,8 +287,8 @@ class Pipeline(Predictor):
             The corresponding snake_case name
 
         """
-        s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
-        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+        snake_case_pattern = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+        return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", snake_case_pattern).lower()
 
     @staticmethod
     def yaml_to_dict(filepath: str):
@@ -331,7 +337,7 @@ class Pipeline(Predictor):
         config = cls.yaml_to_dict(path)
         config[cls.PIPELINE_FIELD] = Pipeline.__get_reader_params(data, name)
         config[cls.ARCHITECTURE_FIELD] = Pipeline.__get_model_params(data, name)
-        model.__config = config
+        model._update_config(config)
         return model
 
     @classmethod
@@ -391,7 +397,6 @@ class Pipeline(Predictor):
         validation: str = None,
         test: Optional[str] = None,
         vocab: Optional[str] = None,
-        workers: int = 1,
         verbose: bool = False,
     ):
         """
@@ -414,8 +419,6 @@ class Pipeline(Predictor):
             The already generated vocabulary path
         test: str
             The test datasource configuration
-        workers: int
-            Number of workers used for local dask cluster. Obsolete
         verbose
             Turn on verbose logs
         """
