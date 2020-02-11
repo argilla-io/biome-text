@@ -75,9 +75,10 @@ class TextFieldBuilderMixin:
                 "i will set as_text_field for the single sentences to true."
             )
 
-    @staticmethod
-    def _value_as_string(value):
-        # TODO evaluate field value type for stringify properly
+    def _value_as_string(self, value):
+        # TODO: evaluate field value type for stringify properly in the rest of the cases
+        if isinstance(value, list):
+            return " ".join(map(self._value_as_string, value))
         return str(value)
 
     def build_textfield(
@@ -106,23 +107,21 @@ class TextFieldBuilderMixin:
             data = [data]
 
         if isinstance(data, dict):
-            data = data.values()
+            data = list(data.values())
 
         if self._sentence_segmenter:
-            text = " ".join(map(str, data))
+            text = self._value_as_string(data)
             sentences: List[TextField] = []
-            sentence_splits = self._sentence_segmenter.split_sentences(
-                self._value_as_string(text)
-            )
+            sentence_splits = self._sentence_segmenter.split_sentences(text)
             for sentence in sentence_splits[: self._max_nr_of_sentences]:
                 word_tokens = self._tokenizer.tokenize(
                     sentence[: self._max_sequence_length]
                 )
                 sentences.append(TextField(word_tokens, self._token_indexers))
             return ListField(sentences) if sentences else None
-        if self._as_text_field:
-            text = " ".join(map(str, data))[: self._max_sequence_length]
-            word_tokens = self._tokenizer.tokenize(self._value_as_string(text))
+        elif self._as_text_field:
+            text = self._value_as_string(data)[: self._max_sequence_length]
+            word_tokens = self._tokenizer.tokenize(text)
             return TextField(word_tokens, self._token_indexers)
 
         # text_fields of different lengths are allowed, they will be sorted by the trainer and padded adequately
@@ -136,5 +135,4 @@ class TextFieldBuilderMixin:
             for value in data
             if value
         ]
-
         return ListField(text_fields) if text_fields else None
