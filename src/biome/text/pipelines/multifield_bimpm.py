@@ -1,14 +1,14 @@
+from typing import Union, List, Type
+
 import allennlp
-from allennlp.predictors import Predictor
 from allennlp.data import DatasetReader
 from allennlp.models import Model
+from allennlp.predictors import Predictor
 
 from biome.text.dataset_readers import SequencePairClassifierReader
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.pipelines.pipeline import Pipeline
 from biome.text.models import MultifieldBiMpm
-
-from typing import Union, List, Type
+from biome.text.pipelines.pipeline import Pipeline
 
 
 class MultifieldBiMpmPipeline(Pipeline):
@@ -20,6 +20,7 @@ class MultifieldBiMpmPipeline(Pipeline):
     def model_class(cls) -> Type[allennlp.models.Model]:
         return MultifieldBiMpm
 
+    # pylint: disable=arguments-differ
     def predict(
         self, record1: Union[str, List[str], dict], record2: Union[str, List[str], dict]
     ):

@@ -1,7 +1,9 @@
 from typing import Optional, Dict, List
 
 import torch
+from allennlp.common.checks import check_dimensions_match
 from allennlp.data import Vocabulary
+from allennlp.models.model import Model
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
@@ -9,14 +11,12 @@ from allennlp.modules import (
     TextFieldEmbedder,
     TimeDistributed,
 )
-from allennlp.common.checks import check_dimensions_match
 from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
+from allennlp.nn import util
 from allennlp.training.metrics import CategoricalAccuracy
 from overrides import overrides
-from allennlp.models.model import Model
 from torch.nn import Linear
-from allennlp.nn import util
 
 from .mixins import BiomeClassifierMixin
 

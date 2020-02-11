@@ -15,6 +15,7 @@ from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy
 from overrides import overrides
 from torch.nn import Dropout, Linear
+
 from .mixins import BiomeClassifierMixin
 
 
@@ -162,7 +163,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         encoded_text = self._seq2vec_encoder(embedded_text, mask=mask)
 
         if self._dropout:
-            encoded_text = self._dropout(encoded_text)
+            encoded_text = self._dropout(encoded_text)  # pylint: disable=not-callable
 
         if self._multifield_seq2vec_encoder:
             # For calculating the mask, we assume that all seq2vec encoders produce a null vector if they only receive

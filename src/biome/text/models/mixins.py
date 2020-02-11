@@ -1,6 +1,7 @@
 from typing import Optional, Dict
-import torch
+
 import numpy as np
+import torch
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 
@@ -121,13 +122,14 @@ class BiomeClassifierMixin:
             if metric_name == "accuracy":
                 all_metrics["accuracy"] = metric.get_metric(reset)
             else:
-                precision, recall, f1 = metric.get_metric(
+                # pylint: disable=invalid-name
+                precision, recall, f_1 = metric.get_metric(
                     reset
                 )  # pylint: disable=invalid-name
-                total_f1 += f1
+                total_f1 += f_1
                 total_precision += precision
                 total_recall += recall
-                all_metrics[metric_name + "/f1"] = f1
+                all_metrics[metric_name + "/f1"] = f_1
                 all_metrics[metric_name + "/precision"] = precision
                 all_metrics[metric_name + "/recall"] = recall
 

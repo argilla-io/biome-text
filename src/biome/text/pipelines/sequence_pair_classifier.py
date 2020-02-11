@@ -18,6 +18,7 @@ class SequencePairClassifier(Pipeline):
     def model_class(cls) -> Type[allennlp.models.Model]:
         return biome.text.models.SequencePairClassifier
 
+    # pylint: disable=arguments-differ
     def predict(
         self, record1: Union[str, List[str], dict], record2: Union[str, List[str], dict]
     ):

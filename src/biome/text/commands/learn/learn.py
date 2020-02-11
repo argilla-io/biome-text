@@ -33,14 +33,18 @@ __alias__ = [DefaultCallbackTrainer]
 
 
 class BiomeLearn(Subcommand):
-    def description(self) -> str:
+    @staticmethod
+    def description() -> str:
         return "Make a model learn"
 
-    def command_handler(self) -> Callable:
+    @staticmethod
+    def command_handler() -> Callable:
         return learn_from_args
 
     def add_subparser(
-        self, name: str, parser: argparse._SubParsersAction
+        self,
+        name: str,
+        parser: argparse._SubParsersAction,  # pylint: disable=protected-access
     ) -> argparse.ArgumentParser:
         subparser = parser.add_parser(
             name, description=self.description(), help=self.description()
