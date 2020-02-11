@@ -2,19 +2,17 @@ import logging
 import multiprocessing
 import os
 import tempfile
-import unittest
 from time import sleep
 
 import requests
-
-from biome.text import Pipeline
-from biome.text.environment import ES_HOST
 from elasticsearch import Elasticsearch
 
+from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
-from biome.text.models import SequencePairClassifier, load_archive
-from biome.text.predictors import get_predictor_from_archive
+from biome.text.environment import ES_HOST
+from biome.text.models import load_archive
+from biome.text.predictors.utils import get_predictor_from_archive
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 

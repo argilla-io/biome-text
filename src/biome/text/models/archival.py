@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 
-from smart_open import open
+import smart_open
 from allennlp.models import load_archive as _load_archive, Archive
 
 
@@ -18,10 +18,12 @@ def load_archive(
 
 
 def to_local_archive(archive_file: str) -> str:
-    # Wraps archive download to support remote locations (s3, hdfs,...)
+    """
+    Wraps archive download to support remote locations (s3, hdfs,...)
+    """
     tempdir = tempfile.mkdtemp()
     local_file = os.path.join(tempdir, "model.tar.gz")
-    with open(archive_file, mode="rb") as archive, gzip.open(
+    with smart_open.open(archive_file, mode="rb") as archive, gzip.open(
         local_file, "wb"
     ) as output:
         shutil.copyfileobj(archive, output, length=-1)

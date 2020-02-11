@@ -14,6 +14,7 @@ class SequencePairClassifierReader(DataSourceReader):
     A DatasetReader for the SequencePairClassifier model.
     """
 
+    # pylint: disable=arguments-differ
     def text_to_instance(
         self,
         record1: Union[str, List[str], dict],
@@ -31,8 +32,7 @@ class SequencePairClassifierReader(DataSourceReader):
             # skipp example
             if str(label).strip() == "":
                 return None
-            else:
-                label_field = LabelField(str(label).strip())
+            label_field = LabelField(str(label).strip())
 
         if record1_field:
             fields["record1"] = record1_field

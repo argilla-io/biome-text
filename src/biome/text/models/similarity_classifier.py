@@ -15,7 +15,7 @@ from overrides import overrides
 from torch.nn import CosineEmbeddingLoss
 from torch.nn.modules import Module
 
-from . import SequenceClassifierBase
+from .sequence_classifier_base import SequenceClassifierBase
 
 logger = logging.getLogger(__name__)
 

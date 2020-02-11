@@ -13,7 +13,8 @@ from .app import make_app
 
 # TODO centralize configuration
 logging.basicConfig(level=logging.INFO)
-_logger = logging.getLogger(__name__)
+
+__LOGGER = logging.getLogger(__name__)
 
 
 class BiomeUI(Subcommand):
@@ -29,10 +30,7 @@ class BiomeUI(Subcommand):
             "--es-host", help="The elasticsearch backend storage", default=None
         )
         subparser.add_argument(
-            "--port",
-            help="Listening port for application",
-            default=9000,
-            type=lambda a: int(a),
+            "--port", help="Listening port for application", default=9000, type=int
         )
         subparser.set_defaults(func=launch_ui_from_args)
         return subparser
@@ -50,8 +48,10 @@ def launch_ui(es_host: str, port: int = 9000) -> None:
     )
 
     http_server = WSGIServer(("0.0.0.0", port), flask_app)
-    _logger.info(
-        f"Running biome UI on http://0.0.0.0:{http_server.server_port} with elasticsearch backend {es_host}"
+    __LOGGER.info(
+        "Running biome UI on %s with elasticsearch backend %s",
+        f"http://0.0.0.0:{http_server.server_port}",
+        es_host,
     )
     http_server.serve_forever()
 

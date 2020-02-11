@@ -7,7 +7,7 @@ from allennlp.data.tokenizers import WordTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 
 
-class CacheableMixin(object):
+class CacheableMixin:
     """
         This ``CacheableMixin`` allow in memory cache mechanism
     """
@@ -25,7 +25,8 @@ class CacheableMixin(object):
         CacheableMixin._cache[key] = data
 
 
-class TextFieldBuilderMixin(object):
+# pylint: disable=too-few-public-methods
+class TextFieldBuilderMixin:
     """
     This ``TextFieldBuilderMixin`` build ``Fields`` for inputs in classification problems
 
@@ -47,6 +48,7 @@ class TextFieldBuilderMixin(object):
         Use only the first max_nr_of_sentences when segmenting the text into sentences
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -96,7 +98,7 @@ class TextFieldBuilderMixin(object):
         """
         if not isinstance(data, (str, list, dict)):
             self._logger.warning(
-                f"Cannot process data example {data} of type {type(data)}"
+                "Cannot process data example %s of type %s", data, type(data)
             )
             return None
 
@@ -118,7 +120,7 @@ class TextFieldBuilderMixin(object):
                 )
                 sentences.append(TextField(word_tokens, self._token_indexers))
             return ListField(sentences) if sentences else None
-        elif self._as_text_field:
+        if self._as_text_field:
             text = " ".join(map(str, data))[: self._max_sequence_length]
             word_tokens = self._tokenizer.tokenize(self._value_as_string(text))
             return TextField(word_tokens, self._token_indexers)

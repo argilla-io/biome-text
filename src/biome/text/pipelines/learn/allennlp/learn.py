@@ -56,14 +56,16 @@ def learn(
     if model_binary:
         archive = load_archive(model_binary)
         __LOGGER.info(
-            f"Loading '{BiomeConfig.MODEL_FIELD}' config: "
-            f"{archive.config.as_dict()[BiomeConfig.MODEL_FIELD]}"
+            "Loading '%s' config: %s",
+            BiomeConfig.MODEL_FIELD,
+            archive.config.as_dict()[BiomeConfig.MODEL_FIELD],
         )
         __LOGGER.info(
-            f"Loading '{BiomeConfig.DATASET_READER_FIELD}' config:"
-            f"{archive.config.as_dict()[BiomeConfig.DATASET_READER_FIELD]}"
+            "Loading '%s' config:  %s",
+            BiomeConfig.DATASET_READER_FIELD,
+            archive.config.as_dict()[BiomeConfig.DATASET_READER_FIELD],
         )
-        __LOGGER.info(f"Provided configs: {allennlp_configuration}")
+        __LOGGER.info("Provided configs: %s", allennlp_configuration)
         # The model params are ignored by the `fine_tune_model` method
         fine_tune_params = Params(
             {
@@ -86,15 +88,15 @@ def learn(
             extend_vocab=True,
             file_friendly_logging=True,
         )
-    else:
-        params = Params(allennlp_configuration)
-        is_recovered = recover_output_folder(output, params)
-        return train_model(
-            params=params,
-            serialization_dir=output,
-            file_friendly_logging=True,
-            recover=is_recovered,
-        )
+
+    params = Params(allennlp_configuration)
+    is_recovered = recover_output_folder(output, params)
+    return train_model(
+        params=params,
+        serialization_dir=output,
+        file_friendly_logging=True,
+        recover=is_recovered,
+    )
 
 
 def recover_output_folder(output: str, params: Params) -> bool:
@@ -116,19 +118,17 @@ def recover_output_folder(output: str, params: Params) -> bool:
     """
     if not os.path.isdir(output):
         return False
-    else:
-        [
+    for pattern in [
+        os.path.join(output, "*.th"),
+        os.path.join(output, "*.json"),
+        os.path.join(output, "**/events.out*"),
+    ]:
+        for file in glob.glob(pattern, recursive=True):
             os.remove(file)
-            for pattern in [
-                os.path.join(output, "*.th"),
-                os.path.join(output, "*.json"),
-                os.path.join(output, "**/events.out*"),
-            ]
-            for file in glob.glob(pattern, recursive=True)
-        ]
-        params.to_file(os.path.join(output, CONFIG_NAME))
-        __LOGGER.warning(
-            f"Using vocab from recovered output folder '{output}' if available."
-        )
 
-        return True
+    params.to_file(os.path.join(output, CONFIG_NAME))
+    __LOGGER.warning(
+        "Using vocab from recovered output folder '%s' if available.", output
+    )
+
+    return True

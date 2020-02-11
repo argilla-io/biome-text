@@ -3,6 +3,7 @@ import logging
 from inspect import Parameter
 from typing import Iterable, Dict, Union
 
+from dask.dataframe import Series as DaskSeries
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
 from allennlp.data.tokenizers import SentenceSplitter
 
@@ -35,6 +36,7 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         Use only the first max_nr_of_sentences when segmenting the text into sentences
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         tokenizer: Tokenizer = None,
@@ -106,11 +108,11 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         # get cached instances of the data set
         instances = self.get(file_path)
         if instances is not None:
-            self.logger.debug("Loaded cached data set {}".format(file_path))
+            self.logger.debug("Loaded cached data set %s", file_path)
         else:
-            self.logger.debug("Read data set from {}".format(file_path))
+            self.logger.debug("Read data set from %s", file_path)
             dataset = data_source.to_mapped_dataframe()
-            instances = dataset.apply(
+            instances: DaskSeries = dataset.apply(
                 lambda x: self.text_to_instance(**x.to_dict()),
                 axis=1,
                 meta=(None, "object"),
@@ -119,7 +121,9 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             # cache instances of the data set
             self.set(file_path, instances)
 
-        return (instance for idx, instance in instances.iteritems() if instance)
+        return (instance for _, instance in instances.iteritems() if instance)
 
+    # pylint: disable=arguments-differ
     def text_to_instance(self, **inputs) -> Instance:
+        """ Convert an input text data into a allennlp Instance"""
         raise NotImplementedError

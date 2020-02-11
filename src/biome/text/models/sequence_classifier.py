@@ -1,4 +1,3 @@
-import logging
 from typing import Dict
 
 import torch
@@ -6,8 +5,6 @@ from allennlp.models.model import Model
 from overrides import overrides
 
 from biome.text.models.sequence_classifier_base import SequenceClassifierBase
-
-logger = logging.getLogger(__name__)
 
 
 @Model.register("sequence_classifier")

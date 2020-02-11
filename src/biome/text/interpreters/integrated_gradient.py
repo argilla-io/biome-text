@@ -1,24 +1,21 @@
 # pylint: disable=protected-access
 import math
+import operator
 from typing import List, Dict, Any
 
 import numpy
-
-import operator
-
 from allennlp.common.util import JsonDict, sanitize
 from allennlp.data import Instance
 from allennlp.interpret.saliency_interpreters.integrated_gradient import (
-    IntegratedGradient,
+    IntegratedGradient as AllennlpIntegratedGradient,
 )
 from allennlp.interpret.saliency_interpreters.saliency_interpreter import (
     SaliencyInterpreter,
 )
-from allennlp.nn import util
 
 
 @SaliencyInterpreter.register("biome-integrated-gradient")
-class IntegratedGradient(IntegratedGradient):
+class IntegratedGradient(AllennlpIntegratedGradient):
     """
     Interprets the prediction using Integrated Gradients (https://arxiv.org/abs/1703.01365)
     """
@@ -33,7 +30,7 @@ class IntegratedGradient(IntegratedGradient):
         labeled_instances = self.predictor.json_to_labeled_instances(inputs)
 
         instances_with_grads: List = []
-        for idx, instance in enumerate(labeled_instances):
+        for instance in labeled_instances:
             # Run integrated gradients
             grads = self._integrate_gradients(instance)
 
@@ -46,7 +43,8 @@ class IntegratedGradient(IntegratedGradient):
 
         return sanitize(instances_with_grads)
 
-    def _pack_with_field_tokens(self, instance: Instance, grads):
+    @staticmethod
+    def _pack_with_field_tokens(instance: Instance, grads):
         # We assume keys are ordered in the same way fields are processed
         list_keys = list(instance.fields.keys())
         list_keys.remove("label")

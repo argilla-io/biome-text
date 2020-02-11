@@ -55,8 +55,8 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
     def static_proxy(path: str) -> Response:  # pylint: disable=unused-variable
         try:
             return send_from_directory(statics_dir, path)
-        except NotFound as nf:
-            app.logger.warn(nf)
+        except NotFound as error:
+            app.logger().warning(error)
             return index()
 
     @app.route("/static/js/<path:path>")

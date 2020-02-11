@@ -17,7 +17,11 @@ def package_version(version: str):
     def get_first_tag_for_commit(repository: git.Git, commit_hash: str) -> str:
         """ Return tags related to current commit """
 
-        tags = (repository.tag("--contains", commit_hash) if commit_hash else repository.tag("--contains")).split("\n")
+        tags = (
+            repository.tag("--contains", commit_hash)
+            if commit_hash
+            else repository.tag("--contains")
+        ).split("\n")
         return tags[0]
 
     try:
