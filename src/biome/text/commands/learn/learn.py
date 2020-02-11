@@ -103,10 +103,6 @@ class BiomeLearn(Subcommand):
         )
 
         subparser.add_argument(
-            "--workers", type=int, default=1, help="Workers for dask local cluster"
-        )
-
-        subparser.add_argument(
             "-v",
             "--verbose",
             action="store_true",
@@ -136,6 +132,5 @@ def learn_from_args(args: argparse.Namespace):
         train=args.train,
         validation=args.validation,
         test=args.test,
-        workers=args.workers,
         verbose=args.verbose,
     )
