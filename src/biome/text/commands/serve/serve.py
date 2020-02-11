@@ -8,7 +8,7 @@ from gevent.pywsgi import WSGIServer
 
 from biome.text import Pipeline
 
-logger = logging.getLogger(__name__)
+__LOGGER = logging.getLogger(__name__)
 
 
 class BiomeRestAPI(Subcommand):
@@ -51,5 +51,5 @@ def serve(binary: str, port: int = 8000) -> None:
     app = make_app(binary)
 
     http_server = WSGIServer(("0.0.0.0", port), app)
-    logger.info(f"Model loaded, serving on port {port}")
+    __LOGGER.info("Model loaded, serving on port %s", port)
     http_server.serve_forever()

@@ -64,6 +64,6 @@ class DefaultBasePredictor(Predictor):
         ]
 
     @staticmethod
-    def _to_prediction(input, output):
+    def _to_prediction(input_data, output):
         output.pop("logits")
-        return {**input, "annotation": sanitize(output)}
+        return {**input_data, "annotation": sanitize(output)}

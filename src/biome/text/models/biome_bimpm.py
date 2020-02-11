@@ -97,6 +97,7 @@ class BiomeBiMpm(BiomeClassifierMixin, BiMpm):
         self.metrics = self._biome_classifier_metrics
 
     @overrides
+    # pylint: disable=arguments-differ
     def forward(
         self,  # type: ignore
         record1: Dict[str, torch.LongTensor],

@@ -3,7 +3,7 @@ default: help
 
 check: ## applies a code pylint with autopep8 reformating
 	@black .
-	@pylint --exit-zero --rcfile=setup.cfg  src
+	@pylint --exit-zero --rcfile=setup.cfg --unsafe-load-any-extension=y src
 
 test: check ## launch package tests
 	@pytest
