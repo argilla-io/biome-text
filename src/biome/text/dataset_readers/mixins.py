@@ -108,11 +108,9 @@ class TextFieldBuilderMixin(object):
             data = data.values()
 
         if self._sentence_segmenter:
-            text = " ".join(map(str, data))
+            text = self._value_as_string(data)
             sentences: List[TextField] = []
-            sentence_splits = self._sentence_segmenter.split_sentences(
-                self._value_as_string(text)
-            )
+            sentence_splits = self._sentence_segmenter.split_sentences(text)
             for sentence in sentence_splits[: self._max_nr_of_sentences]:
                 word_tokens = self._tokenizer.tokenize(
                     sentence[: self._max_sequence_length]
@@ -120,7 +118,7 @@ class TextFieldBuilderMixin(object):
                 sentences.append(TextField(word_tokens, self._token_indexers))
             return ListField(sentences) if sentences else None
         elif self._as_text_field:
-            text = " ".join(map(str, data))[: self._max_sequence_length]
+            text = self._value_as_string(data)[: self._max_sequence_length]
             word_tokens = self._tokenizer.tokenize(self._value_as_string(text))
             return TextField(word_tokens, self._token_indexers)
 
