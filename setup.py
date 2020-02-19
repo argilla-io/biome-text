@@ -68,7 +68,6 @@ if __name__ == "__main__":
             "allennlp~=0.9",
             "smart_open~=1.8",
             "coloredlogs==10.0",
-            "dask-elk~=0.2.0",
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
             "biome-data~=0.2.0",
         ],
