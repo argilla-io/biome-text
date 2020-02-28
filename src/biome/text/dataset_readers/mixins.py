@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union, Any, Dict, List
+from typing import Optional, Union, Any, Dict, List, Iterable
 
 from allennlp.data import Tokenizer, TokenIndexer
 from allennlp.data.fields import ListField, TextField
@@ -75,14 +75,17 @@ class TextFieldBuilderMixin:
                 "i will set as_text_field for the single sentences to true."
             )
 
-    def _value_as_string(self, value):
-        # TODO: evaluate field value type for stringify properly in the rest of the cases
-        if isinstance(value, list):
+    def _value_as_string(self, value) -> str:
+        if isinstance(value, str):
+            return value
+        if isinstance(value, dict):
+            return self._value_as_string(value.values())
+        if isinstance(value, Iterable):
             return " ".join(map(self._value_as_string, value))
         return str(value)
 
     def build_textfield(
-        self, data: Union[str, list, dict]
+        self, data: Union[str, Iterable, dict]
     ) -> Optional[Union[ListField, TextField]]:
         """Embeds the record in a TextField or ListField depending on the _as_text_field parameter.
 
@@ -97,17 +100,17 @@ class TextFieldBuilderMixin:
             Either a TextField or a ListField containing the record.
             Returns None if `data` is not a str or a dict.
         """
-        if not isinstance(data, (str, list, dict)):
+        if not isinstance(data, (str, Iterable, dict)):
             self._logger.warning(
-                "Cannot process data example %s of type %s", data, type(data)
+                "Processing data %s of type %s as string", data, type(data)
             )
-            return None
+            data = self._value_as_string(data)
 
         if isinstance(data, str):
             data = [data]
 
         if isinstance(data, dict):
-            data = list(data.values())
+            data = data.values()
 
         if self._sentence_segmenter:
             text = self._value_as_string(data)
@@ -133,6 +136,5 @@ class TextFieldBuilderMixin:
                 self._token_indexers,
             )
             for value in data
-            if value
         ]
         return ListField(text_fields) if text_fields else None
