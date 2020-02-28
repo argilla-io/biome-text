@@ -41,7 +41,8 @@ class LoggingCallback(Callback):
     @handle_event(Events.VALIDATE)
     # pylint: disable=unused-argument
     def on_validate(self, trainer: CallbackTrainer):
-        self._LOGGER.info("Validate")
+        # self._LOGGER.info("Validate")
+        pass
 
     @handle_event(Events.ERROR)
     def on_error(self, trainer: CallbackTrainer):
@@ -50,7 +51,7 @@ class LoggingCallback(Callback):
     @handle_event(Events.EPOCH_START)
     def on_epoch_starts(self, trainer: CallbackTrainer):
         self._LOGGER.info(
-            "Starting epoch  %s", trainer.epoch_number / trainer.num_epochs
+            "Epoch %s of %s", trainer.epoch_number, trainer.num_epochs
         )
 
     @handle_event(Events.EPOCH_END)
