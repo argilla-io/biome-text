@@ -3,7 +3,7 @@
 import os
 
 from pip import __version__ as pip_version
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 from typing import Tuple
 
 PIP_VERSION_REQUIRED = "19.1.1"
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         url="https://www.recogn.ai/",
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
-        packages=find_packages("src"),
+        packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
             "allennlp~=0.9",
