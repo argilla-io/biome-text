@@ -140,13 +140,17 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         if loss_weights is None:
             return None
 
+        loss_weights = loss_weights.copy()  # So the popping does not change the input
         weights = []
         for i in range(self.vocab.get_vocab_size(namespace="labels")):
             label = self.vocab.get_token_from_index(i, namespace="labels")
             try:
-                weights.append(loss_weights[label])
+                weights.append(loss_weights.pop(label))
             except KeyError as error:
                 raise KeyError(f"Could not find {label} in the specified loss_weights") from error
+
+        if loss_weights:
+            raise ValueError(f"Could not find the labels {loss_weights.keys()} in the vocabulary")
 
         return torch.tensor(weights)
 
