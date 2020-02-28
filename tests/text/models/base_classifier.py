@@ -4,15 +4,20 @@ import os
 import tempfile
 from time import sleep
 
+import pytest
 import requests
-from elasticsearch import Elasticsearch
-
+import torch
+from allennlp.modules import Seq2VecEncoder
+from allennlp.modules import TextFieldEmbedder
 from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
+from biome.text.models import SequenceClassifierBase
 from biome.text.models import load_archive
 from biome.text.predictors.utils import get_predictor_from_archive
+from elasticsearch import Elasticsearch
+
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest
 
@@ -22,6 +27,39 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_CONFIG_PATH = os.path.join(
     TEST_RESOURCES, "resources/models/sequence_pair_classifier"
 )
+
+
+def test_loss_weights(tokens_labels_vocab):
+    encoder = Seq2VecEncoder()
+    encoder.get_output_dim = lambda: 1
+    model = SequenceClassifierBase(
+        vocab=tokens_labels_vocab,
+        text_field_embedder=TextFieldEmbedder(),
+        seq2vec_encoder=encoder,
+        loss_weights={"label0": 0.0, "label1": 1.0},
+    )
+
+    input_tensor = torch.tensor([[1.0, 1.0]])
+    class_tensor0 = torch.tensor([0], dtype=torch.long)
+    class_tensor1 = torch.tensor([1], dtype=torch.long)
+
+    assert model._loss(input=input_tensor, target=class_tensor0) == torch.tensor(0)
+    assert model._loss(input=input_tensor, target=class_tensor1) == -torch.log(torch.tensor(0.5))
+
+    with pytest.raises(KeyError):
+        SequenceClassifierBase(
+            vocab=tokens_labels_vocab,
+            text_field_embedder=TextFieldEmbedder(),
+            seq2vec_encoder=encoder,
+            loss_weights={"label0": 0.0, "missing_label": 1.0},
+        )
+    with pytest.raises(RuntimeError):
+        SequenceClassifierBase(
+            vocab=tokens_labels_vocab,
+            text_field_embedder=TextFieldEmbedder(),
+            seq2vec_encoder=encoder,
+            loss_weights={"label0": 0.0, "label1": 1.0, "extra_label": 0.0},
+        )
 
 
 class BasePairClassifierTest(DaskSupportTest):

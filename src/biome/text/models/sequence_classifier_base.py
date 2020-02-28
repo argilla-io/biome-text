@@ -54,6 +54,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         Used to regularize the model. Passed on to :class:`~allennlp.models.model.Model`.
     accuracy
         The accuracy you want to use. By default, we choose a categorical top-1 accuracy.
+    loss_weights
+        A dict with the labels and the corresponding weights.
+        These weights will be used in the CrossEntropyLoss function.
     """
 
     @property
@@ -75,6 +78,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         initializer: Optional[InitializerApplicator] = None,
         regularizer: Optional[RegularizerApplicator] = None,
         accuracy: Optional[CategoricalAccuracy] = None,
+        loss_weights: Dict[str, float] = None,
     ) -> None:
         # Passing on kwargs does not work because of the 'from_params' machinery
         super().__init__(accuracy=accuracy, vocab=vocab, regularizer=regularizer)
@@ -85,7 +89,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         # dropout for encoded vector
         self._dropout = Dropout(dropout) if dropout else None
         # loss function for training
-        self._loss = torch.nn.CrossEntropyLoss()
+        self._loss = torch.nn.CrossEntropyLoss(weight=self._get_loss_weights(loss_weights))
         # default value for wrapping dimensions for masking = 0 (single field)
         self._num_wrapping_dims = 0
 
@@ -130,6 +134,25 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         self._output_layer = Linear(self._classifier_input_dim, self.num_classes)
 
         self._initializer(self)
+
+    def _get_loss_weights(self, loss_weights: Dict[str, float] = None) -> Optional[torch.Tensor]:
+        """Helper function to get the weights for the class labels in the CrossEntropyLoss function"""
+        if loss_weights is None:
+            return None
+
+        loss_weights = loss_weights.copy()  # So the popping does not change the input
+        weights = []
+        for i in range(self.vocab.get_vocab_size(namespace="labels")):
+            label = self.vocab.get_token_from_index(i, namespace="labels")
+            try:
+                weights.append(loss_weights.pop(label))
+            except KeyError as error:
+                raise KeyError(f"Could not find {label} in the specified loss_weights") from error
+
+        if loss_weights:
+            raise ValueError(f"Could not find the labels {list(loss_weights.keys())} in the vocabulary")
+
+        return torch.tensor(weights)
 
     @property
     def num_classes(self):
