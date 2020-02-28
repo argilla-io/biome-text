@@ -150,7 +150,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
                 raise KeyError(f"Could not find {label} in the specified loss_weights") from error
 
         if loss_weights:
-            raise ValueError(f"Could not find the labels {loss_weights.keys()} in the vocabulary")
+            raise ValueError(f"Could not find the labels {list(loss_weights.keys())} in the vocabulary")
 
         return torch.tensor(weights)
 
