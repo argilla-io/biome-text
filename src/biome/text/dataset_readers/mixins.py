@@ -102,9 +102,9 @@ class TextFieldBuilderMixin:
         """
         if not isinstance(data, (str, Iterable)):
             self._logger.warning(
-                "Processing data %s of type %s as string", data, type(data)
+                "Cannot process data example %s of type %s", data, type(data)
             )
-            data = self._value_as_string(data)
+            return None
 
         if isinstance(data, str):
             data = [data]
@@ -130,11 +130,10 @@ class TextFieldBuilderMixin:
         # text_fields of different lengths are allowed, they will be sorted by the trainer and padded adequately
         text_fields = [
             TextField(
-                self._tokenizer.tokenize(
-                    self._value_as_string(value)[: self._max_sequence_length]
-                ),
+                self._tokenizer.tokenize(text[: self._max_sequence_length]),
                 self._token_indexers,
             )
-            for value in data
+            for text in map(self._value_as_string, data)
+            if text and text.strip()
         ]
         return ListField(text_fields) if text_fields else None
