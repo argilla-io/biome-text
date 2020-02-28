@@ -100,7 +100,7 @@ class TextFieldBuilderMixin:
             Either a TextField or a ListField containing the record.
             Returns None if `data` is not a str or a dict.
         """
-        if not isinstance(data, (str, Iterable, dict)):
+        if not isinstance(data, (str, Iterable)):
             self._logger.warning(
                 "Processing data %s of type %s as string", data, type(data)
             )
