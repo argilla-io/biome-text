@@ -143,7 +143,10 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         weights = []
         for i in range(self.vocab.get_vocab_size(namespace="labels")):
             label = self.vocab.get_token_from_index(i, namespace="labels")
-            weights.append(loss_weights[label])
+            try:
+                weights.append(loss_weights[label])
+            except KeyError as error:
+                raise KeyError(f"Could not find {label} in the specified loss_weights") from error
 
         return torch.tensor(weights)
 
