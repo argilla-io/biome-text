@@ -5,6 +5,8 @@ import pickle
 import re
 import warnings
 from copy import deepcopy
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from functools import lru_cache
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any
@@ -26,6 +28,13 @@ from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
+
+try:
+    import ujson as json
+except ModuleNotFoundError:
+    import json
+
+
 
 
 class _HashDict(dict):
@@ -71,6 +80,26 @@ class Pipeline(Predictor):
         super(Pipeline, self).__init__(model, reader)
         self.__config = {}
         self.__binary_path = None
+        self.__feedback_logger = self.__configure_predictions_logger("feedback")
+
+    @staticmethod
+    def __configure_predictions_logger(training_path: str) -> logging.Logger:
+        Path(training_path).mkdir(parents=True, exist_ok=True)
+
+        predictions_logger = logging.getLogger(training_path)
+        predictions_logger.setLevel(logging.DEBUG)
+        predictions_logger.propagate = (
+            False  # This flag avoid propagate message logging to parent loggers
+        )
+        file_handler = RotatingFileHandler(
+            os.path.join(training_path, "predictions.json"),
+            maxBytes=20000000,
+            backupCount=20,
+        )
+        file_handler.setLevel(logging.INFO)
+        predictions_logger.addHandler(file_handler)
+
+        return predictions_logger
 
     @classmethod
     def reader_class(cls) -> Type[DataSourceReader]:
@@ -311,9 +340,14 @@ class Pipeline(Predictor):
         """
         instance = self._json_to_instance(inputs)
         if instance is None:
-            return None
+            output = None
+        else:
+            output = self.model.forward_on_instance(instance)
+            output = sanitize(output)
 
-        output = sanitize(self.model.forward_on_instance(instance))
+        self.__feedback_logger.info(
+            json.dumps(dict(inputs=inputs, annotation=output))
+        )
         return output
 
     def init_prediction_cache(self, max_size) -> None:
