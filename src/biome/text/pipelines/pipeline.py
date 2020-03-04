@@ -1,8 +1,10 @@
 import copy
 import logging
 import os
+import pickle
 import re
 from copy import deepcopy
+from functools import lru_cache
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any
 
@@ -17,12 +19,11 @@ from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
-from overrides import overrides
-
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
+from overrides import overrides
 
 
 class Pipeline(Predictor):
@@ -271,6 +272,33 @@ class Pipeline(Predictor):
 
         output = self.model.forward_on_instance(instance)
         return sanitize(output)
+
+    def predict_json_with_cache(self, inputs: JsonDict) -> Optional[JsonDict]:
+        """Predict an input with the pipeline's model while caching the result.
+
+        For this we need to pickle the input dict so we can hash it.
+
+        Parameters
+        ----------
+        inputs
+            The input features/tokens in form of a json dict
+
+        Returns
+        -------
+        output
+            The model's prediction in form of a dict.
+            Returns None if the input could not be transformed to an instance.
+        """
+        pickled_inputs = pickle.dumps(inputs)
+
+        return self.predict_json_pickle(pickled_inputs)
+
+    @lru_cache(maxsize=None)
+    def predict_json_pickle(self, inputs: bytes):
+        inputs = pickle.loads(inputs)
+        output = self.predict_json(inputs)
+
+        return output
 
     @staticmethod
     def __to_snake_case(name):

@@ -65,6 +65,12 @@ class BiomeExplore(Subcommand):
         )
 
         subparser.add_argument(
+            "--cache-predictions",
+            action="store_true",
+            help="Cache predictions in memory?",
+        )
+
+        subparser.add_argument(
             "--interpret",
             action="store_true",
             help="Add interpretation information to classifier predictions",
@@ -93,6 +99,7 @@ def explore_with_args(args: argparse.Namespace) -> None:
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
         es_host=os.getenv(ES_HOST, "http://localhost:9200"),
         es_index=index,
+        cache_predictions=args.cache_predictions,
         interpret=args.interpret,
     )
 
@@ -103,6 +110,7 @@ def explore(
     es_host: str,
     es_index: str,
     batch_size: int = 500,
+    cache_predictions: bool = False,
     interpret: bool = False,
     **prediction_metadata,
 ) -> None:
@@ -122,12 +130,13 @@ def explore(
         The elasticsearch index where publish the data
     batch_size
         The batch size for model predictions
+    cache_predictions
+        Cache predictions in memory?
     interpret: bool
         If true, include interpret information for every prediction
     prediction_metadata: keyed arguments
         Extra arguments included as prediction metadata
     """
-
     pipeline = Pipeline.load(binary)
 
     if not isinstance(pipeline, Pipeline):
@@ -136,6 +145,10 @@ def explore(
             "\nPlease, be sure your pipeline class is registered as an allennlp.predictos.Predictor"
             "\nwith the same name that your model."
         )
+
+    predict = pipeline.predict_json
+    if cache_predictions:
+        predict = pipeline.predict_json_with_cache
 
     client = Elasticsearch(hosts=es_host, retry_on_timeout=True, http_compress=True)
     doc_type = get_compatible_doc_type(client)
@@ -151,7 +164,7 @@ def explore(
     ddf_mapped_columns = ddf_mapped.columns
 
     ddf_mapped["annotation"] = ddf_mapped[ddf_mapped_columns].apply(
-        lambda x: pipeline.predict_json(x.to_dict()), axis=1, meta=(None, object)
+        lambda x: predict(x.to_dict()), axis=1, meta=(None, object)
     )
 
     if interpret:
