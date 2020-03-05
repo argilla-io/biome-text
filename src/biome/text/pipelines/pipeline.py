@@ -21,10 +21,19 @@ from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
-from biome.text.utils import HashDict
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
 from overrides import overrides
+
+
+class HashDict(dict):
+    """
+    hashable dict implementation.
+    BE AWARE! Since dicts are mutable, the hash can change!
+    """
+
+    def __hash__(self):
+        return hash(frozenset(self.items()))
 
 
 class Pipeline(Predictor):
@@ -150,9 +159,7 @@ class Pipeline(Predictor):
         self.__config = config
 
     @classmethod
-    def load(
-        cls, binary_path: str, **kwargs
-    ) -> "Pipeline":
+    def load(cls, binary_path: str, **kwargs) -> "Pipeline":
         """Load a model pipeline form a binary path.
 
         Parameters
@@ -315,7 +322,9 @@ class Pipeline(Predictor):
             Save up to max_size most recent items.
         """
         if hasattr(self._predict_hashable_json, "cache_info"):
-            warnings.warn("Prediction cache already initiated!", category=RuntimeWarning)
+            warnings.warn(
+                "Prediction cache already initiated!", category=RuntimeWarning
+            )
             return
 
         decorated_func = lru_cache(maxsize=max_size)(self._predict_hashable_json)
