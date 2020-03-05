@@ -152,7 +152,21 @@ class Pipeline(Predictor):
     def load(
         cls, binary_path: str, prediction_cache_size: int = 0, **kwargs
     ) -> "Pipeline":
-        """Load a model pipeline form a binary path"""
+        """Load a model pipeline form a binary path.
+
+        Parameters
+        ----------
+        binary_path
+            Path to the binary file
+        prediction_cache_size
+            Size of the prediction cache
+        kwargs
+            Passed on to the biome.text.models.load_archive method
+
+        Returns
+        -------
+        pipeline
+        """
         # TODO: Read labels from tar.gzs
         name = None
         # TODO resolve load from Pipeline.class. By now, you must decorate your own
