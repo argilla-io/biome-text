@@ -65,6 +65,13 @@ class BiomeExplore(Subcommand):
         )
 
         subparser.add_argument(
+            "--prediction-cache-size",
+            type=int,
+            default=0,
+            help="Size of the prediction cache in number of items",
+        )
+
+        subparser.add_argument(
             "--interpret",
             action="store_true",
             help="Add interpretation information to classifier predictions",
@@ -93,6 +100,7 @@ def explore_with_args(args: argparse.Namespace) -> None:
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
         es_host=os.getenv(ES_HOST, "http://localhost:9200"),
         es_index=index,
+        prediction_cache_size=args.prediction_cache_size,
         interpret=args.interpret,
     )
 
@@ -103,6 +111,7 @@ def explore(
     es_host: str,
     es_index: str,
     batch_size: int = 500,
+    prediction_cache_size: int = 0,
     interpret: bool = False,
     **prediction_metadata,
 ) -> None:
@@ -122,12 +131,13 @@ def explore(
         The elasticsearch index where publish the data
     batch_size
         The batch size for model predictions
+    prediction_cache_size
+        Size of the prediction cache in number of items
     interpret: bool
         If true, include interpret information for every prediction
     prediction_metadata: keyed arguments
         Extra arguments included as prediction metadata
     """
-
     pipeline = Pipeline.load(binary)
 
     if not isinstance(pipeline, Pipeline):
@@ -136,6 +146,9 @@ def explore(
             "\nPlease, be sure your pipeline class is registered as an allennlp.predictos.Predictor"
             "\nwith the same name that your model."
         )
+
+    if prediction_cache_size > 0:
+        pipeline.init_prediction_cache(prediction_cache_size)
 
     client = Elasticsearch(hosts=es_host, retry_on_timeout=True, http_compress=True)
     doc_type = get_compatible_doc_type(client)

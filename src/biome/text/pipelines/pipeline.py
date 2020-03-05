@@ -1,8 +1,11 @@
 import copy
 import logging
 import os
+import pickle
 import re
+import warnings
 from copy import deepcopy
+from functools import lru_cache
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any
 
@@ -23,6 +26,17 @@ from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
+
+
+class _HashDict(dict):
+    """
+    hashable dict implementation.
+    BE AWARE! Since dicts are mutable, the hash can change!
+    """
+
+    def __hash__(self):
+        # user a better way
+        return pickle.dumps(self).__hash__()
 
 
 class Pipeline(Predictor):
@@ -149,7 +163,19 @@ class Pipeline(Predictor):
 
     @classmethod
     def load(cls, binary_path: str, **kwargs) -> "Pipeline":
-        """Load a model pipeline form a binary path"""
+        """Load a model pipeline form a binary path.
+
+        Parameters
+        ----------
+        binary_path
+            Path to the binary file
+        kwargs
+            Passed on to the biome.text.models.load_archive method
+
+        Returns
+        -------
+        pipeline
+        """
         # TODO: Read labels from tar.gzs
         name = None
         # TODO resolve load from Pipeline.class. By now, you must decorate your own
@@ -265,12 +291,48 @@ class Pipeline(Predictor):
             The model's prediction in form of a dict.
             Returns None if the input could not be transformed to an instance.
         """
+        hashable_dict = _HashDict(inputs)
+
+        return self._predict_hashable_json(hashable_dict)
+
+    def _predict_hashable_json(self, inputs: _HashDict) -> Optional[JsonDict]:
+        """Predict an input with the pipeline's model with a hashable input to be able to cache the return value.
+
+        Parameters
+        ----------
+        inputs
+            The input features/tokens in form of a hashable dict
+
+        Returns
+        -------
+        output
+            The model's prediction in form of a dict.
+            Returns None if the input could not be transformed to an instance.
+        """
         instance = self._json_to_instance(inputs)
         if instance is None:
             return None
 
-        output = self.model.forward_on_instance(instance)
-        return sanitize(output)
+        output = sanitize(self.model.forward_on_instance(instance))
+        return output
+
+    def init_prediction_cache(self, max_size) -> None:
+        """Initialize a prediction cache using the functools.lru_cache decorator
+
+        Parameters
+        ----------
+        max_size
+            Save up to max_size most recent items.
+        """
+        if hasattr(self._predict_hashable_json, "cache_info"):
+            warnings.warn(
+                "Prediction cache already initiated!", category=RuntimeWarning
+            )
+            return
+
+        decorated_func = lru_cache(maxsize=max_size)(self._predict_hashable_json)
+
+        self.__setattr__("_predict_hashable_json", decorated_func)
 
     @staticmethod
     def __to_snake_case(name):
@@ -464,3 +526,10 @@ class Pipeline(Predictor):
         raise ConfigurationError(
             "Cannot load sequence classifier without pipeline configuration"
         )
+
+    def __del__(self):
+        if hasattr(self._predict_hashable_json, "cache_info"):
+            # pylint: disable=no-member
+            self._logger.info(
+                "Cache statistics: %s", self._predict_hashable_json.cache_info()
+            )

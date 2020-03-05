@@ -164,6 +164,7 @@ class SequenceClassifierTest(DaskSupportTest):
             source_path=self.validation_data,
             es_host=es_host,
             es_index=index,
+            cache_predictions=True,
             interpret=True,  # Enable interpret
             **extra_metadata or {},
         )
@@ -214,6 +215,17 @@ class SequenceClassifierTest(DaskSupportTest):
 
             self.assertTrue(all(prob > 0 for _, prob in classes.items()))
 
+        def test_cached_predictions():
+            inputs = {"tokens": "Herbert Brandes-Siller", "label": "duplicate"}
+
+            predictor.init_prediction_cache(1)
+            predictor.predict_json(inputs)
+            predictor.predict_json(inputs)
+
+            assert predictor._predict_hashable_json.cache_info()[0] == 1
+            with pytest.warns(RuntimeWarning):
+                predictor.init_prediction_cache(1)
+
         def test_input_that_make_me_cry():
             self.assertRaises(
                 Exception,
@@ -223,4 +235,5 @@ class SequenceClassifierTest(DaskSupportTest):
 
         test_batch_input()
         test_input_that_make_me_cry()
+        test_cached_predictions()
         test_label_input()

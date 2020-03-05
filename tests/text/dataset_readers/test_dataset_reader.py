@@ -75,7 +75,7 @@ class SequenceClassifierDatasetReaderTest(DaskSupportTest):
             path=NO_HEADER_CSV_PATH,
             sep=",",
             header=None,
-            mapping={"tokens": [0], "label": 1},
+            mapping={"tokens": ["0"], "label": "1"},
         )
 
         dataset = reader.read(create_temp_configuration(datasource_cfg))
