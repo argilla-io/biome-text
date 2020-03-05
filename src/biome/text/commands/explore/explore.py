@@ -65,9 +65,10 @@ class BiomeExplore(Subcommand):
         )
 
         subparser.add_argument(
-            "--cache-predictions",
-            action="store_true",
-            help="Cache predictions in memory?",
+            "--prediction-cache-size",
+            type=int,
+            default=0,
+            help="Size of the prediction cache in number of items",
         )
 
         subparser.add_argument(
@@ -99,7 +100,7 @@ def explore_with_args(args: argparse.Namespace) -> None:
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
         es_host=os.getenv(ES_HOST, "http://localhost:9200"),
         es_index=index,
-        cache_predictions=args.cache_predictions,
+        prediction_cache_size=args.prediction_cache_size,
         interpret=args.interpret,
     )
 
@@ -110,7 +111,7 @@ def explore(
     es_host: str,
     es_index: str,
     batch_size: int = 500,
-    cache_predictions: bool = False,
+    prediction_cache_size: int = 0,
     interpret: bool = False,
     **prediction_metadata,
 ) -> None:
@@ -130,14 +131,14 @@ def explore(
         The elasticsearch index where publish the data
     batch_size
         The batch size for model predictions
-    cache_predictions
-        Cache predictions in memory?
+    prediction_cache_size
+        Size of the prediction cache in number of items
     interpret: bool
         If true, include interpret information for every prediction
     prediction_metadata: keyed arguments
         Extra arguments included as prediction metadata
     """
-    pipeline = Pipeline.load(binary)
+    pipeline = Pipeline.load(binary, prediction_cache_size=prediction_cache_size)
 
     if not isinstance(pipeline, Pipeline):
         raise ConfigurationError(
@@ -145,10 +146,6 @@ def explore(
             "\nPlease, be sure your pipeline class is registered as an allennlp.predictos.Predictor"
             "\nwith the same name that your model."
         )
-
-    predict = pipeline.predict_json
-    if cache_predictions:
-        predict = pipeline.predict_json_with_cache
 
     client = Elasticsearch(hosts=es_host, retry_on_timeout=True, http_compress=True)
     doc_type = get_compatible_doc_type(client)
@@ -164,7 +161,7 @@ def explore(
     ddf_mapped_columns = ddf_mapped.columns
 
     ddf_mapped["annotation"] = ddf_mapped[ddf_mapped_columns].apply(
-        lambda x: predict(x.to_dict()), axis=1, meta=(None, object)
+        lambda x: pipeline.predict_json(x.to_dict()), axis=1, meta=(None, object)
     )
 
     if interpret:

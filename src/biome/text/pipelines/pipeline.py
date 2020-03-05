@@ -1,7 +1,6 @@
 import copy
 import logging
 import os
-import pickle
 import re
 from copy import deepcopy
 from functools import lru_cache
@@ -21,6 +20,7 @@ from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
+from biome.text.utils import HashDict
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
 from overrides import overrides
@@ -149,7 +149,9 @@ class Pipeline(Predictor):
         self.__config = config
 
     @classmethod
-    def load(cls, binary_path: str, **kwargs) -> "Pipeline":
+    def load(
+        cls, binary_path: str, prediction_cache_size: int = 0, **kwargs
+    ) -> "Pipeline":
         """Load a model pipeline form a binary path"""
         # TODO: Read labels from tar.gzs
         name = None
@@ -168,6 +170,9 @@ class Pipeline(Predictor):
         predictor = get_predictor_from_archive(archive, predictor_name=name)
         pipeline = cast(Pipeline, predictor)
         pipeline._update_binary_path(binary_path)
+
+        if prediction_cache_size > 0:
+            pipeline.init_prediction_cache(prediction_cache_size)
 
         return pipeline
 
@@ -266,22 +271,17 @@ class Pipeline(Predictor):
             The model's prediction in form of a dict.
             Returns None if the input could not be transformed to an instance.
         """
-        instance = self._json_to_instance(inputs)
-        if instance is None:
-            return None
+        hashable_dict = HashDict(inputs)
 
-        output = self.model.forward_on_instance(instance)
-        return sanitize(output)
+        return self._predict_hashable_json(hashable_dict)
 
-    def predict_json_with_cache(self, inputs: JsonDict) -> Optional[JsonDict]:
-        """Predict an input with the pipeline's model while caching the result.
-
-        For this we need to pickle the input dict so we can hash it.
+    def _predict_hashable_json(self, inputs: HashDict) -> Optional[JsonDict]:
+        """Predict an input with the pipeline's model with a hashable input to be able to cache the return value.
 
         Parameters
         ----------
         inputs
-            The input features/tokens in form of a json dict
+            The input features/tokens in form of a hashable dict
 
         Returns
         -------
@@ -289,16 +289,24 @@ class Pipeline(Predictor):
             The model's prediction in form of a dict.
             Returns None if the input could not be transformed to an instance.
         """
-        pickled_inputs = pickle.dumps(inputs)
+        instance = self._json_to_instance(inputs)
+        if instance is None:
+            return None
 
-        return self.predict_json_pickle(pickled_inputs)
-
-    @lru_cache(maxsize=None)
-    def predict_json_pickle(self, inputs: bytes):
-        inputs = pickle.loads(inputs)
-        output = self.predict_json(inputs)
-
+        output = sanitize(self.model.forward_on_instance(instance))
         return output
+
+    def init_prediction_cache(self, max_size) -> None:
+        """Initialize a prediction cache using the functools.lru_cache decorator
+
+        Parameters
+        ----------
+        max_size
+            Save up to max_size most recent items.
+        """
+        decorated_func = lru_cache(maxsize=max_size)(self._predict_hashable_json)
+
+        self.__setattr__("_predict_hashable_json", decorated_func)
 
     @staticmethod
     def __to_snake_case(name):

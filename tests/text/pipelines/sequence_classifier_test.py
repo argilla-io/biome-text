@@ -189,7 +189,7 @@ class SequenceClassifierTest(DaskSupportTest):
         process.terminate()
 
     def check_predictor(self):
-        predictor = SequenceClassifier.load(self.model_archive)
+        predictor = SequenceClassifier.load(self.model_archive, prediction_cache_size=1)
 
         def test_batch_input():
             inputs = [{"tokens": "Herbert Brandes-Siller", "label": "duplicate"}]
@@ -218,11 +218,11 @@ class SequenceClassifierTest(DaskSupportTest):
         def test_cached_predictions():
             inputs = {"tokens": "Herbert Brandes-Siller", "label": "duplicate"}
 
-            predictor.predict_json_pickle.cache_clear()
-            predictor.predict_json_with_cache(inputs)
-            predictor.predict_json_with_cache(inputs)
+            predictor._predict_hashable_json.cache_clear()
+            predictor.predict_json(inputs)
+            predictor.predict_json(inputs)
 
-            assert predictor.predict_json_pickle.cache_info()[0] == 1
+            assert predictor._predict_hashable_json.cache_info()[0] == 1
 
         def test_input_that_make_me_cry():
             self.assertRaises(
