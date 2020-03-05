@@ -151,7 +151,7 @@ class Pipeline(Predictor):
 
     @classmethod
     def load(
-        cls, binary_path: str, prediction_cache_size: int = 0, **kwargs
+        cls, binary_path: str, **kwargs
     ) -> "Pipeline":
         """Load a model pipeline form a binary path.
 
@@ -159,8 +159,6 @@ class Pipeline(Predictor):
         ----------
         binary_path
             Path to the binary file
-        prediction_cache_size
-            Size of the prediction cache
         kwargs
             Passed on to the biome.text.models.load_archive method
 
@@ -185,9 +183,6 @@ class Pipeline(Predictor):
         predictor = get_predictor_from_archive(archive, predictor_name=name)
         pipeline = cast(Pipeline, predictor)
         pipeline._update_binary_path(binary_path)
-
-        if prediction_cache_size > 0:
-            pipeline.init_prediction_cache(prediction_cache_size)
 
         return pipeline
 

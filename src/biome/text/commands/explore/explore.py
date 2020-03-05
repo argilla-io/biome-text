@@ -138,7 +138,7 @@ def explore(
     prediction_metadata: keyed arguments
         Extra arguments included as prediction metadata
     """
-    pipeline = Pipeline.load(binary, prediction_cache_size=prediction_cache_size)
+    pipeline = Pipeline.load(binary)
 
     if not isinstance(pipeline, Pipeline):
         raise ConfigurationError(
@@ -146,6 +146,9 @@ def explore(
             "\nPlease, be sure your pipeline class is registered as an allennlp.predictos.Predictor"
             "\nwith the same name that your model."
         )
+
+    if prediction_cache_size > 0:
+        pipeline.init_prediction_cache(prediction_cache_size)
 
     client = Elasticsearch(hosts=es_host, retry_on_timeout=True, http_compress=True)
     doc_type = get_compatible_doc_type(client)
