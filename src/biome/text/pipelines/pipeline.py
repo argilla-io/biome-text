@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+import pickle
 import re
 import warnings
 from copy import deepcopy
@@ -19,21 +20,23 @@ from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
 from allennlp.models import Archive, Model
 from allennlp.predictors import Predictor
+from overrides import overrides
+
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
-from overrides import overrides
 
 
-class HashDict(dict):
+class _HashDict(dict):
     """
     hashable dict implementation.
     BE AWARE! Since dicts are mutable, the hash can change!
     """
 
     def __hash__(self):
-        return hash(frozenset(self.items()))
+        # user a better way
+        return pickle.dumps(self).__hash__()
 
 
 class Pipeline(Predictor):
@@ -288,11 +291,11 @@ class Pipeline(Predictor):
             The model's prediction in form of a dict.
             Returns None if the input could not be transformed to an instance.
         """
-        hashable_dict = HashDict(inputs)
+        hashable_dict = _HashDict(inputs)
 
         return self._predict_hashable_json(hashable_dict)
 
-    def _predict_hashable_json(self, inputs: HashDict) -> Optional[JsonDict]:
+    def _predict_hashable_json(self, inputs: _HashDict) -> Optional[JsonDict]:
         """Predict an input with the pipeline's model with a hashable input to be able to cache the return value.
 
         Parameters
