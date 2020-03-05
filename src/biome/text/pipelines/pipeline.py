@@ -526,3 +526,10 @@ class Pipeline(Predictor):
         raise ConfigurationError(
             "Cannot load sequence classifier without pipeline configuration"
         )
+
+    def __del__(self):
+        if hasattr(self._predict_hashable_json, "cache_info"):
+            # pylint: disable=no-member
+            self._logger.info(
+                "Cache statistics: %s", self._predict_hashable_json.cache_info()
+            )
