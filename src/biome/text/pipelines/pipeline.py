@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 import re
+import warnings
 from copy import deepcopy
 from functools import lru_cache
 from tempfile import mktemp
@@ -318,6 +319,10 @@ class Pipeline(Predictor):
         max_size
             Save up to max_size most recent items.
         """
+        if hasattr(self._predict_hashable_json, "cache_info"):
+            warnings.warn("Prediction cache already initiated!", category=RuntimeWarning)
+            return
+
         decorated_func = lru_cache(maxsize=max_size)(self._predict_hashable_json)
 
         self.__setattr__("_predict_hashable_json", decorated_func)

@@ -223,6 +223,8 @@ class SequenceClassifierTest(DaskSupportTest):
             predictor.predict_json(inputs)
 
             assert predictor._predict_hashable_json.cache_info()[0] == 1
+            with pytest.warns(RuntimeWarning):
+                predictor.init_prediction_cache(max_size=1)
 
         def test_input_that_make_me_cry():
             self.assertRaises(
