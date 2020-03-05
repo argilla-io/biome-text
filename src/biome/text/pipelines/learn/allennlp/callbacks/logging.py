@@ -50,9 +50,7 @@ class LoggingCallback(Callback):
 
     @handle_event(Events.EPOCH_START)
     def on_epoch_starts(self, trainer: CallbackTrainer):
-        self._LOGGER.info(
-            "Epoch %s of %s", trainer.epoch_number, trainer.num_epochs
-        )
+        self._LOGGER.info("Epoch %s of %s", trainer.epoch_number, trainer.num_epochs)
 
     @handle_event(Events.EPOCH_END)
     def on_epoch_end(self, trainer: CallbackTrainer):

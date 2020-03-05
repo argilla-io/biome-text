@@ -8,11 +8,13 @@ from allennlp.data.vocabulary import Vocabulary
 @pytest.fixture
 def tokens_labels_vocab():
     text = "The grass is green and the sky is blue. What can you do?"
-    text_field = TextField(WordTokenizer().tokenize(text), token_indexers={"tokens": SingleIdTokenIndexer()})
+    text_field = TextField(
+        WordTokenizer().tokenize(text),
+        token_indexers={"tokens": SingleIdTokenIndexer()},
+    )
 
-    vocab = Vocabulary.from_instances([text_field, LabelField("label0"), LabelField("label1")])
+    vocab = Vocabulary.from_instances(
+        [text_field, LabelField("label0"), LabelField("label1")]
+    )
 
     return vocab
-
-
-

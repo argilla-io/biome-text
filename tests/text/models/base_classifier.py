@@ -44,7 +44,9 @@ def test_loss_weights(tokens_labels_vocab):
     class_tensor1 = torch.tensor([1], dtype=torch.long)
 
     assert model._loss(input=input_tensor, target=class_tensor0) == torch.tensor(0)
-    assert model._loss(input=input_tensor, target=class_tensor1) == -torch.log(torch.tensor(0.5))
+    assert model._loss(input=input_tensor, target=class_tensor1) == -torch.log(
+        torch.tensor(0.5)
+    )
 
     with pytest.raises(KeyError):
         SequenceClassifierBase(

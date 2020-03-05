@@ -89,7 +89,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         # dropout for encoded vector
         self._dropout = Dropout(dropout) if dropout else None
         # loss function for training
-        self._loss = torch.nn.CrossEntropyLoss(weight=self._get_loss_weights(loss_weights))
+        self._loss = torch.nn.CrossEntropyLoss(
+            weight=self._get_loss_weights(loss_weights)
+        )
         # default value for wrapping dimensions for masking = 0 (single field)
         self._num_wrapping_dims = 0
 
@@ -135,7 +137,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
         self._initializer(self)
 
-    def _get_loss_weights(self, loss_weights: Dict[str, float] = None) -> Optional[torch.Tensor]:
+    def _get_loss_weights(
+        self, loss_weights: Dict[str, float] = None
+    ) -> Optional[torch.Tensor]:
         """Helper function to get the weights for the class labels in the CrossEntropyLoss function"""
         if loss_weights is None:
             return None
@@ -147,10 +151,14 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
             try:
                 weights.append(loss_weights.pop(label))
             except KeyError as error:
-                raise KeyError(f"Could not find {label} in the specified loss_weights") from error
+                raise KeyError(
+                    f"Could not find {label} in the specified loss_weights"
+                ) from error
 
         if loss_weights:
-            raise ValueError(f"Could not find the labels {list(loss_weights.keys())} in the vocabulary")
+            raise ValueError(
+                f"Could not find the labels {list(loss_weights.keys())} in the vocabulary"
+            )
 
         return torch.tensor(weights)
 
