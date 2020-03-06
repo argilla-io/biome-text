@@ -23,33 +23,53 @@ class BiomeRestAPI(Subcommand):
 
         subparser.add_argument("--port", type=int, default=8000)
         subparser.add_argument("--binary", type=str, required=True)
+        subparser.add_argument(
+            "--output",
+            type=str,
+            default=None,
+            required=False,
+            help="If provided, write predictions as json file to this output folder.",
+        )
         subparser.set_defaults(func=_serve_from_args)
 
         return subparser
 
 
 def _serve_from_args(args: argparse.Namespace) -> None:
-    return serve(binary=args.binary, port=args.port)
+    return serve(binary=args.binary, port=args.port, output=args.output)
 
 
-def make_app(binary: str):
-    """
-    This function allows serve model from gunicorn server. For example:
-
-    >>>gunicorn 'biome.allennlp.commands.serve.serve:make_app("/path/to/model.tar.gz")'
-
-    :param binary: the model.tar.gz path
-    :return: a Flask app used by gunicorn server
-    """
-    pipeline = Pipeline.load(binary)
-    app = server_simple.make_app(pipeline, title=pipeline.__class__.__name__)
-    CORS(app)
-    return app
-
-
-def serve(binary: str, port: int = 8000) -> None:
-    app = make_app(binary)
+def serve(binary: str, port: int = 8000, output: str = None) -> None:
+    app = make_app(binary, output)
 
     http_server = WSGIServer(("0.0.0.0", port), app)
     __LOGGER.info("Model loaded, serving on port %s", port)
     http_server.serve_forever()
+
+
+def make_app(binary: str, output: str = None):
+    """
+    This function allows to serve a model from a gunicorn server. For example:
+
+    >>>gunicorn 'biome.allennlp.commands.serve.serve:make_app("/path/to/model.tar.gz")'
+
+    Parameters
+    ----------
+    binary
+        Path to the *model.tar.gz* file
+    output
+        Path to the output folder, in which to store the predictions.
+
+    Returns
+    -------
+    app
+        A Flask app used by gunicorn server
+    """
+    pipeline = Pipeline.load(binary)
+    if output:
+        pipeline.init_prediction_logger(output)
+
+    app = server_simple.make_app(pipeline, title=pipeline.__class__.__name__)
+    CORS(app)
+
+    return app
