@@ -5,6 +5,7 @@ from time import sleep
 from typing import Optional
 
 import pandas as pd
+import json
 import pytest
 import requests
 import yaml
@@ -176,8 +177,12 @@ class SequenceClassifierTest(DaskSupportTest):
 
     def check_serve(self):
         port = 18000
+        output_dir = os.path.join(self.output_dir, "predictions")
+
         process = multiprocessing.Process(
-            target=serve, daemon=True, kwargs=dict(binary=self.model_archive, port=port)
+            target=serve,
+            daemon=True,
+            kwargs=dict(binary=self.model_archive, port=port, output=output_dir),
         )
         process.start()
         sleep(5)
@@ -186,15 +191,24 @@ class SequenceClassifierTest(DaskSupportTest):
             f"http://localhost:{port}/predict", json={"tokens": "Mike Farrys"}
         )
         self.assertTrue(response.json() is not None)
+        assert os.path.isfile(os.path.join(output_dir, Pipeline.PREDICTION_FILE_NAME))
+
         process.terminate()
 
     def check_predictor(self):
         predictor = SequenceClassifier.load(self.model_archive)
+        inputs = [
+            {"tokens": "Herbert Brandes-Siller", "label": "duplicate"},
+            {
+                "tokens": {"first_name": "Herbert", "last_name": "Brandes-Siller"},
+                "label": "duplicate",
+            },
+            {"tokens": ["Herbert", "Brandes-Siller"], "label": "not_duplicate"},
+        ]
 
         def test_batch_input():
-            inputs = [{"tokens": "Herbert Brandes-Siller", "label": "duplicate"}]
-
-            results = predictor.predict_batch_json(inputs)
+            # TODO: predict_batch_json does not work properly with len>1 inputs ...
+            results = predictor.predict_batch_json([inputs[0]])
             result = results[0]
             classes = result.get("classes")
 
@@ -204,27 +218,39 @@ class SequenceClassifierTest(DaskSupportTest):
             self.assertTrue(all(prob > 0 for _, prob in classes.items()))
             self.assertEqual(1, len(results))
 
-        def test_label_input():
-            inputs = {"tokens": "Herbert Brandes-Siller", "label": "duplicate"}
+        def test_single_input():
+            for inputs_i in inputs:
+                result = predictor.predict_json(inputs_i)
+                classes = result.get("classes")
 
-            result = predictor.predict_json(inputs)
-            classes = result.get("classes")
+                for the_class in ["duplicate", "not_duplicate"]:
+                    self.assertIn(the_class, classes)
 
-            for the_class in ["duplicate", "not_duplicate"]:
-                self.assertIn(the_class, classes)
-
-            self.assertTrue(all(prob > 0 for _, prob in classes.items()))
+                self.assertTrue(all(prob > 0 for _, prob in classes.items()))
 
         def test_cached_predictions():
-            inputs = {"tokens": "Herbert Brandes-Siller", "label": "duplicate"}
-
             predictor.init_prediction_cache(1)
-            predictor.predict_json(inputs)
-            predictor.predict_json(inputs)
-
-            assert predictor._predict_hashable_json.cache_info()[0] == 1
             with pytest.warns(RuntimeWarning):
                 predictor.init_prediction_cache(1)
+
+            for i, inputs_i in enumerate(inputs):
+                predictor.init_prediction_cache(1)
+                predictor.predict_json(inputs_i)
+                predictor.predict_json(inputs_i)
+
+                # for every input we get one more hit in the cache_info stats
+                assert predictor._predict_hashable_json.cache_info()[0] == i + 1
+
+        def test_prediction_logger():
+            output_dir = os.path.join(self.output_dir, "predictions")
+
+            predictor.init_prediction_logger(output_dir)
+            predictor.predict_json(inputs[0])
+
+            output_file = os.path.join(output_dir, Pipeline.PREDICTION_FILE_NAME)
+            with open(output_file) as file:
+                json_dict = json.loads(file.readlines()[-1])
+                assert all([key in json_dict for key in ["inputs", "annotation"]])
 
         def test_input_that_make_me_cry():
             self.assertRaises(
@@ -234,6 +260,7 @@ class SequenceClassifierTest(DaskSupportTest):
             )
 
         test_batch_input()
+        test_single_input()
         test_input_that_make_me_cry()
         test_cached_predictions()
-        test_label_input()
+        test_prediction_logger()

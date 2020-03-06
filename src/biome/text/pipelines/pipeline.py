@@ -5,6 +5,8 @@ import pickle
 import re
 import warnings
 from copy import deepcopy
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from functools import lru_cache
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any
@@ -26,6 +28,11 @@ from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
+
+try:
+    import ujson as json
+except ModuleNotFoundError:
+    import json
 
 
 class _HashDict(dict):
@@ -58,7 +65,7 @@ class Pipeline(Predictor):
         The class:allennlp.data.DatasetReader
     """
 
-    _logger = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     # Disable allennlp logging
     logging.getLogger("elasticsearch").setLevel(logging.WARNING)
@@ -67,10 +74,46 @@ class Pipeline(Predictor):
     ARCHITECTURE_FIELD = "architecture"
     TYPE_FIELD = "type"
 
+    PREDICTION_FILE_NAME = "predictions.json"
+
     def __init__(self, model: allennlp.models.model.Model, reader: DataSourceReader):
         super(Pipeline, self).__init__(model, reader)
         self.__config = {}
         self.__binary_path = None
+        self.__prediction_logger = None
+
+    def init_prediction_logger(
+        self, output_dir: str, max_bytes: int = 20000000, backup_count: int = 20
+    ):
+        """Initialize the prediction logger.
+
+        If initialized we will log all predictions to a file called *predictions.json* in the `output_folder`.
+
+        Parameters
+        ----------
+        output_dir
+            Path to the folder in which we create the *predictions.json* file.
+        max_bytes
+            Passed on to logging.handlers.RotatingFileHandler
+        backup_count
+            Passed on to logging.handlers.RotatingFileHandler
+
+        """
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        predictions_logger = logging.getLogger(output_dir)
+        predictions_logger.setLevel(logging.DEBUG)
+        # This flag avoids logging messages to be propagated to the parent loggers
+        predictions_logger.propagate = False
+        file_handler = RotatingFileHandler(
+            os.path.join(output_dir, self.PREDICTION_FILE_NAME),
+            maxBytes=max_bytes,
+            backupCount=backup_count,
+        )
+        file_handler.setLevel(logging.INFO)
+        predictions_logger.addHandler(file_handler)
+
+        self.__prediction_logger = predictions_logger
 
     @classmethod
     def reader_class(cls) -> Type[DataSourceReader]:
@@ -293,7 +336,14 @@ class Pipeline(Predictor):
         """
         hashable_dict = _HashDict(inputs)
 
-        return self._predict_hashable_json(hashable_dict)
+        output = self._predict_hashable_json(hashable_dict)
+
+        if self.__prediction_logger:
+            self.__prediction_logger.info(
+                json.dumps(dict(inputs=inputs, annotation=output))
+            )
+
+        return output
 
     def _predict_hashable_json(self, inputs: _HashDict) -> Optional[JsonDict]:
         """Predict an input with the pipeline's model with a hashable input to be able to cache the return value.
@@ -312,8 +362,8 @@ class Pipeline(Predictor):
         instance = self._json_to_instance(inputs)
         if instance is None:
             return None
-
         output = sanitize(self.model.forward_on_instance(instance))
+
         return output
 
     def init_prediction_cache(self, max_size) -> None:
@@ -530,6 +580,6 @@ class Pipeline(Predictor):
     def __del__(self):
         if hasattr(self._predict_hashable_json, "cache_info"):
             # pylint: disable=no-member
-            self._logger.info(
+            self._LOGGER.info(
                 "Cache statistics: %s", self._predict_hashable_json.cache_info()
             )
