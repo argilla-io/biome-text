@@ -1,17 +1,18 @@
 import inspect
 import logging
 from inspect import Parameter
-from typing import Iterable, Dict, Union
+from typing import Iterable, Dict, Union, Optional, List
 
-from dask.dataframe import Series as DaskSeries
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
-from allennlp.data.tokenizers import SentenceSplitter
-
+from allennlp.data.fields import TextField, ListField
 from biome.data.sources import DataSource
-from biome.text.dataset_readers.mixins import TextFieldBuilderMixin, CacheableMixin
+from biome.text.dataset_readers.mixins import CacheableMixin
+from dask.dataframe import Series as DaskSeries
+from allennlp.data.tokenizers import WordTokenizer, SentenceSplitter
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 
 
-class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
+class DataSourceReader(DatasetReader, CacheableMixin):
     """
     A DataSetReader as base for read instances from ``DataSource``
 
@@ -27,7 +28,9 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
     segment_sentences
         If True, we will first segment the text into sentences using SpaCy and then tokenize words.
     as_text_field
-        Build ``Instance`` fields as ``ListField`` of ``TextField`` or ``TextField``
+        Flag indicating how to generate the ``TextField``. If enabled, the output Field
+        will be a ``TextField`` with text concatenation, else the result field will be
+        a ``ListField`` of ``TextField``s, one per input data value
     skip_empty_tokens
         Should i silently skip empty tokens?
     max_sequence_length
@@ -48,17 +51,24 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         max_nr_of_sentences: int = None,
     ) -> None:
         DatasetReader.__init__(self, lazy=True)
-        TextFieldBuilderMixin.__init__(
-            self,
-            tokenizer=tokenizer,
-            # The token_indexers keys are directly related to the model text_field_embedder configuration
-            token_indexers=token_indexers,
-            segment_sentences=segment_sentences,
-            as_text_field=as_text_field,
-            max_sequence_length=max_sequence_length,
-            max_nr_of_sentences=max_nr_of_sentences,
-        )
+
+        self._tokenizer = tokenizer or WordTokenizer()
+        self._token_indexers = token_indexers
+        self._sentence_segmenter = segment_sentences
+        if segment_sentences is True:
+            self._sentence_segmenter = SpacySentenceSplitter()
+        self._as_text_field = as_text_field
         self._skip_empty_tokens = skip_empty_tokens
+        self._max_sequence_length = max_sequence_length
+        self._max_nr_of_sentences = max_nr_of_sentences
+
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+        if segment_sentences and not as_text_field:
+            self._logger.warning(
+                "You cannot segment sentences and set as_text_field to false at the same time, "
+                "i will set as_text_field for the single sentences to true."
+            )
 
         self._signature = {
             name: dict(optional=value.default != Parameter.empty)
@@ -67,8 +77,6 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             ).parameters.items()
             if name != "self"
         }
-
-    logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
     @property
     def signature(self) -> dict:
@@ -108,9 +116,9 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
         # get cached instances of the data set
         instances = self.get(file_path)
         if instances is not None:
-            self.logger.debug("Loaded cached data set %s", file_path)
+            self._logger.debug("Loaded cached data set %s", file_path)
         else:
-            self.logger.debug("Read data set from %s", file_path)
+            self._logger.debug("Read data set from %s", file_path)
             dataset = data_source.to_mapped_dataframe()
             instances: DaskSeries = dataset.apply(
                 lambda x: self.text_to_instance(**x.to_dict()),
@@ -122,6 +130,69 @@ class DataSourceReader(DatasetReader, TextFieldBuilderMixin, CacheableMixin):
             self.set(file_path, instances)
 
         return (instance for _, instance in instances.iteritems() if instance)
+
+    def _value_as_string(self, value) -> str:
+        if isinstance(value, str):
+            return value
+        if isinstance(value, dict):
+            return self._value_as_string(value.values())
+        if isinstance(value, Iterable):
+            return " ".join(map(self._value_as_string, value))
+        return str(value)
+
+    def build_textfield(
+            self, data: Union[str, Iterable, dict]
+    ) -> Optional[Union[ListField, TextField]]:
+        """Embeds the record in a TextField or ListField depending on the _as_text_field parameter.
+
+        Parameters
+        ----------
+        data
+            Record to be embedded.
+
+        Returns
+        -------
+        field
+            Either a TextField or a ListField containing the record.
+            Returns None if `data` is not a str or a dict.
+        """
+        if not isinstance(data, (str, Iterable)):
+            self._logger.warning(
+                "Cannot process data example %s of type %s", data, type(data)
+            )
+            return None
+
+        if isinstance(data, str):
+            data = [data]
+
+        if isinstance(data, dict):
+            data = data.values()
+
+        if self._sentence_segmenter:
+            text = self._value_as_string(data)
+            sentences: List[TextField] = []
+            sentence_splits = self._sentence_segmenter.split_sentences(text)
+            for sentence in sentence_splits[: self._max_nr_of_sentences]:
+                word_tokens = self._tokenizer.tokenize(
+                    sentence[: self._max_sequence_length]
+                )
+                sentences.append(TextField(word_tokens, self._token_indexers))
+            return ListField(sentences) if sentences else None
+        elif self._as_text_field:
+            text = self._value_as_string(data)[: self._max_sequence_length]
+            word_tokens = self._tokenizer.tokenize(text)
+            return TextField(word_tokens, self._token_indexers)
+
+        # text_fields of different lengths are allowed, they will be sorted by the trainer and padded adequately
+        text_fields = [
+            TextField(
+                self._tokenizer.tokenize(text[: self._max_sequence_length]),
+                self._token_indexers,
+            )
+            for text in map(self._value_as_string, data)
+            if text and text.strip()
+        ]
+        return ListField(text_fields) if text_fields else None
 
     # pylint: disable=arguments-differ
     def text_to_instance(self, **inputs) -> Instance:
