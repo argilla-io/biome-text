@@ -5,11 +5,13 @@ from typing import Iterable, Dict, Union, Optional, List
 
 from allennlp.data import DatasetReader, Instance, Tokenizer, TokenIndexer
 from allennlp.data.fields import TextField, ListField
-from biome.data.sources import DataSource
-from biome.text.dataset_readers.mixins import CacheableMixin
-from dask.dataframe import Series as DaskSeries
+from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+from biome.data.sources import DataSource
+from biome.text.dataset_readers.mixins import CacheableMixin
+from biome.text.dataset_readers.text_transforms import RmSpacesTextTransforms, TextTransforms
+from dask.dataframe import Series as DaskSeries
 
 
 class DataSourceReader(DatasetReader, CacheableMixin):
@@ -37,6 +39,9 @@ class DataSourceReader(DatasetReader, CacheableMixin):
         If you want to truncate the text input to a maximum number of characters
     max_nr_of_sentences
         Use only the first max_nr_of_sentences when segmenting the text into sentences
+    text_transforms
+        By default we apply the base class, which just removes useless, leading and trailing spaces from the text
+        before embedding it in a `TextField`.
     """
 
     # pylint: disable=too-many-arguments
@@ -49,11 +54,12 @@ class DataSourceReader(DatasetReader, CacheableMixin):
         skip_empty_tokens: bool = False,
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
+        text_transforms: TextTransforms = None,
     ) -> None:
         DatasetReader.__init__(self, lazy=True)
 
         self._tokenizer = tokenizer or WordTokenizer()
-        self._token_indexers = token_indexers
+        self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer}
         self._sentence_segmenter = segment_sentences
         if segment_sentences is True:
             self._sentence_segmenter = SpacySentenceSplitter()
@@ -61,6 +67,7 @@ class DataSourceReader(DatasetReader, CacheableMixin):
         self._skip_empty_tokens = skip_empty_tokens
         self._max_sequence_length = max_sequence_length
         self._max_nr_of_sentences = max_nr_of_sentences
+        self._text_transforms = text_transforms or RmSpacesTextTransforms()
 
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -141,7 +148,7 @@ class DataSourceReader(DatasetReader, CacheableMixin):
         return str(value)
 
     def build_textfield(
-            self, data: Union[str, Iterable, dict]
+        self, data: Union[str, Iterable, dict]
     ) -> Optional[Union[ListField, TextField]]:
         """Embeds the record in a TextField or ListField depending on the _as_text_field parameter.
 
@@ -169,7 +176,7 @@ class DataSourceReader(DatasetReader, CacheableMixin):
             data = data.values()
 
         if self._sentence_segmenter:
-            text = self._value_as_string(data)
+            text = self._text_transforms(self._value_as_string(data))
             sentences: List[TextField] = []
             sentence_splits = self._sentence_segmenter.split_sentences(text)
             for sentence in sentence_splits[: self._max_nr_of_sentences]:
@@ -179,7 +186,9 @@ class DataSourceReader(DatasetReader, CacheableMixin):
                 sentences.append(TextField(word_tokens, self._token_indexers))
             return ListField(sentences) if sentences else None
         elif self._as_text_field:
-            text = self._value_as_string(data)[: self._max_sequence_length]
+            text = self._text_transforms(self._value_as_string(data))[
+                : self._max_sequence_length
+            ]
             word_tokens = self._tokenizer.tokenize(text)
             return TextField(word_tokens, self._token_indexers)
 
@@ -189,7 +198,7 @@ class DataSourceReader(DatasetReader, CacheableMixin):
                 self._tokenizer.tokenize(text[: self._max_sequence_length]),
                 self._token_indexers,
             )
-            for text in map(self._value_as_string, data)
+            for text in map(self._text_transforms, map(self._value_as_string, data))
             if text and text.strip()
         ]
         return ListField(text_fields) if text_fields else None
