@@ -113,6 +113,7 @@ def explore(
     batch_size: int = 500,
     prediction_cache_size: int = 0,
     interpret: bool = False,
+    force_delete: bool = True,
     **prediction_metadata,
 ) -> None:
     """
@@ -135,6 +136,8 @@ def explore(
         Size of the prediction cache in number of items
     interpret: bool
         If true, include interpret information for every prediction
+    force_delete: bool
+        If true, force delete elastic index before explore data creation
     prediction_metadata: keyed arguments
         Extra arguments included as prediction metadata
     """
@@ -211,7 +214,7 @@ def explore(
         **merged_metadata,
     )
 
-    __prepare_es_index(client, es_index, doc_type)
+    __prepare_es_index(client, es_index, doc_type, force_delete=force_delete)
     ddf.persist()
     # TODO: The explore APP endpoint returns localhost:8080, running biome ui defaults to
     __LOGGER.info(
@@ -331,7 +334,9 @@ def register_biome_prediction(
     del es_client
 
 
-def __prepare_es_index(es_client: Elasticsearch, index: str, doc_type: str):
+def __prepare_es_index(
+    es_client: Elasticsearch, index: str, doc_type: str, force_delete: bool
+):
     dynamic_templates = [
         {
             data_type: {
@@ -346,7 +351,9 @@ def __prepare_es_index(es_client: Elasticsearch, index: str, doc_type: str):
         for data_type, path_match in [("*", "*.value"), ("string", "*")]
     ]
 
-    es_client.indices.delete(index=index, ignore=[400, 404])
+    if force_delete:
+        es_client.indices.delete(index=index, ignore=[400, 404])
+
     es_client.indices.create(
         index=index,
         body={"mappings": {doc_type: {"dynamic_templates": dynamic_templates}}},
