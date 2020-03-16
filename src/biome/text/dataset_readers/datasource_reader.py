@@ -10,7 +10,7 @@ from allennlp.data.tokenizers import WordTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from biome.data.sources import DataSource
 from biome.text.dataset_readers.mixins import CacheableMixin
-from biome.text.dataset_readers.text_transforms import RmSpacesTextTransforms, TextTransforms
+from biome.text.dataset_readers.text_transforms import RmSpacesTransforms, TextTransforms
 from dask.dataframe import Series as DaskSeries
 
 
@@ -40,8 +40,8 @@ class DataSourceReader(DatasetReader, CacheableMixin):
     max_nr_of_sentences
         Use only the first max_nr_of_sentences when segmenting the text into sentences
     text_transforms
-        By default we apply the base class, which just removes useless, leading and trailing spaces from the text
-        before embedding it in a `TextField`.
+        By default we use the as 'rm_spaces' registered class, which just removes useless, leading and trailing spaces
+        from the text before embedding it in a `TextField`.
     """
 
     # pylint: disable=too-many-arguments
@@ -67,7 +67,7 @@ class DataSourceReader(DatasetReader, CacheableMixin):
         self._skip_empty_tokens = skip_empty_tokens
         self._max_sequence_length = max_sequence_length
         self._max_nr_of_sentences = max_nr_of_sentences
-        self._text_transforms = text_transforms or RmSpacesTextTransforms()
+        self._text_transforms = text_transforms or RmSpacesTransforms()
 
         self._logger = logging.getLogger(self.__class__.__name__)
 

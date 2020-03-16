@@ -1,6 +1,7 @@
 import html
 import re
 from typing import List
+from bs4 import BeautifulSoup
 
 from allennlp.common import Registrable
 
@@ -27,17 +28,20 @@ class TextTransforms(Registrable):
     DEFAULT_RULES = []
 
     def __init__(self, rules: List[str] = None):
-        self._rules = rules or self.DEFAULT_RULES
+        self.rules = rules or self.DEFAULT_RULES
+        for rule in self.rules:
+            if not hasattr(self, rule):
+                raise AttributeError(f"{type(self).__name__} has no rule (method) called '{rule}'")
 
     def __call__(self, text: str) -> str:
-        for rule in self._rules:
+        for rule in self.rules:
             text = getattr(self, rule)(text)
 
         return text
 
 
 @TextTransforms.register("rm_spaces")
-class RmSpacesTextTransforms(TextTransforms):
+class RmSpacesTransforms(TextTransforms):
     DEFAULT_RULES = TextTransforms.DEFAULT_RULES + [
         "strip_spaces",
         "rm_useless_spaces",
@@ -45,7 +49,7 @@ class RmSpacesTextTransforms(TextTransforms):
 
     @staticmethod
     def strip_spaces(text: str) -> str:
-        """Strip leading and trailing spaces"""
+        """Strip leading and trailing spaces/new lines"""
         return text.strip()
 
     @staticmethod
@@ -54,9 +58,14 @@ class RmSpacesTextTransforms(TextTransforms):
         return re.sub(" {2,}", " ", text)
 
 
-@TextTransforms.register("fix_html")
-class FixHtmlTextTransforms(RmSpacesTextTransforms):
-    DEFAULT_RULES = RmSpacesTextTransforms.DEFAULT_RULES + ["fix_html"]
+@TextTransforms.register("html_to_text")
+class Html2TextTransforms(RmSpacesTransforms):
+    DEFAULT_RULES = ["html_to_text", "fix_html"] + RmSpacesTransforms.DEFAULT_RULES
+
+    @staticmethod
+    def html_to_text(text: str) -> str:
+        """Extract text from a html doc with BeautifulSoup4"""
+        return BeautifulSoup(text, "lxml").get_text()
 
     @staticmethod
     def fix_html(text: str) -> str:
