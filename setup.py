@@ -56,7 +56,7 @@ if __name__ == "__main__":
         name=package_name,
         version=about["__version__"],
         description="Biome-text is a light-weight open source Natural Language Processing toolbox"
-        "tool built with AllenNLP",
+        " built with AllenNLP",
         author="Recognai",
         author_email="francisco@recogn.ai",
         url="https://www.recogn.ai/",
@@ -69,6 +69,8 @@ if __name__ == "__main__":
             "smart_open~=1.8",
             "coloredlogs==10.0",
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
+            "beautifulsoup4~=4.8.2",
+            "lxml~=4.5.0",
             "biome-data~=0.2.0",
         ],
         extras_require={
