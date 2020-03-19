@@ -1,22 +1,13 @@
-from typing import Union, List, Type
+from typing import Union, List
 
-import allennlp
 from allennlp.predictors import Predictor
 
-import biome
-from biome.text.dataset_readers import SequenceClassifierReader
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from .pipeline import Pipeline
+from ..models import SequenceClassifier
 
 
-class SequenceClassifier(Pipeline):
-    @classmethod
-    def reader_class(cls) -> Type[DataSourceReader]:
-        return SequenceClassifierReader
-
-    @classmethod
-    def model_class(cls) -> Type[allennlp.models.Model]:
-        return biome.text.models.SequenceClassifier
+class SequenceClassifierPipeline(Pipeline[SequenceClassifier, DataSourceReader]):
 
     # pylint: disable=arguments-differ
     def predict(self, features: Union[dict, str, List[str]]):
@@ -32,7 +23,7 @@ class SequenceClassifier(Pipeline):
             The prediction result
 
         """
-        return super(SequenceClassifier, self).predict(tokens=features)
+        return super(SequenceClassifierPipeline, self).predict(tokens=features)
 
 
-Predictor.register("sequence_classifier")(SequenceClassifier)
+Predictor.register("sequence_classifier")(SequenceClassifierPipeline)

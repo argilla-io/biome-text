@@ -1,22 +1,15 @@
-from typing import Union, List, Type
+from typing import Union, List
 
-import allennlp
 from allennlp.predictors import Predictor
 
-import biome
 from biome.text.dataset_readers import SequencePairClassifierReader
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from .pipeline import Pipeline
+from ..models import SequencePairClassifier
 
 
-class SequencePairClassifier(Pipeline):
-    @classmethod
-    def reader_class(cls) -> Type[DataSourceReader]:
-        return SequencePairClassifierReader
-
-    @classmethod
-    def model_class(cls) -> Type[allennlp.models.Model]:
-        return biome.text.models.SequencePairClassifier
+class SequencePairClassifierPipeline(
+    Pipeline[SequencePairClassifier, SequencePairClassifierReader]
+):
 
     # pylint: disable=arguments-differ
     def predict(
@@ -26,5 +19,7 @@ class SequencePairClassifier(Pipeline):
         return self.model.forward_on_instance(instance)
 
 
-Predictor.register("sequence_pair_classifier")(SequencePairClassifier)
-Predictor.register(SequencePairClassifier.__name__)(SequencePairClassifier)
+Predictor.register("sequence_pair_classifier")(SequencePairClassifierPipeline)
+Predictor.register(SequencePairClassifierPipeline.__name__)(
+    SequencePairClassifierPipeline
+)
