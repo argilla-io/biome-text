@@ -31,11 +31,11 @@ def test_html_to_text():
     <html>
         <body>
             <p>    Hello @ViewBag.PersonName,</p>
-            <p>This is a message &amp; text  </p>
+            <p>This is a<br>message &amp;&nbsp;&#160;&#xa0;text<br>   </p>
         </body>
     </html>
     """
-    assert text_transforms(html_doc) == "Hello @ViewBag.PersonName,\nThis is a message & text"
+    assert text_transforms(html_doc) == "Hello @ViewBag.PersonName,\nThis is a\nmessage & text"
 
 
 

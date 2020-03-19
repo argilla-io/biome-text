@@ -1,4 +1,3 @@
-import html
 import re
 from typing import List
 from bs4 import BeautifulSoup
@@ -31,7 +30,9 @@ class TextTransforms(Registrable):
         self.rules = rules or self.DEFAULT_RULES
         for rule in self.rules:
             if not hasattr(self, rule):
-                raise AttributeError(f"{type(self).__name__} has no rule (method) called '{rule}'")
+                raise AttributeError(
+                    f"{type(self).__name__} has no rule (method) called '{rule}'"
+                )
 
     def __call__(self, text: str) -> str:
         for rule in self.rules:
@@ -60,32 +61,27 @@ class RmSpacesTransforms(TextTransforms):
 
 @TextTransforms.register("html_to_text")
 class Html2TextTransforms(RmSpacesTransforms):
-    DEFAULT_RULES = ["html_to_text", "fix_html"] + RmSpacesTransforms.DEFAULT_RULES
+    DEFAULT_RULES = ["fix_html", "html_to_text"] + RmSpacesTransforms.DEFAULT_RULES
+
+    @staticmethod
+    def fix_html(text: str) -> str:
+        """list of replacements in html code.
+        I leave a link to the fastai version here as a reference:
+        https://docs.fast.ai/text.transform.html#fix_html
+        """
+        text = (
+            # non breakable space -> space
+            text.replace("&nbsp;", " ")
+            .replace("&#160;", " ")
+            .replace("&#xa0;", " ")
+            # <br> html single line breaks -> unicode line breaks
+            .replace("<br>", "\n")
+        )
+
+        return text
 
     @staticmethod
     def html_to_text(text: str) -> str:
         """Extract text from a html doc with BeautifulSoup4"""
         return BeautifulSoup(text, "lxml").get_text()
 
-    @staticmethod
-    def fix_html(text: str) -> str:
-        """List of replacements from html strings in `text`.
-        Copied from https://docs.fast.ai/text.transform.html#fix_html"""
-        re1 = re.compile(r"  +")
-        text = (
-            text.replace("#39;", "'")
-            .replace("amp;", "&")
-            .replace("#146;", "'")
-            .replace("nbsp;", " ")
-            .replace("#36;", "$")
-            .replace("\\n", "\n")
-            .replace("quot;", "'")
-            .replace("<br />", "\n")
-            .replace('\\"', '"')
-            .replace("<unk>", "xxunk")
-            .replace(" @.@ ", ".")
-            .replace(" @-@ ", "-")
-            .replace(" @,@ ", ",")
-            .replace("\\", " \\ ")
-        )
-        return re1.sub(" ", html.unescape(text))
