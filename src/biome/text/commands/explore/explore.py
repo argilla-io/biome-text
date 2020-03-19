@@ -337,6 +337,7 @@ def register_biome_prediction(
 def __prepare_es_index(
     es_client: Elasticsearch, index: str, doc_type: str, force_delete: bool
 ):
+    # TODO: Define wide index template
     dynamic_templates = [
         {
             data_type: {
