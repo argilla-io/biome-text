@@ -15,7 +15,7 @@ from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
-from biome.text.pipelines.sequence_classifier import SequenceClassifier
+from biome.text.pipelines.sequence_classifier import SequenceClassifierPipeline
 from tests import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
 
@@ -106,7 +106,7 @@ def trainer_yaml(tmpdir):
 def test_segment_sentences(
     training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory
 ):
-    pipeline = SequenceClassifier.from_config(pipeline_yaml)
+    pipeline = SequenceClassifierPipeline.from_config(pipeline_yaml)
 
     pipeline.learn(
         trainer=trainer_yaml,
@@ -138,7 +138,7 @@ class SequenceClassifierTest(DaskSupportTest):
 
     def check_train(self):
         classifier = Pipeline.from_config(self.model_path)
-        self.assertIsInstance(classifier, SequenceClassifier)
+        self.assertIsInstance(classifier, SequenceClassifierPipeline)
 
         # learn without validation
         classifier.learn(
@@ -196,7 +196,7 @@ class SequenceClassifierTest(DaskSupportTest):
         process.terminate()
 
     def check_predictor(self):
-        predictor = SequenceClassifier.load(self.model_archive)
+        predictor = SequenceClassifierPipeline.load(self.model_archive)
         inputs = [
             {"tokens": "Herbert Brandes-Siller", "label": "duplicate"},
             {

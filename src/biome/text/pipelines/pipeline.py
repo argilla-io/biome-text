@@ -3,13 +3,14 @@ import logging
 import os
 import pickle
 import re
+import types
 import warnings
 from copy import deepcopy
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from functools import lru_cache
 from tempfile import mktemp
-from typing import cast, Type, Optional, List, Dict, Tuple, Any
+from typing import cast, Type, Optional, List, Dict, Tuple, Any, Generic, TypeVar
 
 import allennlp
 import numpy
@@ -20,7 +21,7 @@ from allennlp.common.util import sanitize
 from allennlp.data import DatasetReader, Instance
 from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
-from allennlp.models import Archive, Model
+from allennlp.models import Archive
 from allennlp.predictors import Predictor
 from overrides import overrides
 
@@ -46,7 +47,11 @@ class _HashDict(dict):
         return pickle.dumps(self).__hash__()
 
 
-class Pipeline(Predictor):
+Architecture = TypeVar("Architecture", bound=allennlp.models.Model)
+Reader = TypeVar("Reader", bound=DataSourceReader)
+
+
+class Pipeline(Generic[Architecture, Reader], Predictor):
     """
     This class combine the different allennlp components that make possible a ``Pipeline`,
     understanding as a model, not only the definition of the neural network architecture,
@@ -67,8 +72,9 @@ class Pipeline(Predictor):
 
     _LOGGER = logging.getLogger(__name__)
 
-    # Disable allennlp logging
+    # Disable logging
     logging.getLogger("elasticsearch").setLevel(logging.WARNING)
+    logging.getLogger("allennlp").setLevel(logging.WARNING)
 
     PIPELINE_FIELD = "pipeline"
     ARCHITECTURE_FIELD = "architecture"
@@ -76,7 +82,7 @@ class Pipeline(Predictor):
 
     PREDICTION_FILE_NAME = "predictions.json"
 
-    def __init__(self, model: allennlp.models.model.Model, reader: DataSourceReader):
+    def __init__(self, model: Architecture, reader: Reader):
         super(Pipeline, self).__init__(model, reader)
         self.__config = {}
         self.__binary_path = None
@@ -116,7 +122,7 @@ class Pipeline(Predictor):
         self.__prediction_logger = predictions_logger
 
     @classmethod
-    def reader_class(cls) -> Type[DataSourceReader]:
+    def reader_class(cls) -> Type[Reader]:
         """
         Must be implemented by subclasses
 
@@ -124,10 +130,15 @@ class Pipeline(Predictor):
         -------
             The class of ``DataSourceReader`` used in the model instance
         """
-        raise NotImplementedError
+        _, reader = cls.__resolve_generics()
+        return reader
 
     @classmethod
-    def model_class(cls) -> Type[allennlp.models.Model]:
+    def __resolve_generics(cls) -> Tuple[Type[Architecture], Type[Reader]]:
+        return getattr(cls, "__orig_bases__")[0].__args__
+
+    @classmethod
+    def model_class(cls) -> Type[Architecture]:
         """
         Must be implemented by subclasses
 
@@ -135,7 +146,8 @@ class Pipeline(Predictor):
         -------
             The class of ``allennlp.models.Model`` used in the model instance
         """
-        raise NotImplementedError
+        model, _ = cls.__resolve_generics()
+        return model
 
     @property
     def reader(self) -> DataSourceReader:
@@ -229,7 +241,7 @@ class Pipeline(Predictor):
             #  PR for that. See (https://github.com/allenai/allennlp/pull/3344)
             #  So, we register the required components by allennlp before load them
             Predictor.register(name, exist_ok=True)(cls)
-            Model.register(name, exist_ok=True)(cls.model_class())
+            allennlp.models.Model.register(name, exist_ok=True)(cls.model_class())
             DatasetReader.register(name, exist_ok=True)(cls.reader_class())
 
         archive = load_archive(binary_path, **kwargs)
@@ -430,9 +442,8 @@ class Pipeline(Predictor):
             data = data["topology"]
 
         pipeline_class = cls.__get_pipeline_class(data)
-        name = cls.__get_pipeline_name_from_config(data) or cls.__registrable_name(
-            pipeline_class
-        )
+        name = cls.__get_pipeline_name_from_config(data)
+
         # Creating an empty pipeline
         model = pipeline_class(
             model=None,
@@ -444,8 +455,6 @@ class Pipeline(Predictor):
             ),
         )
         # Include pipeline configuration
-        # TODO This configuration will fail if the reader and model are registered with other names than the calculated
-        #  registrable_name
         config = cls.yaml_to_dict(path)
         config[cls.PIPELINE_FIELD] = Pipeline.__get_reader_params(data, name)
         config[cls.ARCHITECTURE_FIELD] = Pipeline.__get_model_params(data, name)
