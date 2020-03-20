@@ -3,12 +3,11 @@ import logging
 import os
 import pickle
 import re
-import types
 import warnings
 from copy import deepcopy
+from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from functools import lru_cache
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any, Generic, TypeVar
 
@@ -18,12 +17,17 @@ import yaml
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import sanitize
-from allennlp.data import DatasetReader, Instance
+from allennlp.data import DatasetReader, Instance, Vocabulary
 from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
+from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.models import Archive
+from allennlp.modules import Embedding
+from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.predictors import Predictor
 from overrides import overrides
+from torch.nn import LSTM
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from biome.text.models import load_archive
@@ -181,7 +185,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         -------
             The fully qualified pipeline class name
         """
-        return f"{self.__module__}.{self.__class__.__name__}"
+        return f"{self.__module__}.{self.__class__.__name__}::{self.__binary_path}"
 
     @property
     def config(self) -> dict:
@@ -421,6 +425,37 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         return config
 
     @classmethod
+    def empty_pipeline(cls, labels: List[str]) -> "Pipeline":
+        """Creates a dummy pipeline with labels for model layers"""
+        vocab = Vocabulary()
+        vocab.add_tokens_to_namespace(tokens=labels, namespace="labels")
+
+        return cls(
+            model=cls.model_class()(
+                text_field_embedder=BasicTextFieldEmbedder(
+                    token_embedders={
+                        "tokens": Embedding.from_params(
+                            vocab=vocab,
+                            params=Params({"embedding_dim": 64, "trainable": True}),
+                        )
+                    }
+                ),
+                seq2vec_encoder=PytorchSeq2VecWrapper(
+                    LSTM(
+                        input_size=64,
+                        hidden_size=32,
+                        bidirectional=True,
+                        batch_first=True,
+                    )
+                ),
+                vocab=vocab,
+            ),
+            reader=cls.reader_class()(
+                token_indexers={"tokens": SingleIdTokenIndexer()}
+            ),
+        )
+
+    @classmethod
     def from_config(cls, path: str) -> "Pipeline":
         """
         Read a ``Pipeline`` subclass instance by reading a configuration file
@@ -459,6 +494,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         config[cls.PIPELINE_FIELD] = Pipeline.__get_reader_params(data, name)
         config[cls.ARCHITECTURE_FIELD] = Pipeline.__get_model_params(data, name)
         model._update_config(config)
+
         return model
 
     @classmethod
@@ -592,3 +628,10 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             self._LOGGER.info(
                 "Cache statistics: %s", self._predict_hashable_json.cache_info()
             )
+
+    def extend_labels(self, *labels: List[str]) -> None:
+        """Allow extend prediction labels to pipeline"""
+        if hasattr(self.model, "extend_labels"):
+            self.model.extend_labels(labels)
+        else:
+            warnings.warn(f"Model {self.model} is not updatable")
