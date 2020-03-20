@@ -7,7 +7,9 @@ from ..dataset_readers import SequenceClassifierReader
 from ..models import SequenceClassifier
 
 
-class SequenceClassifierPipeline(Pipeline[SequenceClassifier, SequenceClassifierReader]):
+class SequenceClassifierPipeline(
+    Pipeline[SequenceClassifier, SequenceClassifierReader]
+):
 
     # pylint: disable=arguments-differ
     def predict(self, features: Union[dict, str, List[str]]):
