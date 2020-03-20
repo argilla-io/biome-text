@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import torch
 from allennlp.data import Vocabulary
@@ -254,3 +254,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         self, *inputs
     ) -> Dict[str, torch.Tensor]:  # pylint: disable=arguments-differ
         raise NotImplementedError
+
+    def extend_labels(self, labels: List[str]):
+        self.vocab.add_tokens_to_namespace(labels, namespace="labels")
+        self._output_layer = Linear(self._classifier_input_dim, self.num_classes)
