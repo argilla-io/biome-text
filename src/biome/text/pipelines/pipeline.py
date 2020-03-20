@@ -442,9 +442,8 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             data = data["topology"]
 
         pipeline_class = cls.__get_pipeline_class(data)
-        name = cls.__get_pipeline_name_from_config(data) or cls.__registrable_name(
-            pipeline_class
-        )
+        name = cls.__get_pipeline_name_from_config(data)
+
         # Creating an empty pipeline
         model = pipeline_class(
             model=None,
@@ -456,8 +455,6 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             ),
         )
         # Include pipeline configuration
-        # TODO This configuration will fail if the reader and model are registered with other names than the calculated
-        #  registrable_name
         config = cls.yaml_to_dict(path)
         config[cls.PIPELINE_FIELD] = Pipeline.__get_reader_params(data, name)
         config[cls.ARCHITECTURE_FIELD] = Pipeline.__get_model_params(data, name)
