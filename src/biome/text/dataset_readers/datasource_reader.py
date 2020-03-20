@@ -10,7 +10,10 @@ from allennlp.data.tokenizers import WordTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from biome.data.sources import DataSource
 from biome.text.dataset_readers.mixins import CacheableMixin
-from biome.text.dataset_readers.text_transforms import RmSpacesTransforms, TextTransforms
+from biome.text.dataset_readers.text_transforms import (
+    RmSpacesTransforms,
+    TextTransforms,
+)
 from dask.dataframe import Series as DaskSeries
 
 
@@ -59,7 +62,7 @@ class DataSourceReader(DatasetReader, CacheableMixin):
         DatasetReader.__init__(self, lazy=True)
 
         self._tokenizer = tokenizer or WordTokenizer()
-        self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer}
+        self._token_indexers = token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._sentence_segmenter = segment_sentences
         if segment_sentences is True:
             self._sentence_segmenter = SpacySentenceSplitter()
