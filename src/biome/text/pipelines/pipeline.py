@@ -21,7 +21,7 @@ from allennlp.data import DatasetReader, Instance, Vocabulary
 from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
 from allennlp.data.token_indexers import SingleIdTokenIndexer
-from allennlp.models import Archive
+from allennlp.models import Archive, Model
 from allennlp.modules import Embedding
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
@@ -126,6 +126,10 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         self.__prediction_logger = predictions_logger
 
     @classmethod
+    def by_name(cls: Type["Pipeline"], name: str) -> Type["Pipeline"]:
+        return cast(Type[Pipeline], Predictor.by_name(name))
+
+    @classmethod
     def reader_class(cls) -> Type[Reader]:
         """
         Must be implemented by subclasses
@@ -185,7 +189,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         -------
             The fully qualified pipeline class name
         """
-        return f"{self.__module__}.{self.__class__.__name__}::{self.__binary_path}"
+        return f"{self.__module__}.{self.__class__.__name__}::{self.__binary_path or 'empty'}"
 
     @property
     def config(self) -> dict:
@@ -424,12 +428,26 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             config = yaml.safe_load(yaml_content)
         return config
 
+    @staticmethod
+    def _empty_vocab(labels: List[str] = None) -> Vocabulary:
+        """
+        This method generate a mock vocabulary for the 3 common allennlp namespaces.
+        If default model use another tokens indexer key name, the pipeline model won't be loaded
+        from configuration
+        """
+        labels = labels or ["true", "false"]
+        vocab = Vocabulary()
+
+        vocab.add_tokens_to_namespace(labels, namespace="labels")
+        for namespace in ["tokens", "tokens_characters"]:
+            vocab.add_token_to_namespace("t", namespace=namespace)
+
+        return vocab
+
     @classmethod
     def empty_pipeline(cls, labels: List[str]) -> "Pipeline":
         """Creates a dummy pipeline with labels for model layers"""
-        vocab = Vocabulary()
-        vocab.add_tokens_to_namespace(tokens=labels, namespace="labels")
-
+        vocab = cls._empty_vocab(labels)
         return cls(
             model=cls.model_class()(
                 text_field_embedder=BasicTextFieldEmbedder(
@@ -456,7 +474,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         )
 
     @classmethod
-    def from_config(cls, path: str) -> "Pipeline":
+    def from_config(cls, path: str, labels: List[str] = None) -> "Pipeline":
         """
         Read a ``Pipeline`` subclass instance by reading a configuration file
 
@@ -464,6 +482,8 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         ----------
         path
             The configuration file path
+        labels:
+            Optional. If passed, set a list of output labels for empty pipeline model
 
         Returns
         -------
@@ -479,9 +499,17 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         pipeline_class = cls.__get_pipeline_class(data)
         name = cls.__get_pipeline_name_from_config(data)
 
+        try:
+            model = Model.from_params(
+                params=Params(Pipeline.__get_model_params(data, name)),
+                vocab=cls._empty_vocab(labels),
+            )
+        except allennlp.common.checks.ConfigurationError:
+            model = None
+
         # Creating an empty pipeline
         model = pipeline_class(
-            model=None,
+            model=model,
             reader=cast(
                 DataSourceReader,
                 DatasetReader.from_params(
@@ -629,7 +657,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
                 "Cache statistics: %s", self._predict_hashable_json.cache_info()
             )
 
-    def extend_labels(self, *labels: List[str]) -> None:
+    def extend_labels(self, labels: List[str]) -> None:
         """Allow extend prediction labels to pipeline"""
         if not isinstance(self.model, SequenceClassifierBase):
             warnings.warn(f"Model {self.model} is not updatable")
