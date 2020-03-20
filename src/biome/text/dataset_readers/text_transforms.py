@@ -84,4 +84,3 @@ class Html2TextTransforms(RmSpacesTransforms):
     def html_to_text(text: str) -> str:
         """Extract text from a html doc with BeautifulSoup4"""
         return BeautifulSoup(text, "lxml").get_text()
-

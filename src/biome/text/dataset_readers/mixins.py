@@ -17,4 +17,3 @@ class CacheableMixin:
     def set(key, data):
         """ Set an cache entry """
         CacheableMixin._cache[key] = data
-
