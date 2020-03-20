@@ -30,7 +30,7 @@ from overrides import overrides
 from torch.nn import LSTM
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.models import load_archive
+from biome.text.models import load_archive, SequenceClassifierBase
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
 
@@ -92,9 +92,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         self.__binary_path = None
         self.__prediction_logger = None
 
-    def init_prediction_logger(
-        self, output_dir: str, max_bytes: int = 20000000, backup_count: int = 20
-    ):
+    def init_prediction_logger(self, output_dir: str, max_bytes: int = 20000000, backup_count: int = 20):
         """Initialize the prediction logger.
 
         If initialized we will log all predictions to a file called *predictions.json* in the `output_folder`.
@@ -116,9 +114,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         # This flag avoids logging messages to be propagated to the parent loggers
         predictions_logger.propagate = False
         file_handler = RotatingFileHandler(
-            os.path.join(output_dir, self.PREDICTION_FILE_NAME),
-            maxBytes=max_bytes,
-            backupCount=backup_count,
+            os.path.join(output_dir, self.PREDICTION_FILE_NAME), maxBytes=max_bytes, backupCount=backup_count
         )
         file_handler.setLevel(logging.INFO)
         predictions_logger.addHandler(file_handler)
@@ -264,9 +260,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         return self.reader.text_to_instance(**json_dict)
 
     @overrides
-    def predictions_to_labeled_instances(
-        self, instance: Instance, outputs: Dict[str, numpy.ndarray]
-    ) -> List[Instance]:
+    def predictions_to_labeled_instances(self, instance: Instance, outputs: Dict[str, numpy.ndarray]) -> List[Instance]:
 
         new_instance = deepcopy(instance)
         label = numpy.argmax(outputs["logits"])
@@ -275,9 +269,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         return [new_instance]
 
     @overrides
-    def get_gradients(
-        self, instances: List[Instance]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    def get_gradients(self, instances: List[Instance]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """
         Gets the gradients of the loss with respect to the model inputs.
 
@@ -355,9 +347,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         output = self._predict_hashable_json(hashable_dict)
 
         if self.__prediction_logger:
-            self.__prediction_logger.info(
-                json.dumps(dict(inputs=inputs, annotation=output))
-            )
+            self.__prediction_logger.info(json.dumps(dict(inputs=inputs, annotation=output)))
 
         return output
 
@@ -391,9 +381,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             Save up to max_size most recent items.
         """
         if hasattr(self._predict_hashable_json, "cache_info"):
-            warnings.warn(
-                "Prediction cache already initiated!", category=RuntimeWarning
-            )
+            warnings.warn("Prediction cache already initiated!", category=RuntimeWarning)
             return
 
         decorated_func = lru_cache(maxsize=max_size)(self._predict_hashable_json)
@@ -435,24 +423,16 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
                 text_field_embedder=BasicTextFieldEmbedder(
                     token_embedders={
                         "tokens": Embedding.from_params(
-                            vocab=vocab,
-                            params=Params({"embedding_dim": 64, "trainable": True}),
+                            vocab=vocab, params=Params({"embedding_dim": 64, "trainable": True})
                         )
                     }
                 ),
                 seq2vec_encoder=PytorchSeq2VecWrapper(
-                    LSTM(
-                        input_size=64,
-                        hidden_size=32,
-                        bidirectional=True,
-                        batch_first=True,
-                    )
+                    LSTM(input_size=64, hidden_size=32, bidirectional=True, batch_first=True)
                 ),
                 vocab=vocab,
             ),
-            reader=cls.reader_class()(
-                token_indexers={"tokens": SingleIdTokenIndexer()}
-            ),
+            reader=cls.reader_class()(token_indexers={"tokens": SingleIdTokenIndexer()}),
         )
 
     @classmethod
@@ -482,12 +462,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         # Creating an empty pipeline
         model = pipeline_class(
             model=None,
-            reader=cast(
-                DataSourceReader,
-                DatasetReader.from_params(
-                    Params(Pipeline.__get_reader_params(data, name))
-                ),
-            ),
+            reader=cast(DataSourceReader, DatasetReader.from_params(Params(Pipeline.__get_reader_params(data, name)))),
         )
         # Include pipeline configuration
         config = cls.yaml_to_dict(path)
@@ -535,9 +510,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
 
     @classmethod
     def __get_pipeline_name_from_config(cls, config: Dict[str, Any]):
-        pipeline_type = config.get(
-            cls.TYPE_FIELD, cls.__get_model_params(config).get(cls.TYPE_FIELD)
-        )
+        pipeline_type = config.get(cls.TYPE_FIELD, cls.__get_model_params(config).get(cls.TYPE_FIELD))
         if not pipeline_type:
             raise ConfigurationError(
                 "Cannot load the pipeline: No pipeline type found in file."
@@ -618,20 +591,24 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         -------
 
         """
-        raise ConfigurationError(
-            "Cannot load sequence classifier without pipeline configuration"
-        )
+        raise ConfigurationError("Cannot load sequence classifier without pipeline configuration")
 
     def __del__(self):
         if hasattr(self._predict_hashable_json, "cache_info"):
             # pylint: disable=no-member
-            self._LOGGER.info(
-                "Cache statistics: %s", self._predict_hashable_json.cache_info()
-            )
+            self._LOGGER.info("Cache statistics: %s", self._predict_hashable_json.cache_info())
 
     def extend_labels(self, *labels: List[str]) -> None:
         """Allow extend prediction labels to pipeline"""
-        if hasattr(self.model, "extend_labels"):
-            self.model.extend_labels(labels)
-        else:
+        if not isinstance(self.model, SequenceClassifierBase):
             warnings.warn(f"Model {self.model} is not updatable")
+
+        else:
+            cast(SequenceClassifierBase, self.model).extend_labels(*labels)
+
+    def get_output_labels(self) -> List[str]:
+        """Output model labels"""
+        if not isinstance(self.model, SequenceClassifierBase):
+            warnings.warn(f"get_output_labels not suported for model {self.model}")
+            return []
+        return cast(SequenceClassifierBase, self.model).output_classes
