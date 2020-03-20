@@ -3,7 +3,13 @@ from typing import Dict, Optional, List
 import torch
 from allennlp.data import Vocabulary
 from allennlp.models.model import Model
-from allennlp.modules import TextFieldEmbedder, Seq2VecEncoder, Seq2SeqEncoder, FeedForward, TimeDistributed
+from allennlp.modules import (
+    TextFieldEmbedder,
+    Seq2VecEncoder,
+    Seq2SeqEncoder,
+    FeedForward,
+    TimeDistributed,
+)
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy
@@ -83,7 +89,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         # dropout for encoded vector
         self._dropout = Dropout(dropout) if dropout else None
         # loss function for training
-        self._loss = torch.nn.CrossEntropyLoss(weight=self._get_loss_weights(loss_weights))
+        self._loss = torch.nn.CrossEntropyLoss(
+            weight=self._get_loss_weights(loss_weights)
+        )
         # default value for wrapping dimensions for masking = 0 (single field)
         self._num_wrapping_dims = 0
 
@@ -91,14 +99,18 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
             # 1. setup num_wrapping_dims to 1
             self._num_wrapping_dims = 1
             # 2. Wrap the seq2vec and seq2seq encoders in TimeDistributed to account for the extra dimension num_fields
-            self._seq2seq_encoder = TimeDistributed(seq2seq_encoder) if seq2seq_encoder else None
+            self._seq2seq_encoder = (
+                TimeDistributed(seq2seq_encoder) if seq2seq_encoder else None
+            )
             self._seq2vec_encoder = TimeDistributed(seq2vec_encoder)
             # 3. (Optionally) setup multifield_seq2seq_encoder
             self._multifield_seq2seq_encoder = multifield_seq2seq_encoder
             # 4. setup multifield_seq2vec_encoder
             self._multifield_seq2vec_encoder = multifield_seq2vec_encoder
             # doc vector dropout
-            self._multifield_dropout = Dropout(multifield_dropout) if multifield_dropout else None
+            self._multifield_dropout = (
+                Dropout(multifield_dropout) if multifield_dropout else None
+            )
         else:
             # token sequence level encoders
             self._seq2seq_encoder = seq2seq_encoder
@@ -113,7 +125,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         if self._feed_forward:
             self._classifier_input_dim = self._feed_forward.get_output_dim()
         elif self._multifield_seq2vec_encoder:
-            self._classifier_input_dim = self._multifield_seq2vec_encoder.get_output_dim()
+            self._classifier_input_dim = (
+                self._multifield_seq2vec_encoder.get_output_dim()
+            )
         else:
             self._classifier_input_dim = self._seq2vec_encoder.get_output_dim()
 
@@ -123,7 +137,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
         self._initializer(self)
 
-    def _get_loss_weights(self, loss_weights: Dict[str, float] = None) -> Optional[torch.Tensor]:
+    def _get_loss_weights(
+        self, loss_weights: Dict[str, float] = None
+    ) -> Optional[torch.Tensor]:
         """Helper function to get the weights for the class labels in the CrossEntropyLoss function"""
         if loss_weights is None:
             return None
@@ -135,10 +151,14 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
             try:
                 weights.append(loss_weights.pop(label))
             except KeyError as error:
-                raise KeyError(f"Could not find {label} in the specified loss_weights") from error
+                raise KeyError(
+                    f"Could not find {label} in the specified loss_weights"
+                ) from error
 
         if loss_weights:
-            raise ValueError(f"Could not find the labels {list(loss_weights.keys())} in the vocabulary")
+            raise ValueError(
+                f"Could not find the labels {list(loss_weights.keys())} in the vocabulary"
+            )
 
         return torch.tensor(weights)
 
@@ -173,9 +193,13 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         -------
         A ``Tensor``
         """
-        mask = get_text_field_mask(tokens, num_wrapping_dims=self._num_wrapping_dims).float()
+        mask = get_text_field_mask(
+            tokens, num_wrapping_dims=self._num_wrapping_dims
+        ).float()
 
-        embedded_text = self._text_field_embedder(tokens, mask=mask, num_wrapping_dims=self._num_wrapping_dims)
+        embedded_text = self._text_field_embedder(
+            tokens, mask=mask, num_wrapping_dims=self._num_wrapping_dims
+        )
 
         # seq2seq encoding for each token in field
         if self._seq2seq_encoder:
@@ -195,10 +219,14 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
             # seq2seq encoding for each field vector
             if self._multifield_seq2seq_encoder:
-                encoded_text = self._multifield_seq2seq_encoder(encoded_text, mask=multifield_mask)
+                encoded_text = self._multifield_seq2seq_encoder(
+                    encoded_text, mask=multifield_mask
+                )
 
             # seq2vec encoding for field --> record vector
-            encoded_text = self._multifield_seq2vec_encoder(encoded_text, mask=multifield_mask)
+            encoded_text = self._multifield_seq2vec_encoder(
+                encoded_text, mask=multifield_mask
+            )
 
             if self._multifield_dropout:
                 encoded_text = self._multifield_dropout(encoded_text)
@@ -208,7 +236,9 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
         return encoded_text
 
-    def output_layer(self, encoded_text: torch.Tensor, label) -> Dict[str, torch.Tensor]:
+    def output_layer(
+        self, encoded_text: torch.Tensor, label
+    ) -> Dict[str, torch.Tensor]:
         """
         Returns
         -------
@@ -235,5 +265,7 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
         return output_dict
 
     @overrides
-    def forward(self, *inputs) -> Dict[str, torch.Tensor]:  # pylint: disable=arguments-differ
+    def forward(
+        self, *inputs
+    ) -> Dict[str, torch.Tensor]:  # pylint: disable=arguments-differ
         raise NotImplementedError
