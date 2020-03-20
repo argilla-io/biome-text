@@ -189,7 +189,12 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         -------
             The fully qualified pipeline class name
         """
-        return f"{self.__module__}.{self.__class__.__name__}::{self.__binary_path or 'empty'}"
+        model_name = (
+            os.path.basename(os.path.dirname(self.__binary_path))
+            if self.__binary_path
+            else "empty"
+        )
+        return f"{self.__module__}.{self.__class__.__name__}::{model_name}"
 
     @property
     def config(self) -> dict:

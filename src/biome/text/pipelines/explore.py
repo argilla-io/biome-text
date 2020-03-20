@@ -95,6 +95,7 @@ def pipeline_predictions(
         "Data annotated successfully. You can explore your data here: %s",
         f"{constants.EXPLORE_APP_ENDPOINT}/projects/default/explore/{es_config.es_index}",
     )
+
     return ddf
 
 
