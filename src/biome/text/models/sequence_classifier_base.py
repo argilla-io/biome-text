@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import torch
 from allennlp.data import Vocabulary
@@ -146,8 +146,8 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
         loss_weights = loss_weights.copy()  # So the popping does not change the input
         weights = []
-        for i in range(self.vocab.get_vocab_size(namespace="labels")):
-            label = self.vocab.get_token_from_index(i, namespace="labels")
+        for i in range(self.num_classes):
+            label = self.label_for_index(i)
             try:
                 weights.append(loss_weights.pop(label))
             except KeyError as error:
@@ -164,7 +164,22 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
 
     @property
     def num_classes(self):
-        return self.vocab.get_vocab_size(namespace="labels")
+        """Number of output classes"""
+        return len(self.output_classes)
+
+    @property
+    def output_classes(self) -> List[str]:
+        """The output token classes"""
+        return [k for k in self.vocab.get_token_to_index_vocabulary(namespace="labels")]
+
+    def label_for_index(self, idx) -> str:
+        """Token label for label index"""
+        return self.vocab.get_token_from_index(idx, namespace="labels")
+
+    def extend_labels(self, labels: List[str]):
+        """Extends the number of output labels"""
+        self.vocab.add_tokens_to_namespace(labels, namespace="labels")
+        self._output_layer = Linear(self._classifier_input_dim, self.num_classes)
 
     def forward_tokens(self, tokens: Dict[str, torch.Tensor]) -> torch.Tensor:
         """Apply the whole forward chain but last layer (output)

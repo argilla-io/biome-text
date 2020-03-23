@@ -1,5 +1,9 @@
 from allennlp.common import Params
-from biome.text.dataset_readers.text_transforms import TextTransforms, RmSpacesTransforms, Html2TextTransforms
+from biome.text.dataset_readers.text_transforms import (
+    TextTransforms,
+    RmSpacesTransforms,
+    Html2TextTransforms,
+)
 import pytest
 
 
@@ -35,8 +39,7 @@ def test_html_to_text():
         </body>
     </html>
     """
-    assert text_transforms(html_doc) == "Hello @ViewBag.PersonName,\nThis is a\nmessage & text"
-
-
-
-
+    assert (
+        text_transforms(html_doc)
+        == "Hello @ViewBag.PersonName,\nThis is a\nmessage & text"
+    )

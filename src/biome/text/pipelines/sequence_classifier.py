@@ -2,12 +2,14 @@ from typing import Union, List
 
 from allennlp.predictors import Predictor
 
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
 from .pipeline import Pipeline
+from ..dataset_readers import SequenceClassifierReader
 from ..models import SequenceClassifier
 
 
-class SequenceClassifierPipeline(Pipeline[SequenceClassifier, DataSourceReader]):
+class SequenceClassifierPipeline(
+    Pipeline[SequenceClassifier, SequenceClassifierReader]
+):
 
     # pylint: disable=arguments-differ
     def predict(self, features: Union[dict, str, List[str]]):

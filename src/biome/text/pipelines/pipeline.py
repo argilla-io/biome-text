@@ -3,12 +3,11 @@ import logging
 import os
 import pickle
 import re
-import types
 import warnings
 from copy import deepcopy
+from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from functools import lru_cache
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any, Generic, TypeVar
 
@@ -18,15 +17,20 @@ import yaml
 from allennlp.common import JsonDict, Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import sanitize
-from allennlp.data import DatasetReader, Instance
+from allennlp.data import DatasetReader, Instance, Vocabulary
 from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
-from allennlp.models import Archive
+from allennlp.data.token_indexers import SingleIdTokenIndexer
+from allennlp.models import Archive, Model
+from allennlp.modules import Embedding
+from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.predictors import Predictor
 from overrides import overrides
+from torch.nn import LSTM
 
 from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.models import load_archive
+from biome.text.models import load_archive, SequenceClassifierBase
 from biome.text.pipelines.learn.allennlp import learn
 from biome.text.predictors.utils import get_predictor_from_archive
 
@@ -122,6 +126,10 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         self.__prediction_logger = predictions_logger
 
     @classmethod
+    def by_name(cls: Type["Pipeline"], name: str) -> Type["Pipeline"]:
+        return cast(Type[Pipeline], Predictor.by_name(name))
+
+    @classmethod
     def reader_class(cls) -> Type[Reader]:
         """
         Must be implemented by subclasses
@@ -181,7 +189,12 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         -------
             The fully qualified pipeline class name
         """
-        return f"{self.__module__}.{self.__class__.__name__}"
+        model_name = (
+            os.path.basename(os.path.dirname(self.__binary_path))
+            if self.__binary_path
+            else "empty"
+        )
+        return f"{self.__module__}.{self.__class__.__name__}::{model_name}"
 
     @property
     def config(self) -> dict:
@@ -420,8 +433,53 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             config = yaml.safe_load(yaml_content)
         return config
 
+    @staticmethod
+    def _empty_vocab(labels: List[str] = None) -> Vocabulary:
+        """
+        This method generate a mock vocabulary for the 3 common allennlp namespaces.
+        If default model use another tokens indexer key name, the pipeline model won't be loaded
+        from configuration
+        """
+        labels = labels or ["true", "false"]
+        vocab = Vocabulary()
+
+        vocab.add_tokens_to_namespace(labels, namespace="labels")
+        for namespace in ["tokens", "tokens_characters"]:
+            vocab.add_token_to_namespace("t", namespace=namespace)
+
+        return vocab
+
     @classmethod
-    def from_config(cls, path: str) -> "Pipeline":
+    def empty_pipeline(cls, labels: List[str]) -> "Pipeline":
+        """Creates a dummy pipeline with labels for model layers"""
+        vocab = cls._empty_vocab(labels)
+        return cls(
+            model=cls.model_class()(
+                text_field_embedder=BasicTextFieldEmbedder(
+                    token_embedders={
+                        "tokens": Embedding.from_params(
+                            vocab=vocab,
+                            params=Params({"embedding_dim": 64, "trainable": True}),
+                        )
+                    }
+                ),
+                seq2vec_encoder=PytorchSeq2VecWrapper(
+                    LSTM(
+                        input_size=64,
+                        hidden_size=32,
+                        bidirectional=True,
+                        batch_first=True,
+                    )
+                ),
+                vocab=vocab,
+            ),
+            reader=cls.reader_class()(
+                token_indexers={"tokens": SingleIdTokenIndexer()}
+            ),
+        )
+
+    @classmethod
+    def from_config(cls, path: str, labels: List[str] = None) -> "Pipeline":
         """
         Read a ``Pipeline`` subclass instance by reading a configuration file
 
@@ -429,6 +487,8 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         ----------
         path
             The configuration file path
+        labels:
+            Optional. If passed, set a list of output labels for empty pipeline model
 
         Returns
         -------
@@ -444,9 +504,17 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         pipeline_class = cls.__get_pipeline_class(data)
         name = cls.__get_pipeline_name_from_config(data)
 
+        try:
+            model = Model.from_params(
+                params=Params(Pipeline.__get_model_params(data, name)),
+                vocab=cls._empty_vocab(labels),
+            )
+        except allennlp.common.checks.ConfigurationError:
+            model = None
+
         # Creating an empty pipeline
         model = pipeline_class(
-            model=None,
+            model=model,
             reader=cast(
                 DataSourceReader,
                 DatasetReader.from_params(
@@ -459,6 +527,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
         config[cls.PIPELINE_FIELD] = Pipeline.__get_reader_params(data, name)
         config[cls.ARCHITECTURE_FIELD] = Pipeline.__get_model_params(data, name)
         model._update_config(config)
+
         return model
 
     @classmethod
@@ -592,3 +661,17 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
             self._LOGGER.info(
                 "Cache statistics: %s", self._predict_hashable_json.cache_info()
             )
+
+    def extend_labels(self, labels: List[str]) -> None:
+        """Allow extend prediction labels to pipeline"""
+        if not isinstance(self.model, SequenceClassifierBase):
+            warnings.warn(f"Model {self.model} is not updatable")
+        else:
+            cast(SequenceClassifierBase, self.model).extend_labels(labels)
+
+    def get_output_labels(self) -> List[str]:
+        """Output model labels"""
+        if not isinstance(self.model, SequenceClassifierBase):
+            warnings.warn(f"get_output_labels not suported for model {self.model}")
+            return []
+        return cast(SequenceClassifierBase, self.model).output_classes
