@@ -1,1 +1,2 @@
 sphinx-automodapi
+git+git://github.com/recognai/biome-data
