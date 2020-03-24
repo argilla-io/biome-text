@@ -80,7 +80,12 @@ if __name__ == "__main__":
                 "pytest-pylint~=0.14.0",
                 "black",
                 "GitPython",
-            ]
+            ],
+            "docs": [
+                "sphinx",
+                "sphinx_rtd_theme",
+                "sphinx-automodapi"
+            ],
         },
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},
