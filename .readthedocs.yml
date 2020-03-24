@@ -23,8 +23,6 @@ python:
   version: 3.7
   install:
     - method: pip
-      path: git+https://github.com/recognai/biome-data
-    - method: pip
       path: .
       extra_requirements:
         - docs

@@ -71,7 +71,7 @@ if __name__ == "__main__":
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
             "beautifulsoup4~=4.8.2",
             "lxml~=4.5.0",
-            "biome-data~=0.2.0",
+            "biome-data @ git+https://github.com/recognai/biome-data",
         ],
         extras_require={
             "testing": [
