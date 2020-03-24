@@ -1,6 +1,7 @@
 from typing import Union, List, Tuple
 
 from allennlp.predictors import Predictor
+from allennlp.data import DatasetReader
 
 from .pipeline import Pipeline
 from biome.text.dataset_readers.entity_classifier_reader import EntityClassifierReader
@@ -41,3 +42,4 @@ class EntityClassifierPipeline(Pipeline[SequenceClassifier, EntityClassifierRead
 
 
 Predictor.register("entity_classifier")(EntityClassifierPipeline)
+DatasetReader.register("entity_classifier")(EntityClassifierReader)
