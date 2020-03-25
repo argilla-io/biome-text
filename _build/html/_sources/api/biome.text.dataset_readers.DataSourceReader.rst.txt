@@ -1,0 +1,29 @@
+DataSourceReader
+================
+
+.. currentmodule:: biome.text.dataset_readers
+
+.. autoclass:: DataSourceReader
+   :show-inheritance:
+
+   .. rubric:: Attributes Summary
+
+   .. autosummary::
+
+      ~DataSourceReader.signature
+
+   .. rubric:: Methods Summary
+
+   .. autosummary::
+
+      ~DataSourceReader.build_textfield
+      ~DataSourceReader.text_to_instance
+
+   .. rubric:: Attributes Documentation
+
+   .. autoattribute:: signature
+
+   .. rubric:: Methods Documentation
+
+   .. automethod:: build_textfield
+   .. automethod:: text_to_instance

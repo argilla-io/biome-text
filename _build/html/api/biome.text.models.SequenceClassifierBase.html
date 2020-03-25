@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>SequenceClassifierBase &mdash; biome-text  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SequencePairClassifier" href="biome.text.models.SequencePairClassifier.html" />
+    <link rel="prev" title="SequenceClassifier" href="biome.text.models.SequenceClassifier.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> biome-text
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset_readers/index.html">dataset_readers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../interpreters/index.html">interpreters</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../models/index.html">models</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../models/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../models/index.html#module-biome.text.models">biome.text.models Package</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../models/index.html#functions">Functions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../models/index.html#classes">Classes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pipelines/index.html">pipelines</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">biome-text</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../models/index.html">models</a> &raquo;</li>
+        
+      <li>SequenceClassifierBase</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/biome.text.models.SequenceClassifierBase.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sequenceclassifierbase">
+<h1>SequenceClassifierBase<a class="headerlink" href="#sequenceclassifierbase" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="biome.text.models.SequenceClassifierBase">
+<em class="property">class </em><code class="sig-prename descclassname">biome.text.models.</code><code class="sig-name descname">SequenceClassifierBase</code><span class="sig-paren">(</span><em class="sig-param">vocab: allennlp.data.vocabulary.Vocabulary</em>, <em class="sig-param">text_field_embedder: allennlp.modules.text_field_embedders.text_field_embedder.TextFieldEmbedder</em>, <em class="sig-param">seq2vec_encoder: allennlp.modules.seq2vec_encoders.seq2vec_encoder.Seq2VecEncoder</em>, <em class="sig-param">seq2seq_encoder: Optional[allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder] = None</em>, <em class="sig-param">multifield_seq2seq_encoder: Optional[allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder] = None</em>, <em class="sig-param">multifield_seq2vec_encoder: Optional[allennlp.modules.seq2vec_encoders.seq2vec_encoder.Seq2VecEncoder] = None</em>, <em class="sig-param">feed_forward: Optional[allennlp.modules.feedforward.FeedForward] = None</em>, <em class="sig-param">dropout: Optional[float] = None</em>, <em class="sig-param">multifield_dropout: Optional[float] = None</em>, <em class="sig-param">initializer: Optional[allennlp.nn.initializers.InitializerApplicator] = None</em>, <em class="sig-param">regularizer: Optional[allennlp.nn.regularizers.regularizer_applicator.RegularizerApplicator] = None</em>, <em class="sig-param">accuracy: Optional[allennlp.training.metrics.categorical_accuracy.CategoricalAccuracy] = None</em>, <em class="sig-param">loss_weights: Dict[str</em>, <em class="sig-param">float] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#biome.text.models.SequenceClassifierBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">biome.text.models.mixins.BiomeClassifierMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">allennlp.models.model.Model</span></code></p>
+<p>In the most simple form this <code class="docutils literal notranslate"><span class="pre">BaseModelClassifier</span></code> encodes a sequence with a <code class="docutils literal notranslate"><span class="pre">Seq2VecEncoder</span></code>, then
+predicts a label for the sequence.</p>
+<dl class="simple">
+<dt>vocab</dt><dd><p>A Vocabulary, required in order to compute sizes for input/output projections
+and passed on to the <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code> class.</p>
+</dd>
+<dt>text_field_embedder</dt><dd><p>Used to embed the input text into a <code class="docutils literal notranslate"><span class="pre">TextField</span></code></p>
+</dd>
+<dt>seq2seq_encoder</dt><dd><p>Optional Seq2Seq encoder layer for the input text.</p>
+</dd>
+<dt>seq2vec_encoder</dt><dd><p>Required Seq2Vec encoder layer. If <cite>seq2seq_encoder</cite> is provided, this encoder
+will pool its output. Otherwise, this encoder will operate directly on the output
+of the <cite>text_field_embedder</cite>.</p>
+</dd>
+<dt>dropout</dt><dd><p>Dropout percentage to use on the output of the Seq2VecEncoder</p>
+</dd>
+<dt>multifield_seq2seq_encoder</dt><dd><p>Optional Seq2Seq encoder layer for the encoded fields.</p>
+</dd>
+<dt>multifield_seq2vec_encoder</dt><dd><p>If we use <cite>ListField`s, this Seq2Vec encoder is required.
+If `multifield_seq2seq_encoder</cite> is provided, this encoder will pool its output.
+Otherwise, this encoder will operate directly on the output of the <cite>seq2vec_encoder</cite>.</p>
+</dd>
+<dt>multifield_dropout</dt><dd><p>Dropout percentage to use on the output of the doc Seq2VecEncoder</p>
+</dd>
+<dt>feed_forward</dt><dd><p>A feed forward layer applied to the encoded inputs.</p>
+</dd>
+<dt>initializer</dt><dd><p>Used to initialize the model parameters.</p>
+</dd>
+<dt>regularizer</dt><dd><p>Used to regularize the model. Passed on to <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code>.</p>
+</dd>
+<dt>accuracy</dt><dd><p>The accuracy you want to use. By default, we choose a categorical top-1 accuracy.</p>
+</dd>
+<dt>loss_weights</dt><dd><p>A dict with the labels and the corresponding weights.
+These weights will be used in the CrossEntropyLoss function.</p>
+</dd>
+</dl>
+<p class="rubric">Attributes Summary</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.n_inputs" title="biome.text.models.SequenceClassifierBase.n_inputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_inputs</span></code></a></p></td>
+<td><p>This value is used for calculate the output layer dimension.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.num_classes" title="biome.text.models.SequenceClassifierBase.num_classes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_classes</span></code></a></p></td>
+<td><p>Number of output classes</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.output_classes" title="biome.text.models.SequenceClassifierBase.output_classes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_classes</span></code></a></p></td>
+<td><p>The output token classes</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.extend_labels" title="biome.text.models.SequenceClassifierBase.extend_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extend_labels</span></code></a>(labels)</p></td>
+<td><p>Extends the number of output labels</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.forward" title="biome.text.models.SequenceClassifierBase.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(*inputs)</p></td>
+<td><p>Defines the forward pass of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.forward_tokens" title="biome.text.models.SequenceClassifierBase.forward_tokens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_tokens</span></code></a>(tokens)</p></td>
+<td><p>Apply the whole forward chain but last layer (output)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.label_for_index" title="biome.text.models.SequenceClassifierBase.label_for_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">label_for_index</span></code></a>(idx)</p></td>
+<td><p>Token label for label index</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequenceClassifierBase.output_layer" title="biome.text.models.SequenceClassifierBase.output_layer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_layer</span></code></a>(encoded_text, label)</p></td>
+<td><p>Returns</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="attribute">
+<dt id="biome.text.models.SequenceClassifierBase.n_inputs">
+<code class="sig-name descname">n_inputs</code><a class="headerlink" href="#biome.text.models.SequenceClassifierBase.n_inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This value is used for calculate the output layer dimension. Default value is 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="biome.text.models.SequenceClassifierBase.num_classes">
+<code class="sig-name descname">num_classes</code><a class="headerlink" href="#biome.text.models.SequenceClassifierBase.num_classes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of output classes</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="biome.text.models.SequenceClassifierBase.output_classes">
+<code class="sig-name descname">output_classes</code><a class="headerlink" href="#biome.text.models.SequenceClassifierBase.output_classes" title="Permalink to this definition">¶</a></dt>
+<dd><p>The output token classes</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="method">
+<dt id="biome.text.models.SequenceClassifierBase.extend_labels">
+<code class="sig-name descname">extend_labels</code><span class="sig-paren">(</span><em class="sig-param">labels: List[str]</em><span class="sig-paren">)</span><a class="headerlink" href="#biome.text.models.SequenceClassifierBase.extend_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extends the number of output labels</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="biome.text.models.SequenceClassifierBase.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">*inputs</em><span class="sig-paren">)</span> &#x2192; Dict[str, torch.Tensor]<a class="headerlink" href="#biome.text.models.SequenceClassifierBase.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the forward pass of the model. In addition, to facilitate easy training,
+this method is designed to compute a loss function defined by a user.</p>
+<p>The input is comprised of everything required to perform a
+training update, <cite>including</cite> labels - you define the signature here!
+It is down to the user to ensure that inference can be performed
+without the presence of these labels. Hence, any inputs not available at
+inference time should only be used inside a conditional block.</p>
+<p>The intended sketch of this method is as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input1</span><span class="p">,</span> <span class="n">input2</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="o">....</span>
+    <span class="o">....</span>
+    <span class="n">output1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer1</span><span class="p">(</span><span class="n">input1</span><span class="p">)</span>
+    <span class="n">output2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span><span class="p">(</span><span class="n">input2</span><span class="p">)</span>
+    <span class="n">output_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;output1&quot;</span><span class="p">:</span> <span class="n">output1</span><span class="p">,</span> <span class="s2">&quot;output2&quot;</span><span class="p">:</span> <span class="n">output2</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Function returning a scalar torch.Tensor, defined by the user.</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_loss</span><span class="p">(</span><span class="n">output1</span><span class="p">,</span> <span class="n">output2</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+        <span class="n">output_dict</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span>
+    <span class="k">return</span> <span class="n">output_dict</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>inputs:</dt><dd><p>Tensors comprising everything needed to perform a training update, <cite>including</cite> labels,
+which should be optional (i.e have a default value of <code class="docutils literal notranslate"><span class="pre">None</span></code>).  At inference time,
+simply pass the relevant inputs, not including the labels.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>output_dict: <code class="docutils literal notranslate"><span class="pre">Dict[str,</span> <span class="pre">torch.Tensor]</span></code></dt><dd><p>The outputs from the model. In order to train a model using the
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Trainer</span></code> api, you must provide a “loss” key pointing to a
+scalar <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> representing the loss to be optimized.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="biome.text.models.SequenceClassifierBase.forward_tokens">
+<code class="sig-name descname">forward_tokens</code><span class="sig-paren">(</span><em class="sig-param">tokens: Dict[str, torch.Tensor]</em><span class="sig-paren">)</span> &#x2192; torch.Tensor<a class="headerlink" href="#biome.text.models.SequenceClassifierBase.forward_tokens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply the whole forward chain but last layer (output)</p>
+<dl class="simple">
+<dt>tokens</dt><dd><p>The tokens tensor</p>
+</dd>
+</dl>
+<p>A <code class="docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="biome.text.models.SequenceClassifierBase.label_for_index">
+<code class="sig-name descname">label_for_index</code><span class="sig-paren">(</span><em class="sig-param">idx</em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#biome.text.models.SequenceClassifierBase.label_for_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Token label for label index</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="biome.text.models.SequenceClassifierBase.output_layer">
+<code class="sig-name descname">output_layer</code><span class="sig-paren">(</span><em class="sig-param">encoded_text: torch.Tensor</em>, <em class="sig-param">label</em><span class="sig-paren">)</span> &#x2192; Dict[str, torch.Tensor]<a class="headerlink" href="#biome.text.models.SequenceClassifierBase.output_layer" title="Permalink to this definition">¶</a></dt>
+<dd><p>An output dictionary consisting of:
+logits : <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+<blockquote>
+<div><p>A tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_classes)</span></code> representing
+the logits of the classifier model.</p>
+</div></blockquote>
+<dl>
+<dt>class_probabilities<span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></span></dt><dd><p>A tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_classes)</span></code> representing
+the softmax probabilities of the classes.</p>
+</dd>
+<dt>loss<span class="classifier"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, optional</span></dt><dd><p>A scalar loss to be optimised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="biome.text.models.SequencePairClassifier.html" class="btn btn-neutral float-right" title="SequencePairClassifier" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="biome.text.models.SequenceClassifier.html" class="btn btn-neutral float-left" title="SequenceClassifier" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, recognai
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

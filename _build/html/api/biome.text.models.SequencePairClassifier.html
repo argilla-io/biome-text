@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>SequencePairClassifier &mdash; biome-text  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SimilarityClassifier" href="biome.text.models.SimilarityClassifier.html" />
+    <link rel="prev" title="SequenceClassifierBase" href="biome.text.models.SequenceClassifierBase.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> biome-text
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset_readers/index.html">dataset_readers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../interpreters/index.html">interpreters</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../models/index.html">models</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../models/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../models/index.html#module-biome.text.models">biome.text.models Package</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../models/index.html#functions">Functions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../models/index.html#classes">Classes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pipelines/index.html">pipelines</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">biome-text</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../models/index.html">models</a> &raquo;</li>
+        
+      <li>SequencePairClassifier</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/biome.text.models.SequencePairClassifier.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sequencepairclassifier">
+<h1>SequencePairClassifier<a class="headerlink" href="#sequencepairclassifier" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="biome.text.models.SequencePairClassifier">
+<em class="property">class </em><code class="sig-prename descclassname">biome.text.models.</code><code class="sig-name descname">SequencePairClassifier</code><span class="sig-paren">(</span><em class="sig-param">vocab: allennlp.data.vocabulary.Vocabulary</em>, <em class="sig-param">text_field_embedder: allennlp.modules.text_field_embedders.text_field_embedder.TextFieldEmbedder</em>, <em class="sig-param">seq2vec_encoder: allennlp.modules.seq2vec_encoders.seq2vec_encoder.Seq2VecEncoder</em>, <em class="sig-param">seq2seq_encoder: Optional[allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder] = None</em>, <em class="sig-param">multifield_seq2seq_encoder: Optional[allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder] = None</em>, <em class="sig-param">multifield_seq2vec_encoder: Optional[allennlp.modules.seq2vec_encoders.seq2vec_encoder.Seq2VecEncoder] = None</em>, <em class="sig-param">feed_forward: Optional[allennlp.modules.feedforward.FeedForward] = None</em>, <em class="sig-param">dropout: Optional[float] = None</em>, <em class="sig-param">multifield_dropout: Optional[float] = None</em>, <em class="sig-param">initializer: Optional[allennlp.nn.initializers.InitializerApplicator] = None</em>, <em class="sig-param">regularizer: Optional[allennlp.nn.regularizers.regularizer_applicator.RegularizerApplicator] = None</em>, <em class="sig-param">accuracy: Optional[allennlp.training.metrics.categorical_accuracy.CategoricalAccuracy] = None</em>, <em class="sig-param">loss_weights: Dict[str</em>, <em class="sig-param">float] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#biome.text.models.SequencePairClassifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">biome.text.models.sequence_classifier_base.SequenceClassifierBase</span></code></p>
+<p>This <code class="docutils literal notranslate"><span class="pre">SequencePairClassifier</span></code> uses a siamese network architecture to perform a classification task between a pair
+of records or documents.</p>
+<p>The classifier can be configured to take into account the hierarchical structure of documents
+and multi-field records.</p>
+<p>A record/document can be (1) single-field (single sentence): composed of a sequence of
+tokens, or (2) multi-field (multi-sentence): a sequence of fields with each of the fields containing a sequence of
+tokens. In the case of multi-field a doc_seq2vec_encoder and optionally a doc_seq2seq_encoder should be configured,
+for encoding each of the fields into a single vector encoding the full record/doc must be configured.</p>
+<p>The sequences are encoded into two single vectors, the resulting vectors are concatenated and fed to a
+linear classification layer.</p>
+<p class="rubric">Attributes Summary</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequencePairClassifier.n_inputs" title="biome.text.models.SequencePairClassifier.n_inputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_inputs</span></code></a></p></td>
+<td><p>This value is used for calculate the output layer dimension.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Summary</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.SequencePairClassifier.forward" title="biome.text.models.SequencePairClassifier.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(record1, record2[, label])</p></td>
+<td><p>Parameters</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes Documentation</p>
+<dl class="attribute">
+<dt id="biome.text.models.SequencePairClassifier.n_inputs">
+<code class="sig-name descname">n_inputs</code><a class="headerlink" href="#biome.text.models.SequencePairClassifier.n_inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This value is used for calculate the output layer dimension. Default value is 1</p>
+</dd></dl>
+
+<p class="rubric">Methods Documentation</p>
+<dl class="method">
+<dt id="biome.text.models.SequencePairClassifier.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">record1: Dict[str, torch.Tensor], record2: Dict[str, torch.Tensor], label: torch.Tensor = None</em><span class="sig-paren">)</span> &#x2192; Dict[str, torch.Tensor]<a class="headerlink" href="#biome.text.models.SequencePairClassifier.forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>record1</dt><dd><p>The first input tokens.
+The dictionary is the output of a <code class="docutils literal notranslate"><span class="pre">TextField.as_array()</span></code>. It gives names to the tensors created by
+the <code class="docutils literal notranslate"><span class="pre">TokenIndexer``s.</span>
+<span class="pre">In</span> <span class="pre">its</span> <span class="pre">most</span> <span class="pre">basic</span> <span class="pre">form,</span> <span class="pre">using</span> <span class="pre">a</span> <span class="pre">``SingleIdTokenIndexer</span></code>, the dictionary is composed of:
+<code class="docutils literal notranslate"><span class="pre">{&quot;tokens&quot;:</span> <span class="pre">Tensor(batch_size,</span> <span class="pre">num_tokens)}</span></code>.
+The keys of the dictionary are defined in the <cite>model.yml</cite> input.
+The dictionary is designed to be passed on directly to a <code class="docutils literal notranslate"><span class="pre">TextFieldEmbedder</span></code>, that has a
+<code class="docutils literal notranslate"><span class="pre">TokenEmbedder</span></code> for each key in the dictionary (except you set <cite>allow_unmatched_keys</cite> in the
+<code class="docutils literal notranslate"><span class="pre">TextFieldEmbedder</span></code> to False) and knows how to combine different word/character representations into a
+single vector per token in your input.</p>
+</dd>
+<dt>record2</dt><dd><p>The second input tokens.</p>
+</dd>
+<dt>label<span class="classifier">torch.LongTensor, optional (default = None)</span></dt><dd><p>A torch tensor representing the sequence of integer gold class label of shape
+<code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_classes)</span></code>.</p>
+</dd>
+</dl>
+<p>An output dictionary consisting of:
+logits : torch.FloatTensor</p>
+<blockquote>
+<div><p>A tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_tokens,</span> <span class="pre">tag_vocab_size)</span></code> representing
+unnormalised log probabilities of the tag classes.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>class_probabilities<span class="classifier">torch.FloatTensor</span></dt><dd><p>A tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_tokens,</span> <span class="pre">tag_vocab_size)</span></code> representing
+a distribution of the tag classes per word.</p>
+</dd>
+<dt>loss<span class="classifier">torch.FloatTensor, optional</span></dt><dd><p>A scalar loss to be optimised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="biome.text.models.SimilarityClassifier.html" class="btn btn-neutral float-right" title="SimilarityClassifier" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="biome.text.models.SequenceClassifierBase.html" class="btn btn-neutral float-left" title="SequenceClassifierBase" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, recognai
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

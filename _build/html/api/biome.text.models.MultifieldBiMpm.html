@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>MultifieldBiMpm &mdash; biome-text  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/graphviz.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SequenceClassifier" href="biome.text.models.SequenceClassifier.html" />
+    <link rel="prev" title="BiomeClassifierMixin" href="biome.text.models.BiomeClassifierMixin.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> biome-text
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../commands/index.html">commands</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset_readers/index.html">dataset_readers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../interpreters/index.html">interpreters</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../models/index.html">models</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../models/index.html#reference-api">Reference/API</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../models/index.html#module-biome.text.models">biome.text.models Package</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../models/index.html#functions">Functions</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="../models/index.html#classes">Classes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../pipelines/index.html">pipelines</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">biome-text</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../models/index.html">models</a> &raquo;</li>
+        
+      <li>MultifieldBiMpm</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/biome.text.models.MultifieldBiMpm.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="multifieldbimpm">
+<h1>MultifieldBiMpm<a class="headerlink" href="#multifieldbimpm" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="biome.text.models.MultifieldBiMpm">
+<em class="property">class </em><code class="sig-prename descclassname">biome.text.models.</code><code class="sig-name descname">MultifieldBiMpm</code><span class="sig-paren">(</span><em class="sig-param">vocab: allennlp.data.vocabulary.Vocabulary</em>, <em class="sig-param">text_field_embedder: allennlp.modules.text_field_embedders.text_field_embedder.TextFieldEmbedder</em>, <em class="sig-param">matcher_word: allennlp.modules.bimpm_matching.BiMpmMatching</em>, <em class="sig-param">encoder: allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder</em>, <em class="sig-param">matcher_forward: allennlp.modules.bimpm_matching.BiMpmMatching</em>, <em class="sig-param">aggregator: allennlp.modules.seq2vec_encoders.seq2vec_encoder.Seq2VecEncoder</em>, <em class="sig-param">classifier_feedforward: allennlp.modules.feedforward.FeedForward</em>, <em class="sig-param">matcher_backward: allennlp.modules.bimpm_matching.BiMpmMatching = None</em>, <em class="sig-param">encoder2: allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder = None</em>, <em class="sig-param">matcher2_forward: allennlp.modules.bimpm_matching.BiMpmMatching = None</em>, <em class="sig-param">matcher2_backward: allennlp.modules.bimpm_matching.BiMpmMatching = None</em>, <em class="sig-param">dropout: float = 0.1</em>, <em class="sig-param">multifield: bool = True</em>, <em class="sig-param">initializer: allennlp.nn.initializers.InitializerApplicator = &lt;allennlp.nn.initializers.InitializerApplicator object&gt;</em>, <em class="sig-param">regularizer: Optional[allennlp.nn.regularizers.regularizer_applicator.RegularizerApplicator] = None</em>, <em class="sig-param">accuracy: Optional[allennlp.training.metrics.categorical_accuracy.CategoricalAccuracy] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#biome.text.models.MultifieldBiMpm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">biome.text.models.mixins.BiomeClassifierMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">allennlp.models.model.Model</span></code></p>
+<p>This <code class="docutils literal notranslate"><span class="pre">Model</span></code> is a version of AllenNLPs implementation of the BiMPM model described in
+<a class="reference external" href="https://arxiv.org/abs/1702.03814">Bilateral Multi-Perspective Matching for Natural Language Sentences</a>
+by Zhiguo Wang et al., 2017.</p>
+<p>This version adds the feature of being compatible with multiple inputs for the two records.
+The matching will be done for all possible combinations between the two records, that is:
+(r1_1, r2_1), (r1_1, r2_2), …, (r1_2, r2_1), (r1_2, r2_2), …</p>
+<p>This version also allows you to apply only one encoder, and to leave out the backward matching.</p>
+<p>vocab : <code class="docutils literal notranslate"><span class="pre">Vocabulary</span></code>
+text_field_embedder : <code class="docutils literal notranslate"><span class="pre">TextFieldEmbedder</span></code></p>
+<blockquote>
+<div><p>Used to embed the <code class="docutils literal notranslate"><span class="pre">record1</span></code> and <code class="docutils literal notranslate"><span class="pre">record2</span></code> <code class="docutils literal notranslate"><span class="pre">TextFields</span></code> we get as input to the
+model.</p>
+</div></blockquote>
+<dl>
+<dt>matcher_word<span class="classifier"><code class="docutils literal notranslate"><span class="pre">BiMpmMatching</span></code></span></dt><dd><p>BiMPM matching on the output of word embeddings of record1 and record2.</p>
+</dd>
+<dt>encoder<span class="classifier"><code class="docutils literal notranslate"><span class="pre">Seq2SeqEncoder</span></code></span></dt><dd><p>Encoder layer for record1 and record2</p>
+</dd>
+<dt>matcher_forward<span class="classifier"><code class="docutils literal notranslate"><span class="pre">BiMPMMatching</span></code></span></dt><dd><p>BiMPM matching for the forward output of the encoder layer</p>
+</dd>
+<dt>aggregator<span class="classifier"><code class="docutils literal notranslate"><span class="pre">Seq2VecEncoder</span></code></span></dt><dd><p>Aggregator of all BiMPM matching vectors</p>
+</dd>
+<dt>classifier_feedforward<span class="classifier"><code class="docutils literal notranslate"><span class="pre">FeedForward</span></code></span></dt><dd><p>Fully connected layers for classification.
+A linear output layer with the number of labels at the end will be added automatically!!!</p>
+</dd>
+<dt>matcher_backward<span class="classifier"><code class="docutils literal notranslate"><span class="pre">BiMPMMatching</span></code>, optional</span></dt><dd><p>BiMPM matching for the backward output of the encoder layer</p>
+</dd>
+<dt>encoder2<span class="classifier"><code class="docutils literal notranslate"><span class="pre">Seq2SeqEncoder</span></code>, optional</span></dt><dd><p>Encoder layer for encoded record1 and encoded record2</p>
+</dd>
+<dt>matcher2_forward<span class="classifier"><code class="docutils literal notranslate"><span class="pre">BiMPMMatching</span></code>, optional</span></dt><dd><p>BiMPM matching for the forward output of the second encoder layer</p>
+</dd>
+<dt>matcher2_backward<span class="classifier"><code class="docutils literal notranslate"><span class="pre">BiMPMMatching</span></code>, optional</span></dt><dd><p>BiMPM matching for the backward output of the second encoder layer</p>
+</dd>
+<dt>dropout<span class="classifier"><code class="docutils literal notranslate"><span class="pre">float</span></code>, optional (default=0.1)</span></dt><dd><p>Dropout percentage to use.</p>
+</dd>
+<dt>multifield<span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code>, optional (default=False)</span></dt><dd><p>Are there multiple inputs for each record, that is do the inputs come from <a href="#id1"><span class="problematic" id="id2">``</span></a>ListField``s?</p>
+</dd>
+<dt>initializer<span class="classifier"><code class="docutils literal notranslate"><span class="pre">InitializerApplicator</span></code>, optional (default=``InitializerApplicator()``)</span></dt><dd><p>If provided, will be used to initialize the model parameters.</p>
+</dd>
+<dt>regularizer<span class="classifier"><code class="docutils literal notranslate"><span class="pre">RegularizerApplicator</span></code>, optional (default=``None``)</span></dt><dd><p>If provided, will be used to calculate the regularization penalty during training.</p>
+</dd>
+<dt>accuracy</dt><dd><p>The accuracy you want to use. By default, we choose a categorical top-1 accuracy.</p>
+</dd>
+</dl>
+<p class="rubric">Methods Summary</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#biome.text.models.MultifieldBiMpm.forward" title="biome.text.models.MultifieldBiMpm.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(record1, record2[, label])</p></td>
+<td><p>Parameters</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods Documentation</p>
+<dl class="method">
+<dt id="biome.text.models.MultifieldBiMpm.forward">
+<code class="sig-name descname">forward</code><span class="sig-paren">(</span><em class="sig-param">record1: Dict[str, torch.LongTensor], record2: Dict[str, torch.LongTensor], label: torch.LongTensor = None</em><span class="sig-paren">)</span> &#x2192; Dict[str, torch.Tensor]<a class="headerlink" href="#biome.text.models.MultifieldBiMpm.forward" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>record1</dt><dd><p>The first input tokens.
+The dictionary is the output of a <code class="docutils literal notranslate"><span class="pre">TextField.as_array()</span></code>. It gives names to the tensors created by
+the <code class="docutils literal notranslate"><span class="pre">TokenIndexer``s.</span>
+<span class="pre">In</span> <span class="pre">its</span> <span class="pre">most</span> <span class="pre">basic</span> <span class="pre">form,</span> <span class="pre">using</span> <span class="pre">a</span> <span class="pre">``SingleIdTokenIndexer</span></code>, the dictionary is composed of:
+<code class="docutils literal notranslate"><span class="pre">{&quot;tokens&quot;:</span> <span class="pre">Tensor(batch_size,</span> <span class="pre">num_tokens)}</span></code>.
+The keys of the dictionary are defined in the <cite>model.yml</cite> input.
+The dictionary is designed to be passed on directly to a <code class="docutils literal notranslate"><span class="pre">TextFieldEmbedder</span></code>, that has a
+<code class="docutils literal notranslate"><span class="pre">TokenEmbedder</span></code> for each key in the dictionary (except you set <cite>allow_unmatched_keys</cite> in the
+<code class="docutils literal notranslate"><span class="pre">TextFieldEmbedder</span></code> to False) and knows how to combine different word/character representations into a
+single vector per token in your input.</p>
+</dd>
+<dt>record2</dt><dd><p>The second input tokens.</p>
+</dd>
+<dt>label<span class="classifier">torch.LongTensor, optional (default = None)</span></dt><dd><p>A torch tensor representing the sequence of integer gold class label of shape
+<code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_classes)</span></code>.</p>
+</dd>
+</dl>
+<p>An output dictionary consisting of:
+logits : torch.FloatTensor</p>
+<blockquote>
+<div><p>A tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_tokens,</span> <span class="pre">tag_vocab_size)</span></code> representing
+unnormalised log probabilities of the tag classes.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>class_probabilities<span class="classifier">torch.FloatTensor</span></dt><dd><p>A tensor of shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_tokens,</span> <span class="pre">tag_vocab_size)</span></code> representing
+a distribution of the tag classes per word.</p>
+</dd>
+<dt>loss<span class="classifier">torch.FloatTensor, optional</span></dt><dd><p>A scalar loss to be optimised.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="biome.text.models.SequenceClassifier.html" class="btn btn-neutral float-right" title="SequenceClassifier" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="biome.text.models.BiomeClassifierMixin.html" class="btn btn-neutral float-left" title="BiomeClassifierMixin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, recognai
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
