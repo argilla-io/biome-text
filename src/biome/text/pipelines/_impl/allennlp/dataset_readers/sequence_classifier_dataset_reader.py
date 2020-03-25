@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 from allennlp.data import DatasetReader, Instance
 from allennlp.data.fields import LabelField
 
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
+from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader
 
 
 @DatasetReader.register("sequence_classifier")
@@ -42,7 +42,7 @@ class SequenceClassifierReader(DataSourceReader):
         label_field = None
         # TODO: This is ugly as f***, should go into a decorator that checks/transforms the input
         if label is not None:
-            # skipp example
+            # skip example
             if str(label).strip() == "":
                 return None
             label_field = LabelField(str(label).strip())

@@ -5,8 +5,8 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.models import Archive
 from allennlp.predictors import Predictor
 
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.predictors import DefaultBasePredictor
+from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader
+from biome.text.pipelines._impl.allennlp.predictors import DefaultBasePredictor
 
 __LOGGER = logging.getLogger(__name__)
 

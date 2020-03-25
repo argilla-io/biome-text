@@ -9,8 +9,8 @@ from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from biome.data.sources import DataSource
-from biome.text.dataset_readers.mixins import CacheableMixin
-from biome.text.dataset_readers.text_transforms import (
+from biome.text.pipelines._impl.allennlp.dataset_readers import CacheableMixin
+from biome.text.pipelines._impl.allennlp.dataset_readers import (
     RmSpacesTransforms,
     TextTransforms,
 )

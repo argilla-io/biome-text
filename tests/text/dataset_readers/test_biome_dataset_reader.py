@@ -2,7 +2,7 @@ import os
 from typing import Iterable
 
 from allennlp.data.fields import TextField, LabelField
-from biome.text.dataset_readers import SequenceClassifierReader
+from biome.text.pipelines._impl.allennlp.dataset_readers import SequenceClassifierReader
 
 from tests.test_context import TEST_RESOURCES
 from tests.test_support import DaskSupportTest

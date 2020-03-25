@@ -1,12 +1,10 @@
 import os
-import tempfile
 from typing import Iterable
 import pytest
 
-import yaml
 from allennlp.data import DatasetReader
 from allennlp.data.fields import TextField, LabelField
-from biome.text.dataset_readers import SequenceClassifierReader
+from biome.text.pipelines._impl.allennlp.dataset_readers import SequenceClassifierReader
 from tests.test_context import TEST_RESOURCES, create_temp_configuration
 
 from tests.test_support import DaskSupportTest

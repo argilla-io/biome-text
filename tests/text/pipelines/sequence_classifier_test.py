@@ -10,11 +10,16 @@ import pytest
 import requests
 import yaml
 from elasticsearch import Elasticsearch
-
 from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
+from biome.text.pipelines.configuration import PipelineBuilder
+from biome.text.pipelines._impl.allennlp.classifier.pipeline import (
+    AllenNlpTextClassifierPipeline,
+)
+from biome.text.pipelines._impl.allennlp.dataset_readers import SequenceClassifierReader
+from biome.text.pipelines._impl.allennlp.models import SequenceClassifier
 from biome.text.pipelines.sequence_classifier import SequenceClassifierPipeline
 from tests import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
@@ -128,6 +133,7 @@ class SequenceClassifierTest(DaskSupportTest):
     validation_data = os.path.join(BASE_CONFIG_PATH, "validation.data.yml")
 
     def test_model_workflow(self):
+        self.check_train_other()
         self.check_train()
         # Check explore metadata override
         self.check_explore(
@@ -135,6 +141,27 @@ class SequenceClassifierTest(DaskSupportTest):
         )
         self.check_serve()
         self.check_predictor()
+
+    def check_train_other(self):
+        model_path = os.path.join(BASE_CONFIG_PATH, "model.new.yml")
+        classifier = AllenNlpTextClassifierPipeline(
+            model=SequenceClassifier, reader=SequenceClassifierReader
+        ).from_config(PipelineBuilder.from_file(model_path))
+
+        classifier.learn(
+            trainer=self.trainer_path, train=self.training_data, output=self.output_dir
+        )
+        classifier.learn(
+            trainer=self.trainer_path,
+            train=self.training_data,
+            validation=self.validation_data,
+            output=self.output_dir,
+        )
+
+        self.assertTrue(classifier._predictor is not None)
+
+        prediction = classifier.predict(tokens={"a": "mike", "b": "Farrys"})
+        self.assertTrue("logits" in prediction, f"Not in {prediction}")
 
     def check_train(self):
         classifier = Pipeline.from_config(self.model_path)

@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 
 from allennlp.data import DatasetReader, Instance
 from allennlp.data.fields import LabelField
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
+from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
