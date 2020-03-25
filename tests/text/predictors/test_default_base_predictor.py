@@ -2,7 +2,9 @@ import os
 
 import pytest
 from allennlp.models import load_archive
-from biome.text.predictors.utils import get_predictor_from_archive
+from biome.text.pipelines._impl.allennlp.predictors.utils import (
+    get_predictor_from_archive,
+)
 
 from tests.test_context import TEST_RESOURCES
 

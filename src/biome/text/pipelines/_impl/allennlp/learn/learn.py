@@ -11,8 +11,8 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.models import Model
 from allennlp.models.archival import CONFIG_NAME
 
-from biome.text.models import load_archive
-from biome.text.pipelines.learn.allennlp.defs import BiomeConfig
+from biome.text.pipelines._impl.allennlp.models import load_archive
+from biome.text.pipelines._impl.allennlp.learn.defs import BiomeConfig
 
 __LOGGER = logging.getLogger(__name__)  # pylint: disable=invalid-name
 

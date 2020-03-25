@@ -11,7 +11,9 @@ from dask_elk.client import DaskElasticClient
 from biome.data import DataSource
 from biome.text import Pipeline
 from biome.text import constants
-from biome.text.interpreters import IntegratedGradient as DefaultInterpreterClass
+from biome.text.pipelines._impl.allennlp.interpreters import (
+    IntegratedGradient as DefaultInterpreterClass,
+)
 from biome.text.pipelines.defs import ExploreConfig, ElasticsearchConfig
 
 __LOGGER = logging.getLogger(__name__)

@@ -10,7 +10,6 @@ from flask import (
     send_file,
     send_from_directory,
     jsonify,
-    redirect,
 )
 from flask_cors import CORS
 from werkzeug.exceptions import NotFound

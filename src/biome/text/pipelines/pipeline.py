@@ -29,10 +29,16 @@ from allennlp.predictors import Predictor
 from overrides import overrides
 from torch.nn import LSTM
 
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
-from biome.text.models import load_archive, SequenceClassifierBase
-from biome.text.pipelines.learn.allennlp import learn
-from biome.text.predictors.utils import get_predictor_from_archive
+from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader
+from biome.text.pipelines._impl.allennlp.learn import learn
+from biome.text.pipelines._impl.allennlp.models import (
+    load_archive,
+    SequenceClassifierBase,
+)
+from biome.text.pipelines.pipeline_interface import ClassifierPipeline
+from biome.text.pipelines._impl.allennlp.predictors.utils import (
+    get_predictor_from_archive,
+)
 
 try:
     import ujson as json
@@ -55,7 +61,7 @@ Architecture = TypeVar("Architecture", bound=allennlp.models.Model)
 Reader = TypeVar("Reader", bound=DataSourceReader)
 
 
-class Pipeline(Generic[Architecture, Reader], Predictor):
+class Pipeline(Generic[Architecture, Reader], Predictor, ClassifierPipeline):
     """
     This class combine the different allennlp components that make possible a ``Pipeline`,
     understanding as a model, not only the definition of the neural network architecture,
@@ -73,6 +79,9 @@ class Pipeline(Generic[Architecture, Reader], Predictor):
     reader
         The class:allennlp.data.DatasetReader
     """
+
+    def explore(self):
+        raise NotImplementedError
 
     _LOGGER = logging.getLogger(__name__)
 

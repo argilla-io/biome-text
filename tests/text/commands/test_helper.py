@@ -2,7 +2,7 @@ import os
 import unittest
 
 from biome.text.environment import CUDA_DEVICE
-from biome.text.pipelines.learn.allennlp.defs import BiomeConfig
+from biome.text.pipelines._impl.allennlp.learn.defs import BiomeConfig
 from tests.test_context import TEST_RESOURCES
 
 WITHOUT_CUDA_DEVICE_TRAINER_PATH = os.path.join(

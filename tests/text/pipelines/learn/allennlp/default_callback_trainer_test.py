@@ -2,7 +2,7 @@ import unittest
 
 from allennlp.common import Params
 
-from biome.text.pipelines.learn.allennlp.default_callback_trainer import (
+from biome.text.pipelines._impl.allennlp.learn.default_callback_trainer import (
     DefaultCallbackTrainer,
 )
 

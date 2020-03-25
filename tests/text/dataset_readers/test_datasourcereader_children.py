@@ -7,11 +7,11 @@ from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.data.tokenizers import WordTokenizer
 from allennlp.models import Model, BertForClassification
 
-from biome.text.dataset_readers import (
+from biome.text.pipelines._impl.allennlp.dataset_readers import (
     SequenceClassifierReader,
     SequencePairClassifierReader,
 )
-from biome.text.models import (
+from biome.text.pipelines._impl.allennlp.models import (
     SequenceClassifier,
     SequencePairClassifier,
     SimilarityClassifier,

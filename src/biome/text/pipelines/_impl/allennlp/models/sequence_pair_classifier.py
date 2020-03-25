@@ -4,7 +4,9 @@ import torch
 from allennlp.models.model import Model
 from overrides import overrides
 
-from biome.text.models.sequence_classifier_base import SequenceClassifierBase
+from biome.text.pipelines._impl.allennlp.models.sequence_classifier_base import (
+    SequenceClassifierBase,
+)
 
 
 @Model.register("sequence_pair_classifier")

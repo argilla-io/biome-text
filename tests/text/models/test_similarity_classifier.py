@@ -1,7 +1,7 @@
 import logging
 import os
 
-from biome.text.models import SimilarityClassifier
+from biome.text.pipelines._impl.allennlp.models import SimilarityClassifier
 from tests.test_context import TEST_RESOURCES
 from tests.text.models.base_classifier import BasePairClassifierTest
 

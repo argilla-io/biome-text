@@ -13,9 +13,11 @@ from biome.text import Pipeline
 from biome.text.commands.explore.explore import explore
 from biome.text.commands.serve.serve import serve
 from biome.text.environment import ES_HOST
-from biome.text.models import SequenceClassifierBase
-from biome.text.models import load_archive
-from biome.text.predictors.utils import get_predictor_from_archive
+from biome.text.pipelines._impl.allennlp.models import SequenceClassifierBase
+from biome.text.pipelines._impl.allennlp.models import load_archive
+from biome.text.pipelines._impl.allennlp.predictors.utils import (
+    get_predictor_from_archive,
+)
 from elasticsearch import Elasticsearch
 
 from tests.test_context import TEST_RESOURCES

@@ -1,6 +1,6 @@
 import os
 
-from biome.text.models import SequencePairClassifier
+from biome.text.pipelines._impl.allennlp.models import SequencePairClassifier
 from tests.test_context import TEST_RESOURCES
 from tests.text.models.base_classifier import BasePairClassifierTest
 

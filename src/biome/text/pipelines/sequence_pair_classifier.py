@@ -2,9 +2,11 @@ from typing import Union, List
 
 from allennlp.predictors import Predictor
 
-from biome.text.dataset_readers import SequencePairClassifierReader
+from biome.text.pipelines._impl.allennlp.dataset_readers import (
+    SequencePairClassifierReader,
+)
 from .pipeline import Pipeline
-from ..models import SequencePairClassifier
+from biome.text.pipelines._impl.allennlp.models import SequencePairClassifier
 
 
 class SequencePairClassifierPipeline(

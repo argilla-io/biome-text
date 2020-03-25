@@ -1,5 +1,5 @@
 from allennlp.common import Params
-from biome.text.dataset_readers.text_transforms import (
+from biome.text.pipelines._impl.allennlp.dataset_readers import (
     TextTransforms,
     RmSpacesTransforms,
     Html2TextTransforms,

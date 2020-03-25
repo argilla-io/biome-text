@@ -2,8 +2,10 @@ from allennlp.data import DatasetReader
 from allennlp.models import Model
 from allennlp.predictors import Predictor
 
-from biome.text.dataset_readers import SequencePairClassifierReader
-from biome.text.models.biome_bimpm import BiomeBiMpm
+from biome.text.pipelines._impl.allennlp.dataset_readers import (
+    SequencePairClassifierReader,
+)
+from biome.text.pipelines._impl.allennlp.models.biome_bimpm import BiomeBiMpm
 from biome.text.pipelines import SequencePairClassifierPipeline
 from biome.text.pipelines.pipeline import Pipeline
 

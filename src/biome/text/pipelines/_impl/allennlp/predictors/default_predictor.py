@@ -7,7 +7,7 @@ from allennlp.models import Model
 from allennlp.predictors import Predictor
 from overrides import overrides
 
-from biome.text.dataset_readers.datasource_reader import DataSourceReader
+from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader
 
 # TODO: This class is deprecated and is not used at the moment! Should be removed in the near future!
 class DefaultBasePredictor(Predictor):

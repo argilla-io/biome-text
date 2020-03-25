@@ -3,8 +3,8 @@ from typing import Union, List
 from allennlp.predictors import Predictor
 
 from .pipeline import Pipeline
-from ..dataset_readers import SequenceClassifierReader
-from ..models import SequenceClassifier
+from biome.text.pipelines._impl.allennlp.dataset_readers import SequenceClassifierReader
+from biome.text.pipelines._impl.allennlp.models import SequenceClassifier
 
 
 class SequenceClassifierPipeline(
