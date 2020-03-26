@@ -1,11 +1,14 @@
 import copy
-from typing import Dict, Union, List, Any, Optional, Iterable, cast
+from typing import Dict, Union, List, Any, Optional, Iterable, cast, Tuple
 
 from allennlp.data import Instance, Tokenizer, TokenIndexer
 from allennlp.data.fields import LabelField, MultiLabelField
 from allennlp.data.tokenizers import SentenceSplitter
 
-from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader, TextTransforms
+from biome.text.pipelines._impl.allennlp.dataset_readers import (
+    DataSourceReader,
+    TextTransforms,
+)
 
 
 class ConfigurableInputDatasourceReader(DataSourceReader):
@@ -44,7 +47,7 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
         return self._inputs.copy()
 
     @property
-    def outputs(self):
+    def output(self):
         return self._output
 
     def text_to_instance(self, **inputs: Dict[str, Any]) -> Optional[Instance]:
@@ -60,8 +63,10 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
             return Instance(fields) if fields else None
 
         label_data = inputs.get(self._output, "")
-        if isinstance(label_data, Iterable):
-            labels = [str(label).strip() for label in cast(Iterable, label_data) if label]
+        if isinstance(label_data, (List, Tuple)):
+            labels = [
+                str(label).strip() for label in cast(Iterable, label_data) if label
+            ]
         else:
             labels = [str(label_data).strip()]
 
@@ -70,5 +75,9 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
         if len(labels) <= 0:
             return None
 
-        fields["label"] = MultiLabelField(labels) if self._multilabel else LabelField(str.join(" ", labels))
+        fields["label"] = (
+            MultiLabelField(labels)
+            if self._multilabel
+            else LabelField(str.join(" ", labels))
+        )
         return Instance(fields)
