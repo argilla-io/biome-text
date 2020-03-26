@@ -4,13 +4,14 @@ import os
 import re
 
 from allennlp.commands.subcommand import Subcommand
+from biome.data import DataSource
 
 from biome.text.constants import BIOME_METADATA_INDEX, EXPLORE_APP_ENDPOINT
 from biome.text.environment import ES_HOST
 from biome.text.helpers import get_compatible_doc_type
 from biome.text.pipelines import explore as pipeline_explore
 from biome.text.pipelines.explore import ElasticsearchConfig, ExploreConfig
-from biome.text.pipelines.pipeline import Pipeline
+from biome.text import Pipeline
 
 # TODO centralize configuration
 
@@ -107,9 +108,9 @@ def explore(
     force_delete: bool = True,
     **prediction_metadata,
 ) -> None:
-    pipeline_explore.pipeline_predictions(
-        Pipeline.load(binary),
-        source_path=source_path,
+    pipeline = Pipeline.load(binary)
+    pipeline.explore(
+        ds_path=source_path,
         # TODO use the /elastic explorer UI proxy as default elasticsearch endpoint
         es_config=ElasticsearchConfig(es_host=es_host, es_index=es_index),
         config=ExploreConfig(

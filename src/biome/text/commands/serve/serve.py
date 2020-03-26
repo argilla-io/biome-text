@@ -2,9 +2,6 @@ import argparse
 import logging
 
 from allennlp.commands import Subcommand
-from allennlp.service import server_simple
-from flask_cors import CORS
-from gevent.pywsgi import WSGIServer
 
 from biome.text import Pipeline
 
@@ -40,11 +37,8 @@ def _serve_from_args(args: argparse.Namespace) -> None:
 
 
 def serve(binary: str, port: int = 8000, output: str = None) -> None:
-    app = make_app(binary, output)
-
-    http_server = WSGIServer(("0.0.0.0", port), app)
-    __LOGGER.info("Model loaded, serving on port %s", port)
-    http_server.serve_forever()
+    pipeline = Pipeline.load(binary)
+    pipeline.serve(port, predictions=output)
 
 
 def make_app(binary: str, output: str = None):
@@ -65,11 +59,4 @@ def make_app(binary: str, output: str = None):
     app
         A Flask app used by gunicorn server
     """
-    pipeline = Pipeline.load(binary)
-    if output:
-        pipeline.init_prediction_logger(output)
-
-    app = server_simple.make_app(pipeline, title=pipeline.__class__.__name__)
-    CORS(app)
-
-    return app
+    pass
