@@ -6,16 +6,15 @@
 Welcome to biome-text's documentation!
 ======================================
 
+Welcome
+
+Table of content
+================
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
-   commands/index
-   dataset_readers/index
-   interpreters/index
-   models/index
-   pipelines/index
-
+   get_started
+   api
 
 Indices and tables
 ==================

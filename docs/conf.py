@@ -13,6 +13,7 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('../src'))
+import sphinx_material
 
 
 # -- Project information -----------------------------------------------------
@@ -28,7 +29,7 @@ author = 'recognai'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx_automodapi.automodapi'
+    'sphinx_automodapi.automodapi', 'sphinx.ext.napoleon', 'recommonmark', 'sphinx_material',
 ]
 numpydoc_show_class_members = False
 
@@ -47,9 +48,27 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 #html_theme = 'alabaster'
-html_theme = 'sphinx_rtd_theme'
+#html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_material'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# sphinx_material things
+html_theme_path = sphinx_material.html_theme_path()
+
+html_context = sphinx_material.get_html_context()
+
+#html_show_sourcelink = True
+html_sidebars = {
+    "**": ["logo-text.html", "globaltoc.html", "localtoc.html", "searchbox.html"]
+}
+
+html_theme_options = {
+    'html_minify': True,
+    'css_minify': True,
+    'nav_title': 'Biome-text WTF?',
+    'globaltoc_depth': 2
+}
