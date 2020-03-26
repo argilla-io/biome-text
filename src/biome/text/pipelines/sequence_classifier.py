@@ -12,12 +12,12 @@ class SequenceClassifierPipeline(
 ):
 
     # pylint: disable=arguments-differ
-    def predict(self, features: Union[dict, str, List[str]]):
+    def predict(self, tokens: Union[dict, str, List[str]]):
         """
         This methods just define the api use for the model
         Parameters
         ----------
-        features
+        tokens
             The data features used for prediction
 
         Returns
@@ -25,7 +25,7 @@ class SequenceClassifierPipeline(
             The prediction result
 
         """
-        return super(SequenceClassifierPipeline, self).predict(tokens=features)
+        return super(SequenceClassifierPipeline, self).predict(tokens=tokens)
 
 
 Predictor.register("sequence_classifier")(SequenceClassifierPipeline)
