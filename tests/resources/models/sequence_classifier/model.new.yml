@@ -1,0 +1,30 @@
+name: sequence_classifier
+
+type: text_classifier
+
+tokenizer:
+  type: word
+  word_splitter:
+    type: spacy
+
+inputs:
+  - tokens
+
+textual_features:
+  tokens: # Please don't change this value. Multiple test executions brings errors with this configuration
+    indexer:
+      type: single_id
+      lowercase_tokens: true
+    embedder:
+      type: embedding
+      embedding_dim: 10
+
+architecture:
+  seq2vec_encoder:
+    hidden_size: 10
+    input_size: 10
+    num_layers: 1
+    dropout: 0.0
+    type: gru
+
+

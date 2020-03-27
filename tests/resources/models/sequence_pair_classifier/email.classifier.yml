@@ -1,0 +1,48 @@
+name: email_classifier
+
+type: text_classifier
+
+tokenizer:
+  type: word
+  word_splitter:
+    type: spacy
+
+inputs:
+
+  subject:
+    type: text
+    features:
+      words:
+        indexer:
+          type: single_id
+          lowercase_tokens: true
+        embedder:
+          type: embedding
+          embedding_dim: 10
+
+  body:
+    type: text
+    segment_sentences: true
+    # This input will generate an embeddings tensor of shape like (batch_size, time_steps, [rest]),
+    # that differs with subject embedding tensor. So, We cannot use a single encoder for all inputs
+    text_transforms:
+      - rm_spaces
+      - html_to_text
+    features:
+      words:
+        indexer:
+          type: single_id
+          lowercase_tokens: true
+        embedder:
+          type: embedding
+          embedding_dim: 100
+
+architecture:
+  seq2vec_encoder:
+    hidden_size: 10
+    input_size: 10
+    num_layers: 1
+    dropout: 0.0
+    type: gru
+
+

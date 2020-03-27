@@ -1,0 +1,10 @@
+path: ../../data/dedup_100_de.csv
+format: csv
+mapping:
+  label: target
+  record1:
+  - record1_firstname
+  - record1_lastname
+  record2:
+  - record2_firstname
+  - record2_lastname

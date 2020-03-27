@@ -1,0 +1,65 @@
+name: entity_classifier
+
+type: text_classifier
+
+tokenizer:
+  type: word
+  word_splitter:
+    type: spacy
+
+inputs:
+
+  context_type:
+    type: categorical
+    features:
+      categories:
+        indexer: ???
+        embedder: ???
+
+  context:
+    type: text
+    features:
+      words:
+        indexer:
+          type: single_id
+          lowercase_tokens: true
+        embedder:
+          type: embedding
+          embedding_dim: 10
+
+  token_position:
+    type: Tuple[int, int]
+    features:
+      numeric:
+        indexer: ???
+        embedder: ???
+
+  value:
+    type: computed
+    compute_with: value_from_context($context)
+    segment_sentences: true
+    features:
+      words:
+        indexer:
+          type: single_id
+          lowercase_tokens: true
+        embedder:
+          type: embedding
+          embedding_dim: 10
+      characters:
+        indexer:
+          type: single_id
+          lowercase_tokens: true
+        embedder:
+          type: embedding
+          embedding_dim: 10
+
+architecture:
+  seq2vec_encoder:
+    hidden_size: 10
+    input_size: 10
+    num_layers: 1
+    dropout: 0.0
+    type: gru
+
+
