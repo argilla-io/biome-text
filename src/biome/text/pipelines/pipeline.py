@@ -1,17 +1,12 @@
 import copy
-import datetime
 import logging
 import os
-import pickle
 import re
 import warnings
 from copy import deepcopy
 from functools import lru_cache
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
 from tempfile import mktemp
 from typing import cast, Type, Optional, List, Dict, Tuple, Any, Generic, TypeVar, Union
-from gevent.pywsgi import WSGIServer
 
 import allennlp
 import numpy
@@ -31,17 +26,14 @@ from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.predictors import Predictor
 from allennlp.service import server_simple
-
-from dask import dataframe as dd
-from dask_elk.client import DaskElasticClient
 from flask_cors import CORS
+from gevent.pywsgi import WSGIServer
 from overrides import overrides
 from torch.nn import LSTM
 
-from biome.data import DataSource
-from biome.text import constants
-from biome.text.defs import TextClassifierPipeline, Pipeline
+from biome.text.defs import TextClassifierPipeline, Pipeline, _HashDict
 from biome.text.pipelines._impl.allennlp.dataset_readers import DataSourceReader
+from biome.text.pipelines._impl.allennlp.interpreters import IntegratedGradient
 from biome.text.pipelines._impl.allennlp.learn import learn
 from biome.text.pipelines._impl.allennlp.models import (
     load_archive,
@@ -50,23 +42,13 @@ from biome.text.pipelines._impl.allennlp.models import (
 from biome.text.pipelines._impl.allennlp.predictors.utils import (
     get_predictor_from_archive,
 )
-from biome.text.pipelines.defs import ExploreConfig, ElasticsearchConfig
+
+DefaultInterpreterClass = IntegratedGradient
 
 try:
     import ujson as json
 except ModuleNotFoundError:
     import json
-
-
-class _HashDict(dict):
-    """
-    hashable dict implementation.
-    BE AWARE! Since dicts are mutable, the hash can change!
-    """
-
-    def __hash__(self):
-        # user a better way
-        return pickle.dumps(self).__hash__()
 
 
 Architecture = TypeVar("Architecture", bound=allennlp.models.Model)
@@ -102,46 +84,12 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
     ARCHITECTURE_FIELD = "architecture"
     TYPE_FIELD = "type"
 
-    PREDICTION_FILE_NAME = "predictions.json"
-
     def __init__(self, model: Architecture, reader: Reader):
-        super(Pipeline, self).__init__(model, reader)
+        Predictor.__init__(self, model, reader)
+        TextClassifierPipeline.__init__(self, name="")
+
         self.__config = {}
         self.__binary_path = None
-        self.__prediction_logger = None
-
-    def init_prediction_logger(
-        self, output_dir: str, max_bytes: int = 20000000, backup_count: int = 20
-    ):
-        """Initialize the prediction logger.
-
-        If initialized we will log all predictions to a file called *predictions.json* in the `output_folder`.
-
-        Parameters
-        ----------
-        output_dir
-            Path to the folder in which we create the *predictions.json* file.
-        max_bytes
-            Passed on to logging.handlers.RotatingFileHandler
-        backup_count
-            Passed on to logging.handlers.RotatingFileHandler
-
-        """
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-        predictions_logger = logging.getLogger(output_dir)
-        predictions_logger.setLevel(logging.DEBUG)
-        # This flag avoids logging messages to be propagated to the parent loggers
-        predictions_logger.propagate = False
-        file_handler = RotatingFileHandler(
-            os.path.join(output_dir, self.PREDICTION_FILE_NAME),
-            maxBytes=max_bytes,
-            backupCount=backup_count,
-        )
-        file_handler.setLevel(logging.INFO)
-        predictions_logger.addHandler(file_handler)
-
-        self.__prediction_logger = predictions_logger
 
     @classmethod
     def by_name(cls: Type["Pipeline"], name: str) -> Type["Pipeline"]:
@@ -380,11 +328,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
         hashable_dict = _HashDict(inputs)
 
         output = self._predict_hashable_json(hashable_dict)
-
-        if self.__prediction_logger:
-            self.__prediction_logger.info(
-                json.dumps(dict(inputs=inputs, annotation=output))
-            )
+        self.log_prediction(inputs, output)
 
         return output
 
@@ -409,7 +353,7 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
 
         return output
 
-    def init_prediction_cache(self, max_size) -> None:
+    def init_prediction_cache(self, max_size: int) -> None:
         """Initialize a prediction cache using the functools.lru_cache decorator
 
         Parameters
@@ -433,114 +377,6 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
     def output(self) -> str:
         return "label"
 
-    def explore(
-        self, ds_path: str, config: ExploreConfig, es_config: ElasticsearchConfig
-    ) -> dd.DataFrame:
-        from biome.text.pipelines._impl.allennlp.interpreters import (
-            IntegratedGradient as DefaultInterpreterClass,
-        )
-
-        def _interpret_dataframe(
-            df: pd.DataFrame,
-            pipeline: Pipeline,
-            interpreter_klass: Type = DefaultInterpreterClass,
-        ) -> pd.Series:
-            """
-            Apply a model interpretation to every partition dataframe
-
-            Parameters
-            ----------
-            df: pd.DataFrame
-                The partition DataFrame
-            pipeline: str
-                The pipeline
-            interpreter_klass: Type
-                The used interpreted class
-
-            Returns
-            -------
-
-            A pandas Series representing the interpretations
-
-            """
-
-            def interpret_row(
-                row: pd.Series, interpreter: SaliencyInterpreter
-            ) -> Union[dict, List[dict]]:
-                """Interpret a incoming dataframe row"""
-                data = row.to_dict()
-                interpretation = interpreter.saliency_interpret_from_json(data)
-                if len(interpretation) == 0:
-                    return {}
-                if len(interpretation) == 1:
-                    return interpretation[0]
-                return interpretation
-
-            interpreter = interpreter_klass(pipeline)
-            return df.apply(interpret_row, interpreter=interpreter, axis=1)
-
-        if config.prediction_cache > 0:
-            self.init_prediction_cache(config.prediction_cache)
-        data_source = DataSource.from_yaml(ds_path)
-        ddf_mapped = data_source.to_mapped_dataframe()
-        # this only makes really sense when we have a predict_batch_json method implemented ...
-        n_partitions = max(1, round(len(ddf_mapped) / config.batch_size))
-
-        # a persist is necessary here, otherwise it fails for n_partitions == 1
-        # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-        ddf_mapped = ddf_mapped.repartition(npartitions=n_partitions).persist()
-        ddf_mapped_columns = ddf_mapped.columns
-
-        ddf_mapped["annotation"] = ddf_mapped[self.inputs_keys()].apply(
-            lambda x: sanitize(self.predict(**x.to_dict())), axis=1, meta=(None, object)
-        )
-
-        if config.interpret:
-            # TODO we should apply the same mechanism for the model predictions. Creating a new pipeline
-            #  for every partition
-            ddf_mapped["interpretations"] = ddf_mapped[
-                ddf_mapped_columns
-            ].map_partitions(_interpret_dataframe, pipeline=self, meta=(None, object))
-
-        ddf_source = data_source.to_dataframe()
-        ddf_source = ddf_source.repartition(npartitions=n_partitions).persist()
-
-        # We are sure that both data frames are aligned!
-        # A 100% safe way would be to set_index of both data frames on a meaningful column.
-        # The main problem are multiple csv files (read_csv("*.csv")), where the index starts from 0 for each file ...
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            ddf = dd.concat([ddf_source, ddf_mapped], axis=1)
-
-        # TODO @dcfidalgo we could calculate base metrics here (F1, recall & precision) using dataframe.
-        #  And include as part of explore metadata
-        #  Does it's simple???
-
-        ddf = DaskElasticClient(
-            host=es_config.es_host, retry_on_timeout=True, http_compress=True
-        ).save(ddf, index=es_config.es_index, doc_type=es_config.es_doc)
-
-        merged_metadata = {
-            **(config.metadata or {}),
-            "datasource": ds_path,
-            # TODO this should change when ui is normalized (action detail and action link naming)F
-            "explore_name": es_config.es_index,
-            "model": self.name,
-            "columns": ddf.columns.values.tolist(),
-        }
-
-        self.register_biome_prediction(
-            name=es_config.es_index, es_config=es_config, **merged_metadata
-        )
-        self.__prepare_es_index(es_config, force_delete=config.force_delete)
-        ddf = ddf.persist()
-        self._LOGGER.info(
-            "Data annotated successfully. You can explore your data here: %s",
-            f"{constants.EXPLORE_APP_ENDPOINT}/projects/default/explore/{es_config.es_index}",
-        )
-
-        return ddf
-
     def serve(self, port: int, predictions: str):
         if predictions:
             self.init_prediction_logger(predictions)
@@ -552,82 +388,6 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
         self._LOGGER.info("Model loaded, serving on port %s", port)
 
         http_server.serve_forever()
-
-    def register_biome_prediction(
-        self, name: str, es_config: ElasticsearchConfig, **kwargs
-    ):
-        """
-        Creates a new metadata entry for the incoming prediction
-
-        Parameters
-        ----------
-        name
-            A descriptive prediction name
-        pipeline
-            The pipeline used for the prediction batch
-        es_config:
-            The Elasticsearch configuration data
-        kwargs
-            Extra arguments passed as extra metadata info
-        """
-
-        metadata_index = constants.BIOME_METADATA_INDEX
-
-        es_config.client.indices.create(
-            index=metadata_index,
-            body={
-                "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}
-            },
-            params=dict(ignore=400),
-        )
-
-        parameters = {
-            **kwargs,
-            "pipeline": self.name,
-            "signature": self.inputs_keys() + [self.output()],
-            "predict_signature": self.inputs_keys(),
-            # TODO remove when ui is adapted
-            "inputs": self.inputs_keys(),  # backward compatibility
-        }
-
-        es_config.client.update(
-            index=metadata_index,
-            doc_type=es_config.es_doc,
-            id=es_config.es_index,
-            body={
-                "doc": dict(
-                    name=name, created_at=datetime.datetime.now(), **parameters
-                ),
-                "doc_as_upsert": True,
-            },
-        )
-
-    @staticmethod
-    def __prepare_es_index(es_config: ElasticsearchConfig, force_delete: bool):
-        dynamic_templates = [
-            {
-                data_type: {
-                    "match_mapping_type": data_type,
-                    "path_match": path_match,
-                    "mapping": {
-                        "type": "text",
-                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
-                    },
-                }
-            }
-            for data_type, path_match in [("*", "*.value"), ("string", "*")]
-        ]
-
-        if force_delete:
-            es_config.client.indices.delete(index=es_config.es_index, ignore=[400, 404])
-
-        es_config.client.indices.create(
-            index=es_config.es_index,
-            body={
-                "mappings": {es_config.es_doc: {"dynamic_templates": dynamic_templates}}
-            },
-            ignore=400,
-        )
 
     @staticmethod
     def __to_snake_case(name):
@@ -895,3 +655,21 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
             warnings.warn(f"get_output_labels not suported for model {self.model}")
             return []
         return cast(SequenceClassifierBase, self.model).output_classes
+
+    def _interpret_dataframe(
+        self, df: pd.DataFrame, interpreter_klass: Type = DefaultInterpreterClass
+    ) -> pd.Series:
+        def interpret_row(
+            row: pd.Series, interpreter: SaliencyInterpreter
+        ) -> Union[dict, List[dict]]:
+            """Interpret a incoming dataframe row"""
+            data = row.to_dict()
+            interpretation = interpreter.saliency_interpret_from_json(cast(dict, data))
+            if len(interpretation) == 0:
+                return {}
+            if len(interpretation) == 1:
+                return interpretation[0]
+            return interpretation
+
+        interpreter = interpreter_klass(self)
+        return df.apply(interpret_row, interpreter=interpreter, axis=1)
