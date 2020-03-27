@@ -3,7 +3,7 @@ iterator:
   cache_instances: 'true'
   max_instances_in_memory: 200000
   sorting_keys:
-  - - record1
+  - - tokens
     - num_tokens
   type: bucket
 trainer:
