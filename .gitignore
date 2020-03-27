@@ -113,3 +113,5 @@ generated*
 .DS_Store
 
 .dask
+/mk_docs/docs/api/
+/mk_docs/site/

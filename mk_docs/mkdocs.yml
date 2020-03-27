@@ -1,0 +1,60 @@
+nav:
+- Biome-text WTF?: index.md
+- Get started: get_started.md
+- API:
+  - about: api/about.md
+  - commands:
+    - explore:
+      - explore: api/commands/explore/explore.md
+    - learn:
+      - learn: api/commands/learn/learn.md
+    - serve:
+      - serve: api/commands/serve/serve.md
+    - ui:
+      - app: api/commands/ui/app.md
+      - ui: api/commands/ui/ui.md
+  - constants: api/constants.md
+  - dataset_readers:
+    - datasource_reader: api/dataset_readers/datasource_reader.md
+    - mixins: api/dataset_readers/mixins.md
+    - sequence_classifier_dataset_reader: api/dataset_readers/sequence_classifier_dataset_reader.md
+    - sequence_pair_classifier_dataset_reader: api/dataset_readers/sequence_pair_classifier_dataset_reader.md
+    - text_transforms: api/dataset_readers/text_transforms.md
+  - environment: api/environment.md
+  - helpers: api/helpers.md
+  - interpreters:
+    - integrated_gradient: api/interpreters/integrated_gradient.md
+  - models:
+    - archival: api/models/archival.md
+    - biome_bimpm: api/models/biome_bimpm.md
+    - language_model: api/models/language_model.md
+    - mixins: api/models/mixins.md
+    - multifield_bimpm: api/models/multifield_bimpm.md
+    - sequence_classifier: api/models/sequence_classifier.md
+    - sequence_classifier_base: api/models/sequence_classifier_base.md
+    - sequence_pair_classifier: api/models/sequence_pair_classifier.md
+    - similarity_classifier: api/models/similarity_classifier.md
+  - pipelines:
+    - biome_bimpm: api/pipelines/biome_bimpm.md
+    - defs: api/pipelines/defs.md
+    - explore: api/pipelines/explore.md
+    - learn:
+      - allennlp:
+        - callbacks:
+          - evaluate: api/pipelines/learn/allennlp/callbacks/evaluate.md
+          - logging: api/pipelines/learn/allennlp/callbacks/logging.md
+        - default_callback_trainer: api/pipelines/learn/allennlp/default_callback_trainer.md
+        - defs: api/pipelines/learn/allennlp/defs.md
+        - learn: api/pipelines/learn/allennlp/learn.md
+    - multifield_bimpm: api/pipelines/multifield_bimpm.md
+    - pipeline: api/pipelines/pipeline.md
+    - sequence_classifier: api/pipelines/sequence_classifier.md
+    - sequence_pair_classifier: api/pipelines/sequence_pair_classifier.md
+    - similarity_classifier: api/pipelines/similarity_classifier.md
+  - predictors:
+    - default_predictor: api/predictors/default_predictor.md
+    - utils: api/predictors/utils.md
+
+site_name: Biome-text WTF?
+theme:
+  name: material

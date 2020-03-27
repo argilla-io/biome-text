@@ -1,0 +1,2236 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-4.6.3">
+    
+    
+      
+        <title>pipeline - Biome-text WTF?</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.adb8469c.css">
+      
+      
+    
+    
+      <script src="../../../assets/javascripts/modernizr.86422ebf.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#biometextpipelinespipeline" tabindex="0" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../.." title="Biome-text WTF?" aria-label="Biome-text WTF?" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Biome-text WTF?
+            </span>
+            <span class="md-header-nav__topic">
+              
+                pipeline
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" aria-label="search" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../.." title="Biome-text WTF?" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Biome-text WTF?
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Biome-text WTF?" class="md-nav__link">
+      Biome-text WTF?
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../get_started/" title="Get started" class="md-nav__link">
+      Get started
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
+    
+    <label class="md-nav__link" for="nav-3">
+      API
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        API
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../about/" title="about" class="md-nav__link">
+      about
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2">
+    
+    <label class="md-nav__link" for="nav-3-2">
+      commands
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        commands
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2-1" type="checkbox" id="nav-3-2-1">
+    
+    <label class="md-nav__link" for="nav-3-2-1">
+      explore
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-2-1">
+        explore
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../commands/explore/explore/" title="explore" class="md-nav__link">
+      explore
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2-2" type="checkbox" id="nav-3-2-2">
+    
+    <label class="md-nav__link" for="nav-3-2-2">
+      learn
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-2-2">
+        learn
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../commands/learn/learn/" title="learn" class="md-nav__link">
+      learn
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2-3" type="checkbox" id="nav-3-2-3">
+    
+    <label class="md-nav__link" for="nav-3-2-3">
+      serve
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-2-3">
+        serve
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../commands/serve/serve/" title="serve" class="md-nav__link">
+      serve
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-2-4" type="checkbox" id="nav-3-2-4">
+    
+    <label class="md-nav__link" for="nav-3-2-4">
+      ui
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-2-4">
+        ui
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../commands/ui/app/" title="app" class="md-nav__link">
+      app
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../commands/ui/ui/" title="ui" class="md-nav__link">
+      ui
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../constants/" title="constants" class="md-nav__link">
+      constants
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-4" type="checkbox" id="nav-3-4">
+    
+    <label class="md-nav__link" for="nav-3-4">
+      dataset_readers
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-4">
+        dataset_readers
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dataset_readers/datasource_reader/" title="datasource_reader" class="md-nav__link">
+      datasource_reader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dataset_readers/mixins/" title="mixins" class="md-nav__link">
+      mixins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dataset_readers/sequence_classifier_dataset_reader/" title="sequence_classifier_dataset_reader" class="md-nav__link">
+      sequence_classifier_dataset_reader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dataset_readers/sequence_pair_classifier_dataset_reader/" title="sequence_pair_classifier_dataset_reader" class="md-nav__link">
+      sequence_pair_classifier_dataset_reader
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../dataset_readers/text_transforms/" title="text_transforms" class="md-nav__link">
+      text_transforms
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../environment/" title="environment" class="md-nav__link">
+      environment
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../helpers/" title="helpers" class="md-nav__link">
+      helpers
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-7" type="checkbox" id="nav-3-7">
+    
+    <label class="md-nav__link" for="nav-3-7">
+      interpreters
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-7">
+        interpreters
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../interpreters/integrated_gradient/" title="integrated_gradient" class="md-nav__link">
+      integrated_gradient
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-8" type="checkbox" id="nav-3-8">
+    
+    <label class="md-nav__link" for="nav-3-8">
+      models
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-8">
+        models
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/archival/" title="archival" class="md-nav__link">
+      archival
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/biome_bimpm/" title="biome_bimpm" class="md-nav__link">
+      biome_bimpm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/language_model/" title="language_model" class="md-nav__link">
+      language_model
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/mixins/" title="mixins" class="md-nav__link">
+      mixins
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/multifield_bimpm/" title="multifield_bimpm" class="md-nav__link">
+      multifield_bimpm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/sequence_classifier/" title="sequence_classifier" class="md-nav__link">
+      sequence_classifier
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/sequence_classifier_base/" title="sequence_classifier_base" class="md-nav__link">
+      sequence_classifier_base
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/sequence_pair_classifier/" title="sequence_pair_classifier" class="md-nav__link">
+      sequence_pair_classifier
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../models/similarity_classifier/" title="similarity_classifier" class="md-nav__link">
+      similarity_classifier
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-9" type="checkbox" id="nav-3-9" checked>
+    
+    <label class="md-nav__link" for="nav-3-9">
+      pipelines
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-9">
+        pipelines
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../biome_bimpm/" title="biome_bimpm" class="md-nav__link">
+      biome_bimpm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../defs/" title="defs" class="md-nav__link">
+      defs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../explore/" title="explore" class="md-nav__link">
+      explore
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-9-4" type="checkbox" id="nav-3-9-4">
+    
+    <label class="md-nav__link" for="nav-3-9-4">
+      learn
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
+      <label class="md-nav__title" for="nav-3-9-4">
+        learn
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-9-4-1" type="checkbox" id="nav-3-9-4-1">
+    
+    <label class="md-nav__link" for="nav-3-9-4-1">
+      allennlp
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
+      <label class="md-nav__title" for="nav-3-9-4-1">
+        allennlp
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-9-4-1-1" type="checkbox" id="nav-3-9-4-1-1">
+    
+    <label class="md-nav__link" for="nav-3-9-4-1-1">
+      callbacks
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="5">
+      <label class="md-nav__title" for="nav-3-9-4-1-1">
+        callbacks
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../learn/allennlp/callbacks/evaluate/" title="evaluate" class="md-nav__link">
+      evaluate
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../learn/allennlp/callbacks/logging/" title="logging" class="md-nav__link">
+      logging
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../learn/allennlp/default_callback_trainer/" title="default_callback_trainer" class="md-nav__link">
+      default_callback_trainer
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../learn/allennlp/defs/" title="defs" class="md-nav__link">
+      defs
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../learn/allennlp/learn/" title="learn" class="md-nav__link">
+      learn
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../multifield_bimpm/" title="multifield_bimpm" class="md-nav__link">
+      multifield_bimpm
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        pipeline
+      </label>
+    
+    <a href="./" title="pipeline" class="md-nav__link md-nav__link--active">
+      pipeline
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    Architecture
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reader" class="md-nav__link">
+    Reader
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline" class="md-nav__link">
+    Pipeline
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture_field" class="md-nav__link">
+    ARCHITECTURE_FIELD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    model
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_1" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#name" class="md-nav__link">
+    name
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_2" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pipeline_field" class="md-nav__link">
+    PIPELINE_FIELD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prediction_file_name" class="md-nav__link">
+    PREDICTION_FILE_NAME
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reader_1" class="md-nav__link">
+    reader
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_3" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signature" class="md-nav__link">
+    signature
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_4" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type_field" class="md-nav__link">
+    TYPE_FIELD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#init_prediction_logger" class="md-nav__link">
+    init_prediction_logger
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_1" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reader_class" class="md-nav__link">
+    reader_class
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_5" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model_class" class="md-nav__link">
+    model_class
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_6" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load" class="md-nav__link">
+    load
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_2" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_7" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#predictions_to_labeled_instances" class="md-nav__link">
+    predictions_to_labeled_instances
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_gradients" class="md-nav__link">
+    get_gradients
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_3" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_8" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    Notes
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json_to_labeled_instances" class="md-nav__link">
+    json_to_labeled_instances
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict_json" class="md-nav__link">
+    predict_json
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_4" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_9" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#init_prediction_cache" class="md-nav__link">
+    init_prediction_cache
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_5" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#empty_pipeline" class="md-nav__link">
+    empty_pipeline
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from_config" class="md-nav__link">
+    from_config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_6" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_10" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learn" class="md-nav__link">
+    learn
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_7" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extend_labels" class="md-nav__link">
+    extend_labels
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_output_labels" class="md-nav__link">
+    get_output_labels
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../sequence_classifier/" title="sequence_classifier" class="md-nav__link">
+      sequence_classifier
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../sequence_pair_classifier/" title="sequence_pair_classifier" class="md-nav__link">
+      sequence_pair_classifier
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../similarity_classifier/" title="similarity_classifier" class="md-nav__link">
+      similarity_classifier
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3-10" type="checkbox" id="nav-3-10">
+    
+    <label class="md-nav__link" for="nav-3-10">
+      predictors
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-10">
+        predictors
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../predictors/default_predictor/" title="default_predictor" class="md-nav__link">
+      default_predictor
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../predictors/utils/" title="utils" class="md-nav__link">
+      utils
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    Architecture
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reader" class="md-nav__link">
+    Reader
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline" class="md-nav__link">
+    Pipeline
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture_field" class="md-nav__link">
+    ARCHITECTURE_FIELD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config" class="md-nav__link">
+    config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    model
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_1" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#name" class="md-nav__link">
+    name
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_2" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pipeline_field" class="md-nav__link">
+    PIPELINE_FIELD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prediction_file_name" class="md-nav__link">
+    PREDICTION_FILE_NAME
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reader_1" class="md-nav__link">
+    reader
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_3" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#signature" class="md-nav__link">
+    signature
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_4" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#type_field" class="md-nav__link">
+    TYPE_FIELD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#init_prediction_logger" class="md-nav__link">
+    init_prediction_logger
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_1" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reader_class" class="md-nav__link">
+    reader_class
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_5" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model_class" class="md-nav__link">
+    model_class
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_6" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load" class="md-nav__link">
+    load
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_2" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_7" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#predictions_to_labeled_instances" class="md-nav__link">
+    predictions_to_labeled_instances
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_gradients" class="md-nav__link">
+    get_gradients
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_3" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_8" class="md-nav__link">
+    Returns
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    Notes
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#json_to_labeled_instances" class="md-nav__link">
+    json_to_labeled_instances
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predict_json" class="md-nav__link">
+    predict_json
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_4" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_9" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#init_prediction_cache" class="md-nav__link">
+    init_prediction_cache
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_5" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#empty_pipeline" class="md-nav__link">
+    empty_pipeline
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from_config" class="md-nav__link">
+    from_config
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_6" class="md-nav__link">
+    Parameters
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#returns_10" class="md-nav__link">
+    Returns
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#learn" class="md-nav__link">
+    learn
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters_7" class="md-nav__link">
+    Parameters
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extend_labels" class="md-nav__link">
+    extend_labels
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_output_labels" class="md-nav__link">
+    get_output_labels
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <h1 id="biometextpipelinespipeline">biome.text.pipelines.pipeline</h1>
+<h2 id="architecture">Architecture</h2>
+<p>Type variable.</p>
+<p>Usage::</p>
+<p>T = TypeVar('T')  # Can be anything
+  A = TypeVar('A', str, bytes)  # Must be str or bytes</p>
+<p>Type variables exist primarily for the benefit of static type
+checkers.  They serve as the parameters for generic types as well
+as for generic function definitions.  See class Generic for more
+information on generic types.  Generic functions work as follows:</p>
+<p>def repeat(x: T, n: int) -&gt; List[T]:
+      '''Return a list containing n references to x.'''
+      return [x]*n</p>
+<p>def longest(x: A, y: A) -&gt; A:
+      '''Return the longest of two strings.'''
+      return x if len(x) &gt;= len(y) else y</p>
+<p>The latter example's signature is essentially the overloading
+of (str, str) -&gt; str and (bytes, bytes) -&gt; bytes.  Also note
+that if the arguments are instances of some subclass of str,
+the return type is still plain str.</p>
+<p>At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.</p>
+<p>Type variables defined with covariant=True or contravariant=True
+can be used to declare covariant or contravariant generic types.
+See PEP 484 for more details. By default generic types are invariant
+in all type variables.</p>
+<p>Type variables can be introspected. e.g.:</p>
+<p>T.<strong>name</strong> == 'T'
+  T.<strong>constraints</strong> == ()
+  T.<strong>covariant</strong> == False
+  T.<strong>contravariant</strong> = False
+  A.<strong>constraints</strong> == (str, bytes)</p>
+<p>Note that only type variables defined in global scope can be pickled.</p>
+<h2 id="reader">Reader</h2>
+<p>Type variable.</p>
+<p>Usage::</p>
+<p>T = TypeVar('T')  # Can be anything
+  A = TypeVar('A', str, bytes)  # Must be str or bytes</p>
+<p>Type variables exist primarily for the benefit of static type
+checkers.  They serve as the parameters for generic types as well
+as for generic function definitions.  See class Generic for more
+information on generic types.  Generic functions work as follows:</p>
+<p>def repeat(x: T, n: int) -&gt; List[T]:
+      '''Return a list containing n references to x.'''
+      return [x]*n</p>
+<p>def longest(x: A, y: A) -&gt; A:
+      '''Return the longest of two strings.'''
+      return x if len(x) &gt;= len(y) else y</p>
+<p>The latter example's signature is essentially the overloading
+of (str, str) -&gt; str and (bytes, bytes) -&gt; bytes.  Also note
+that if the arguments are instances of some subclass of str,
+the return type is still plain str.</p>
+<p>At runtime, isinstance(x, T) and issubclass(C, T) will raise TypeError.</p>
+<p>Type variables defined with covariant=True or contravariant=True
+can be used to declare covariant or contravariant generic types.
+See PEP 484 for more details. By default generic types are invariant
+in all type variables.</p>
+<p>Type variables can be introspected. e.g.:</p>
+<p>T.<strong>name</strong> == 'T'
+  T.<strong>constraints</strong> == ()
+  T.<strong>covariant</strong> == False
+  T.<strong>contravariant</strong> = False
+  A.<strong>constraints</strong> == (str, bytes)</p>
+<p>Note that only type variables defined in global scope can be pickled.</p>
+<h2 id="pipeline">Pipeline</h2>
+<pre><code class="python">Pipeline(cls, *args, **kwds)
+</code></pre>
+
+<p>This class combine the different allennlp components that make possible a <code>`Pipeline</code>,
+understanding as a model, not only the definition of the neural network architecture,
+but also the transformation of the input data to Instances and the evaluation of
+predictions on new data</p>
+<p>The base idea is that this class contains the model and the dataset reader (as a predictor does),
+and allow operations of learning, predict and save</p>
+<h2 id="parameters">Parameters</h2>
+<p>model`
+    The class:~allennlp.models.Model architecture</p>
+<p>reader
+    The class:allennlp.data.DatasetReader</p>
+<h3 id="architecture_field">ARCHITECTURE_FIELD</h3>
+<h3 id="config">config</h3>
+<p>A representation of reader and model in a properties defined way
+as allennlp does</p>
+<h2 id="returns">Returns</h2>
+<pre><code>The configuration dictionary
+</code></pre>
+<h3 id="model">model</h3>
+<p>The model (AKA <code>allennlp.models.Model</code>)</p>
+<h2 id="returns_1">Returns</h2>
+<pre><code>The configured ``allennlp.models.Model``
+</code></pre>
+<h3 id="name">name</h3>
+<p>Get the pipeline name</p>
+<h2 id="returns_2">Returns</h2>
+<pre><code>The fully qualified pipeline class name
+</code></pre>
+<h3 id="pipeline_field">PIPELINE_FIELD</h3>
+<h3 id="prediction_file_name">PREDICTION_FILE_NAME</h3>
+<h3 id="reader_1">reader</h3>
+<p>The data reader (AKA <code>DatasetReader</code>)</p>
+<h2 id="returns_3">Returns</h2>
+<pre><code>The configured ``DatasetReader``
+</code></pre>
+<h3 id="signature">signature</h3>
+<p>Describe de input signature for the pipeline</p>
+<h2 id="returns_4">Returns</h2>
+<pre><code>A dict of expected inputs
+</code></pre>
+<h3 id="type_field">TYPE_FIELD</h3>
+<h3 id="init_prediction_logger">init_prediction_logger</h3>
+<pre><code class="python">Pipeline.init_prediction_logger(output_dir: str,
+                                max_bytes: int = 20000000,
+                                backup_count: int = 20)
+</code></pre>
+
+<p>Initialize the prediction logger.</p>
+<p>If initialized we will log all predictions to a file called <em>predictions.json</em> in the <code>output_folder</code>.</p>
+<h2 id="parameters_1">Parameters</h2>
+<p>output_dir
+    Path to the folder in which we create the <em>predictions.json</em> file.
+max_bytes
+    Passed on to logging.handlers.RotatingFileHandler
+backup_count
+    Passed on to logging.handlers.RotatingFileHandler</p>
+<h3 id="reader_class">reader_class</h3>
+<pre><code class="python">Pipeline.reader_class()
+</code></pre>
+
+<p>Must be implemented by subclasses</p>
+<h2 id="returns_5">Returns</h2>
+<pre><code>The class of ``DataSourceReader`` used in the model instance
+</code></pre>
+<h3 id="model_class">model_class</h3>
+<pre><code class="python">Pipeline.model_class()
+</code></pre>
+
+<p>Must be implemented by subclasses</p>
+<h2 id="returns_6">Returns</h2>
+<pre><code>The class of ``allennlp.models.Model`` used in the model instance
+</code></pre>
+<h3 id="load">load</h3>
+<pre><code class="python">Pipeline.load(binary_path: str, **kwargs)
+</code></pre>
+
+<p>Load a model pipeline form a binary path.</p>
+<h2 id="parameters_2">Parameters</h2>
+<p>binary_path
+    Path to the binary file
+kwargs
+    Passed on to the biome.text.models.load_archive method</p>
+<h2 id="returns_7">Returns</h2>
+<p>pipeline</p>
+<h3 id="predictions_to_labeled_instances">predictions_to_labeled_instances</h3>
+<pre><code class="python">Pipeline.predictions_to_labeled_instances(
+    instance: Instance, outputs: typing.Dict[str, numpy.ndarray])
+</code></pre>
+
+<p>This function takes a model's outputs for an Instance, and it labels that instance according
+to the output. For example, in classification this function labels the instance according
+to the class with the highest probability. This function is used to to compute gradients
+of what the model predicted. The return type is a list because in some tasks there are
+multiple predictions in the output (e.g., in NER a model predicts multiple spans). In this
+case, each instance in the returned list of Instances contains an individual
+entity prediction as the label.</p>
+<h3 id="get_gradients">get_gradients</h3>
+<pre><code class="python">Pipeline.get_gradients(
+    instances: typing.List[allennlp.data.instance.Instance])
+</code></pre>
+
+<p>Gets the gradients of the loss with respect to the model inputs.</p>
+<h2 id="parameters_3">Parameters</h2>
+<p>instances: List[Instance]</p>
+<h2 id="returns_8">Returns</h2>
+<p>Tuple[Dict[str, Any], Dict[str, Any]]
+The first item is a Dict of gradient entries for each input.
+The keys have the form  <code>{grad_input_1: ..., grad_input_2: ... }</code>
+up to the number of inputs given. The second item is the model's output.</p>
+<h2 id="notes">Notes</h2>
+<p>Takes a <code>JsonDict</code> representing the inputs of the model and converts
+them to :class:<code>~allennlp.data.instance.Instance</code>s, sends these through
+the model :func:<code>forward</code> function after registering hooks on the embedding
+layer of the model. Calls :func:<code>backward</code> on the loss and then removes the
+hooks.</p>
+<h3 id="json_to_labeled_instances">json_to_labeled_instances</h3>
+<pre><code class="python">Pipeline.json_to_labeled_instances(inputs: typing.Dict[str, typing.Any])
+</code></pre>
+
+<p>Converts incoming json to a :class:<code>~allennlp.data.instance.Instance</code>,
+runs the model on the newly created instance, and adds labels to the
+:class:<code>~allennlp.data.instance.Instance</code>s given by the model's output.
+Returns</p>
+<hr />
+<p>List[instance]
+A list of :class:<code>~allennlp.data.instance.Instance</code></p>
+<h3 id="predict_json">predict_json</h3>
+<pre><code class="python">Pipeline.predict_json(inputs: typing.Dict[str, typing.Any])
+</code></pre>
+
+<p>Predict an input with the pipeline's model.</p>
+<h2 id="parameters_4">Parameters</h2>
+<p>inputs
+    The input features/tokens in form of a json dict</p>
+<h2 id="returns_9">Returns</h2>
+<p>output
+    The model's prediction in form of a dict.
+    Returns None if the input could not be transformed to an instance.</p>
+<h3 id="init_prediction_cache">init_prediction_cache</h3>
+<pre><code class="python">Pipeline.init_prediction_cache(max_size)
+</code></pre>
+
+<p>Initialize a prediction cache using the functools.lru_cache decorator</p>
+<h2 id="parameters_5">Parameters</h2>
+<p>max_size
+    Save up to max_size most recent items.</p>
+<h3 id="empty_pipeline">empty_pipeline</h3>
+<pre><code class="python">Pipeline.empty_pipeline(labels: typing.List[str])
+</code></pre>
+
+<p>Creates a dummy pipeline with labels for model layers</p>
+<h3 id="from_config">from_config</h3>
+<pre><code class="python">Pipeline.from_config(path: str, labels: typing.List[str] = None)
+</code></pre>
+
+<p>Read a <code>Pipeline</code> subclass instance by reading a configuration file</p>
+<h2 id="parameters_6">Parameters</h2>
+<p>path
+    The configuration file path
+labels:
+    Optional. If passed, set a list of output labels for empty pipeline model</p>
+<h2 id="returns_10">Returns</h2>
+<pre><code>An instance of ``Pipeline`` with no architecture, since the internal
+``allennlp.models.Model`` needs a Vocabulary for the initialization
+</code></pre>
+<h3 id="learn">learn</h3>
+<pre><code class="python">Pipeline.learn(trainer: str,
+               train: str,
+               output: str,
+               validation: str = None,
+               test: typing.Union[str, NoneType] = None,
+               vocab: typing.Union[str, NoneType] = None,
+               verbose: bool = False)
+</code></pre>
+
+<p>Launch a learning process for loaded model configuration.</p>
+<p>Once the learn process finish, the model is ready for make predictions</p>
+<h2 id="parameters_7">Parameters</h2>
+<p>trainer
+    The trainer file path
+train
+    The train datasource file path
+validation
+    The validation datasource file path
+output
+    The learn output path
+vocab: Vocab
+    The already generated vocabulary path
+test: str
+    The test datasource configuration
+verbose
+    Turn on verbose logs</p>
+<h3 id="extend_labels">extend_labels</h3>
+<pre><code class="python">Pipeline.extend_labels(labels: typing.List[str])
+</code></pre>
+
+<p>Allow extend prediction labels to pipeline</p>
+<h3 id="get_output_labels">get_output_labels</h3>
+<pre><code class="python">Pipeline.get_output_labels()
+</code></pre>
+
+<p>Output model labels</p>
+                
+                  
+                
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../multifield_bimpm/" title="multifield_bimpm" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                multifield_bimpm
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../sequence_classifier/" title="sequence_classifier" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                sequence_classifier
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org" target="_blank" rel="noopener">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/application.c33a9706.js"></script>
+      
+      <script>app.initialize({version:"1.1",url:{base:"../../.."}})</script>
+      
+    
+  </body>
+</html>
