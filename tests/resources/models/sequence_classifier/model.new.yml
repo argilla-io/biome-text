@@ -19,12 +19,12 @@ textual_features:
       type: embedding
       embedding_dim: 10
 
-architecture:
-  seq2vec_encoder:
-    hidden_size: 10
-    input_size: 10
-    num_layers: 1
-    dropout: 0.0
-    type: gru
+# The rest the params will define the model architecture
+seq2vec_encoder:
+  hidden_size: 10
+  num_layers: 1
+  dropout: 0.0
+  type: gru
+
 
 

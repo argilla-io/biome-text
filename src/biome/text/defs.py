@@ -356,9 +356,9 @@ class PipelineDefinition:
         inputs: List[str],
         tokenizer: Dict[str, Any],
         textual_features: Dict[str, Dict[str, Any]],
-        architecture: Dict[str, Dict[str, Any]],
         name: Optional[str] = None,
         output: Optional[str] = None,
+        **architecture: Dict[str, Dict[str, Any]],
     ):
         self.name = name or "noname"
         self.inputs = inputs

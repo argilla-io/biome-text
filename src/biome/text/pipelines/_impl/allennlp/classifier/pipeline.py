@@ -6,13 +6,19 @@ from typing import Dict, Any, List, Optional, cast, Type, Union
 
 import pandas as pd
 import yaml
-from allennlp.common import Params
+from allennlp.common import Params, Registrable
 from allennlp.data import Vocabulary, DatasetReader
 from allennlp.data.token_indexers import SingleIdTokenIndexer
 from allennlp.interpret import SaliencyInterpreter
 from allennlp.models import Model
-from allennlp.modules import Embedding
-from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
+from allennlp.modules import Embedding, TextFieldEmbedder, Seq2SeqEncoder
+from allennlp.modules.seq2vec_encoders import (
+    PytorchSeq2VecWrapper,
+    CnnEncoder,
+    BagOfEmbeddingsEncoder,
+    CnnHighwayEncoder,
+    _Seq2VecWrapper,
+)
 from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.service import server_simple
 from flask_cors import CORS
@@ -20,9 +26,7 @@ from gevent.pywsgi import WSGIServer
 from torch.nn import LSTM
 
 from biome.text.defs import PipelineDefinition, TextClassifierPipeline
-from biome.text.pipelines._impl.allennlp.classifier.predictor import (
-    AllenNlpTextClassifierPredictor,
-)
+from biome.text.pipelines._impl.allennlp.classifier.predictor import AllenNlpTextClassifierPredictor
 from biome.text.pipelines._impl.allennlp.dataset_readers.configurable_input_datasource_reader import (
     ConfigurableInputDatasourceReader,
 )
@@ -44,27 +48,24 @@ def _copy_signature(new_signature: inspect.Signature, to_method):
     return wrapper
 
 
-Model.register(SequenceClassifier.__name__, exist_ok=True)(SequenceClassifier)
-DatasetReader.register(ConfigurableInputDatasourceReader.__name__, exist_ok=True)(
-    ConfigurableInputDatasourceReader
-)
-
-
 class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
 
     """
-    This class manages a pipeline implementation based on allennlp components
+    This class manages a text classification pipeline implementation based on allennlp components
 
-    An Allenlp classifier pipeline must define:
-
-    - A datasource reader with almost these attributes:
-        - A text tokenizer
-        - A token_indexers for text features
-
-    - A model architecture with almost these attributes:
-        - A text_field_embedder keeping relation with token_indexer in reader
-        - A seq2vec encoder for token embeddings pooling
+    An allennlp text classifier must define:
+    - An `allennlp.data.DatasetReader` with almost a token_indexers dictionary
+    - An `allennlp.models.Model` with almost a `allennlp.modules.TextFieldEmbedder`
+      keeping relation between embeddings and indexers defined in reader token_indexers
     """
+
+    # The inner `allennlp.models.Model` used in this pipeline
+    _model_class = SequenceClassifier
+    # The inner `allennlp.data.DatasetReader` used in this pipeline
+    _dataset_reader_class = ConfigurableInputDatasourceReader
+
+    Model.register(_model_class.__name__, exist_ok=True)(_model_class)
+    DatasetReader.register(_dataset_reader_class.__name__, exist_ok=True)(_dataset_reader_class)
 
     def __init__(self, name: str):
 
@@ -82,9 +83,7 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         self._feature_names = []
 
     @classmethod
-    def from_config(
-        cls, config: PipelineDefinition
-    ) -> "AllenNlpTextClassifierPipeline":
+    def from_config(cls, config: PipelineDefinition) -> "AllenNlpTextClassifierPipeline":
         return AllenNlpTextClassifierPipeline(config.name)._with_config(config)
 
     @classmethod
@@ -158,12 +157,8 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
 
         http_server.serve_forever()
 
-    def _interpret_dataframe(
-        self, df: pd.DataFrame, interpreter_klass: Type = DefaultInterpreterClass
-    ) -> pd.Series:
-        def interpret_row(
-            row: pd.Series, interpreter: SaliencyInterpreter
-        ) -> Union[dict, List[dict]]:
+    def _interpret_dataframe(self, df: pd.DataFrame, interpreter_klass: Type = DefaultInterpreterClass) -> pd.Series:
+        def interpret_row(row: pd.Series, interpreter: SaliencyInterpreter) -> Union[dict, List[dict]]:
             """Interpret a incoming dataframe row"""
             data = row.to_dict()
             interpretation = interpreter.saliency_interpret_from_json(cast(dict, data))
@@ -177,9 +172,7 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         return df.apply(interpret_row, interpreter=interpreter, axis=1)
 
     def get_output_labels(self) -> List[str]:
-        return cast(
-            AllenNlpTextClassifierPredictor, self._predictor
-        ).get_output_labels()
+        return cast(AllenNlpTextClassifierPredictor, self._predictor).get_output_labels()
 
     def allennlp_config(self) -> Dict[str, Any]:
         return self._allennlp_config.copy()
@@ -188,12 +181,7 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         if not self._predictor:
             return {}
 
-        kw_inputs.update(
-            {
-                self.inputs_keys()[idx]: input_value
-                for idx, input_value in enumerate(inputs)
-            }
-        )
+        kw_inputs.update({self.inputs_keys()[idx]: input_value for idx, input_value in enumerate(inputs)})
 
         output = self._predictor.predict_json(kw_inputs)
         self.log_prediction(kw_inputs, output)
@@ -211,28 +199,20 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         vocab = self._empty_vocab()
 
         return AllenNlpTextClassifierPredictor(
-            model=SequenceClassifier(
+            model=self._model_class(
                 text_field_embedder=BasicTextFieldEmbedder(
                     token_embedders={
                         "tokens": Embedding.from_params(
-                            vocab=vocab,
-                            params=Params({"embedding_dim": 2, "trainable": True}),
+                            vocab=vocab, params=Params({"embedding_dim": 2, "trainable": True})
                         )
                     }
                 ),
                 seq2vec_encoder=PytorchSeq2VecWrapper(
-                    LSTM(
-                        input_size=2,
-                        hidden_size=8,
-                        bidirectional=False,
-                        batch_first=True,
-                    )
+                    LSTM(input_size=2, hidden_size=8, bidirectional=False, batch_first=True)
                 ),
                 vocab=vocab,
             ),
-            dataset_reader=ConfigurableInputDatasourceReader(
-                inputs=inputs, token_indexers={"tokens": SingleIdTokenIndexer()}
-            ),
+            dataset_reader=self._dataset_reader_class(inputs=inputs, token_indexers={"tokens": SingleIdTokenIndexer()}),
         )
 
     def _empty_vocab(self, labels: List[str] = None) -> Vocabulary:
@@ -259,9 +239,7 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         """The pipeline model predictor"""
         return self._predictor
 
-    def _with_config(
-        self, config: PipelineDefinition
-    ) -> "AllenNlpTextClassifierPipeline":
+    def _with_config(self, config: PipelineDefinition) -> "AllenNlpTextClassifierPipeline":
         self._config = config
         self._feature_names = [feature for feature in config.textual_features.keys()]
         self._allennlp_config = self._pipeline_definition_to_allennlp_config(config)
@@ -276,10 +254,7 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
             "predict",
             _copy_signature(
                 inspect.Signature(
-                    [
-                        inspect.Parameter(input_name, inspect.Parameter.KEYWORD_ONLY)
-                        for input_name in self.inputs_keys()
-                    ]
+                    [inspect.Parameter(input_name, inspect.Parameter.KEYWORD_ONLY) for input_name in self.inputs_keys()]
                 ),
                 self.predict,
             ),
@@ -294,61 +269,83 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         }
 
         model = archive.model
-        reader = DatasetReader.from_params(
-            Params(self._allennlp_config["dataset_reader"].copy())
-        )
+        reader = DatasetReader.from_params(Params(self._allennlp_config["dataset_reader"].copy()))
 
-        if not isinstance(model, SequenceClassifier):
-            raise TypeError(
-                f"Model type for model {model} not supported. Expected: SequenceClassifier"
-            )
+        if not isinstance(model, self._model_class):
+            raise TypeError(f"Model type for model {model} not supported. Expected: {self._model_class}")
 
-        if not isinstance(reader, ConfigurableInputDatasourceReader):
-            raise TypeError(
-                f"Reader type for reader {reader} not supported. Expected: ConfigurableInputDatasourceReader"
-            )
+        if not isinstance(reader, self._dataset_reader_class):
+            raise TypeError(f"Reader type for reader {reader} not supported. Expected: {self._model_class}")
 
-        self._predictor = AllenNlpTextClassifierPredictor(
-            model=model, dataset_reader=reader
-        )
-        self._config = self._allennlp_config_to_pipeline_definition(
-            self._allennlp_config
-        )
+        self._predictor = AllenNlpTextClassifierPredictor(model=model, dataset_reader=reader)
+        self._config = self._allennlp_config_to_pipeline_definition(self._allennlp_config)
         self._binary = path
         self._update_predict_signature()
 
         return self
 
-    def _pipeline_definition_to_allennlp_config(
-        self, config: PipelineDefinition
-    ) -> Dict[str, Any]:
-        token_indexers = {
-            feature: config["indexer"]
-            for feature, config in config.textual_features.items()
-        }
-        text_field_embedder = {
-            feature: config["embedder"]
-            for feature, config in config.textual_features.items()
-        }
+    def _pipeline_definition_to_allennlp_config(self, config: PipelineDefinition) -> Dict[str, Any]:
+        def component_from_config(
+            component_class: Type[Registrable], component_config: Dict[str, Any], **extra_args
+        ) -> Registrable:
+            """Loads a allennlp registrable component class from its configuration"""
+            return component_class.from_params(Params(copy.deepcopy(component_config)), **extra_args)
+
+        def chain_component_config(
+            component_class: Type[Registrable], component_config: Dict[str, Any], prev: Registrable
+        ) -> Dict[str, Any]:
+            """
+            Configures component forward chain by setting the component
+            input dimension with previous output dimension
+            """
+            _component_class = component_class.by_name(component_config.get("type"))
+            # This occurs with wrapped seq2vec and internal allennlp mechanism, the _Seq2VecWrapper class.
+            # They break their own method api signature.
+            # Bravo allennlp team !!
+            if not isinstance(_component_class, Type):
+                _component_class = _component_class.__class__
+
+            # There is no standardization about input dimension init field, so we need check
+            # depending on the component class
+            if issubclass(_component_class, (CnnEncoder, BagOfEmbeddingsEncoder, CnnHighwayEncoder)):
+                input_dim_attribute = "embedding_dim"
+            elif issubclass(_component_class, (_Seq2VecWrapper, PytorchSeq2VecWrapper)):
+                input_dim_attribute = "input_size"
+            elif issubclass(_component_class, Seq2SeqEncoder):
+                input_dim_attribute = "input_dim"
+            else:  # Nothing to do
+                return component_config
+
+            if hasattr(prev, "get_output_dim"):
+                return {**component_config, input_dim_attribute: prev.get_output_dim()}
+            raise TypeError(f"Cannot chain from component {prev}")
+
+        token_indexers = {feature: config["indexer"] for feature, config in config.textual_features.items()}
+        text_field_embedder = {feature: config["embedder"] for feature, config in config.textual_features.items()}
+
+        init_model_signature = inspect.signature(self._model_class.__init__)
+
+        architecture = {}
+        vocab = self._empty_vocab()
+        prev_component = component_from_config(TextFieldEmbedder, text_field_embedder, vocab=vocab)
+        for name, component_cfg in config.architecture.items():
+            component_class = init_model_signature.parameters.get(name).annotation
+            new_configuration = chain_component_config(component_class, component_cfg, prev_component)
+            architecture[name] = new_configuration
+            prev_component = component_from_config(component_class, new_configuration)
 
         return {
             "dataset_reader": {
-                "type": ConfigurableInputDatasourceReader.__name__,
+                "type": self._dataset_reader_class.__name__,
                 "tokenizer": config.tokenizer,
                 "token_indexers": token_indexers,
                 "inputs": self._config.inputs,
                 "output": self._config.output,
             },
-            "model": {
-                "type": SequenceClassifier.__name__,
-                "text_field_embedder": text_field_embedder,
-                **config.architecture,
-            },
+            "model": {"type": self._model_class.__name__, "text_field_embedder": text_field_embedder, **architecture},
         }
 
-    def _allennlp_config_to_pipeline_definition(
-        self, allennlp_config: Dict[str, Any]
-    ) -> PipelineDefinition:
+    def _allennlp_config_to_pipeline_definition(self, allennlp_config: Dict[str, Any]) -> PipelineDefinition:
 
         dataset_reader = copy.deepcopy(allennlp_config["dataset_reader"])
         model = copy.deepcopy(allennlp_config["model"])
@@ -362,8 +359,7 @@ class AllenNlpTextClassifierPipeline(TextClassifierPipeline):
         text_field_embedder = model.pop("text_field_embedder")
 
         textual_features = {
-            feature: {"indexer": v, "embedder": text_field_embedder[feature]}
-            for feature, v in token_indexers.items()
+            feature: {"indexer": v, "embedder": text_field_embedder[feature]} for feature, v in token_indexers.items()
         }
 
         return PipelineDefinition(
