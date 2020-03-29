@@ -38,10 +38,9 @@ class ClassificationHead(TaskHead):
         feedforward: Optional[FeedForwardSpec] = None,
         multilabel: bool = False,
     ) -> None:
-        super(ClassificationHead, self).__init__()
-        self.vocab = vocab
-        # layers
+        super(ClassificationHead, self).__init__(vocab)
 
+        # layers
         tokens_pooler = (
             BagOfEmbeddingsEncoder(embedding_dim=prev_layer.get_output_dim())
             if not tokens_pooler
@@ -63,17 +62,21 @@ class ClassificationHead(TaskHead):
             else feedforward.input_dim(self._doc_pooler.get_output_dim()).compile()
         )
 
-        # label related configurations
-        self._multilabel = multilabel
-
         # output layers
-        if self._feedforward:
-            self._classifier_input_dim = self._feedforward.get_output_dim()
-        else:
-            self._classifier_input_dim = self._doc_pooler.get_output_dim()
+        self._classifier_input_dim = (
+            self._feedforward.get_output_dim()
+            if self._feedforward
+            else self._doc_pooler.get_output_dim()
+        )
 
         self._classification_layer = torch.nn.Linear(
             self._classifier_input_dim, self.num_classes
+        )
+
+        # label related configurations
+        self._multilabel = multilabel
+        self._calculate_output = (
+            self._output_multilabel if self._multilabel else self._output_label
         )
 
         # metrics and loss
@@ -148,29 +151,37 @@ class ClassificationHead(TaskHead):
             embedded_text = self._feedforward(embedded_text)
 
         logits = self._classification_layer(embedded_text)
+        return self._calculate_output(label, logits)
+
+    def _output_label(
+        self, label: Optional[torch.IntTensor], logits: torch.Tensor
+    ) -> Dict[str, torch.Tensor]:
         output_dict = {"logits": logits}
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+        output_dict["probs"] = probs
+        if label is not None:
+            loss = self._loss(logits, label.long())
+            output_dict["loss"] = loss
+            for metric in self._metrics.values():
+                metric(logits, label)
 
-        if self._multilabel:
-            probs = logits.sigmoid()  # TODO check this 'probs' calculation
-            output_dict["probs"] = probs
-            if label is not None:
-                # casting long to float for BCELoss
-                # see https://discuss.pytorch.org/t/nn-bcewithlogitsloss-cant-accept-one-hot-target/59980
-                loss = self._loss(
-                    logits.view(-1, self.num_classes),
-                    label.view(-1, self.num_classes).type_as(logits),
-                )
-                output_dict["loss"] = loss
-                # self._metrics(logits, label) TODO
-        else:
-            probs = torch.nn.functional.softmax(logits, dim=-1)
-            output_dict["probs"] = probs
-            if label is not None:
-                loss = self._loss(logits, label.long())
-                output_dict["loss"] = loss
-                for metric in self._metrics.values():
-                    metric(logits, label)
+        return output_dict
 
+    def _output_multilabel(
+        self, label: Optional[torch.IntTensor], logits: torch.Tensor
+    ) -> Dict[str, torch.Tensor]:
+        output_dict = {"logits": logits}
+        probs = logits.sigmoid()  # TODO check this 'probs' calculation
+        output_dict["probs"] = probs
+        if label is not None:
+            # casting long to float for BCELoss
+            # see https://discuss.pytorch.org/t/nn-bcewithlogitsloss-cant-accept-one-hot-target/59980
+            loss = self._loss(
+                logits.view(-1, self.num_classes),
+                label.view(-1, self.num_classes).type_as(logits),
+            )
+            output_dict["loss"] = loss
+            # self._metrics(logits, label) TODO
         return output_dict
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
