@@ -39,6 +39,7 @@ from biome.text.pipelines._impl.allennlp.models import (
     load_archive,
     SequenceClassifierBase,
 )
+from biome.text.pipelines._impl.allennlp.models.defs import ITextClassifier
 from biome.text.pipelines._impl.allennlp.predictors.utils import (
     get_predictor_from_archive,
 )
@@ -644,17 +645,17 @@ class Pipeline(Generic[Architecture, Reader], Predictor, TextClassifierPipeline)
 
     def extend_labels(self, labels: List[str]) -> None:
         """Allow extend prediction labels to pipeline"""
-        if not isinstance(self.model, SequenceClassifierBase):
+        if not isinstance(self.model, ITextClassifier):
             warnings.warn(f"Model {self.model} is not updatable")
         else:
-            cast(SequenceClassifierBase, self.model).extend_labels(labels)
+            cast(ITextClassifier, self.model).extend_labels(labels)
 
     def get_output_labels(self) -> List[str]:
         """Output model labels"""
-        if not isinstance(self.model, SequenceClassifierBase):
+        if not isinstance(self.model, ITextClassifier):
             warnings.warn(f"get_output_labels not suported for model {self.model}")
             return []
-        return cast(SequenceClassifierBase, self.model).output_classes
+        return cast(ITextClassifier, self.model).output_classes()
 
     def _interpret_dataframe(
         self, df: pd.DataFrame, interpreter_klass: Type = DefaultInterpreterClass

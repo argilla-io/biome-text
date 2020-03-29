@@ -39,6 +39,9 @@ class _HashList(list):
         return pickle.dumps(self).__hash__()
 
 
+_TYPES_MAP: Dict[str, Type["Pipeline"]] = {}
+
+
 class Pipeline:
     """Base pipeline interface"""
 
@@ -49,6 +52,17 @@ class Pipeline:
     def __init__(self, name: str):
         self._name = name
         self._prediction_logger = None
+
+    @classmethod
+    def register(cls, pipeline_type: str, overrides: bool = False):
+        """Register a new pipeline class for a given type name"""
+        if overrides or pipeline_type not in _TYPES_MAP:
+            _TYPES_MAP[pipeline_type] = cls
+
+    @classmethod
+    def by_type(cls, pipeline_type: str) -> Optional[Type["Pipeline"]]:
+        """Get an already registered pipeline class for a given type name, if exists"""
+        return _TYPES_MAP.get(pipeline_type)
 
     @property
     def name(self) -> str:
@@ -161,7 +175,7 @@ class Pipeline:
             )
 
     def explore(
-        self, ds_path: str, config: ExploreConfig, es_config: ElasticsearchConfig
+        self, ds_path: str, config: ExploreConfig, es_config: ElasticsearchConfig,
     ):
         """
             Read a data source and tries to apply a model predictions to the whole data source. The
@@ -182,7 +196,9 @@ class Pipeline:
         ddf_mapped_columns = ddf_mapped.columns
 
         ddf_mapped["annotation"] = ddf_mapped[self.inputs_keys()].apply(
-            lambda x: sanitize(self.predict(**x.to_dict())), axis=1, meta=(None, object)
+            lambda x: sanitize(self.predict(**x.to_dict())),
+            axis=1,
+            meta=(None, object),
         )
 
         if config.interpret:
@@ -356,6 +372,8 @@ class PipelineDefinition:
         inputs: List[str],
         tokenizer: Dict[str, Any],
         textual_features: Dict[str, Dict[str, Any]],
+        aggregate_inputs: bool = True,
+        multilabel: Optional[bool] = False,
         name: Optional[str] = None,
         output: Optional[str] = None,
         **architecture: Dict[str, Dict[str, Any]],
@@ -363,10 +381,12 @@ class PipelineDefinition:
         self.name = name or "noname"
         self.inputs = inputs
         self.output = output or "label"
+        self.aggregate_inputs = aggregate_inputs
         self.type = type
         self.tokenizer = tokenizer
         self.textual_features = textual_features
         self.architecture = architecture
+        self.multilabel = multilabel
         self.inference = {}
 
     @staticmethod

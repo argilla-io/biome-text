@@ -11,9 +11,8 @@ import requests
 from biome.text import Pipeline
 from biome.text.defs import PipelineDefinition
 from biome.text.environment import ES_HOST
-from biome.text.pipelines._impl.allennlp.classifier.pipeline import (
-    AllenNlpTextClassifierPipeline,
-)
+from biome.text.defs import TextClassifierPipeline as ITextClassifierPipeline
+from biome.text.pipelines import TextClassifierPipeline
 from biome.text.pipelines.defs import ExploreConfig, ElasticsearchConfig
 from tests import DaskSupportTest
 from tests.test_context import TEST_RESOURCES
@@ -27,11 +26,14 @@ class SequenceClassifierTest(DaskSupportTest):
     model_archive = os.path.join(output_dir, "model.tar.gz")
 
     name = "sequence_classifier"
+    type = "TextClassifierPipeline"
+
+    pipeline_class = ITextClassifierPipeline.by_type(type)
 
     model_path = os.path.join(BASE_CONFIG_PATH, "model.new.yml")
-    trainer_path = os.path.join(BASE_CONFIG_PATH, "trainer.yml")
-    training_data = os.path.join(BASE_CONFIG_PATH, "train.data.yml")
-    validation_data = os.path.join(BASE_CONFIG_PATH, "validation.data.yml")
+    trainer_path = os.path.join(BASE_CONFIG_PATH, "trainer.new.yml")
+    training_data = os.path.join(BASE_CONFIG_PATH, "train.data.new.yml")
+    validation_data = os.path.join(BASE_CONFIG_PATH, "validation.data.new.yml")
 
     def test_model_workflow(self):
         self.check_train()
@@ -43,12 +45,13 @@ class SequenceClassifierTest(DaskSupportTest):
         self.check_serve()
 
     def check_train(self):
-        classifier = AllenNlpTextClassifierPipeline.from_config(
+        self.assertEqual(TextClassifierPipeline, self.pipeline_class)
+        classifier = self.pipeline_class.from_config(
             PipelineDefinition.from_file(self.model_path)
         )
 
         classifier.learn(
-            trainer=self.trainer_path, train=self.training_data, output=self.output_dir
+            trainer=self.trainer_path, train=self.training_data, output=self.output_dir,
         )
         classifier.learn(
             trainer=self.trainer_path,
@@ -59,18 +62,18 @@ class SequenceClassifierTest(DaskSupportTest):
 
         self.assertTrue(classifier._predictor is not None)
 
-        prediction = classifier.predict(tokens={"a": "mike", "b": "Farrys"})
+        prediction = classifier.predict({"a": "mike", "b": "Farrys"})
         self.assertTrue("logits" in prediction, f"Not in {prediction}")
 
     def check_explore(self, extra_metadata: Optional[dict] = None):
         index = self.name
         es_host = os.getenv(ES_HOST, "http://localhost:9200")
-        pipeline = AllenNlpTextClassifierPipeline.load(self.model_archive)
+        pipeline = self.pipeline_class.load(self.model_archive)
         es_config = ElasticsearchConfig(es_host=es_host, es_index=index)
         pipeline.explore(
             ds_path=self.validation_data,
             config=ExploreConfig(
-                interpret=True, prediction_cache_size=100, **extra_metadata or {}
+                interpret=False, prediction_cache_size=100, **extra_metadata or {},
             ),
             es_config=es_config,
         )
@@ -82,8 +85,7 @@ class SequenceClassifierTest(DaskSupportTest):
     def check_serve(self):
         port = 18000
         output_dir = os.path.join(self.output_dir, "predictions")
-
-        pipeline = AllenNlpTextClassifierPipeline.load(self.model_archive)
+        pipeline = self.pipeline_class.load(self.model_archive)
 
         process = multiprocessing.Process(
             target=pipeline.serve,
@@ -102,10 +104,10 @@ class SequenceClassifierTest(DaskSupportTest):
         process.terminate()
 
     def check_predictions(self):
-        pipeline = AllenNlpTextClassifierPipeline.load(self.model_archive)
+        pipeline = self.pipeline_class.load(self.model_archive)
         inputs = [
             {"tokens": "Herbert Brandes-Siller"},
-            {"tokens": {"first_name": "Herbert", "last_name": "Brandes-Siller"}},
+            {"tokens": {"first_name": "Herbert", "last_name": "Brandes-Siller",}},
             {"tokens": ["Herbert", "Brandes-Siller"]},
         ]
 
@@ -147,7 +149,8 @@ class SequenceClassifierTest(DaskSupportTest):
             self.assertRaises(
                 Exception,
                 pipeline.predict,
-                {"label": "duplicate", "record1": "Herbert Brandes-Siller"},
+                label="duplicate",
+                record1="Herbert Brandes-Siller",
             )
 
         test_single_input()

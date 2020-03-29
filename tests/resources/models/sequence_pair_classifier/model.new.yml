@@ -10,6 +10,8 @@ inputs:
   - record1
   - record2
 
+aggregate_inputs: false
+
 textual_features:
   tokens: # Please don't change this value. Multiple test executions brings errors with this configuration
     indexer:
@@ -21,10 +23,14 @@ textual_features:
 
 
 # The rest the params will define the model architecture
-seq2vec_encoder:
+encoder:
   hidden_size: 15
   num_layers: 2
   dropout: 0.6
   type: gru
+
+head:
+  pooler:
+    type: boe
 
 

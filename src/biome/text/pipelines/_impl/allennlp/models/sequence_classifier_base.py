@@ -16,10 +16,11 @@ from allennlp.training.metrics import CategoricalAccuracy
 from overrides import overrides
 from torch.nn import Dropout, Linear
 
+from .defs import ITextClassifier
 from .mixins import BiomeClassifierMixin
 
 
-class SequenceClassifierBase(BiomeClassifierMixin, Model):
+class SequenceClassifierBase(BiomeClassifierMixin, ITextClassifier):
     """In the most simple form this ``BaseModelClassifier`` encodes a sequence with a ``Seq2VecEncoder``, then
     predicts a label for the sequence.
 
@@ -165,9 +166,8 @@ class SequenceClassifierBase(BiomeClassifierMixin, Model):
     @property
     def num_classes(self):
         """Number of output classes"""
-        return len(self.output_classes)
+        return len(self.output_classes())
 
-    @property
     def output_classes(self) -> List[str]:
         """The output token classes"""
         return [k for k in self.vocab.get_token_to_index_vocabulary(namespace="labels")]

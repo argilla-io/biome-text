@@ -8,7 +8,7 @@ iterator:
   type: bucket
 trainer:
   type: default
-  num_epochs: 2
+  num_epochs: 1
   optimizer:
     amsgrad: 'true'
     type: adam

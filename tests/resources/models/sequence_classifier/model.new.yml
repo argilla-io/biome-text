@@ -10,6 +10,8 @@ tokenizer:
 inputs:
   - tokens
 
+aggregate_inputs: false
+
 textual_features:
   tokens: # Please don't change this value. Multiple test executions brings errors with this configuration
     indexer:
@@ -20,11 +22,14 @@ textual_features:
       embedding_dim: 10
 
 # The rest the params will define the model architecture
-seq2vec_encoder:
+encoder:
   hidden_size: 10
   num_layers: 1
   dropout: 0.0
   type: gru
 
+head:
+  pooler:
+    type: boe
 
 

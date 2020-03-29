@@ -2,14 +2,15 @@ import warnings
 from copy import deepcopy
 from typing import List, Optional, cast, Tuple, Dict, Any
 
+import numpy as np
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
 from allennlp.data import Instance
 from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
 from allennlp.predictors import Predictor
-import numpy as np
-from biome.text.pipelines._impl.allennlp.models import SequenceClassifierBase
+
+from biome.text.pipelines._impl.allennlp.models.defs import ITextClassifier
 
 
 class AllenNlpTextClassifierPredictor(Predictor):
@@ -109,14 +110,14 @@ class AllenNlpTextClassifierPredictor(Predictor):
 
     def extend_labels(self, labels: List[str]) -> None:
         """Allow extend prediction labels to pipeline"""
-        if not isinstance(self._model, SequenceClassifierBase):
+        if not isinstance(self._model, ITextClassifier):
             warnings.warn(f"Model {self._model} is not updatable")
         else:
-            cast(SequenceClassifierBase, self._model).extend_labels(labels)
+            cast(ITextClassifier, self._model).extend_labels(labels)
 
     def get_output_labels(self) -> List[str]:
         """Return the prediction classes"""
-        if not isinstance(self._model, SequenceClassifierBase):
+        if not isinstance(self._model, ITextClassifier):
             warnings.warn(f"get_output_labels not supported for model {self._model}")
             return []
-        return cast(SequenceClassifierBase, self._model).output_classes
+        return cast(ITextClassifier, self._model).output_classes()
