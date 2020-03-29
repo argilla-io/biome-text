@@ -5,15 +5,26 @@ from typing import List, Optional, cast, Tuple, Dict, Any
 import numpy as np
 from allennlp.common import JsonDict
 from allennlp.common.util import sanitize
-from allennlp.data import Instance
+from allennlp.data import Instance, DatasetReader
 from allennlp.data.dataset import Batch
 from allennlp.data.fields import LabelField
+from allennlp.models import Model
 from allennlp.predictors import Predictor
 
 from biome.text.pipelines._impl.allennlp.models.defs import ITextClassifier
 
 
-class AllenNlpTextClassifierPredictor(Predictor):
+class TextClassifierPredictor(Predictor):
+    """Text classifier predictor. This predictor will support for ITextClassifier model implementations"""
+
+    def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
+        if not isinstance(model, ITextClassifier):
+            raise TypeError(
+                f"Cannot support model of type {model.__class__}. Only for ITextClassifier implementations"
+            )
+
+        super(TextClassifierPredictor, self).__init__(model, dataset_reader)
+
     def json_to_labeled_instances(self, inputs: JsonDict) -> List[Instance]:
         """
         Converts incoming json to a :class:`~allennlp.data.instance.Instance`,

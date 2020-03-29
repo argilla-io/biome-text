@@ -27,9 +27,7 @@ from biome.text.pipelines._impl.allennlp.learn import learn
 from biome.text.pipelines._impl.allennlp.models import load_archive
 from biome.text.pipelines._impl.allennlp.models.defs import ITextClassifier
 from biome.text.pipelines._impl.allennlp.models.text_classifier import TextClassifier
-from biome.text.pipelines._impl.allennlp.predictor import (
-    AllenNlpTextClassifierPredictor,
-)
+from biome.text.pipelines._impl.allennlp.predictor import TextClassifierPredictor
 
 DefaultInterpreterClass = IntegratedGradient
 
@@ -197,9 +195,7 @@ class TextClassifierPipeline(ITextClassifierPipeline):
         return df.apply(interpret_row, interpreter=interpreter, axis=1)
 
     def get_output_labels(self) -> List[str]:
-        return cast(
-            AllenNlpTextClassifierPredictor, self._predictor
-        ).get_output_labels()
+        return cast(TextClassifierPredictor, self._predictor).get_output_labels()
 
     def allennlp_config(self) -> Dict[str, Any]:
         return self._allennlp_config.copy()
@@ -226,11 +222,11 @@ class TextClassifierPipeline(ITextClassifierPipeline):
     def output(self) -> str:
         return self._config.output
 
-    def _empty_predictor(self, inputs: List[str]) -> AllenNlpTextClassifierPredictor:
+    def _empty_predictor(self, inputs: List[str]) -> TextClassifierPredictor:
         """Creates a dummy pipeline with labels for model layers"""
         vocab = self._empty_vocab()
 
-        return AllenNlpTextClassifierPredictor(
+        return TextClassifierPredictor(
             model=Model.from_params(
                 Params(copy.deepcopy(self._allennlp_config["model"])), vocab=vocab
             ),
@@ -306,9 +302,7 @@ class TextClassifierPipeline(ITextClassifierPipeline):
                 f"Reader type for reader {reader} not supported. Expected: {self._dataset_reader_class}"
             )
 
-        self._predictor = AllenNlpTextClassifierPredictor(
-            model=model, dataset_reader=reader
-        )
+        self._predictor = TextClassifierPredictor(model=model, dataset_reader=reader)
         self._config = self._allennlp_config_to_pipeline_definition(
             self._allennlp_config
         )
