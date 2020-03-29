@@ -9,7 +9,7 @@ from allennlp.models import Model
 from ...allennlp import helpers
 
 
-class ChainedLayer(Registrable):
+class WithLayerChain(Registrable):
     """TBD"""
 
     @classmethod
@@ -35,7 +35,7 @@ class ChainedLayer(Registrable):
         return cls(**args, **extras)
 
 
-class ITextClassifier(Model, ChainedLayer, ABC):
+class ITextClassifier(Model, WithLayerChain, ABC):
     """Interface text classifier model"""
 
     def output_classes(self) -> List[str]:

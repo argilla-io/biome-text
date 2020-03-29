@@ -6,7 +6,7 @@ from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder
 from allennlp.modules.seq2seq_encoders import _Seq2SeqWrapper
 from allennlp.modules.seq2vec_encoders import _Seq2VecWrapper
 
-from biome.text.pipelines._impl.allennlp.models.defs import ChainedLayer
+from biome.text.pipelines._impl.allennlp.models.defs import WithLayerChain
 
 
 def _find_input_attribute(component: Any) -> str:

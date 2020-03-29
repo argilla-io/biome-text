@@ -2,10 +2,10 @@ from typing import Dict
 
 import torch
 
-from biome.text.pipelines._impl.allennlp.models.defs import ChainedLayer
+from biome.text.pipelines._impl.allennlp.models.defs import WithLayerChain
 
 
-class TaskHead(torch.nn.Module, ChainedLayer):
+class TaskHead(torch.nn.Module, WithLayerChain):
     """Base task head for last `TextClassifier` model layer"""
 
     def __init__(self):
