@@ -28,8 +28,8 @@ T = TypeVar("T")
 
 class LayerSpec(Generic[T], FromParams):
     """
-    The layer spec component allows create
-    Pytorch modules lazily, and instantiate its components with dimension layer chain.
+    The layer spec component allows create Pytorch modules lazily,
+    and instantiate them inside a context (Model or other component) dimension layer chain.
 
     The layer spec wraps a component params and will generate an instance of type T once the input_dim is set.
 
