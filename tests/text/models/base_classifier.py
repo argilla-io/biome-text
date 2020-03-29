@@ -111,7 +111,9 @@ class BasePairClassifierTest(DaskSupportTest):
     def check_serve(self):
         port = 18000
         process = multiprocessing.Process(
-            target=serve, daemon=True, kwargs=dict(binary=self.model_archive, port=port)
+            target=serve,
+            daemon=True,
+            kwargs=dict(binary=self.model_archive, port=port),
         )
         process.start()
         sleep(5)

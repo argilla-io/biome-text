@@ -27,7 +27,7 @@ class BiomeDatasetReaderTest(DaskSupportTest):
         expected_inputs = ["44", "53", "28", "39", "55", "30", "37", "36"]
 
         yaml_config = os.path.join(
-            TEST_RESOURCES, "resources/datasources/biome.csv.multi.file.spec.yml"
+            TEST_RESOURCES, "resources/datasources/biome.csv.multi.file.spec.yml",
         )
         dataset = reader.read(yaml_config)
         self._check_dataset(dataset, expected_length, expected_inputs, expected_labels)

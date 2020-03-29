@@ -74,10 +74,10 @@ class BiomeLearn(Subcommand):
         )
 
         subparser.add_argument(
-            "--trainer", type=str, help="trainer.yml specification", required=True
+            "--trainer", type=str, help="trainer.yml specification", required=True,
         )
         subparser.add_argument(
-            "--train", type=str, help="train datasource definition", required=True
+            "--train", type=str, help="train datasource definition", required=True,
         )
         subparser.add_argument(
             "--validation",

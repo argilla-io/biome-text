@@ -163,7 +163,10 @@ class SimilarityClassifier(SequenceClassifierBase):
         combined_records = torch.cat(encoded_texts, dim=-1)
         logits = self._output_layer(combined_records)
         class_probabilities = torch.softmax(logits, dim=1)
-        output_dict = {"logits": logits, "class_probabilities": class_probabilities}
+        output_dict = {
+            "logits": logits,
+            "class_probabilities": class_probabilities,
+        }
 
         if label is not None:
             loss = self._loss(logits, label.long())
@@ -172,10 +175,10 @@ class SimilarityClassifier(SequenceClassifierBase):
                 # we need to transform the labels, see:
                 # https://pytorch.org/docs/stable/nn.html#cosineembeddingloss
                 label_transformed = torch.where(
-                    label == 0, torch.ones_like(label), -1 * torch.ones_like(label)
+                    label == 0, torch.ones_like(label), -1 * torch.ones_like(label),
                 )
                 loss += self._verification_weight * self._loss_sim(
-                    encoded_texts[0], encoded_texts[1], label_transformed.float()
+                    encoded_texts[0], encoded_texts[1], label_transformed.float(),
                 )
 
             output_dict["loss"] = loss

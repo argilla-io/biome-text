@@ -6,7 +6,7 @@ from biome.text.pipelines._impl.allennlp.dataset_readers import (
     SequencePairClassifierReader,
 )
 from biome.text.pipelines._impl.allennlp.models import MultifieldBiMpm
-from biome.text.pipelines import SequencePairClassifierPipeline
+from .sequence_pair_classifier import SequencePairClassifierPipeline
 from biome.text.pipelines.pipeline import Pipeline
 
 

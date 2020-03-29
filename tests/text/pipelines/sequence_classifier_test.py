@@ -27,7 +27,10 @@ def training_data_yaml(tmpdir):
     data_file = tmpdir.join("sentences.csv")
     df = pd.DataFrame(
         {
-            "tokens": ["Two simple sentences. Split by a dot.", "One simple sentence."],
+            "tokens": [
+                "Two simple sentences. Split by a dot.",
+                "One simple sentence.",
+            ],
             "label": [1, 0],
         }
     )
@@ -142,7 +145,7 @@ class SequenceClassifierTest(DaskSupportTest):
 
         # learn without validation
         classifier.learn(
-            trainer=self.trainer_path, train=self.training_data, output=self.output_dir
+            trainer=self.trainer_path, train=self.training_data, output=self.output_dir,
         )
 
         classifier.learn(
@@ -200,7 +203,7 @@ class SequenceClassifierTest(DaskSupportTest):
         inputs = [
             {"tokens": "Herbert Brandes-Siller", "label": "duplicate"},
             {
-                "tokens": {"first_name": "Herbert", "last_name": "Brandes-Siller"},
+                "tokens": {"first_name": "Herbert", "last_name": "Brandes-Siller",},
                 "label": "duplicate",
             },
             {"tokens": ["Herbert", "Brandes-Siller"], "label": "not_duplicate"},

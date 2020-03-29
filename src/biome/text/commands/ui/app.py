@@ -70,11 +70,11 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
             return index()
 
     @app.route("/static/js/<path:path>")
-    def static_js_proxy(path: str) -> Response:  # pylint: disable=unused-variable
+    def static_js_proxy(path: str,) -> Response:  # pylint: disable=unused-variable
         return send_from_directory(os.path.join(statics_dir, "static/js"), path)
 
     @app.route("/static/css/<path:path>")
-    def static_css_proxy(path: str) -> Response:  # pylint: disable=unused-variable
+    def static_css_proxy(path: str,) -> Response:  # pylint: disable=unused-variable
         return send_from_directory(os.path.join(statics_dir, "static/css"), path)
 
     @app.route("/public/<path:path>")

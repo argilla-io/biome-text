@@ -6,8 +6,8 @@ from biome.text.pipelines._impl.allennlp.dataset_readers import (
     SequencePairClassifierReader,
 )
 from biome.text.pipelines._impl.allennlp.models.biome_bimpm import BiomeBiMpm
-from biome.text.pipelines import SequencePairClassifierPipeline
 from biome.text.pipelines.pipeline import Pipeline
+from .sequence_pair_classifier import SequencePairClassifierPipeline
 
 
 class BiomeBiMpmPipeline(Pipeline[BiomeBiMpm, SequencePairClassifierReader]):

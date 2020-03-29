@@ -39,7 +39,7 @@ class ParallelDatasetReaderTest(DaskSupportTest):
                 {
                     "path": CSV_PATH,
                     "format": "csv",
-                    "forward": {"tokens": ["age"], "target": {"gold_label": "job"}},
+                    "forward": {"tokens": ["age"], "target": {"gold_label": "job"},},
                 }
             )
         )

@@ -30,7 +30,7 @@ class BiomeUI(Subcommand):
             "--es-host", help="The elasticsearch backend storage", default=None
         )
         subparser.add_argument(
-            "--port", help="Listening port for application", default=9000, type=int
+            "--port", help="Listening port for application", default=9000, type=int,
         )
         subparser.set_defaults(func=launch_ui_from_args)
         return subparser

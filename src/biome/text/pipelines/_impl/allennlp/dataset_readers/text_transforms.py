@@ -61,7 +61,7 @@ class RmSpacesTransforms(TextTransforms):
 
 @TextTransforms.register("html_to_text")
 class Html2TextTransforms(RmSpacesTransforms):
-    DEFAULT_RULES = ["fix_html", "html_to_text"] + RmSpacesTransforms.DEFAULT_RULES
+    DEFAULT_RULES = ["fix_html", "html_to_text",] + RmSpacesTransforms.DEFAULT_RULES
 
     @staticmethod
     def fix_html(text: str) -> str:

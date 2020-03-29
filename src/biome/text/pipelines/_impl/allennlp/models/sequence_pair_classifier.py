@@ -75,7 +75,7 @@ class SequencePairClassifier(SequenceClassifierBase):
 
         """
         combined_records = torch.cat(
-            [self.forward_tokens(tokens) for tokens in [record1, record2]], dim=-1
+            [self.forward_tokens(tokens) for tokens in [record1, record2]], dim=-1,
         )
 
         return self.output_layer(combined_records, label)

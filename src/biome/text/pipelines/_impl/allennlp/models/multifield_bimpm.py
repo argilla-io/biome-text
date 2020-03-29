@@ -144,7 +144,7 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
 
         self.classifier_output_dim = self.classifier_feedforward.get_output_dim()
         self.output_layer = Linear(
-            self.classifier_output_dim, self.vocab.get_vocab_size(namespace="labels")
+            self.classifier_output_dim, self.vocab.get_vocab_size(namespace="labels"),
         )
 
         self.dropout = torch.nn.Dropout(dropout)

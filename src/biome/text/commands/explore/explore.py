@@ -16,7 +16,11 @@ from biome.text import Pipeline
 # TODO centralize configuration
 
 # TODO: Remove (Just backward compatibility)
-__alias__ = [get_compatible_doc_type, BIOME_METADATA_INDEX, EXPLORE_APP_ENDPOINT]
+__alias__ = [
+    get_compatible_doc_type,
+    BIOME_METADATA_INDEX,
+    EXPLORE_APP_ENDPOINT,
+]
 
 
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +35,9 @@ class BiomeExplore(Subcommand):
         description = """Apply a batch predictions over a dataset and make accessible through the explore UI"""
 
         subparser = parser.add_parser(
-            name, description=description, help="Allow data exploration with prediction"
+            name,
+            description=description,
+            help="Allow data exploration with prediction",
         )
 
         subparser.add_argument(
@@ -69,7 +75,7 @@ class BiomeExplore(Subcommand):
         )
 
         subparser.add_argument(
-            "--cuda-device", type=int, default=-1, help="id of GPU to use (if any)"
+            "--cuda-device", type=int, default=-1, help="id of GPU to use (if any)",
         )
 
         subparser.set_defaults(func=explore_with_args)
@@ -125,8 +131,12 @@ def explore(
 
 # TODO: Remove (Just backward compatibility)
 def register_biome_prediction(
-    name: str, created_index: str, es_hosts: str, pipeline: Pipeline, **extra_args: dict
+    name: str,
+    created_index: str,
+    es_hosts: str,
+    pipeline: Pipeline,
+    **extra_args: dict,
 ) -> None:
     pipeline_explore.register_biome_prediction(
-        name, pipeline, ElasticsearchConfig(es_hosts, created_index), **extra_args
+        name, pipeline, ElasticsearchConfig(es_hosts, created_index), **extra_args,
     )
