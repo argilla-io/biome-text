@@ -7,7 +7,6 @@ from typing import Dict, Any, List, Optional, cast, Type, Union
 import pandas as pd
 import yaml
 from allennlp.common import Params
-from allennlp.common.from_params import remove_optional
 from allennlp.data import Vocabulary, DatasetReader
 from allennlp.interpret import SaliencyInterpreter
 from allennlp.models import Model
@@ -33,7 +32,6 @@ from biome.text.pipelines._impl.allennlp.predictor import (
 )
 
 DefaultInterpreterClass = IntegratedGradient
-from biome.text.pipelines._impl.allennlp import helpers
 
 
 def _copy_signature(new_signature: inspect.Signature, to_method):
@@ -68,10 +66,27 @@ class TextClassifierPipeline(ITextClassifierPipeline):
     # The inner `allennlp.data.DatasetReader` used in this pipeline
     _dataset_reader_class = ConfigurableInputDatasourceReader
 
-    Model.register(_model_class.__name__, exist_ok=True)(_model_class)
-    DatasetReader.register(_dataset_reader_class.__name__, exist_ok=True)(
-        _dataset_reader_class
-    )
+    @classmethod
+    def init_class(cls):
+        """Manage all pipeline class configuration for use"""
+        cls.register(cls.__name__)
+
+        if not issubclass(cls._model_class, ITextClassifier):
+            raise TypeError(
+                f"Wrong model class configured {cls._model_class}."
+                "Expected ITextClassifier subclass"
+            )
+
+        if not issubclass(cls._dataset_reader_class, ConfigurableInputDatasourceReader):
+            raise TypeError(
+                f"Wrong reader class configured {cls._dataset_reader_class}."
+                "Expected ConfigurableInputDatasourceReader subclass"
+            )
+
+        Model.register(cls._model_class.__name__, exist_ok=True)(cls._model_class)
+        DatasetReader.register(cls._dataset_reader_class.__name__, exist_ok=True)(
+            cls._dataset_reader_class
+        )
 
     def __init__(self, name: str):
 
@@ -311,11 +326,13 @@ class TextClassifierPipeline(ITextClassifierPipeline):
         }
         vocab = self._empty_vocab()
         return {
-            "dataset_reader": self._dataset_reader_from_definition(config),
-            "model": self._model_from_definition(config, text_field_embedder, vocab),
+            "dataset_reader": self.dataset_reader_config_from_definition(config),
+            "model": self.model_config_from_definition(
+                config, text_field_embedder, vocab
+            ),
         }
 
-    def _model_from_definition(
+    def model_config_from_definition(
         self,
         config: PipelineDefinition,
         embedder_config: Dict[str, Any],
@@ -335,7 +352,7 @@ class TextClassifierPipeline(ITextClassifierPipeline):
             **config.architecture,
         }
 
-    def _dataset_reader_from_definition(
+    def dataset_reader_config_from_definition(
         self, config: PipelineDefinition
     ) -> Dict[str, Any]:
         token_indexers = {
@@ -358,11 +375,12 @@ class TextClassifierPipeline(ITextClassifierPipeline):
 
         dataset_reader = copy.deepcopy(allennlp_config["dataset_reader"])
         model = copy.deepcopy(allennlp_config["model"])
+        dataset_reader.pop("type")
         model.pop("type")
 
-        tokenizer = dataset_reader["tokenizer"]
-        inputs = dataset_reader["inputs"]
-        output = dataset_reader.get("output")
+        tokenizer = dataset_reader.pop("tokenizer")
+        inputs = dataset_reader.pop("inputs")
+        output = dataset_reader.pop("output") if "output" in dataset_reader else None
 
         token_indexers = dataset_reader.pop("token_indexers")
         text_field_embedder = model.get("text_field_embedder", model.get("embedder"))
@@ -373,10 +391,11 @@ class TextClassifierPipeline(ITextClassifierPipeline):
         }
 
         return PipelineDefinition(
-            type=self._model_class.__name__,
+            type=self.__class__.__name__,
             tokenizer=tokenizer,
             inputs=inputs,
             output=output,
             textual_features=textual_features,
             architecture={layer: config for layer, config in model.items()},
+            **dataset_reader,
         )

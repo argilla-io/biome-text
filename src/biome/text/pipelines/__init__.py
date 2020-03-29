@@ -14,4 +14,4 @@ for pipeline in [
     SequencePairClassifierPipeline,
     SimilarityClassifierPipeline,
 ]:
-    pipeline.register(pipeline.__name__)
+    pipeline.init_class()

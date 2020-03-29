@@ -10,7 +10,6 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Optional, List, Type
 
-import numpy
 import pandas as pd
 import yaml
 from allennlp.common.util import sanitize
@@ -54,6 +53,11 @@ class Pipeline:
         self._prediction_logger = None
 
     @classmethod
+    def init_class(cls):
+        """Manage all pipeline class configuration for use"""
+        pass
+
+    @classmethod
     def register(cls, pipeline_type: str, overrides: bool = False):
         """Register a new pipeline class for a given type name"""
         if overrides or pipeline_type not in _TYPES_MAP:
@@ -68,34 +72,6 @@ class Pipeline:
     def name(self) -> str:
         """The pipeline name"""
         return self._name
-
-    @classmethod
-    def from_config(cls, config: "PipelineDefinition") -> "Pipeline":
-        """Creates a pipeline from """
-        raise NotImplementedError
-
-    @classmethod
-    def load(cls, binary: str, **kwargs) -> "Pipeline":
-        raise NotImplementedError
-
-    def predict(self, *inputs, **kw_inputs) -> Dict[str, Any]:
-        """Pipeline prediction/inference method"""
-        raise NotImplementedError
-
-    def learn(
-        self,
-        output: str,
-        trainer: str,
-        train: str,
-        validation: Optional[str] = None,
-        test: Optional[str] = None,
-        # This parameter is hard coupled to allennlp implementation details
-        # Could (not) be sense define in a common way an optional vocab for learn phase
-        vocab: Optional[str] = None,
-        verbose: bool = False,
-    ) -> "Pipeline":
-        """Learn method for create a trained pipeline"""
-        raise NotImplementedError
 
     def init_prediction_cache(self, max_size: int) -> None:
         """Initialize a prediction cache using the functools.lru_cache decorator
@@ -175,12 +151,93 @@ class Pipeline:
             )
 
     def explore(
-        self, ds_path: str, config: ExploreConfig, es_config: ElasticsearchConfig,
+        self, ds_path: str, config: ExploreConfig, es_config: ElasticsearchConfig
     ):
         """
             Read a data source and tries to apply a model predictions to the whole data source. The
             results will be persisted into an elasticsearch index for further data exploration
         """
+
+        def register_biome_prediction(
+            name: str, es_config: ElasticsearchConfig, **extra_metadata
+        ):
+            """
+            Creates a new metadata entry for the incoming prediction
+
+            Parameters
+            ----------
+            name
+                A descriptive prediction name
+            es_config:
+                The Elasticsearch configuration data
+            extra_metadata
+                Extra arguments passed as extra metadata info
+            """
+
+            metadata_index = constants.BIOME_METADATA_INDEX
+
+            es_config.client.indices.create(
+                index=metadata_index,
+                body={
+                    "settings": {
+                        "index": {"number_of_shards": 1, "number_of_replicas": 0}
+                    }
+                },
+                params=dict(ignore=400),
+            )
+
+            parameters = {
+                **extra_metadata,
+                "pipeline": self.name,
+                "signature": self.inputs_keys() + [self.output()],
+                "predict_signature": self.inputs_keys(),
+                # TODO remove when ui is adapted
+                "inputs": self.inputs_keys(),  # backward compatibility
+            }
+
+            es_config.client.update(
+                index=metadata_index,
+                doc_type=es_config.es_doc,
+                id=es_config.es_index,
+                body={
+                    "doc": dict(
+                        name=name, created_at=datetime.datetime.now(), **parameters
+                    ),
+                    "doc_as_upsert": True,
+                },
+            )
+
+        def prepare_es_index(es_config: ElasticsearchConfig, force_delete: bool):
+            dynamic_templates = [
+                {
+                    data_type: {
+                        "match_mapping_type": data_type,
+                        "path_match": path_match,
+                        "mapping": {
+                            "type": "text",
+                            "fields": {
+                                "keyword": {"type": "keyword", "ignore_above": 256}
+                            },
+                        },
+                    }
+                }
+                for data_type, path_match in [("*", "*.value"), ("string", "*")]
+            ]
+
+            if force_delete:
+                es_config.client.indices.delete(
+                    index=es_config.es_index, ignore=[400, 404]
+                )
+
+            es_config.client.indices.create(
+                index=es_config.es_index,
+                body={
+                    "mappings": {
+                        es_config.es_doc: {"dynamic_templates": dynamic_templates}
+                    }
+                },
+                ignore=400,
+            )
 
         if config.prediction_cache > 0:
             self.init_prediction_cache(config.prediction_cache)
@@ -196,9 +253,7 @@ class Pipeline:
         ddf_mapped_columns = ddf_mapped.columns
 
         ddf_mapped["annotation"] = ddf_mapped[self.inputs_keys()].apply(
-            lambda x: sanitize(self.predict(**x.to_dict())),
-            axis=1,
-            meta=(None, object),
+            lambda x: sanitize(self.predict(**x.to_dict())), axis=1, meta=(None, object)
         )
 
         if config.interpret:
@@ -235,10 +290,10 @@ class Pipeline:
             "columns": ddf.columns.values.tolist(),
         }
 
-        self._register_biome_prediction(
+        register_biome_prediction(
             name=es_config.es_index, es_config=es_config, **merged_metadata
         )
-        self._prepare_es_index(es_config, force_delete=config.force_delete)
+        prepare_es_index(es_config, force_delete=config.force_delete)
         ddf = ddf.persist()
         self._LOGGER.info(
             "Data annotated successfully. You can explore your data here: %s",
@@ -246,6 +301,34 @@ class Pipeline:
         )
 
         return ddf
+
+    @classmethod
+    def from_config(cls, config: "PipelineDefinition") -> "Pipeline":
+        """Creates a pipeline from """
+        raise NotImplementedError
+
+    @classmethod
+    def load(cls, binary: str, **kwargs) -> "Pipeline":
+        raise NotImplementedError
+
+    def predict(self, *inputs, **kw_inputs) -> Dict[str, Any]:
+        """Pipeline prediction/inference method"""
+        raise NotImplementedError
+
+    def learn(
+        self,
+        output: str,
+        trainer: str,
+        train: str,
+        validation: Optional[str] = None,
+        test: Optional[str] = None,
+        # This parameter is hard coupled to allennlp implementation details
+        # Could (not) be sense define in a common way an optional vocab for learn phase
+        vocab: Optional[str] = None,
+        verbose: bool = False,
+    ) -> "Pipeline":
+        """Learn method for create a trained pipeline"""
+        raise NotImplementedError
 
     def _interpret_dataframe(self, df: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -273,82 +356,6 @@ class Pipeline:
 
     def output(self) -> str:
         raise NotImplementedError
-
-    def _register_biome_prediction(
-        self, name: str, es_config: ElasticsearchConfig, **extra_metadata
-    ):
-        """
-        Creates a new metadata entry for the incoming prediction
-
-        Parameters
-        ----------
-        name
-            A descriptive prediction name
-        pipeline
-            The pipeline used for the prediction batch
-        es_config:
-            The Elasticsearch configuration data
-        extra_metadata
-            Extra arguments passed as extra metadata info
-        """
-
-        metadata_index = constants.BIOME_METADATA_INDEX
-
-        es_config.client.indices.create(
-            index=metadata_index,
-            body={
-                "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}
-            },
-            params=dict(ignore=400),
-        )
-
-        parameters = {
-            **extra_metadata,
-            "pipeline": self.name,
-            "signature": self.inputs_keys() + [self.output()],
-            "predict_signature": self.inputs_keys(),
-            # TODO remove when ui is adapted
-            "inputs": self.inputs_keys(),  # backward compatibility
-        }
-
-        es_config.client.update(
-            index=metadata_index,
-            doc_type=es_config.es_doc,
-            id=es_config.es_index,
-            body={
-                "doc": dict(
-                    name=name, created_at=datetime.datetime.now(), **parameters
-                ),
-                "doc_as_upsert": True,
-            },
-        )
-
-    @staticmethod
-    def _prepare_es_index(es_config: ElasticsearchConfig, force_delete: bool):
-        dynamic_templates = [
-            {
-                data_type: {
-                    "match_mapping_type": data_type,
-                    "path_match": path_match,
-                    "mapping": {
-                        "type": "text",
-                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
-                    },
-                }
-            }
-            for data_type, path_match in [("*", "*.value"), ("string", "*")]
-        ]
-
-        if force_delete:
-            es_config.client.indices.delete(index=es_config.es_index, ignore=[400, 404])
-
-        es_config.client.indices.create(
-            index=es_config.es_index,
-            body={
-                "mappings": {es_config.es_doc: {"dynamic_templates": dynamic_templates}}
-            },
-            ignore=400,
-        )
 
 
 class TextClassifierPipeline(Pipeline, ABC):
