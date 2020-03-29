@@ -25,6 +25,9 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_transforms: TextTransforms = None,
+        inputs_as_single_forward: bool = True,
+        forward_tokens: str = "tokens",
+        forward_label: str = "label",
     ):
         super(ConfigurableInputDatasourceReader, self).__init__(
             tokenizer,
@@ -41,6 +44,10 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
         self._output = output
 
         self._multilabel = multi_label
+        self._inputs_as_single_forward = inputs_as_single_forward
+
+        self._forward_tokens = forward_tokens
+        self._forward_label = forward_label
 
     @property
     def inputs(self):
@@ -55,9 +62,15 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
         tokens = {input_key: _inputs.pop(input_key) for input_key in self._inputs}
         fields = {}
 
-        tokens_field = self.build_textfield(tokens)
-        if tokens_field:
-            fields["tokens"] = tokens_field
+        if not self._inputs_as_single_forward:
+            for k, v in tokens.items():
+                field = self.build_textfield(v)
+                if field:
+                    fields[k] = field
+        else:
+            tokens_field = self.build_textfield(tokens)
+            if tokens_field:
+                fields[self._forward_tokens] = tokens_field
 
         if self._output not in inputs:
             return Instance(fields) if fields else None
@@ -75,7 +88,7 @@ class ConfigurableInputDatasourceReader(DataSourceReader):
         if len(labels) <= 0:
             return None
 
-        fields["label"] = (
+        fields[self._forward_label] = (
             MultiLabelField(labels)
             if self._multilabel
             else LabelField(str.join(" ", labels))
