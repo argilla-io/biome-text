@@ -1,5 +1,12 @@
 .esrunner
 
+**/*.th
+**/*.tar.gz
+**/metrics*.json
+**/config.json
+**/events.out*
+**/vocabulary/*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
