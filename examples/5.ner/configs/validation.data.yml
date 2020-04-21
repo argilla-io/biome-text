@@ -1,0 +1,5 @@
+path: ../data/ner.drugs.train.jsonl
+format: json
+mapping:
+  labels: labels
+  text: tokenized_text

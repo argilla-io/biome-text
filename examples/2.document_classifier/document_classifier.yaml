@@ -1,0 +1,27 @@
+name: text-classifier
+
+features:
+    words:
+        embedding_dim: 100
+        lowercase_tokens: true
+    chars:
+        embedding_dim: 8
+        encoder:
+            type: cnn
+            num_filters: 50
+            ngram_filter_sizes: [ 4 ]
+        dropout: 0.2
+
+encoder:
+    hidden_size: 10
+    num_layers: 2
+    dropout: 0.5
+    type: rnn
+
+head:
+    type: DocumentClassification
+    labels:
+        - duplicate
+        - not_duplicate
+    pooler:
+        type: boe

@@ -1,0 +1,8 @@
+path: ../data/train.csv
+format: csv
+mapping:
+  label: target
+  text:
+  - record1_firstname
+
+

@@ -1,0 +1,8 @@
+path: ../data/validation.csv
+format: csv
+mapping:
+  label: target
+  document:
+    - record1_firstname
+    - record1_lastname
+

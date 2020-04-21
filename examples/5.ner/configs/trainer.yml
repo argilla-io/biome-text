@@ -1,0 +1,13 @@
+iterator:
+  batch_size: 16
+
+trainer:
+  type: default
+  num_epochs: 15
+  optimizer:
+    amsgrad: 'true'
+    type: adam
+    lr: 0.005
+  validation_metric: +f1-measure-overall
+  patience: 3
+  num_serialized_models_to_keep: 1
