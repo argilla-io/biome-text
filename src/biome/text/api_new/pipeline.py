@@ -82,15 +82,27 @@ class VocabularyConfiguration:
 
 
 class Pipeline:
-    """The main pipeline class"""
+    """Manages NLP models configuration and actions.
 
+    Use `Pipeline` for creating new models from a configuration or loading a pre-trained model.
+    
+    Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
+    
+    # Parameters
+    
+        binary: Optional[str]`
+            The path to the model.tar.gz of a pre-trained `Pipeline`
+        config: `Optional[PipelineConfiguration]`
+            A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
+    """
+    # TODO: Signature makes you think you can pass both a pretrained_path and a config, while only one option possible.
     def __init__(
         self,
-        binary: Optional[str] = None,
+        pretrained_path: Optional[str] = None,
         config: Optional[PipelineConfiguration] = None,
     ):
 
-        self._binary = binary
+        self._binary = pretrained_path
         self._config = copy.deepcopy(config)
 
         if self._binary:
@@ -104,43 +116,90 @@ class Pipeline:
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
 
         self.__update_prediction_signatures()
+    
+    @classmethod
+    def from_file(
+        cls, path: str, vocab_config: Optional[VocabularyConfiguration] = None
+    ) -> "Pipeline":
+        """Creates a pipeline from a config yaml file path
+        
+        # Arguments
+            path: `str`
+                The path to the model.tar.gz of a pre-trained `Pipeline`
+            config: `Optional[VocabularyConfiguration]`
+                A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
+        
+        # Returns
+            pipeline: `Pipeline`
+        """
+        with open(path) as yamL_file:
+            return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
 
-    @staticmethod
-    def __model_from_config(
-        config: PipelineConfiguration, **extra_params
-    ) -> __default_impl__:
-        """Creates a internal base model from pipeline configuration"""
-        return __default_impl__.from_params(Params({"config": config}), **extra_params)
+    @classmethod
+    def from_config(
+        cls,
+        config: Union[str, PipelineConfiguration],
+        vocab_config: Optional[VocabularyConfiguration] = None,
+    ) -> "Pipeline":
+        """Creates a pipeline from a `PipelineConfiguration` object
+
+        # Arguments
+            config: `Union[str, PipelineConfiguration]`
+                A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
+            vocab_config: `Optional[VocabularyConfiguration]`
+                A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
+
+        # Returns
+            pipeline: `Pipeline`
+        """
+
+        if isinstance(config, str):
+            config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
+        pipeline = cls(config=config)
+
+        if vocab_config:
+            pipeline = cls._extend_vocab_from_sources(
+                pipeline,
+                sources=vocab_config.sources,
+                max_vocab_size=vocab_config.max_vocab_size,
+                min_count=vocab_config.min_count,
+                pretrained_files=vocab_config.pretrained_files,
+                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
+                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
+                tokens_to_add=vocab_config.tokens_to_add,
+            )
+
+        return pipeline
+    
+    @classmethod
+    def from_binary(cls, binary: str, **kwargs) -> "Pipeline":
+        """Loads an Allennlp pipeline from binary model.tar.gz file"""
+        return cls(binary=binary)
 
     @property
     def name(self):
-        """The pipeline name"""
+        """Gets pipeline  name"""
         return self._model.name
 
     @property
     def inputs(self) -> List[str]:
-        """The pipeline input names"""
+        """Gets pipeline input field names"""
         return self._model.inputs
 
     @property
     def output(self) -> str:
-        """The pipeline output name"""
+        """Gets pipeline output field names"""
         return self._model.output
 
     @property
     def model(self) -> Model:
-        """The pipeline model used by head layer"""
+        """Gets pipeline backbone model"""
         return self.head.model
 
     @property
     def head(self) -> TaskHead:
-        """The pipeline head task"""
+        """Gets pipeline task head"""
         return self._model.head
-
-    def set_head(self, type: Type[TaskHead], **params):
-        """Updates the pipeline head (already created with pipeline model dependency"""
-        self._config.head = TaskHeadSpec(type=type.__name__, **params)
-        self._model.head = self._config.head.compile(model=self.model)
 
     @property
     def config(self) -> PipelineConfiguration:
@@ -180,91 +239,47 @@ class Pipeline:
                 "type": "bucket",
             },
         }
-
-    def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
-        """Applies a data inference"""
-        self._model = self._model.eval()
-        return self._model.predict(*args, **kwargs)
-
-    def explain(self, *args, **kwargs) -> Dict[str, Any]:
-        """Applies a data inference with embedding explanation"""
-        return self._model.explain(*args, **kwargs)
-
-    @classmethod
-    def from_file(
-        cls, path: str, vocab_config: Optional[VocabularyConfiguration] = None
-    ) -> "Pipeline":
-        """Load an empty pipeline for given yaml file path"""
-        with open(path) as yamL_file:
-            return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
-
-    @classmethod
-    def from_config(
-        cls,
-        config: Union[str, PipelineConfiguration],
-        vocab_config: Optional[VocabularyConfiguration] = None,
-    ) -> "Pipeline":
-        """Load an empty pipeline for given yaml string configuration"""
-
-        if isinstance(config, str):
-            config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
-        pipeline = cls(config=config)
-
-        if vocab_config:
-            pipeline = cls._extend_vocab_from_sources(
-                pipeline,
-                sources=vocab_config.sources,
-                max_vocab_size=vocab_config.max_vocab_size,
-                min_count=vocab_config.min_count,
-                pretrained_files=vocab_config.pretrained_files,
-                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-                tokens_to_add=vocab_config.tokens_to_add,
-            )
-
-        return pipeline
-
-    def init_predictions_cache(self, max_size: int) -> None:
-        """Initialize predictions cache"""
-        self._model.init_prediction_cache(max_size)
-
-    def init_predictions_logging(self, output_dir: str):
-        """Initialize the predictions logging"""
-        self._model.init_prediction_logger(output_dir=output_dir)
-
+    
+    @staticmethod
+    def __model_from_config(
+        config: PipelineConfiguration, **extra_params
+    ) -> __default_impl__:
+        """Creates a internal base model from pipeline configuration"""
+        return __default_impl__.from_params(Params({"config": config}), **extra_params)
+    
+    def set_head(self, type: Type[TaskHead], **params):
+        """Updates the pipeline head (already created with pipeline model dependency"""
+        self._config.head = TaskHeadSpec(type=type.__name__, **params)
+        self._model.head = self._config.head.compile(model=self.model)
+    
     def train(
         self,
         output: str,
         trainer: str,
         training: str,
-        validation: str = None,
+        validation: str = None, # TODO: why not optional as the other below?
         test: Optional[str] = None,
         vocab: Optional[str] = None,
         verbose: bool = False,
     ) -> "Pipeline":
-        """
-            Launch a train process for loaded model configuration.
+        """Launches a training run with the specified parameters and datasets
 
-            Once the learn process finish, the model is ready for make predictions
-
-            Parameters
-            ----------
-
-            trainer
+        # Parameters
+            output: `str`
+                The experiment output path
+            trainer: `str`
                 The trainer file path
-            training
+            training: `str`
                 The train datasource file path
-            validation
+            validation: `Optional[str]`
                 The validation datasource file path
-            output
-                The learn output path
-            vocab: Vocab
+            test: `Optional[str]`
+                The test datasource file path
+            vocab: `Optional[str]`
                 The already generated vocabulary path
-            test: str
-                The test datasource configuration
-            verbose
+            verbose: `bool`
                 Turn on verbose logs
-            """
+        """
         self._model = self._model.train(mode=True)
 
         return PipelineHelper.train(
@@ -280,10 +295,14 @@ class Pipeline:
             ),
         )
 
-    @classmethod
-    def from_binary(cls, binary: str, **kwargs) -> "Pipeline":
-        """Loads an Allennlp pipeline from binary model.tar.gz file"""
-        return cls(binary=binary)
+    def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
+        """Applies a data inference"""
+        self._model = self._model.eval()
+        return self._model.predict(*args, **kwargs)
+
+    def explain(self, *args, **kwargs) -> Dict[str, Any]:
+        """Applies a data inference with embedding explanation"""
+        return self._model.explain(*args, **kwargs)
 
     def serve(self, port: int = 9998):
         """Server as rest api"""
