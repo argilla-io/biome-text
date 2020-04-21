@@ -1,6 +1,6 @@
 from datetime import datetime
 
-__version__ = "0.3.0"
+__version__ = "1.0.0.rc"
 
 
 def package_version(version: str):
