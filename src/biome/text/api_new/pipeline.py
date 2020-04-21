@@ -95,6 +95,7 @@ class Pipeline:
         config: `Optional[PipelineConfiguration]`
             A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
     """
+
     # TODO: Signature makes you think you can pass both a pretrained_path and a config, while only one option possible.
     def __init__(
         self,
@@ -116,7 +117,7 @@ class Pipeline:
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
 
         self.__update_prediction_signatures()
-    
+
     @classmethod
     def from_file(
         cls, path: str, vocab_config: Optional[VocabularyConfiguration] = None
@@ -170,7 +171,7 @@ class Pipeline:
             )
 
         return pipeline
-    
+
     @classmethod
     def from_binary(cls, binary: str, **kwargs) -> "Pipeline":
         """Loads an Allennlp pipeline from binary model.tar.gz file"""
@@ -239,25 +240,25 @@ class Pipeline:
                 "type": "bucket",
             },
         }
-    
+
     @staticmethod
     def __model_from_config(
         config: PipelineConfiguration, **extra_params
     ) -> __default_impl__:
         """Creates a internal base model from pipeline configuration"""
         return __default_impl__.from_params(Params({"config": config}), **extra_params)
-    
+
     def set_head(self, type: Type[TaskHead], **params):
         """Updates the pipeline head (already created with pipeline model dependency"""
         self._config.head = TaskHeadSpec(type=type.__name__, **params)
         self._model.head = self._config.head.compile(model=self.model)
-    
+
     def train(
         self,
         output: str,
         trainer: str,
         training: str,
-        validation: str = None, # TODO: why not optional as the other below?
+        validation: str = None,  # TODO: why not optional as the other below?
         test: Optional[str] = None,
         vocab: Optional[str] = None,
         verbose: bool = False,
