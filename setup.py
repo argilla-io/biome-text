@@ -65,13 +65,30 @@ if __name__ == "__main__":
         packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=0.9",
-            "smart_open~=1.8",
-            "coloredlogs==10.0",
+            "allennlp~=0.9.0",
+            "click~=7.0.0",
+            "smart_open~=1.8.0",
+            "coloredlogs~=10.0.0",
             "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
             "beautifulsoup4~=4.8.2",
             "lxml~=4.5.0",
+            "fastapi~=0.52.0",
+            "uvicorn~=0.11.0",
             "biome-data~=0.2.0",
+            "dask[complete]~=2.10.0",
+            "msgpack~=0.6.0",
+            "cachey~=0.1.0",  # required by dask.cache
+            "pyarrow~=0.15.0",
+            "ujson~=1.35",
+            "pandas~=0.25.0",
+            "elasticsearch<7.0",  # latest version doesn't work with dask-elk module
+            "dask-elk~=0.3.0",
+            "bokeh~=1.3.0",
+            "xlrd~=1.2.0",
+            "flatdict~=3.4.0",
+            "python-dateutil<2.8.1",  # botocore (imported from allennlp) has this restriction
+            "s3fs~=0.4.0",
+            "captum~=0.2.0",
         ],
         extras_require={
             "testing": [
@@ -83,7 +100,12 @@ if __name__ == "__main__":
             ]
         },
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
-        entry_points={"console_scripts": ["biome=biome.text.__main__:main"]},
+        entry_points={
+            "console_scripts": [
+                "biome=biome.text.__main__:main",
+                "biome-new=biome.text.api_new.cli:main",
+            ]
+        },
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,
     )
