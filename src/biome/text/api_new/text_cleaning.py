@@ -7,8 +7,7 @@ from bs4 import BeautifulSoup
 
 
 class TextCleaning(Registrable):
-    """
-    Base class for text cleaning
+    """Base class for text cleaning processors
     """
 
     default_implementation = "default"
@@ -19,7 +18,22 @@ class TextCleaning(Registrable):
 
 
 class TextCleaningRule:
-    """This decorator allows register a function as an available rule for the default text cleaning implementation"""
+    """Registers a function as a rule for the default text cleaning implementation
+    
+    Use the decorator `@TextCleaningRule` for creating custom text cleaning and pre-processing rules.
+    
+    An example function to strip spaces (already included in the default `TextCleaning` processor):
+    
+    ```python
+    @TextCleaningRule
+    def strip_spaces(text: str) -> str:
+        return text.strip()
+    ```
+    
+    # Parameters
+        func: `Callable[[str]`
+            The function to register
+    """
 
     __REGISTERED_RULES = {}
 
@@ -34,20 +48,13 @@ class TextCleaningRule:
 
 @TextCleaning.register(TextCleaning.default_implementation)
 class DefaultTextCleaning(Registrable):
-    """
-    This class defines some rules that can be applied to the text before it gets embedded in a `TextField`.
+    """Defines rules that can be applied to the text before it gets tokenized.
 
-    Each rule is a simple python function that receives and returns a str.
-
-
-    Parameters
-    ----------
-    rules
-        A list of registered rule method names to be applied on calling the instance.
-
-    Attributes
-    ----------
-        The default rules if the `rules` parameter is not provided.
+    Each rule is a simple python function that receives and returns a `str`.
+    
+    # Parameters
+        rules: `List[str]`
+            A list of registered rule method names to be applied to text inputs
     """
 
     def __init__(self, rules: List[str] = None):
@@ -67,22 +74,19 @@ class DefaultTextCleaning(Registrable):
 
 @TextCleaningRule
 def strip_spaces(text: str) -> str:
-    """Strip leading and trailing spaces/new lines"""
+    """Strips leading and trailing spaces/new lines"""
     return text.strip()
 
 
 @TextCleaningRule
 def rm_useless_spaces(text: str) -> str:
-    """Remove multiple spaces in `text`"""
+    """Removes multiple spaces in `str`"""
     return re.sub(" {2,}", " ", text)
 
 
 @TextCleaningRule
 def fix_html(text: str) -> str:
-    """list of replacements in html code.
-    I leave a link to the fastai version here as a reference:
-    https://docs.fast.ai/text.transform.html#fix_html
-    """
+    """Replaces some special HTML characters: `&nbsp;`, `<br>`, etc."""
     text = (
         # non breakable space -> space
         text.replace("&nbsp;", " ")
@@ -97,5 +101,5 @@ def fix_html(text: str) -> str:
 
 @TextCleaningRule
 def html_to_text(text: str) -> str:
-    """Extract text from a html doc with BeautifulSoup4"""
+    """Extracts text from an HTML document"""
     return BeautifulSoup(text, "lxml").get_text()

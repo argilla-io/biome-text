@@ -14,7 +14,11 @@ class Tokenizer(FromParams):
     
     Transforms inputs (e.g., a text, a list of texts, etc.) into structures containing `allennlp.data.Token` objects.
     
-    Use its arguments to configure the first stage of the pipeline (i.e., tokenizing a given set of inputs.
+    Use its arguments to configure the first stage of the pipeline (i.e., pre-processing a given set of text inputs.)
+    
+    Use methods for tokenizing depending on the shape of inputs (e.g., records with multiple fields, sentences lists).
+    
+    The main usage of its methods is for developing custom `TaskHead` implementations.
     
     # Parameters
         lang: `str`
@@ -90,7 +94,7 @@ class Tokenizer(FromParams):
             A list of lists of tokens `List[List[Token]]`
         """
         """
-        TODO: clarify: The resultant length list could differs if segment sentences flag is enabled
+        TODO: clarify?: The resultant length list could differs if segment sentences flag is enabled
         """
         sentences = document
         if self.segment_sentences:
@@ -114,8 +118,8 @@ class Tokenizer(FromParams):
         # Parameters
             record: `Dict[str, Any]`
             A `Dict` with arbitrary "fields" containing text.
-        # Returns`
-            A data dictionary with two lists of `Token` for each record entry: `key` and `value` tokens.
+        # Returns
+            A data dictionary with two lists of `Token`'s for each record entry: `key` and `value` tokens.
             Type: `Dict[str, Tuple[List[Token], List[Token]]]`
         """
         data = self._sanitize_dict(record)
