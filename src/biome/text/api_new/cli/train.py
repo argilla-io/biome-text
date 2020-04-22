@@ -34,7 +34,7 @@ def learn(
             ),
         )
         if extension in ["yaml", "yml"]
-        else Pipeline.from_binary(pipeline_path)
+        else Pipeline.from_pretrained(pipeline_path)
     )
     pipeline.train(
         output=output,

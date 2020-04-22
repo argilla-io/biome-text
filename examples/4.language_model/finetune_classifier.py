@@ -3,7 +3,7 @@ from biome.text.api_new.modules.heads import TextClassification
 
 if __name__ == "__main__":
     # load an existing pre-trained model
-    pipe = Pipeline.from_binary("configs/experiment_lm/model.tar.gz")
+    pipe = Pipeline.from_pretrained("configs/experiment_lm/model.tar.gz")
 
     labels = [
         "Allgemeinärzte",

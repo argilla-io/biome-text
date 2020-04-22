@@ -8,5 +8,5 @@ from biome.text.api_new import Pipeline
 @click.argument("pipeline_path", type=Path(exists=True))
 @click.option("-p", "--port", "port", type=int, default=8888, show_default=True)
 def serve(pipeline_path: str, port: int) -> None:
-    pipeline = Pipeline.from_binary(pipeline_path)
+    pipeline = Pipeline.from_pretrained(pipeline_path)
     pipeline.serve(port)

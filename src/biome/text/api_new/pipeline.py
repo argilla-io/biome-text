@@ -59,8 +59,51 @@ def __register(impl_class, overrides: bool = False):
 __register(__default_impl__, overrides=True)
 
 
+class ExploreConfiguration:
+    """Configures an exploration run
+    # Parameters
+        batch_size: `int`
+            The batch size for indexing predictions (default is `500)
+        prediction_cache_size: `int`
+            The size of the cache for caching predictions (default is `0)
+        explain: `bool`
+            Whether to extract and return explanations of token importance (default is `False`)
+        force_delete: `bool`
+            Whether to delete existing explore with `explore_id` before indexing new items (default is `True)
+        **metadata
+    """
+
+    def __init__(
+        self,
+        batch_size: int = 500,
+        prediction_cache_size: int = 0,
+        explain: bool = False,
+        force_delete: bool = True,
+        **metadata,
+    ):
+        self.batch_size = batch_size
+        self.prediction_cache = prediction_cache_size
+        self.explain = explain
+        self.force_delete = force_delete
+        self.metadata = metadata
+
+
 class VocabularyConfiguration:
-    """Vocabulary creation configuration on pipeline loading from file configuration"""
+    """Configures a `Vocabulary` before it gets created from data
+
+    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
+
+    See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+
+    # Parameters
+        sources: `List[str]`
+        min_count: `Dict[str, int]`
+        max_vocab_size: `Union[int, Dict[str, int]]`
+        pretrained_files: `Optional[Dict[str, str]]`
+        only_include_pretrained_words: `bool`
+        tokens_to_add: `Dict[str, List[str]]`
+        min_pretrained_embeddings: `Dict[str, int]`
+    """
 
     def __init__(
         self,
@@ -124,14 +167,15 @@ class Pipeline:
     ) -> "Pipeline":
         """Creates a pipeline from a config yaml file path
         
-        # Arguments
+        # Parameters
             path: `str`
-                The path to the model.tar.gz of a pre-trained `Pipeline`
-            config: `Optional[VocabularyConfiguration]`
+                The path to a YAML configuration file
+            vocab_config: `Optional[VocabularyConfiguration]`
                 A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
         
         # Returns
             pipeline: `Pipeline`
+                An instance of a configured `Pipeline`
         """
         with open(path) as yamL_file:
             return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
@@ -144,7 +188,7 @@ class Pipeline:
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
-        # Arguments
+        # Parameters
             config: `Union[str, PipelineConfiguration]`
                 A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
             vocab_config: `Optional[VocabularyConfiguration]`
@@ -152,6 +196,7 @@ class Pipeline:
 
         # Returns
             pipeline: `Pipeline`
+                An instance of a configured `Pipeline`
         """
 
         if isinstance(config, str):
@@ -173,9 +218,172 @@ class Pipeline:
         return pipeline
 
     @classmethod
-    def from_binary(cls, binary: str, **kwargs) -> "Pipeline":
-        """Loads an Allennlp pipeline from binary model.tar.gz file"""
-        return cls(binary=binary)
+    def from_pretrained(cls, path: str, **kwargs) -> "Pipeline":
+        """Loads a pipeline from a pre-trained pipeline from a model.tar.gz file path
+
+        # Parameters
+            path: `str`
+                The path to the model.tar.gz file of a pre-trained `Pipeline`
+
+        # Returns
+            pipeline: `Pipeline`
+                An instance of a configured `Pipeline`
+        """
+        return cls(pretrained_path=path)
+
+    def train(
+        self,
+        output: str,
+        trainer: str,
+        training: str,
+        validation: Optional[str] = None,
+        test: Optional[str] = None,
+        vocab: Optional[str] = None,
+        verbose: bool = False,
+    ) -> "Pipeline":
+        """Launches a training run with the specified configurations and datasources
+
+        # Parameters
+            output: `str`
+                The experiment output path
+            trainer: `str`
+                The trainer file path
+            training: `str`
+                The train datasource file path
+            validation: `Optional[str]`
+                The validation datasource file path
+            test: `Optional[str]`
+                The test datasource file path
+            vocab: `Optional[str]`
+                The path to an existing vocabulary
+            verbose: `bool`
+                Turn on verbose logs
+        # Returns
+            pipeline: `Pipeline`
+                The trained `Pipeline`
+        """
+        self._model = self._model.train(mode=True)
+
+        return PipelineHelper.train(
+            self,
+            TrainConfiguration(
+                vocab=vocab,
+                test_cfg=test,
+                output=output,
+                trainer_path=trainer,
+                train_cfg=training,
+                validation_cfg=validation,
+                verbose=verbose,
+            ),
+        )
+
+    def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
+        """Predicts over some input data with current state of the model
+
+        # Parameters
+            *args
+            **kwargs
+           
+        # Returns
+            predictions: `Dict[str, numpy.ndarray]`
+                A dictionary containing the predictions and additional information
+        """
+        # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
+        self._model = self._model.eval()
+        return self._model.predict(*args, **kwargs)
+
+    def explain(self, *args, **kwargs) -> Dict[str, Any]:
+        """Predicts over some input data with current state of the model and provides explanations of token importance.
+
+        # Parameters
+            *args
+            **kwargs
+        # Returns
+            explanations: `Dict[str, numpy.ndarray]`
+                A dictionary containing the predictions and additional information
+        """
+        # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
+        return self._model.explain(*args, **kwargs)
+
+    def explore(
+        self,
+        ds_path: str,
+        explore_id: Optional[str] = None,
+        es_host: Optional[str] = None,
+        batch_size: int = 500,
+        prediction_cache_size: int = 0,  # TODO: do we need caching for Explore runs as well or only on serving time?
+        explain: bool = False,
+        force_delete: bool = True,
+        **metadata,
+    ) -> dd.DataFrame:
+        """Launches Explore UI for a given datasource with current model
+        
+        Running this method inside a an `IPython` notebook will try to render the UI directly in the notebook.
+        
+        Running this outside a notebook will try to launch the standalone web application.
+
+        # Parameters
+            ds_path: `str`
+                The path to the configuration of a datasource
+            explore_id: `Optional[str]`
+                A name or id for this explore run, useful for running and keep track of several explorations
+            es_host: `Optional[str]`
+                The URL to the Elasticsearch host for indexing predictions (default is `localhost:9200`)
+            batch_size: `int`
+                The batch size for indexing predictions (default is `500)
+            prediction_cache_size: `int`
+                The size of the cache for caching predictions (default is `0)
+            explain: `bool`
+                Whether to extract and return explanations of token importance (default is `False`)
+            force_delete: `bool`
+                Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
+        # Returns
+            pipeline: `Pipeline`
+                The trained `Pipeline`
+        """
+        config = ExploreConfiguration(
+            batch_size=batch_size,
+            prediction_cache_size=prediction_cache_size,
+            explain=explain,
+            force_delete=force_delete,
+            **metadata,
+        )
+
+        es_config = ElasticsearchExplore(
+            es_index=explore_id or str(uuid.uuid1()),
+            es_host=es_host or constants.DEFAULT_ES_HOST,
+        )
+
+        explore_df = PipelineHelper.explore(self, ds_path, config, es_config)
+        self._show_explore(es_config)
+
+        return explore_df
+
+    def serve(self, port: int = 9998):
+        """Launches a REST prediction service with current model in a specified port (default is `9998)
+        
+        # Parameters
+            port: `int`
+                The port to make available the prediction service
+        """
+        self._model = self._model.eval()
+        return PipelineHelper.serve(self, port)
+
+    def set_head(self, type: Type[TaskHead], **params):
+        """Sets a new task head for the pipeline
+        
+        Use this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
+        
+        # Parameters
+    
+            type: `Type[TaskHead]`
+                The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
+            **params:
+                The `TaskHead` specific parameters (e.g., classification head need a `pooler`)
+        """
+
+        self._config.head = TaskHeadSpec(type=type.__name__, **params)
+        self._model.head = self._config.head.compile(model=self.model)
 
     @property
     def name(self):
@@ -247,101 +455,6 @@ class Pipeline:
     ) -> __default_impl__:
         """Creates a internal base model from pipeline configuration"""
         return __default_impl__.from_params(Params({"config": config}), **extra_params)
-
-    def set_head(self, type: Type[TaskHead], **params):
-        """Updates the pipeline head (already created with pipeline model dependency"""
-        self._config.head = TaskHeadSpec(type=type.__name__, **params)
-        self._model.head = self._config.head.compile(model=self.model)
-
-    def train(
-        self,
-        output: str,
-        trainer: str,
-        training: str,
-        validation: str = None,  # TODO: why not optional as the other below?
-        test: Optional[str] = None,
-        vocab: Optional[str] = None,
-        verbose: bool = False,
-    ) -> "Pipeline":
-        """Launches a training run with the specified parameters and datasets
-
-        # Parameters
-            output: `str`
-                The experiment output path
-            trainer: `str`
-                The trainer file path
-            training: `str`
-                The train datasource file path
-            validation: `Optional[str]`
-                The validation datasource file path
-            test: `Optional[str]`
-                The test datasource file path
-            vocab: `Optional[str]`
-                The already generated vocabulary path
-            verbose: `bool`
-                Turn on verbose logs
-        """
-        self._model = self._model.train(mode=True)
-
-        return PipelineHelper.train(
-            self,
-            TrainConfiguration(
-                vocab=vocab,
-                test_cfg=test,
-                output=output,
-                trainer_path=trainer,
-                train_cfg=training,
-                validation_cfg=validation,
-                verbose=verbose,
-            ),
-        )
-
-    def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
-        """Applies a data inference"""
-        self._model = self._model.eval()
-        return self._model.predict(*args, **kwargs)
-
-    def explain(self, *args, **kwargs) -> Dict[str, Any]:
-        """Applies a data inference with embedding explanation"""
-        return self._model.explain(*args, **kwargs)
-
-    def serve(self, port: int = 9998):
-        """Server as rest api"""
-        self._model = self._model.eval()
-        return PipelineHelper.serve(self, port)
-
-    def explore(
-        self,
-        ds_path: str,
-        explore_id: Optional[str] = None,
-        es_host: Optional[str] = None,
-        batch_size: int = 500,
-        prediction_cache_size: int = 0,
-        explain: bool = False,
-        force_delete: bool = True,
-        **metadata,
-    ) -> dd.DataFrame:
-        """
-            Read a data source and tries to apply a model predictions to the whole data source. The
-            results will be persisted into an elasticsearch index for further data exploration
-        """
-        config = ExploreConfiguration(
-            batch_size=batch_size,
-            prediction_cache_size=prediction_cache_size,
-            explain=explain,
-            force_delete=force_delete,
-            **metadata,
-        )
-
-        es_config = ElasticsearchExplore(
-            es_index=explore_id or str(uuid.uuid1()),
-            es_host=es_host or constants.DEFAULT_ES_HOST,
-        )
-
-        explore_df = PipelineHelper.explore(self, ds_path, config, es_config)
-        self._show_explore(es_config)
-
-        return explore_df
 
     def _show_explore(self, elasticsearch: ElasticsearchExplore) -> None:
         """Shows explore ui for data prediction exploration"""
@@ -445,7 +558,24 @@ class Pipeline:
 
 
 class TrainConfiguration:
-    """Learn configuration class"""
+    """Configures a training run
+    
+    # Parameters
+        output: `str`
+             The experiment output path
+        vocab: `vocab`
+            The path to an existing vocabulary
+        trainer_path: `str`
+             The trainer file path
+        train_cfg: `str`
+            The train datasource file path
+        validation_cfg: `Optional[str]`
+            The validation datasource file path
+        test_cfg: `Optional[str]`
+            The test datasource file path
+        verbose: `bool`
+            Whether to show verbose logs (default is `False`)
+    """
 
     def __init__(
         self,
@@ -466,24 +596,6 @@ class TrainConfiguration:
         self.verbose = verbose
 
 
-class ExploreConfiguration:
-    """Explore configuration data class"""
-
-    def __init__(
-        self,
-        batch_size: int = 500,
-        prediction_cache_size: int = 0,
-        explain: bool = False,
-        force_delete: bool = True,
-        **metadata,
-    ):
-        self.batch_size = batch_size
-        self.prediction_cache = prediction_cache_size
-        self.explain = explain
-        self.force_delete = force_delete
-        self.metadata = metadata
-
-
 class PipelineHelper:
     """Extra pipeline methods"""
 
@@ -491,7 +603,7 @@ class PipelineHelper:
 
     @classmethod
     def serve(cls, pipeline: Pipeline, port: int):
-        """Serves an pipline as rest api"""
+        """Serves an pipeline as rest api"""
 
         def make_app() -> FastAPI:
             app = FastAPI()
@@ -570,7 +682,7 @@ class PipelineHelper:
         )
 
         return pipeline.__class__(
-            binary=os.path.join(config.output, "model.tar.gz"), config=pipeline.config
+            pretrained_path=os.path.join(config.output, "model.tar.gz"), config=pipeline.config
         )
 
     @classmethod

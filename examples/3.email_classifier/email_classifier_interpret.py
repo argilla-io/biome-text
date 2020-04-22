@@ -2,7 +2,7 @@ from biome.text.api_new import Pipeline
 
 if __name__ == "__main__":
 
-    pipeline = Pipeline.from_binary("experiment/model.tar.gz")
+    pipeline = Pipeline.from_pretrained("experiment/model.tar.gz")
     print(
         pipeline.explain(
             subject="Header main. This is a test body!!!",
