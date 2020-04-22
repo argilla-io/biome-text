@@ -137,7 +137,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
             head=config.head.compile(
                 model=Model(
                     vocab=vocab
-                    or vocabulary.empty_vocab(features=config.features.compile()),
+                    or vocabulary.empty_vocab(featurizer=config.features.compile()),
                     tokenizer=config.tokenizer.compile(),
                     featurizer=config.features.compile(),
                     encoder=config.encoder,

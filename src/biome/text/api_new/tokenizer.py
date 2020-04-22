@@ -10,12 +10,36 @@ from biome.text.api_new.text_cleaning import DefaultTextCleaning, TextCleaning
 
 
 class Tokenizer(FromParams):
-    """Manages data tokenization"""
+    """Pre-processes and tokenizes input text
+    
+    Transforms inputs (e.g., a text, a list of texts, etc.) into structures containing `allennlp.data.Token` objects.
+    
+    Use its arguments to configure the first stage of the pipeline (i.e., tokenizing a given set of inputs.
+    
+    # Parameters
+        lang: `str`
+            The `spaCy` language to be used by the tokenizer (default is `en`)
+        skip_empty_tokens: `bool`
+        max_sequence_length: `int`
+            Maximum length in characters for input texts.
+            Texts will be truncated with `[:max_sequence_length]` after the `TextCleaning` stage.
+        max_nr_of_sentences: `int`
+            Maximum number of sentences to keep when using `segment_sentences`.
+            The list of sentences will be truncated  with `[:max_sequence_length]`.
+        text_cleaning: `Optional[TextCleaning]`
+            A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
+        segment_sentences:  `Union[bool, SentenceSplitter]`
+            Whether to segment input texts in to sentences using the default `SentenceSplitter` or a given splitter.
+        start_tokens: `Optional[List[str]]`
+            A list of token strings to the sequence before tokenized input text.
+        end_tokens: `Optional[List[str]]`
+            A list of token strings to the sequence after tokenized input text.
+    """
 
     def __init__(
         self,
         lang: str = "en",
-        skip_empty_tokens: bool = False,
+        skip_empty_tokens: bool = False,  # TODO(David): Check this param for the new API
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[TextCleaning] = None,
@@ -40,6 +64,66 @@ class Tokenizer(FromParams):
             end_tokens=end_tokens,
         )
 
+    def tokenize_text(self, text: str) -> List[Token]:
+        """ Tokenizes a text string
+
+        Use this for the simplest case where your input is just a `str`
+
+        # Parameters
+            text: `str`
+        # Returns`
+            A `List[Token]` object
+        """
+        return self._base_tokenizer.tokenize(
+            self._text_cleaning(text)[: self.max_sequence_length]
+        )
+
+    def tokenize_document(self, document: List[str]) -> List[List[Token]]:
+        """ Tokenizes a document-like structure containing lists of text inputs
+
+        Use this to account for hierarchical text structures (e.g., a paragraph is a list of sentences)
+
+        # Parameters
+            document: `List[str]`
+            A `List` with text inputs, e.g., sentences
+        # Returns`
+            A list of lists of tokens `List[List[Token]]`
+        """
+        """
+        TODO: clarify: The resultant length list could differs if segment sentences flag is enabled
+        """
+        sentences = document
+        if self.segment_sentences:
+            sentences = [
+                sentence
+                for sentences in self.segment_sentences.batch_split_sentences(document)
+                for sentence in sentences
+            ]
+        return [
+            self.tokenize_text(sentence)
+            for sentence in sentences[: self.max_nr_of_sentences]
+        ]
+
+    def tokenize_record(
+        self, record: Dict[str, Any]
+    ) -> Dict[str, Tuple[List[Token], List[Token]]]:
+        """ Tokenizes a record-like structure containing text inputs
+        
+        Use this to keep information about the record-like data structure as input features to the model.
+        
+        # Parameters
+            record: `Dict[str, Any]`
+            A `Dict` with arbitrary "fields" containing text.
+        # Returns`
+            A data dictionary with two lists of `Token` for each record entry: `key` and `value` tokens.
+            Type: `Dict[str, Tuple[List[Token], List[Token]]]`
+        """
+        data = self._sanitize_dict(record)
+        return {
+            key: (self.tokenize_text(key), self.tokenize_text(value))
+            for key, value in data.items()
+        }
+
     def _text_cleaning(self, text) -> str:
         return self.text_cleaning(text)
 
@@ -56,40 +140,3 @@ class Tokenizer(FromParams):
     def _sanitize_dict(self, data: Dict[str, Any]) -> Dict[str, str]:
         """Transforms an data dictionary into a dictionary of strings values"""
         return {key: self._value_as_string(value) for key, value in data.items()}
-
-    def tokenize_record(
-        self, record: Dict[str, Any]
-    ) -> Dict[str, Tuple[List[Token], List[Token]]]:
-        """
-        Tokenize a record data and generates a new data dictionary with two
-        list of tokens for each record entry: key and value tokens
-        """
-        data = self._sanitize_dict(record)
-        return {
-            key: (self.tokenize_text(key), self.tokenize_text(value))
-            for key, value in data.items()
-        }
-
-    def tokenize_document(self, document: List[str]) -> List[List[Token]]:
-        """
-        Tokenize a list of text (document).
-        The resultant length list could differs if segment sentences flag is enabled
-        """
-
-        sentences = document
-        if self.segment_sentences:
-            sentences = [
-                sentence
-                for sentences in self.segment_sentences.batch_split_sentences(document)
-                for sentence in sentences
-            ]
-        return [
-            self.tokenize_text(sentence)
-            for sentence in sentences[: self.max_nr_of_sentences]
-        ]
-
-    def tokenize_text(self, text: str) -> List[Token]:
-        """Tokenize a text"""
-        return self._base_tokenizer.tokenize(
-            self._text_cleaning(text)[: self.max_sequence_length]
-        )

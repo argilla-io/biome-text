@@ -133,7 +133,7 @@ class Pipeline:
     
     # Parameters
     
-        binary: Optional[str]`
+        pretrained_path: Optional[str]`
             The path to the model.tar.gz of a pre-trained `Pipeline`
         config: `Optional[PipelineConfiguration]`
             A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
@@ -174,8 +174,7 @@ class Pipeline:
                 A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
         
         # Returns
-            pipeline: `Pipeline`
-                An instance of a configured `Pipeline`
+            An instance of a configured `Pipeline`
         """
         with open(path) as yamL_file:
             return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
@@ -195,8 +194,7 @@ class Pipeline:
                 A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
 
         # Returns
-            pipeline: `Pipeline`
-                An instance of a configured `Pipeline`
+            An instance of a configured `Pipeline`
         """
 
         if isinstance(config, str):
@@ -226,8 +224,7 @@ class Pipeline:
                 The path to the model.tar.gz file of a pre-trained `Pipeline`
 
         # Returns
-            pipeline: `Pipeline`
-                An instance of a configured `Pipeline`
+            An instance of a configured `Pipeline`
         """
         return cls(pretrained_path=path)
 
@@ -259,8 +256,7 @@ class Pipeline:
             verbose: `bool`
                 Turn on verbose logs
         # Returns
-            pipeline: `Pipeline`
-                The trained `Pipeline`
+           A trained `Pipeline`
         """
         self._model = self._model.train(mode=True)
 
@@ -285,8 +281,7 @@ class Pipeline:
             **kwargs
            
         # Returns
-            predictions: `Dict[str, numpy.ndarray]`
-                A dictionary containing the predictions and additional information
+           `Dict[str, numpy.ndarray]` dictionary containing the predictions and additional information
         """
         # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         self._model = self._model.eval()
@@ -299,8 +294,7 @@ class Pipeline:
             *args
             **kwargs
         # Returns
-            explanations: `Dict[str, numpy.ndarray]`
-                A dictionary containing the predictions and additional information
+            `Dict[str, numpy.ndarray]` dictionary containing the predictions and additional information
         """
         # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         return self._model.explain(*args, **kwargs)
@@ -338,8 +332,7 @@ class Pipeline:
             force_delete: `bool`
                 Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
         # Returns
-            pipeline: `Pipeline`
-                The trained `Pipeline`
+            A trained `Pipeline`
         """
         config = ExploreConfiguration(
             batch_size=batch_size,
