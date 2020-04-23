@@ -18,26 +18,22 @@ class Tokenizer(FromParams):
     
     Use methods for tokenizing depending on the shape of inputs (e.g., records with multiple fields, sentences lists).
     
-    The main usage of its methods is for developing custom `TaskHead` implementations.
-    
     # Parameters
-        lang: `str`
-            The `spaCy` language to be used by the tokenizer (default is `en`)
-        skip_empty_tokens: `bool`
-        max_sequence_length: `int`
-            Maximum length in characters for input texts.
-            Texts will be truncated with `[:max_sequence_length]` after the `TextCleaning` stage.
-        max_nr_of_sentences: `int`
-            Maximum number of sentences to keep when using `segment_sentences`.
-            The list of sentences will be truncated  with `[:max_sequence_length]`.
-        text_cleaning: `Optional[TextCleaning]`
-            A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
-        segment_sentences:  `Union[bool, SentenceSplitter]`
-            Whether to segment input texts in to sentences using the default `SentenceSplitter` or a given splitter.
-        start_tokens: `Optional[List[str]]`
-            A list of token strings to the sequence before tokenized input text.
-        end_tokens: `Optional[List[str]]`
-            A list of token strings to the sequence after tokenized input text.
+    lang: `str`
+        The `spaCy` language to be used by the tokenizer (default is `en`)
+    skip_empty_tokens: `bool`
+    max_sequence_length: `int`
+        Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
+    max_nr_of_sentences: `int`
+        Maximum number of sentences to keep when using `segment_sentences` truncated with `[:max_sequence_length]`.
+    text_cleaning: `Optional[TextCleaning]`
+        A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
+    segment_sentences:  `Union[bool, SentenceSplitter]`
+        Whether to segment input texts in to sentences using the default `SentenceSplitter` or a given splitter.
+    start_tokens: `Optional[List[str]]`
+        A list of token strings to the sequence before tokenized input text.
+    end_tokens: `Optional[List[str]]`
+        A list of token strings to the sequence after tokenized input text.
     """
 
     def __init__(
@@ -75,8 +71,9 @@ class Tokenizer(FromParams):
 
         # Parameters
             text: `str`
-        # Returns`
-            A `List[Token]` object
+            
+        # Returns
+            tokens: `List[Token]`
         """
         return self._base_tokenizer.tokenize(
             self._text_cleaning(text)[: self.max_sequence_length]
@@ -90,8 +87,9 @@ class Tokenizer(FromParams):
         # Parameters
             document: `List[str]`
             A `List` with text inputs, e.g., sentences
-        # Returns`
-            A list of lists of tokens `List[List[Token]]`
+            
+        # Returns
+            tokens: `List[List[Token]]`
         """
         """
         TODO: clarify?: The resultant length list could differs if segment sentences flag is enabled
@@ -118,9 +116,10 @@ class Tokenizer(FromParams):
         # Parameters
             record: `Dict[str, Any]`
             A `Dict` with arbitrary "fields" containing text.
+            
         # Returns
-            A data dictionary with two lists of `Token`'s for each record entry: `key` and `value` tokens.
-            Type: `Dict[str, Tuple[List[Token], List[Token]]]`
+            tokens: `Dict[str, Tuple[List[Token], List[Token]]]`
+                A dictionary with two lists of `Token`'s for each record entry: `key` and `value` tokens.
         """
         data = self._sanitize_dict(record)
         return {

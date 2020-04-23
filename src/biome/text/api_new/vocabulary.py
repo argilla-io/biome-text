@@ -24,7 +24,8 @@ class vocabulary:
             vocab: `allennlp.data.Vocabulary`
 
         # Returns
-            The number of classes in the label vocabulary
+            num_labels: `int`
+                The number of labels in the vocabulary
         """
         return len(cls.get_labels(vocab))
 
@@ -36,7 +37,8 @@ class vocabulary:
             vocab: `allennlp.data.Vocabulary`
 
         # Returns
-            A `List` of label `str`
+            labels: `List[str]`
+                A list of label strings
         """
         return [
             k
@@ -51,7 +53,8 @@ class vocabulary:
             vocab: `allennlp.data.Vocabulary`
 
         # Returns
-            The `str` for a label id
+            label: `str`
+               The string for a label id
         """
         return vocab.get_token_from_index(idx, namespace=cls.LABELS_NAMESPACE)
 
@@ -63,7 +66,8 @@ class vocabulary:
             vocab: `allennlp.data.Vocabulary`
 
         # Returns
-            The `int` id for a label string
+            label_idx: `int`
+                The label id for label string
         """
         return vocab.get_token_index(label, namespace=cls.LABELS_NAMESPACE)
 
@@ -75,7 +79,8 @@ class vocabulary:
             vocab: `allennlp.data.Vocabulary`
 
         # Returns
-            A  dictionary `Dict[int, str]` to get labels strings from ids
+            labels: `Dict[int, str]`
+                A dictionary to get fetch label strings from ids
         """
         return vocab.get_index_to_token_vocabulary(cls.LABELS_NAMESPACE)
 
@@ -86,6 +91,10 @@ class vocabulary:
         # Parameters
             vocab: `allennlp.data.Vocabulary`
             namespace: `str`
+            
+        # Returns
+            size: `int`
+                The vocabulary size for a given namespace
         """
         return vocab.get_vocab_size(namespace=namespace)
 
@@ -95,6 +104,10 @@ class vocabulary:
 
         # Parameters
             vocab: `allennlp.data.Vocabulary`
+            
+        # Returns
+            size: `int`
+                The vocabulary size for the words namespace
         """
         return cls.vocab_size(vocab, namespace=InputFeaturizer.WORDS)
 
@@ -125,7 +138,8 @@ class vocabulary:
             labels: `List[str]`
                 The label strings to add to the vocabulary
         # Returns
-            The created `allennlp.data.Vocabulary`
+            vocabulary: `allennlp.data.Vocabulary`
+                The instantiated vocabulary
         """
         labels = labels or []
         vocab = Vocabulary()

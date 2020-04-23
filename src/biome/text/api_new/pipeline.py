@@ -61,6 +61,7 @@ __register(__default_impl__, overrides=True)
 
 class ExploreConfiguration:
     """Configures an exploration run
+    
     # Parameters
         batch_size: `int`
             The batch size for indexing predictions (default is `500)
@@ -70,7 +71,8 @@ class ExploreConfiguration:
             Whether to extract and return explanations of token importance (default is `False`)
         force_delete: `bool`
             Whether to delete existing explore with `explore_id` before indexing new items (default is `True)
-        **metadata
+        metadata: `kwargs`
+            Additional metadata to index in Elasticsearch
     """
 
     def __init__(
@@ -132,8 +134,7 @@ class Pipeline:
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
     
     # Parameters
-    
-        pretrained_path: Optional[str]`
+        pretrained_path: `Optional[str]`
             The path to the model.tar.gz of a pre-trained `Pipeline`
         config: `Optional[PipelineConfiguration]`
             A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
@@ -172,9 +173,10 @@ class Pipeline:
                 The path to a YAML configuration file
             vocab_config: `Optional[VocabularyConfiguration]`
                 A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
-        
+       
         # Returns
-            An instance of a configured `Pipeline`
+            pipeline: `Pipeline`
+                A configured pipeline
         """
         with open(path) as yamL_file:
             return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
@@ -186,15 +188,16 @@ class Pipeline:
         vocab_config: Optional[VocabularyConfiguration] = None,
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
-
-        # Parameters
-            config: `Union[str, PipelineConfiguration]`
-                A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
-            vocab_config: `Optional[VocabularyConfiguration]`
-                A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
-
-        # Returns
-            An instance of a configured `Pipeline`
+        
+            # Parameters
+                config: `Union[str, PipelineConfiguration]`
+                    A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
+                vocab_config: `Optional[VocabularyConfiguration]`
+                    A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
+            
+            # Returns
+                pipeline: `Pipeline`
+                    A configured pipeline
         """
 
         if isinstance(config, str):
@@ -222,9 +225,10 @@ class Pipeline:
         # Parameters
             path: `str`
                 The path to the model.tar.gz file of a pre-trained `Pipeline`
-
+        
         # Returns
-            An instance of a configured `Pipeline`
+            pipeline: `Pipeline`
+                A configured pipeline
         """
         return cls(pretrained_path=path)
 
@@ -255,8 +259,10 @@ class Pipeline:
                 The path to an existing vocabulary
             verbose: `bool`
                 Turn on verbose logs
+        
         # Returns
-           A trained `Pipeline`
+            pipeline: `Pipeline`
+                A configured pipeline
         """
         self._model = self._model.train(mode=True)
 
@@ -277,11 +283,12 @@ class Pipeline:
         """Predicts over some input data with current state of the model
 
         # Parameters
-            *args
-            **kwargs
-           
+            args: `*args`
+            kwargs: `**kwargs`
+        
         # Returns
-           `Dict[str, numpy.ndarray]` dictionary containing the predictions and additional information
+            predictions: `Dict[str, numpy.ndarray]`
+                A dictionary containing the predictions and additional information
         """
         # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         self._model = self._model.eval()
@@ -291,10 +298,12 @@ class Pipeline:
         """Predicts over some input data with current state of the model and provides explanations of token importance.
 
         # Parameters
-            *args
-            **kwargs
+            args: `*args`
+            kwargs: `**kwargs`
+        
         # Returns
-            `Dict[str, numpy.ndarray]` dictionary containing the predictions and additional information
+            predictions: `Dict[str, numpy.ndarray]`
+                A dictionary containing the predictions with token importance calculated using IntegratedGradients
         """
         # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         return self._model.explain(*args, **kwargs)
@@ -331,8 +340,10 @@ class Pipeline:
                 Whether to extract and return explanations of token importance (default is `False`)
             force_delete: `bool`
                 Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
+        
         # Returns
-            A trained `Pipeline`
+            pipeline: `Pipeline`
+                A configured pipeline
         """
         config = ExploreConfiguration(
             batch_size=batch_size,
@@ -368,11 +379,10 @@ class Pipeline:
         Use this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
         
         # Parameters
-    
             type: `Type[TaskHead]`
                 The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
-            **params:
-                The `TaskHead` specific parameters (e.g., classification head need a `pooler`)
+            params: `**kwargs`
+                The `TaskHead` specific parameters (e.g., classification head needs a `pooler` layer)
         """
 
         self._config.head = TaskHeadSpec(type=type.__name__, **params)

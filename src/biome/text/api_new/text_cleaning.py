@@ -7,8 +7,7 @@ from bs4 import BeautifulSoup
 
 
 class TextCleaning(Registrable):
-    """Base class for text cleaning processors
-    """
+    """Base class for text cleaning processors"""
 
     default_implementation = "default"
 
