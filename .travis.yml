@@ -24,6 +24,7 @@ deploy:
   provider: script
   script: twine upload dist/*
   on:
+    tags: true
     branch:
       - master
       - releases/*
