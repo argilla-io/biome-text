@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union, List
 
 from allennlp.common import FromParams, Params
 
@@ -124,3 +124,39 @@ class TrainerConfiguration:
         self.batch_size = batch_size or 32
         self.data_bucketing = data_bucketing or True
         self.cache_instances = cache_instances or True
+
+
+class VocabularyConfiguration:
+    """Configures a `Vocabulary` before it gets created from data
+
+    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
+
+    See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+
+    # Parameters
+        sources: `List[str]`
+        min_count: `Dict[str, int]`
+        max_vocab_size: `Union[int, Dict[str, int]]`
+        pretrained_files: `Optional[Dict[str, str]]`
+        only_include_pretrained_words: `bool`
+        tokens_to_add: `Dict[str, List[str]]`
+        min_pretrained_embeddings: `Dict[str, int]`
+    """
+
+    def __init__(
+        self,
+        sources: List[str],
+        min_count: Dict[str, int] = None,
+        max_vocab_size: Union[int, Dict[str, int]] = None,
+        pretrained_files: Optional[Dict[str, str]] = None,
+        only_include_pretrained_words: bool = False,
+        tokens_to_add: Dict[str, List[str]] = None,
+        min_pretrained_embeddings: Dict[str, int] = None,
+    ):
+        self.sources = sources
+        self.pretrained_files = pretrained_files
+        self.min_count = min_count
+        self.max_vocab_size = max_vocab_size
+        self.only_include_pretrained_words = only_include_pretrained_words
+        self.tokens_to_add = tokens_to_add
+        self.min_pretrained_embeddings = min_pretrained_embeddings

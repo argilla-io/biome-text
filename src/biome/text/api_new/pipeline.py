@@ -25,17 +25,15 @@ from fastapi import FastAPI
 
 from biome.text.api_new.modules.encoders import TimeDistributedEncoder
 from biome.text.api_new.modules.heads import TaskHead
-from . import constants, helpers
+from . import constants, helpers, VocabularyConfiguration
 from ._impl_model import AllennlpModel, _BaseModelImpl
 from .configuration import PipelineConfiguration, TrainerConfiguration
 from .data import DataSource
 from .errors import http_error_handling
 from .helpers import (
     ElasticsearchExplore,
-    get_env_cuda_device,
     split_signature_params_by_predicate,
     update_method_signature,
-    yaml_to_dict,
 )
 from .model import Model
 from .modules.heads.defs import TaskHeadSpec
@@ -59,7 +57,7 @@ def __register(impl_class, overrides: bool = False):
 __register(__default_impl__, overrides=True)
 
 
-class ExploreConfiguration:
+class _ExploreConfiguration:
     """Configures an exploration run
     
     # Parameters
@@ -88,42 +86,6 @@ class ExploreConfiguration:
         self.explain = explain
         self.force_delete = force_delete
         self.metadata = metadata
-
-
-class VocabularyConfiguration:
-    """Configures a `Vocabulary` before it gets created from data
-
-    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
-
-    See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
-
-    # Parameters
-        sources: `List[str]`
-        min_count: `Dict[str, int]`
-        max_vocab_size: `Union[int, Dict[str, int]]`
-        pretrained_files: `Optional[Dict[str, str]]`
-        only_include_pretrained_words: `bool`
-        tokens_to_add: `Dict[str, List[str]]`
-        min_pretrained_embeddings: `Dict[str, int]`
-    """
-
-    def __init__(
-        self,
-        sources: List[str],
-        min_count: Dict[str, int] = None,
-        max_vocab_size: Union[int, Dict[str, int]] = None,
-        pretrained_files: Optional[Dict[str, str]] = None,
-        only_include_pretrained_words: bool = False,
-        tokens_to_add: Dict[str, List[str]] = None,
-        min_pretrained_embeddings: Dict[str, int] = None,
-    ):
-        self.sources = sources
-        self.pretrained_files = pretrained_files
-        self.min_count = min_count
-        self.max_vocab_size = max_vocab_size
-        self.only_include_pretrained_words = only_include_pretrained_words
-        self.tokens_to_add = tokens_to_add
-        self.min_pretrained_embeddings = min_pretrained_embeddings
 
 
 class Pipeline:
@@ -266,9 +228,9 @@ class Pipeline:
         """
         self._model = self._model.train(mode=True)
 
-        return PipelineHelper.train(
+        return _PipelineHelper.train(
             self,
-            TrainConfiguration(
+            _TrainConfiguration(
                 vocab=vocab,
                 test_cfg=test,
                 output=output,
@@ -345,7 +307,7 @@ class Pipeline:
             pipeline: `Pipeline`
                 A configured pipeline
         """
-        config = ExploreConfiguration(
+        config = _ExploreConfiguration(
             batch_size=batch_size,
             prediction_cache_size=prediction_cache_size,
             explain=explain,
@@ -358,7 +320,7 @@ class Pipeline:
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
-        explore_df = PipelineHelper.explore(self, ds_path, config, es_config)
+        explore_df = _PipelineHelper.explore(self, ds_path, config, es_config)
         self._show_explore(es_config)
 
         return explore_df
@@ -371,7 +333,7 @@ class Pipeline:
                 The port to make available the prediction service
         """
         self._model = self._model.eval()
-        return PipelineHelper.serve(self, port)
+        return _PipelineHelper.serve(self, port)
 
     def set_head(self, type: Type[TaskHead], **params):
         """Sets a new task head for the pipeline
@@ -525,7 +487,7 @@ class Pipeline:
             )
 
 
-class TrainConfiguration:
+class _TrainConfiguration:
     """Configures a training run
     
     # Parameters
@@ -564,7 +526,7 @@ class TrainConfiguration:
         self.verbose = verbose
 
 
-class PipelineHelper:
+class _PipelineHelper:
     """Extra pipeline methods"""
 
     __LOGGER = logging.getLogger(__name__)
@@ -602,7 +564,7 @@ class PipelineHelper:
 
     @classmethod
     def _allennlp_configuration(
-        cls, pipeline: Pipeline, config: TrainConfiguration
+        cls, pipeline: Pipeline, config: _TrainConfiguration
     ) -> Dict[str, Any]:
         def iterator_configuration() -> Dict[str, Any]:
             """Creates a data iterator configuration"""
@@ -670,7 +632,7 @@ class PipelineHelper:
         return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
 
     @classmethod
-    def train(cls, pipeline: Pipeline, config: TrainConfiguration):
+    def train(cls, pipeline: Pipeline, config: _TrainConfiguration):
         logging_level = logging.INFO if config.verbose else logging.WARNING
         logging.getLogger("allennlp").setLevel(logging_level)
 
@@ -701,7 +663,7 @@ class PipelineHelper:
         cls,
         pipeline: Pipeline,
         ds_path: str,
-        config: ExploreConfiguration,
+        config: _ExploreConfiguration,
         elasticsearch: ElasticsearchExplore,
     ) -> dd.DataFrame:
         if config.prediction_cache > 0:
