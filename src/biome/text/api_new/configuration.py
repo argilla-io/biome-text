@@ -79,10 +79,14 @@ class PipelineConfiguration(FromParams):
         self.head = head
 
     def as_dict(self) -> Dict[str, Any]:
-        return {
+        config = {
             "name": self.name,
             "tokenizer": vars(self.tokenizer),
             "features": vars(self.features),
-            "encoder": self.encoder._config,
             "head": self.head._config,
         }
+
+        if self.encoder:
+            config["encoder"] = self.encoder.config
+
+        return config
