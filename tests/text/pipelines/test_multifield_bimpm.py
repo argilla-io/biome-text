@@ -1,8 +1,7 @@
-import pytest
-
-from biome.text.api_new.pipeline import Pipeline
 import pandas as pd
+import pytest
 import yaml
+from biome.text.api_new.pipeline import Pipeline
 
 
 @pytest.fixture
@@ -81,8 +80,8 @@ def pipeline_yaml(tmpdir, request):
                     "hidden_size": 112,
                     "num_layers": 1,
                     "bidirectional": True,
-                }
-            }
+                },
+            },
         },
         "head": {
             "type": "BiMpm",
@@ -166,7 +165,7 @@ def trainer_yaml(tmpdir):
         #     ],
         #     "type": "bucket",
         # },
-        # Missing: batch_size; max_instances_in_memory;
+        # Missing: batch_size; max_instances_in_memory; cache_instances;
         "trainer": {
             "type": "default",
             "cuda_device": -1,
