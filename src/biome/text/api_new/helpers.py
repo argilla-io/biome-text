@@ -242,6 +242,7 @@ class WithLayerChain(Registrable):
             if not parameter:
                 args[name] = component_cfg
                 continue
+            print("TEST", name, parameter)
 
             component_class = remove_optional(parameter.annotation)
             new_configuration = chain_component_config(

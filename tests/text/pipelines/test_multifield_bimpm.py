@@ -1,6 +1,6 @@
 import pytest
 
-from biome.text.pipelines.multifield_bimpm import MultifieldBiMpmPipeline
+from biome.text.api_new.pipeline import Pipeline
 import pandas as pd
 import yaml
 
@@ -35,89 +35,24 @@ def training_data_yaml(tmpdir):
 
 
 @pytest.fixture
-def pipeline_yaml(tmpdir):
-    yaml_dict = {
-        "type": "multifield_bimpm",
-        "pipeline": {
-            "token_indexers": {"tokens": {"type": "single_id"}},
-            "as_text_field": False,
-        },
-        "architecture": {
-            "text_field_embedder": {
-                "tokens": {
-                    "type": "embedding",
-                    "padding_index": 0,
-                    "embedding_dim": 10,
-                }
-            },
-            "matcher_word": {
-                "is_forward": True,
-                "hidden_dim": 10,
-                "num_perspectives": 10,
-                "with_full_match": False,
-            },
-            "encoder": {
-                "type": "lstm",
-                "bidirectional": True,
-                "input_size": 10,
-                "hidden_size": 200,
-                "num_layers": 1,
-            },
-            "matcher_forward": {
-                "is_forward": True,
-                "hidden_dim": 200,
-                "num_perspectives": 10,
-            },
-            "matcher_backward": {
-                "is_forward": False,
-                "hidden_dim": 200,
-                "num_perspectives": 10,
-            },
-            "aggregator": {
-                "type": "gru",
-                "bidirectional": True,
-                "input_size": 154,
-                "hidden_size": 100,
-            },
-            "classifier_feedforward": {
-                "input_dim": 400,
-                "num_layers": 1,
-                "hidden_dims": [200],
-                "activations": ["relu"],
-                "dropout": [0.0],
-            },
-            "initializer": [
-                [".*linear_layers.*weight", {"type": "xavier_normal"}],
-                [".*linear_layers.*bias", {"type": "constant", "val": 0}],
-                [".*weight_ih.*", {"type": "xavier_normal"}],
-                [".*weight_hh.*", {"type": "orthogonal"}],
-                [".*bias.*", {"type": "constant", "val": 0}],
-                [".*matcher.*match_weights.*", {"type": "kaiming_normal"}],
-            ],
-        },
-    }
-
-    yaml_file = tmpdir.join("pipeline.yml")
-    with yaml_file.open("w") as f:
-        yaml.safe_dump(yaml_dict, f)
-
-    return str(yaml_file)
-
-
-@pytest.fixture
 def trainer_yaml(tmpdir):
     yaml_dict = {
         "iterator": {
             "batch_size": 3,
-            "sorting_keys": [["record1", "num_fields"]],
+            "sorting_keys": [["record1", "num_tokens"]],
+            # "sorting_keys": [["record1", "num_fields"]],
             "type": "bucket",
         },
         "trainer": {
             "type": "default",
             "cuda_device": -1,
             "num_serialized_models_to_keep": 1,
+            "should_log_learning_rate": True,
             "num_epochs": 1,
-            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01,},
+            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01},
+            "learning_rate_scheduler": {"type": "reduce_on_plateau", "factor": 0.2, "mode": "min", "patience": 1},
+            "validation_metric": "-loss",
+            "patience": 5,
         },
     }
 
@@ -128,14 +63,21 @@ def trainer_yaml(tmpdir):
     return str(yaml_file)
 
 
+@pytest.fixture
+def pipeline_yaml():
+    return "./resources/bimpm.yaml"
+
+
 def test_multifield_bimpm_learn(
     training_data_yaml, pipeline_yaml, trainer_yaml, tmpdir, tmpdir_factory
 ):
-    pipeline = MultifieldBiMpmPipeline.from_config(pipeline_yaml)
+    pipeline = Pipeline.from_file("resources/bimpm.yaml")
+    # print(pipeline.predict(record1="The one", record2="The other"))
 
-    pipeline.learn(
+    trained_pl = pipeline.train(
+        output="experiment",
         trainer=trainer_yaml,
-        train=training_data_yaml,
-        validation="",
-        output=str(tmpdir.join("output")),
+        training=training_data_yaml,
+        validation=training_data_yaml,
     )
+
