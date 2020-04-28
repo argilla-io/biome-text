@@ -685,7 +685,8 @@ class PipelineHelper:
         )
 
         return pipeline.__class__(
-            pretrained_path=os.path.join(config.output, "model.tar.gz"), config=pipeline.config
+            pretrained_path=os.path.join(config.output, "model.tar.gz"),
+            config=pipeline.config,
         )
 
     @classmethod

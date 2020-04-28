@@ -1,14 +1,13 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import numpy
 import torch
-from allennlp.data import Instance, Token
-from allennlp.data.fields import ListField, TextField
+from allennlp.common import Registrable
+from allennlp.data import Instance
 
-from biome.text.api_new.modules.specs import ComponentSpec
-from biome.text.api_new.helpers import WithLayerChain
 from biome.text.api_new.model import Model
+from biome.text.api_new.modules.specs import ComponentSpec
 from biome.text.api_new.vocabulary import vocabulary
 
 
@@ -56,7 +55,7 @@ class TaskName(Enum):
         return str(self)
 
 
-class TaskHead(torch.nn.Module, WithLayerChain):
+class TaskHead(torch.nn.Module, Registrable):
     """Base task head class"""
 
     def __init__(self, model: Model):
