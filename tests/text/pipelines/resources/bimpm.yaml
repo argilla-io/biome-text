@@ -1,0 +1,117 @@
+name: biome-bimpm
+
+tokenizer:
+  text_cleaning:
+    rules:
+      - strip_spaces
+
+features:
+  tokens:
+    indexer:
+      type: single_id
+      lowercase_tokens: true
+    embedder:
+      type: embedding
+      embedding_dim: 32
+      padding_index: 0
+  token_characters:
+    indexer:
+      type: characters
+      character_tokenizer:
+        lowercase_characters: true
+    embedder:
+      type: character_encoding
+      embedding:
+        embedding_dim: 32
+        padding_index: 0
+      encoder:
+        type: gru
+        input_size: 32
+        hidden_size: 112
+        num_layers: 1
+        bidirectional: true
+      dropout: 0.2
+
+encoder:
+  type: pass_through
+
+head:
+  type: BiMpm
+
+  labels:
+    - "1"
+    - "0"
+
+  matcher_word:
+    is_forward: true
+    hidden_dim: 256
+    num_perspectives: 10
+    with_full_match: false
+
+  encoder:
+    type: lstm
+    bidirectional: false
+    input_size: 256
+    hidden_size: 64
+    num_layers: 1
+
+  matcher_forward:
+    is_forward: true
+    hidden_dim: 64
+    num_perspectives: 21
+
+  encoder2:
+    type: lstm
+    bidirectional: false
+    input_size: 64
+    hidden_size: 32
+    num_layers: 1
+
+  matcher2_forward:
+    is_forward: true
+    hidden_dim: 32
+    num_perspectives: 21
+
+  aggregator:
+    type: lstm
+    bidirectional: true
+    input_size: 264
+    hidden_size: 32
+    num_layers: 2
+    dropout: 0.2
+
+  classifier_feedforward:
+    input_dim: 128
+    num_layers: 1
+    hidden_dims:
+      - 64
+    activations:
+      - relu
+    dropout:
+      - 0.2
+
+  multifield: false
+  dropout: 0.2
+
+#  initializer:
+#    initializers:
+#    - - "output_layer.weight"
+#      - type: xavier_normal
+#    - - "output_layer.bias"
+#      - type: constant
+#        val: 0
+#    - - ".*linear_layers.*weight"
+#      - type: xavier_normal
+#    - - ".*linear_layers.*bias"
+#      - type: constant
+#        val: 0
+#    - - ".*weight_ih.*"
+#      - type: xavier_normal
+#    - - ".*weight_hh.*"
+#      - type: orthogonal
+#    - - ".*bias.*"
+#      - type: constant
+#        val: 0
+#    - - ".*matcher.*match_weights.*"
+#      - type: kaiming_normal
+#
