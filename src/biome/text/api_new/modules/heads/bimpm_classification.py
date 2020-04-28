@@ -7,17 +7,15 @@ from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
     Seq2VecEncoder,
-    TextFieldEmbedder,
     TimeDistributed,
 )
 from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator
 from allennlp.nn import util
-from biome.text.api_new.modules.encoders import TimeDistributedEncoder
-from overrides import overrides
-
 from biome.text.api_new.model import Model
+from biome.text.api_new.modules.encoders import TimeDistributedEncoder
 from biome.text.api_new.modules.heads.classification.defs import ClassificationHead
+from overrides import overrides
 
 
 class BiMpm(ClassificationHead):
@@ -30,13 +28,15 @@ class BiMpm(ClassificationHead):
     The matching will be done for all possible combinations between the two records, that is:
     (r1_1, r2_1), (r1_1, r2_2), ..., (r1_2, r2_1), (r1_2, r2_2), ...
 
-    This version also allows you to apply only one encoder, and to leave out the backward matching.
+    This version also allows you to apply only one encoder, and to leave out the backward matching,
+    providing the possibility to use transformers for the encoding layer.
 
     Parameters
     ----------
-    text_field_embedder : ``TextFieldEmbedder``
-        Used to embed the ``record1`` and ``record2`` ``TextFields`` we get as input to the
-        model.
+    model : ``Model``
+        Takes care of the embedding
+    labels : `List[str]`
+        List of labels
     matcher_word : ``BiMpmMatching``
         BiMPM matching on the output of word embeddings of record1 and record2.
     encoder : ``Seq2SeqEncoder``
@@ -136,9 +136,7 @@ class BiMpm(ClassificationHead):
         )
 
         self.classifier_output_dim = self.classifier_feedforward.get_output_dim()
-        self.output_layer = torch.nn.Linear(
-            self.classifier_output_dim, self.num_labels
-        )
+        self.output_layer = torch.nn.Linear(self.classifier_output_dim, self.num_labels)
 
         self.dropout = torch.nn.Dropout(dropout)
 
@@ -147,12 +145,34 @@ class BiMpm(ClassificationHead):
         initializer(self)
 
     def featurize(
-            self, record1: Dict[str, Any], record2: Dict[str, Any], label: Optional[str] = None
+        self,
+        record1: Dict[str, Any],
+        record2: Dict[str, Any],
+        label: Optional[str] = None,
     ) -> Optional[Instance]:
+        """Tokenizes, indexes and embedds the two records and optionally adds the label
+
+        Parameters
+        ----------
+        record1 : Dict[str, Any]
+            First record
+        record2 : Dict[str, Any]
+            Second record
+        label : Optional[str]
+            Classification label
+
+        Returns
+        -------
+        instance
+            AllenNLP instance containing the two records plus optionally a label
+        """
         record1_field = self.model.featurize(record1, aggregate=not self.multifield)
         record2_field = self.model.featurize(record2, aggregate=not self.multifield)
         instance = Instance(
-            {"record1": record1_field.get("record"), "record2": record2_field.get("record")}
+            {
+                "record1": record1_field.get("record"),
+                "record2": record2_field.get("record"),
+            }
         )
         return self.add_label(instance, label)
 
@@ -169,11 +189,11 @@ class BiMpm(ClassificationHead):
         ----------
         record1
             The first input tokens.
-            The dictionary is the output of a ``TextField.as_array()``. It gives names to the tensors created by
+            The dictionary is the output of a ``*Field.as_array()``. It gives names to the tensors created by
             the ``TokenIndexer``s.
             In its most basic form, using a ``SingleIdTokenIndexer``, the dictionary is composed of:
             ``{"tokens": Tensor(batch_size, num_tokens)}``.
-            The keys of the dictionary are defined in the `model.yml` input.
+            The keys of the dictionary are defined in the `pipeline.yaml` config.
             The dictionary is designed to be passed on directly to a ``TextFieldEmbedder``, that has a
             ``TokenEmbedder`` for each key in the dictionary (except you set `allow_unmatched_keys` in the
             ``TextFieldEmbedder`` to False) and knows how to combine different word/character representations into a
@@ -205,7 +225,9 @@ class BiMpm(ClassificationHead):
 
         # embedding and encoding of record1
         embedded_record1 = self.dropout(
-            self.model.forward(record1, mask=mask_record1, num_wrapping_dims=self.num_wrapping_dims)
+            self.model.forward(
+                record1, mask=mask_record1, num_wrapping_dims=self.num_wrapping_dims
+            )
         )
         encoded_record1 = self.dropout(
             self.td_encoder(embedded_record1, mask=mask_record1)
@@ -218,7 +240,9 @@ class BiMpm(ClassificationHead):
 
         # embedding and encoding of record2
         embedded_record2 = self.dropout(
-            self.model.forward(record2, mask=mask_record2, num_wrapping_dims=self.num_wrapping_dims)
+            self.model.forward(
+                record2, mask=mask_record2, num_wrapping_dims=self.num_wrapping_dims
+            )
         )
         encoded_record2 = self.dropout(
             self.td_encoder(embedded_record2, mask=mask_record2)
@@ -256,6 +280,7 @@ class BiMpm(ClassificationHead):
         encoded2_record1,
         encoded2_record2,
     ):
+        """Implements the Matching layer in case of a TextField input"""
         matching_vector_record1: List[torch.Tensor] = []
         matching_vector_record2: List[torch.Tensor] = []
 
@@ -333,6 +358,7 @@ class BiMpm(ClassificationHead):
         encoded2_record1,
         encoded2_record2,
     ):
+        """Implements the Matching layer in case of a ListField input"""
         multifield_matching_vector_record1: List[torch.Tensor] = []
         multifield_matching_vector_record2: List[torch.Tensor] = []
         multifield_matching_mask_record1: List[torch.Tensor] = []
@@ -459,4 +485,3 @@ class BiMpm(ClassificationHead):
         )
 
         return torch.cat([aggregated_record1, aggregated_record2], dim=-1)
-
