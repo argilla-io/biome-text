@@ -1,15 +1,8 @@
-iterator:
-  batch_size: 64
-  cache_instances: 'true'
-  max_instances_in_memory: 256
+batch_size: 64
 
-trainer:
-  type: default
-  num_epochs: 1
-  optimizer:
-    amsgrad: 'true'
-    type: adam
-  validation_metric: +accuracy
-  patience: 2
-  num_serialized_models_to_keep: 1
-  cuda_device: -1
+num_epochs: 3
+optimizer:
+  amsgrad: 'true'
+  type: adam
+validation_metric: +accuracy
+patience: 2

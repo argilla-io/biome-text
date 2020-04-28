@@ -10,3 +10,4 @@ if __name__ == "__main__":
     ]
     another_document = ["Uno", "Uno dos", "uno dos tres"]
     print(trained_pl.explain(document=another_document))
+    trained_pl.serve()
