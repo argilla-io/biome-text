@@ -180,7 +180,7 @@ def chain_component_config(
     Configures component forward chain by setting the component
     input dimension with previous output dimension
     """
-    if not prev:
+    if not (prev and isinstance(prev, Registrable)):
         return component_config
 
     if (
