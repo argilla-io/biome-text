@@ -27,7 +27,7 @@ from biome.text.api_new.modules.encoders import TimeDistributedEncoder
 from biome.text.api_new.modules.heads import TaskHead
 from . import constants, helpers
 from ._impl_model import AllennlpModel, _BaseModelImpl
-from .configuration import PipelineConfiguration
+from .configuration import PipelineConfiguration, TrainerConfiguration
 from .data import DataSource
 from .errors import http_error_handling
 from .helpers import (
@@ -235,7 +235,7 @@ class Pipeline:
     def train(
         self,
         output: str,
-        trainer: str,
+        trainer: TrainerConfiguration,
         training: str,
         validation: Optional[str] = None,
         test: Optional[str] = None,
@@ -272,7 +272,7 @@ class Pipeline:
                 vocab=vocab,
                 test_cfg=test,
                 output=output,
-                trainer_path=trainer,
+                trainer=trainer,
                 train_cfg=training,
                 validation_cfg=validation,
                 verbose=verbose,
@@ -427,31 +427,6 @@ class Pipeline:
         """The pipeline name. Equivalent to task head name"""
         return self.head.__class__.__name__
 
-    @property
-    def _allennlp_configuration(self):
-        base_config = {
-            "config": self.config.as_dict(),
-            "type": __default_impl__.__name__,
-        }
-
-        return {
-            "dataset_reader": base_config,
-            "model": base_config,
-            "iterator": {
-                "batch_size": 32,
-                "max_instances_in_memory": 128,
-                "sorting_keys": [
-                    [
-                        self.__forward_inputs()[0],
-                        "list_num_tokens"
-                        if isinstance(self.model.encoder, TimeDistributedEncoder)
-                        else "num_tokens",
-                    ]
-                ],
-                "type": "bucket",
-            },
-        }
-
     @staticmethod
     def __model_from_config(
         config: PipelineConfiguration, **extra_params
@@ -524,16 +499,6 @@ class Pipeline:
         self._model = self.__model_from_config(self.config, vocab=vocab)
         return self
 
-    def __forward_inputs(self) -> List[str]:
-        """
-        Calculate the required head.forward arguments. We use this method
-        for automatically generate data iterator sorting keys
-        """
-        required, _ = split_signature_params_by_predicate(
-            self.head.forward, lambda p: p.default == inspect.Parameter.empty
-        )
-        return [p.name for p in required] or [None]
-
     @staticmethod
     def __model_from_archive(archive: Archive) -> __default_impl__:
         if not isinstance(archive.model, __default_impl__):
@@ -583,8 +548,8 @@ class TrainConfiguration:
     def __init__(
         self,
         output: str,
+        trainer: TrainerConfiguration,
         vocab: Optional[str] = None,
-        trainer_path: str = "",
         train_cfg: str = "",
         validation_cfg: Optional[str] = None,
         test_cfg: Optional[str] = None,
@@ -592,7 +557,7 @@ class TrainConfiguration:
     ):
         self.output = output
         self.vocab = vocab
-        self.trainer = trainer_path
+        self.trainer = trainer
         self.training = train_cfg
         self.validation = validation_cfg
         self.test = test_cfg
@@ -636,26 +601,73 @@ class PipelineHelper:
         uvicorn.run(make_app(), host="0.0.0.0", port=port)
 
     @classmethod
-    def _to_allennlp_configuration(cls, config: TrainConfiguration) -> Dict[str, Any]:
-        trainer = {
-            **yaml_to_dict(config.trainer),
+    def _allennlp_configuration(
+        cls, pipeline: Pipeline, config: TrainConfiguration
+    ) -> Dict[str, Any]:
+        def iterator_configuration() -> Dict[str, Any]:
+            """Creates a data iterator configuration"""
+
+            def _forward_inputs(pipeline: Pipeline) -> List[str]:
+                """
+                Calculate the required head.forward arguments. We use this method
+                for automatically generate data iterator sorting keys
+                """
+                required, _ = split_signature_params_by_predicate(
+                    pipeline.head.forward,
+                    lambda p: p.default == inspect.Parameter.empty,
+                )
+                return [p.name for p in required] or [None]
+
+            iterator_config = {
+                "batch_size": config.trainer.batch_size,
+                "max_instances_in_memory": config.trainer.batch_size * 3,
+                "cache_instances": config.trainer.cache_instances,
+                "type": "basic",
+            }
+
+            if config.trainer.data_bucketing:
+                iterator_config.update(
+                    {
+                        "sorting_keys": [
+                            [
+                                _forward_inputs(pipeline)[0],
+                                "list_num_tokens"
+                                if isinstance(
+                                    pipeline.model.encoder, TimeDistributedEncoder
+                                )
+                                else "num_tokens",
+                            ]
+                        ],
+                        "type": "bucket",
+                    }
+                )
+
+            return iterator_config
+
+        base_config = {
+            "config": pipeline.config.as_dict(),
+            "type": __default_impl__.__name__,
         }
-        trainer["trainer"]["type"] = "default"
-        # Add cuda device if necessary
-        trainer["trainer"]["cuda_device"] = trainer["trainer"].get(
-            "cuda_device", get_env_cuda_device()
-        )
+        allennlp_config = {
+            "trainer": {
+                k: v
+                for k, v in vars(config.trainer).items()
+                if k
+                not in [
+                    "data_bucketing",
+                    "batch_size",
+                    "cache_instances",
+                ]  # Data iteration attributes
+            },
+            "iterator": iterator_configuration(),
+            "dataset_reader": base_config,
+            "model": base_config,
+            "train_data_path": config.training,
+            "validation_data_path": config.validation,
+            "test_data_path": config.test,
+        }
 
-        datasets = {}
-        for key, path in [
-            ("train_data_path", config.training),
-            ("validation_data_path", config.validation),
-            ("test_data_path", config.test),
-        ]:
-            if path:
-                datasets[key] = path
-
-        return {**trainer, **datasets}
+        return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
 
     @classmethod
     def train(cls, pipeline: Pipeline, config: TrainConfiguration):
@@ -664,12 +676,7 @@ class PipelineHelper:
 
         cls.__LOGGER.info("Starting up learning process.")
 
-        fine_tune_params = Params(
-            {
-                **cls._to_allennlp_configuration(config),
-                **pipeline._allennlp_configuration,
-            }
-        )
+        fine_tune_params = Params(cls._allennlp_configuration(pipeline, config))
 
         # Force clean folder for run fine tuning properly
         # TODO: reuse vocab
@@ -685,7 +692,8 @@ class PipelineHelper:
         )
 
         return pipeline.__class__(
-            pretrained_path=os.path.join(config.output, "model.tar.gz"), config=pipeline.config
+            pretrained_path=os.path.join(config.output, "model.tar.gz"),
+            config=pipeline.config,
         )
 
     @classmethod

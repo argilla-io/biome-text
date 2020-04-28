@@ -86,3 +86,41 @@ class PipelineConfiguration(FromParams):
             "encoder": self.encoder._config,
             "head": self.head._config,
         }
+
+
+class TrainerConfiguration:
+    """Trainer configuration"""
+
+    def __init__(
+        self,
+        optimizer: Dict[str, Any],
+        validation_metric: str = "-loss",
+        patience: Optional[int] = None,
+        shuffle: bool = True,
+        num_epochs: int = 20,
+        cuda_device: int = -1,
+        grad_norm: Optional[float] = None,
+        grad_clipping: Optional[float] = None,
+        learning_rate_scheduler: Optional[Dict[str, Any]] = None,
+        momentum_scheduler: Optional[Dict[str, Any]] = None,
+        moving_average: Optional[Dict[str, Any]] = None,
+        batch_size: Optional[int] = None,
+        cache_instances: bool = True,
+        data_bucketing: bool = True,
+    ):
+        self.optimizer = optimizer
+        self.validation_metric = validation_metric
+        self.patience = patience
+        self.shuffle = shuffle
+        self.num_epochs = num_epochs
+        self.cuda_device = cuda_device
+        self.grad_norm = grad_norm
+        self.grad_clipping = grad_clipping
+        self.learning_rate_scheduler = learning_rate_scheduler
+        self.momentum_scheduler = momentum_scheduler
+        self.moving_average = moving_average
+
+        # Data Iteration
+        self.batch_size = batch_size or 32
+        self.data_bucketing = data_bucketing or True
+        self.cache_instances = cache_instances or True
