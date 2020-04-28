@@ -13,6 +13,7 @@ from allennlp.modules import (
 from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator
 from allennlp.nn import util
+from biome.text.api_new.modules.encoders import TimeDistributedEncoder
 from overrides import overrides
 
 from biome.text.api_new.model import Model
@@ -83,6 +84,8 @@ class BiMpm(ClassificationHead):
         super(BiMpm, self).__init__(model, labels)
 
         self.multifield = multifield
+        if self.multifield:
+            self.model.encoder = TimeDistributedEncoder(self.model.encoder)
         self.num_wrapping_dims = 1 if multifield else 0
         self.matching = (
             self._multifield_matching if multifield else self._textfield_matching
@@ -141,8 +144,6 @@ class BiMpm(ClassificationHead):
 
         self.loss = torch.nn.CrossEntropyLoss()
 
-        print(type(initializer), initializer)
-        print(type(self.matcher_word), self.matcher_word)
         initializer(self)
 
     def featurize(
