@@ -1,4 +1,5 @@
 import copy
+import datetime
 import inspect
 import logging
 import os
@@ -21,20 +22,24 @@ from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
 from dask_elk.client import DaskElasticClient
+from elasticsearch import Elasticsearch
 from fastapi import FastAPI
 
-from biome.text.api_new.modules.encoders import TimeDistributedEncoder
-from biome.text.api_new.modules.heads import TaskHead
-from . import constants, helpers, VocabularyConfiguration
-from ._impl_model import AllennlpModel, _BaseModelImpl
-from .configuration import PipelineConfiguration, TrainerConfiguration
-from .data import DataSource
-from .errors import http_error_handling
-from .helpers import (
-    ElasticsearchExplore,
+from biome.text.api_new import constants, helpers
+from biome.text.api_new._impl_model import AllennlpModel, _BaseModelImpl
+from biome.text.api_new.configuration import (
+    PipelineConfiguration,
+    TrainerConfiguration,
+    VocabularyConfiguration,
+)
+from biome.text.api_new.data import DataSource
+from biome.text.api_new.errors import http_error_handling
+from biome.text.api_new.helpers import (
     split_signature_params_by_predicate,
     update_method_signature,
 )
+from biome.text.api_new.modules.encoders import TimeDistributedEncoder
+from biome.text.api_new.modules.heads import TaskHead
 from .model import Model
 from .modules.heads.defs import TaskHeadSpec
 from ..commands.ui.ui import launch_ui
@@ -88,13 +93,115 @@ class _ExploreConfiguration:
         self.metadata = metadata
 
 
+class _ElasticsearchExplore:
+    """Elasticsearch data exploration class"""
+
+    def __init__(self, es_index: str, es_host: Optional[str] = None):
+        self.es_index = es_index
+        self.es_host = es_host or constants.DEFAULT_ES_HOST
+        if not self.es_host.startswith("http"):
+            self.es_host = f"http://{self.es_host}"
+
+        self.client = Elasticsearch(
+            hosts=es_host, retry_on_timeout=True, http_compress=True
+        )
+        self.es_doc = helpers.get_compatible_doc_type(self.client)
+
+    def create_explore_data_record(self, parameters: Dict[str, Any]):
+        """Creates an exploration data record data exploration"""
+
+        self.client.indices.create(
+            index=constants.BIOME_METADATA_INDEX,
+            body={
+                "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}
+            },
+            params=dict(ignore=400),
+        )
+
+        self.client.update(
+            index=constants.BIOME_METADATA_INDEX,
+            doc_type=constants.BIOME_METADATA_INDEX_DOC,
+            id=self.es_index,
+            body={
+                "doc": dict(
+                    name=self.es_index, created_at=datetime.datetime.now(), **parameters
+                ),
+                "doc_as_upsert": True,
+            },
+        )
+
+    def create_explore_data_index(self, force_delete: bool):
+        """Creates an explore data index if not exists or is forced"""
+        dynamic_templates = [
+            {
+                data_type: {
+                    "match_mapping_type": data_type,
+                    "path_match": path_match,
+                    "mapping": {
+                        "type": "text",
+                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    },
+                }
+            }
+            for data_type, path_match in [("*", "*.value"), ("string", "*")]
+        ]
+
+        if force_delete:
+            self.client.indices.delete(index=self.es_index, ignore=[400, 404])
+
+        self.client.indices.create(
+            index=self.es_index,
+            body={"mappings": {self.es_doc: {"dynamic_templates": dynamic_templates}}},
+            ignore=400,
+        )
+
+
+class _TrainConfiguration:
+    """Configures a training run
+    
+    # Parameters
+        output: `str`
+             The experiment output path
+        vocab: `vocab`
+            The path to an existing vocabulary
+        trainer_path: `str`
+             The trainer file path
+        train_cfg: `str`
+            The train datasource file path
+        validation_cfg: `Optional[str]`
+            The validation datasource file path
+        test_cfg: `Optional[str]`
+            The test datasource file path
+        verbose: `bool`
+            Whether to show verbose logs (default is `False`)
+    """
+
+    def __init__(
+        self,
+        output: str,
+        trainer: TrainerConfiguration,
+        vocab: Optional[str] = None,
+        train_cfg: str = "",
+        validation_cfg: Optional[str] = None,
+        test_cfg: Optional[str] = None,
+        verbose: bool = False,
+    ):
+        self.output = output
+        self.vocab = vocab
+        self.trainer = trainer
+        self.training = train_cfg
+        self.validation = validation_cfg
+        self.test = test_cfg
+        self.verbose = verbose
+
+
 class Pipeline:
     """Manages NLP models configuration and actions.
 
     Use `Pipeline` for creating new models from a configuration or loading a pre-trained model.
-    
+
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
-    
+
     # Parameters
         pretrained_path: `Optional[str]`
             The path to the model.tar.gz of a pre-trained `Pipeline`
@@ -129,13 +236,13 @@ class Pipeline:
         cls, path: str, vocab_config: Optional[VocabularyConfiguration] = None
     ) -> "Pipeline":
         """Creates a pipeline from a config yaml file path
-        
+
         # Parameters
             path: `str`
                 The path to a YAML configuration file
             vocab_config: `Optional[VocabularyConfiguration]`
                 A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
-       
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
@@ -150,13 +257,13 @@ class Pipeline:
         vocab_config: Optional[VocabularyConfiguration] = None,
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
-        
+
             # Parameters
                 config: `Union[str, PipelineConfiguration]`
                     A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
                 vocab_config: `Optional[VocabularyConfiguration]`
                     A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
-            
+
             # Returns
                 pipeline: `Pipeline`
                     A configured pipeline
@@ -187,7 +294,7 @@ class Pipeline:
         # Parameters
             path: `str`
                 The path to the model.tar.gz file of a pre-trained `Pipeline`
-        
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
@@ -221,7 +328,7 @@ class Pipeline:
                 The path to an existing vocabulary
             verbose: `bool`
                 Turn on verbose logs
-        
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
@@ -247,7 +354,7 @@ class Pipeline:
         # Parameters
             args: `*args`
             kwargs: `**kwargs`
-        
+
         # Returns
             predictions: `Dict[str, numpy.ndarray]`
                 A dictionary containing the predictions and additional information
@@ -262,7 +369,7 @@ class Pipeline:
         # Parameters
             args: `*args`
             kwargs: `**kwargs`
-        
+
         # Returns
             predictions: `Dict[str, numpy.ndarray]`
                 A dictionary containing the predictions with token importance calculated using IntegratedGradients
@@ -276,15 +383,16 @@ class Pipeline:
         explore_id: Optional[str] = None,
         es_host: Optional[str] = None,
         batch_size: int = 500,
-        prediction_cache_size: int = 0,  # TODO: do we need caching for Explore runs as well or only on serving time?
+        prediction_cache_size: int = 0,
+        # TODO: do we need caching for Explore runs as well or only on serving time?
         explain: bool = False,
         force_delete: bool = True,
         **metadata,
     ) -> dd.DataFrame:
         """Launches Explore UI for a given datasource with current model
-        
+
         Running this method inside a an `IPython` notebook will try to render the UI directly in the notebook.
-        
+
         Running this outside a notebook will try to launch the standalone web application.
 
         # Parameters
@@ -302,7 +410,7 @@ class Pipeline:
                 Whether to extract and return explanations of token importance (default is `False`)
             force_delete: `bool`
                 Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
-        
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
@@ -315,7 +423,7 @@ class Pipeline:
             **metadata,
         )
 
-        es_config = ElasticsearchExplore(
+        es_config = _ElasticsearchExplore(
             es_index=explore_id or str(uuid.uuid1()),
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
@@ -327,7 +435,7 @@ class Pipeline:
 
     def serve(self, port: int = 9998):
         """Launches a REST prediction service with current model in a specified port (default is `9998)
-        
+
         # Parameters
             port: `int`
                 The port to make available the prediction service
@@ -337,9 +445,9 @@ class Pipeline:
 
     def set_head(self, type: Type[TaskHead], **params):
         """Sets a new task head for the pipeline
-        
+
         Use this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
-        
+
         # Parameters
             type: `Type[TaskHead]`
                 The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
@@ -396,7 +504,7 @@ class Pipeline:
         """Creates a internal base model from pipeline configuration"""
         return __default_impl__.from_params(Params({"config": config}), **extra_params)
 
-    def _show_explore(self, elasticsearch: ElasticsearchExplore) -> None:
+    def _show_explore(self, elasticsearch: _ElasticsearchExplore) -> None:
         """Shows explore ui for data prediction exploration"""
 
         def is_service_up(url: str) -> bool:
@@ -485,45 +593,6 @@ class Pipeline:
             self.__setattr__(
                 method.__name__, update_method_signature(new_signature, method)
             )
-
-
-class _TrainConfiguration:
-    """Configures a training run
-    
-    # Parameters
-        output: `str`
-             The experiment output path
-        vocab: `vocab`
-            The path to an existing vocabulary
-        trainer_path: `str`
-             The trainer file path
-        train_cfg: `str`
-            The train datasource file path
-        validation_cfg: `Optional[str]`
-            The validation datasource file path
-        test_cfg: `Optional[str]`
-            The test datasource file path
-        verbose: `bool`
-            Whether to show verbose logs (default is `False`)
-    """
-
-    def __init__(
-        self,
-        output: str,
-        trainer: TrainerConfiguration,
-        vocab: Optional[str] = None,
-        train_cfg: str = "",
-        validation_cfg: Optional[str] = None,
-        test_cfg: Optional[str] = None,
-        verbose: bool = False,
-    ):
-        self.output = output
-        self.vocab = vocab
-        self.trainer = trainer
-        self.training = train_cfg
-        self.validation = validation_cfg
-        self.test = test_cfg
-        self.verbose = verbose
 
 
 class _PipelineHelper:
@@ -664,7 +733,7 @@ class _PipelineHelper:
         pipeline: Pipeline,
         ds_path: str,
         config: _ExploreConfiguration,
-        elasticsearch: ElasticsearchExplore,
+        elasticsearch: _ElasticsearchExplore,
     ) -> dd.DataFrame:
         if config.prediction_cache > 0:
             pipeline.init_predictions_cache(config.prediction_cache)

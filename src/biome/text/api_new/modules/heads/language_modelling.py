@@ -9,9 +9,9 @@ from allennlp.training.metrics import Perplexity
 
 from biome.text.api_new.model import Model
 from biome.text.api_new.modules.specs import ComponentSpec
-from .defs import TaskHead, TaskName, TaskOutput
-from ...featurizer import InputFeaturizer
-from ...vocabulary import vocabulary
+from biome.text.api_new.modules.heads import TaskHead, TaskName, TaskOutput
+from biome.text.api_new.featurizer import InputFeaturizer
+from biome.text.api_new.vocabulary import vocabulary
 
 
 class SoftmaxLoss(torch.nn.Module):
