@@ -32,8 +32,8 @@ features:
         bidirectional: true
       dropout: 0.2
 
-encoder:
-  type: pass_through
+#encoder:
+#  type: pass_through
 
 head:
   type: BiMpm
