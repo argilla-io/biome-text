@@ -47,11 +47,11 @@ def pipeline_yaml(tmpdir, request):
             #         "padding_index": 0,
             #     },
             # },
-            # Missing: padding_index
             "words": {
                 "embedding_dim": 32,
                 "lowercase_tokens": True,
                 "trainable": True,
+                "embedder": {"padding_index": 0},
             },
             # "token_characters": {
             #     "indexer": {
@@ -71,7 +71,6 @@ def pipeline_yaml(tmpdir, request):
             #         "dropout": 0.2,
             #     },
             # },
-            # Missing: lowercase_characters, padding_index
             "chars": {
                 "embedding_dim": 32,
                 "dropout": 0.2,
@@ -81,58 +80,60 @@ def pipeline_yaml(tmpdir, request):
                     "num_layers": 1,
                     "bidirectional": True,
                 },
+                "indexer": {"character_tokenizer": {"lowercase_characters": True}},
+                "embedder": {"embedding": {"padding_index": 0}},
             },
         },
         "head": {
             "type": "BiMpm",
             "labels": ["1", "0"],
-            "matcher_word": {
-                "is_forward": True,
-                "hidden_dim": 256,
-                "num_perspectives": 10,
-                "with_full_match": False,
-            },
+            "multifield": request.param == "multifield",
+            "dropout": 0.2,
             "encoder": {
                 "type": "lstm",
                 "bidirectional": False,
-                "input_size": 256,
+                # "input_size": 256,
                 "hidden_size": 64,
                 "num_layers": 1,
             },
+            "matcher_word": {
+                "is_forward": True,
+                # "hidden_dim": 256,
+                "num_perspectives": 10,
+                "with_full_match": False,
+            },
             "matcher_forward": {
                 "is_forward": True,
-                "hidden_dim": 64,
+                # "hidden_dim": 64,
                 "num_perspectives": 21,
             },
             "encoder2": {
                 "type": "lstm",
                 "bidirectional": False,
-                "input_size": 64,
+                # "input_size": 64,
                 "hidden_size": 32,
                 "num_layers": 1,
             },
             "matcher2_forward": {
                 "is_forward": True,
-                "hidden_dim": 32,
+                # "hidden_dim": 32,
                 "num_perspectives": 21,
             },
             "aggregator": {
                 "type": "lstm",
                 "bidirectional": True,
-                "input_size": 264,
+                # "input_size": 264,
                 "hidden_size": 32,
                 "num_layers": 2,
                 "dropout": 0.2,
             },
             "classifier_feedforward": {
-                "input_dim": 128,
+                # "input_dim": 128,
                 "num_layers": 1,
                 "hidden_dims": [64],
                 "activations": ["relu"],
                 "dropout": [0.2],
             },
-            "multifield": request.param == "multifield",
-            "dropout": 0.2,
             "initializer": [
                 ["output_layer.weight", {"type": "xavier_normal"}],
                 ["output_layer.bias", {"type": "constant", "val": 0}],
@@ -194,7 +195,7 @@ def test_multifield_bimpm_learn(
     pipeline_yaml, trainer_yaml, training_data_yaml,
 ):
     pipeline = Pipeline.from_file(pipeline_yaml)
-    print(pipeline.predict(record1="The one", record2="The other"))
+    pipeline.predict(record1="The one", record2="The other")
 
     pipeline.train(
         output="experiment",

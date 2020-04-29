@@ -1,20 +1,25 @@
 from typing import Optional, Dict, List, Any
 
 import torch
-from allennlp.common.checks import check_dimensions_match
 from allennlp.data import Instance
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
     Seq2VecEncoder,
-    TimeDistributed,
 )
 from allennlp.modules.bimpm_matching import BiMpmMatching
+from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn import util
 from biome.text.api_new.model import Model
 from biome.text.api_new.modules.encoders import TimeDistributedEncoder
 from biome.text.api_new.modules.heads.classification.defs import ClassificationHead
+from biome.text.api_new.modules.specs import (
+    FeedForwardSpec,
+    Seq2SeqEncoderSpec,
+    Seq2VecEncoderSpec,
+    BiMpmMatchingSpec,
+)
 from overrides import overrides
 
 
@@ -37,24 +42,24 @@ class BiMpm(ClassificationHead):
         Takes care of the embedding
     labels : `List[str]`
         List of labels
-    matcher_word : ``BiMpmMatching``
+    matcher_word : ``BiMpmMatchingSpec``
         BiMPM matching on the output of word embeddings of record1 and record2.
-    encoder : ``Seq2SeqEncoder``
+    encoder : ``Seq2SeqEncoderSpec``
         Encoder layer for record1 and record2
     matcher_forward : ``BiMPMMatching``
         BiMPM matching for the forward output of the encoder layer
-    aggregator : ``Seq2VecEncoder``
+    aggregator : ``Seq2VecEncoderSpec``
         Aggregator of all BiMPM matching vectors
-    classifier_feedforward : ``FeedForward``
+    classifier_feedforward : ``FeedForwardSpec``
         Fully connected layers for classification.
         A linear output layer with the number of labels at the end will be added automatically!!!
-    matcher_backward : ``BiMPMMatching``, optional
+    matcher_backward : ``BiMPMMatchingSpec``, optional
         BiMPM matching for the backward output of the encoder layer
-    encoder2 : ``Seq2SeqEncoder``, optional
+    encoder2 : ``Seq2SeqEncoderSpec``, optional
         Encoder layer for encoded record1 and encoded record2
-    matcher2_forward : ``BiMPMMatching``, optional
+    matcher2_forward : ``BiMPMMatchingSpec``, optional
         BiMPM matching for the forward output of the second encoder layer
-    matcher2_backward : ``BiMPMMatching``, optional
+    matcher2_backward : ``BiMPMMatchingSpec``, optional
         BiMPM matching for the backward output of the second encoder layer
     dropout : ``float``, optional (default=0.1)
         Dropout percentage to use.
@@ -68,49 +73,83 @@ class BiMpm(ClassificationHead):
         self,
         model: Model,
         labels: List[str],
-        matcher_word: BiMpmMatching,
-        encoder: Seq2SeqEncoder,
-        matcher_forward: BiMpmMatching,
-        aggregator: Seq2VecEncoder,
-        classifier_feedforward: FeedForward,
-        matcher_backward: BiMpmMatching = None,
-        encoder2: Seq2SeqEncoder = None,
-        matcher2_forward: BiMpmMatching = None,
-        matcher2_backward: BiMpmMatching = None,
+        matcher_word: BiMpmMatchingSpec,
+        encoder: Seq2SeqEncoderSpec,
+        matcher_forward: BiMpmMatchingSpec,
+        aggregator: Seq2VecEncoderSpec,
+        classifier_feedforward: FeedForwardSpec,
+        matcher_backward: BiMpmMatchingSpec = None,
+        encoder2: Seq2SeqEncoderSpec = None,
+        matcher2_forward: BiMpmMatchingSpec = None,
+        matcher2_backward: BiMpmMatchingSpec = None,
         dropout: float = 0.1,
         multifield: bool = True,
         initializer: InitializerApplicator = InitializerApplicator(),
     ):
         super(BiMpm, self).__init__(model, labels)
 
+        if not isinstance(self.model.encoder, PassThroughEncoder):
+            raise RuntimeError("The model encoder has to be a PassThroughEncoder!")
+
         self.multifield = multifield
-        if self.multifield:
-            self.model.encoder = TimeDistributedEncoder(self.model.encoder)
         self.num_wrapping_dims = 1 if multifield else 0
         self.matching = (
             self._multifield_matching if multifield else self._textfield_matching
         )
+        if self.multifield:
+            self.model.encoder = TimeDistributedEncoder(self.model.encoder)
 
-        self.matcher_word = matcher_word
+        self.encoder: Seq2SeqEncoder = encoder.input_dim(
+            self.model.encoder.get_output_dim()
+        ).compile()
+        if multifield:
+            self.encoder: Seq2SeqEncoder = TimeDistributedEncoder(self.encoder)
 
-        self.encoder = encoder
-        self.td_encoder = TimeDistributed(self.encoder) if multifield else self.encoder
-        self.matcher_forward = matcher_forward
-        self.matcher_backward = matcher_backward
+        self.matcher_word: BiMpmMatching = matcher_word.input_dim(
+            self.model.encoder.get_output_dim()
+        ).compile()
 
-        self.encoder2 = encoder2
-        self.td_encoder2 = (
-            TimeDistributed(self.encoder2)
-            if multifield and self.encoder2
-            else self.encoder2
+        input_dim_matcher = self.encoder.get_output_dim()
+        if matcher_backward is not None:
+            input_dim_matcher //= 2
+
+        self.matcher_forward: BiMpmMatching = matcher_forward.input_dim(
+            input_dim_matcher
+        ).compile()
+        self.matcher_backward = (
+            matcher_backward.input_dim(input_dim_matcher).compile()
+            if matcher_backward is not None
+            else None
         )
-        self.matcher2_forward = matcher2_forward
-        self.matcher2_backward = matcher2_backward
 
-        self.aggregator = aggregator
+        self.encoder2 = (
+            encoder2.input_dim(self.encoder.get_output_dim()).compile()
+            if encoder2 is not None
+            else None
+        )
+        if multifield and self.encoder2 is not None:
+            self.encoder2 = TimeDistributedEncoder(self.encoder2)
+
+        if self.encoder2 is not None:
+            input_dim_matcher = self.encoder2.get_output_dim()
+            if matcher2_backward is not None:
+                input_dim_matcher //= 2
+
+            self.matcher2_forward: BiMpmMatching = matcher2_forward.input_dim(
+                input_dim_matcher
+            ).compile()
+
+            self.matcher2_backward = (
+                matcher_backward.input_dim(input_dim_matcher).compile()
+                if matcher_backward is not None
+                else None
+            )
+        else:
+            self.matcher2_forward = None
+            self.matcher2_backward = None
 
         matching_dim = (
-            matcher_word.get_output_dim() + self.matcher_forward.get_output_dim()
+            self.matcher_word.get_output_dim() + self.matcher_forward.get_output_dim()
         )
         if self.matcher_backward:
             matching_dim += self.matcher_backward.get_output_dim()
@@ -119,21 +158,11 @@ class BiMpm(ClassificationHead):
         if self.matcher2_backward:
             matching_dim += self.matcher2_backward.get_output_dim()
 
-        check_dimensions_match(
-            matching_dim,
-            self.aggregator.get_input_dim(),
-            "sum of dim of all matching layers",
-            "aggregator input dim",
-        )
+        self.aggregator: Seq2VecEncoder = aggregator.input_dim(matching_dim).compile()
 
-        self.classifier_feedforward = classifier_feedforward
-
-        check_dimensions_match(
-            self.aggregator.get_output_dim() * 2,
-            self.classifier_feedforward.get_input_dim(),
-            "Twice the output dimension of the aggregator (record1 and record2 will be concatenated)",
-            "classifier feedforward input dim",
-        )
+        self.classifier_feedforward: FeedForward = classifier_feedforward.input_dim(
+            self.aggregator.get_output_dim() * 2
+        ).compile()
 
         self.classifier_output_dim = self.classifier_feedforward.get_output_dim()
         self.output_layer = torch.nn.Linear(self.classifier_output_dim, self.num_labels)
@@ -230,10 +259,10 @@ class BiMpm(ClassificationHead):
             )
         )
         encoded_record1 = self.dropout(
-            self.td_encoder(embedded_record1, mask=mask_record1)
+            self.encoder(embedded_record1, mask=mask_record1)
         )
         encoded2_record1 = (
-            self.dropout(self.td_encoder2(encoded_record1, mask=mask_record1))
+            self.dropout(self.encoder2(encoded_record1, mask=mask_record1))
             if self.encoder2
             else None
         )
@@ -245,10 +274,10 @@ class BiMpm(ClassificationHead):
             )
         )
         encoded_record2 = self.dropout(
-            self.td_encoder(embedded_record2, mask=mask_record2)
+            self.encoder(embedded_record2, mask=mask_record2)
         )
         encoded2_record2 = (
-            self.dropout(self.td_encoder2(encoded_record2, mask=mask_record2))
+            self.dropout(self.encoder2(encoded_record2, mask=mask_record2))
             if self.encoder2
             else None
         )
