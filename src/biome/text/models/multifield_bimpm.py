@@ -205,7 +205,7 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
             self.text_field_embedder(record1, num_wrapping_dims=self.num_wrapping_dims)
         )
         encoded_record1 = self.dropout(
-            self.td_encoder(embedded_record1, mask=mask_record1)
+            self.encoder(embedded_record1, mask=mask_record1)
         )
         encoded2_record1 = (
             self.dropout(self.td_encoder2(encoded_record1, mask=mask_record1))
@@ -218,7 +218,7 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
             self.text_field_embedder(record2, num_wrapping_dims=self.num_wrapping_dims)
         )
         encoded_record2 = self.dropout(
-            self.td_encoder(embedded_record2, mask=mask_record2)
+            self.encoder(embedded_record2, mask=mask_record2)
         )
         encoded2_record2 = (
             self.dropout(self.td_encoder2(encoded_record2, mask=mask_record2))
