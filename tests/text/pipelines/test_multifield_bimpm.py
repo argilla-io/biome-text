@@ -156,17 +156,6 @@ def pipeline_yaml(tmpdir, request):
 @pytest.fixture
 def trainer_yaml(tmpdir):
     trainer_dict = {
-        # "iterator": {
-        #     "batch_size": 3,
-        #     "sorting_keys": [
-        #         [
-        #             "record1",
-        #             "num_fields" if request.param == "multifield" else "num_tokens",
-        #         ]
-        #     ],
-        #     "type": "bucket",
-        # },
-        # Missing: batch_size; max_instances_in_memory; cache_instances;
         "trainer": {
             "type": "default",
             "cuda_device": -1,

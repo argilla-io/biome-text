@@ -8,7 +8,6 @@ from allennlp.modules import (
     Seq2VecEncoder,
 )
 from allennlp.modules.bimpm_matching import BiMpmMatching
-from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 from allennlp.nn import InitializerApplicator
 from allennlp.nn import util
 from biome.text.api_new.model import Model
@@ -87,9 +86,6 @@ class BiMpm(ClassificationHead):
         initializer: InitializerApplicator = InitializerApplicator(),
     ):
         super(BiMpm, self).__init__(model, labels)
-
-        if not isinstance(self.model.encoder, PassThroughEncoder):
-            raise RuntimeError("The model encoder has to be a PassThroughEncoder!")
 
         self.multifield = multifield
         self.num_wrapping_dims = 1 if multifield else 0
