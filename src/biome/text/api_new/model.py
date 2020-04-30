@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
@@ -27,6 +28,7 @@ class Model(torch.nn.Module):
         self.vocab = vocab
         self.tokenizer = tokenizer
         self.featurizer = featurizer
+        self._features = self.featurizer.features
         self._embedder = featurizer.build_embedder(self.vocab)
         self.encoder = (
             encoder.input_dim(self._embedder.get_output_dim()).compile()
@@ -50,7 +52,7 @@ class Model(torch.nn.Module):
 
     @property
     def features(self) -> Dict[str, TokenIndexer]:
-        return self.featurizer.features
+        return copy.deepcopy(self._features)
 
     def __tokenize_text(self, text: str) -> List[Token]:
         return self.tokenizer.tokenize_text(text)
