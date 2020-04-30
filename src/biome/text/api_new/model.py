@@ -27,8 +27,8 @@ class Model(torch.nn.Module):
 
         self.vocab = vocab
         self.tokenizer = tokenizer
-        self.featurizer = featurizer
-        self._features = self.featurizer.features
+        self.featurizer = featurizer  # do we need this attribute?
+        self._features = featurizer.features
         self._embedder = featurizer.build_embedder(self.vocab)
         self.encoder = (
             encoder.input_dim(self._embedder.get_output_dim()).compile()
@@ -102,8 +102,8 @@ class Model(torch.nn.Module):
         if aggregate:
             return TextField(
                 [token for entry_tokens in tokens for token in entry_tokens],
-                self.features,
+                self._features,
             )
         return ListField(
-            [TextField(entry_tokens, self.features) for entry_tokens in tokens]
+            [TextField(entry_tokens, self._features) for entry_tokens in tokens]
         )
