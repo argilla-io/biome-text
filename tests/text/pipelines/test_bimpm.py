@@ -180,7 +180,7 @@ def trainer_yaml(tmpdir):
     return str(trainer_yaml)
 
 
-def test_multifield_bimpm_learn(
+def test_bimpm_learn(
     pipeline_yaml, trainer_yaml, training_data_yaml,
 ):
     pipeline = Pipeline.from_file(pipeline_yaml)
