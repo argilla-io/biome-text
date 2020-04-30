@@ -7,7 +7,7 @@ import time
 import uuid
 from inspect import Parameter
 from threading import Thread
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union, cast, Callable
 from urllib.error import URLError
 
 import numpy
@@ -452,6 +452,22 @@ class Pipeline:
             },
         }
 
+    def _filter_parameters_by_predicate(
+        self, predicate: Callable[[], bool]
+    ) -> List[str]:
+        filtered_parameters = filter(predicate, self._model.named_parameters())
+        return [name for name, p in filtered_parameters]
+
+    @property
+    def trainable_parameters(self) -> List[str]:
+        """Returns the name of pipeline trainable parameters"""
+        return self._filter_parameters_by_predicate(lambda p: p.requires_grad)
+
+    @property
+    def frozen_parameters(self) -> List[str]:
+        """Returns the number of frozen parameters of pipeline"""
+        return self._filter_parameters_by_predicate(lambda p: not p.requires_grad)
+
     @staticmethod
     def __model_from_config(
         config: PipelineConfiguration, **extra_params
@@ -637,9 +653,7 @@ class PipelineHelper:
 
     @classmethod
     def _to_allennlp_configuration(cls, config: TrainConfiguration) -> Dict[str, Any]:
-        trainer = {
-            **yaml_to_dict(config.trainer),
-        }
+        trainer = {**yaml_to_dict(config.trainer)}
         trainer["trainer"]["type"] = "default"
         # Add cuda device if necessary
         trainer["trainer"]["cuda_device"] = trainer["trainer"].get(

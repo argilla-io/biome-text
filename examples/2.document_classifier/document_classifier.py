@@ -3,6 +3,8 @@ from biome.text.api_new import Pipeline
 if __name__ == "__main__":
 
     pl = Pipeline.from_file("document_classifier.yaml")
+    print(f"Pipeline parameters: ({pl.trainable_parameters}, {pl.frozen_parameters})")
+
     print(
         pl.predict(
             document=["Header main. This is a test body!!!", "The next phrase is here"]
@@ -14,6 +16,7 @@ if __name__ == "__main__":
         trainer="trainer.yml",
         training="train.data.yml",
         validation="validation.data.yml",
+        verbose=True,
     )
 
     trained_pl.predict(
