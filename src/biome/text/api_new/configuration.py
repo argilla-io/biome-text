@@ -106,6 +106,7 @@ class TrainerConfiguration:
         moving_average: Optional[Dict[str, Any]] = None,
         batch_size: Optional[int] = None,
         cache_instances: bool = True,
+        in_memory_batches: int = 2,
         data_bucketing: bool = True,
     ):
         self.optimizer = optimizer
@@ -124,6 +125,7 @@ class TrainerConfiguration:
         self.batch_size = batch_size or 32
         self.data_bucketing = data_bucketing or True
         self.cache_instances = cache_instances or True
+        self.in_memory_batches = in_memory_batches
 
 
 class VocabularyConfiguration:

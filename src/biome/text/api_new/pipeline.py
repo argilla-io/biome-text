@@ -635,10 +635,26 @@ class _PipelineHelper:
     def _allennlp_configuration(
         cls, pipeline: Pipeline, config: _TrainConfiguration
     ) -> Dict[str, Any]:
-        def iterator_configuration() -> Dict[str, Any]:
+
+        def trainer_configuration(trainer: TrainerConfiguration) -> Dict[str, Any]:
+            """Creates trainer configuration dict"""
+            __excluded_keys = [
+                    "data_bucketing",
+                    "batch_size",
+                    "cache_instances",
+                    "in_memory_batches"
+                ]  # Data iteration attributes
+            return {
+                k: v
+                for k, v in vars(trainer).items()
+                if k
+                not in __excluded_keys
+            }
+
+        def iterator_configuration(pipeline: Pipeline, trainer: TrainerConfiguration) -> Dict[str, Any]:
             """Creates a data iterator configuration"""
 
-            def _forward_inputs(pipeline: Pipeline) -> List[str]:
+            def _forward_inputs() -> List[str]:
                 """
                 Calculate the required head.forward arguments. We use this method
                 for automatically generate data iterator sorting keys
@@ -650,18 +666,20 @@ class _PipelineHelper:
                 return [p.name for p in required] or [None]
 
             iterator_config = {
-                "batch_size": config.trainer.batch_size,
-                "max_instances_in_memory": config.trainer.batch_size * 3,
-                "cache_instances": config.trainer.cache_instances,
+                "batch_size": trainer.batch_size,
+                "max_instances_in_memory": max(
+                    trainer.batch_size * trainer.in_memory_batches, trainer.batch_size
+                ),
+                "cache_instances": trainer.cache_instances,
                 "type": "basic",
             }
 
-            if config.trainer.data_bucketing:
+            if trainer.data_bucketing:
                 iterator_config.update(
                     {
                         "sorting_keys": [
                             [
-                                _forward_inputs(pipeline)[0],
+                                _forward_inputs()[0],
                                 "list_num_tokens"
                                 if isinstance(
                                     pipeline.model.encoder, TimeDistributedEncoder
@@ -680,24 +698,14 @@ class _PipelineHelper:
             "type": __default_impl__.__name__,
         }
         allennlp_config = {
-            "trainer": {
-                k: v
-                for k, v in vars(config.trainer).items()
-                if k
-                not in [
-                    "data_bucketing",
-                    "batch_size",
-                    "cache_instances",
-                ]  # Data iteration attributes
-            },
-            "iterator": iterator_configuration(),
+            "trainer": trainer_configuration(config.trainer),
+            "iterator": iterator_configuration(pipeline, config.trainer),
             "dataset_reader": base_config,
             "model": base_config,
             "train_data_path": config.training,
             "validation_data_path": config.validation,
             "test_data_path": config.test,
         }
-
         return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
 
     @classmethod
