@@ -1,27 +1,28 @@
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 
 import torch
-from allennlp.common.checks import check_dimensions_match
-from allennlp.data import Vocabulary
-from allennlp.models.model import Model
+from allennlp.data import Instance
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
     Seq2VecEncoder,
-    TextFieldEmbedder,
-    TimeDistributed,
 )
 from allennlp.modules.bimpm_matching import BiMpmMatching
-from allennlp.nn import InitializerApplicator, RegularizerApplicator
+from allennlp.nn import InitializerApplicator
 from allennlp.nn import util
-from allennlp.training.metrics import CategoricalAccuracy
+from biome.text.api_new.model import Model
+from biome.text.api_new.modules.encoders import TimeDistributedEncoder
+from biome.text.api_new.modules.heads.classification.defs import ClassificationHead
+from biome.text.api_new.modules.specs import (
+    FeedForwardSpec,
+    Seq2SeqEncoderSpec,
+    Seq2VecEncoderSpec,
+    BiMpmMatchingSpec,
+)
 from overrides import overrides
-from torch.nn import Linear
-
-from .mixins import BiomeClassifierMixin
 
 
-class MultifieldBiMpm(BiomeClassifierMixin, Model):
+class BiMpm(ClassificationHead):
     """
     This ``Model`` is a version of AllenNLPs implementation of the BiMPM model described in
     `Bilateral Multi-Perspective Matching for Natural Language Sentences <https://arxiv.org/abs/1702.03814>`_
@@ -31,32 +32,33 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
     The matching will be done for all possible combinations between the two records, that is:
     (r1_1, r2_1), (r1_1, r2_2), ..., (r1_2, r2_1), (r1_2, r2_2), ...
 
-    This version also allows you to apply only one encoder, and to leave out the backward matching.
+    This version also allows you to apply only one encoder, and to leave out the backward matching,
+    providing the possibility to use transformers for the encoding layer.
 
     Parameters
     ----------
-    vocab : ``Vocabulary``
-    text_field_embedder : ``TextFieldEmbedder``
-        Used to embed the ``record1`` and ``record2`` ``TextFields`` we get as input to the
-        model.
-    matcher_word : ``BiMpmMatching``
+    model : ``Model``
+        Takes care of the embedding
+    labels : `List[str]`
+        List of labels
+    matcher_word : ``BiMpmMatchingSpec``
         BiMPM matching on the output of word embeddings of record1 and record2.
-    encoder : ``Seq2SeqEncoder``
+    encoder : ``Seq2SeqEncoderSpec``
         Encoder layer for record1 and record2
     matcher_forward : ``BiMPMMatching``
         BiMPM matching for the forward output of the encoder layer
-    aggregator : ``Seq2VecEncoder``
+    aggregator : ``Seq2VecEncoderSpec``
         Aggregator of all BiMPM matching vectors
-    classifier_feedforward : ``FeedForward``
+    classifier_feedforward : ``FeedForwardSpec``
         Fully connected layers for classification.
         A linear output layer with the number of labels at the end will be added automatically!!!
-    matcher_backward : ``BiMPMMatching``, optional
+    matcher_backward : ``BiMPMMatchingSpec``, optional
         BiMPM matching for the backward output of the encoder layer
-    encoder2 : ``Seq2SeqEncoder``, optional
+    encoder2 : ``Seq2SeqEncoderSpec``, optional
         Encoder layer for encoded record1 and encoded record2
-    matcher2_forward : ``BiMPMMatching``, optional
+    matcher2_forward : ``BiMPMMatchingSpec``, optional
         BiMPM matching for the forward output of the second encoder layer
-    matcher2_backward : ``BiMPMMatching``, optional
+    matcher2_backward : ``BiMPMMatchingSpec``, optional
         BiMPM matching for the backward output of the second encoder layer
     dropout : ``float``, optional (default=0.1)
         Dropout percentage to use.
@@ -64,60 +66,86 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
         Are there multiple inputs for each record, that is do the inputs come from ``ListField``s?
     initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
         If provided, will be used to initialize the model parameters.
-    regularizer : ``RegularizerApplicator``, optional (default=``None``)
-        If provided, will be used to calculate the regularization penalty during training.
-    accuracy
-        The accuracy you want to use. By default, we choose a categorical top-1 accuracy.
     """
 
     def __init__(
         self,
-        vocab: Vocabulary,
-        text_field_embedder: TextFieldEmbedder,
-        matcher_word: BiMpmMatching,
-        encoder: Seq2SeqEncoder,
-        matcher_forward: BiMpmMatching,
-        aggregator: Seq2VecEncoder,
-        classifier_feedforward: FeedForward,
-        matcher_backward: BiMpmMatching = None,
-        encoder2: Seq2SeqEncoder = None,
-        matcher2_forward: BiMpmMatching = None,
-        matcher2_backward: BiMpmMatching = None,
+        model: Model,
+        labels: List[str],
+        matcher_word: BiMpmMatchingSpec,
+        encoder: Seq2SeqEncoderSpec,
+        matcher_forward: BiMpmMatchingSpec,
+        aggregator: Seq2VecEncoderSpec,
+        classifier_feedforward: FeedForwardSpec,
+        matcher_backward: BiMpmMatchingSpec = None,
+        encoder2: Seq2SeqEncoderSpec = None,
+        matcher2_forward: BiMpmMatchingSpec = None,
+        matcher2_backward: BiMpmMatchingSpec = None,
         dropout: float = 0.1,
         multifield: bool = True,
         initializer: InitializerApplicator = InitializerApplicator(),
-        regularizer: Optional[RegularizerApplicator] = None,
-        accuracy: Optional[CategoricalAccuracy] = None,
     ):
-        super().__init__(accuracy=accuracy, vocab=vocab, regularizer=regularizer)
+        super(BiMpm, self).__init__(model, labels)
 
+        self.multifield = multifield
         self.num_wrapping_dims = 1 if multifield else 0
         self.matching = (
             self._multifield_matching if multifield else self._textfield_matching
         )
+        if self.multifield:
+            self.model.encoder = TimeDistributedEncoder(self.model.encoder)
 
-        self.text_field_embedder = text_field_embedder
+        self.encoder: Seq2SeqEncoder = encoder.input_dim(
+            self.model.encoder.get_output_dim()
+        ).compile()
+        if multifield:
+            self.encoder: Seq2SeqEncoder = TimeDistributedEncoder(self.encoder)
 
-        self.matcher_word = matcher_word
+        self.matcher_word: BiMpmMatching = matcher_word.input_dim(
+            self.model.encoder.get_output_dim()
+        ).compile()
 
-        self.encoder = encoder
-        self.td_encoder = TimeDistributed(self.encoder) if multifield else self.encoder
-        self.matcher_forward = matcher_forward
-        self.matcher_backward = matcher_backward
+        input_dim_matcher = self.encoder.get_output_dim()
+        if matcher_backward is not None:
+            input_dim_matcher //= 2
 
-        self.encoder2 = encoder2
-        self.td_encoder2 = (
-            TimeDistributed(self.encoder2)
-            if multifield and self.encoder2
-            else self.encoder2
+        self.matcher_forward: BiMpmMatching = matcher_forward.input_dim(
+            input_dim_matcher
+        ).compile()
+        self.matcher_backward = (
+            matcher_backward.input_dim(input_dim_matcher).compile()
+            if matcher_backward is not None
+            else None
         )
-        self.matcher2_forward = matcher2_forward
-        self.matcher2_backward = matcher2_backward
 
-        self.aggregator = aggregator
+        self.encoder2 = (
+            encoder2.input_dim(self.encoder.get_output_dim()).compile()
+            if encoder2 is not None
+            else None
+        )
+        if multifield and self.encoder2 is not None:
+            self.encoder2 = TimeDistributedEncoder(self.encoder2)
+
+        if self.encoder2 is not None:
+            input_dim_matcher = self.encoder2.get_output_dim()
+            if matcher2_backward is not None:
+                input_dim_matcher //= 2
+
+            self.matcher2_forward: BiMpmMatching = matcher2_forward.input_dim(
+                input_dim_matcher
+            ).compile()
+
+            self.matcher2_backward = (
+                matcher_backward.input_dim(input_dim_matcher).compile()
+                if matcher_backward is not None
+                else None
+            )
+        else:
+            self.matcher2_forward = None
+            self.matcher2_backward = None
 
         matching_dim = (
-            matcher_word.get_output_dim() + self.matcher_forward.get_output_dim()
+            self.matcher_word.get_output_dim() + self.matcher_forward.get_output_dim()
         )
         if self.matcher_backward:
             matching_dim += self.matcher_backward.get_output_dim()
@@ -126,32 +154,52 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
         if self.matcher2_backward:
             matching_dim += self.matcher2_backward.get_output_dim()
 
-        check_dimensions_match(
-            matching_dim,
-            self.aggregator.get_input_dim(),
-            "sum of dim of all matching layers",
-            "aggregator input dim",
-        )
+        self.aggregator: Seq2VecEncoder = aggregator.input_dim(matching_dim).compile()
 
-        self.classifier_feedforward = classifier_feedforward
-
-        check_dimensions_match(
-            self.aggregator.get_output_dim() * 2,
-            self.classifier_feedforward.get_input_dim(),
-            "Twice the output dimension of the aggregator (record1 and record2 will be concatenated)",
-            "classifier feedforward input dim",
-        )
+        self.classifier_feedforward: FeedForward = classifier_feedforward.input_dim(
+            self.aggregator.get_output_dim() * 2
+        ).compile()
 
         self.classifier_output_dim = self.classifier_feedforward.get_output_dim()
-        self.output_layer = Linear(
-            self.classifier_output_dim, self.vocab.get_vocab_size(namespace="labels")
-        )
+        self.output_layer = torch.nn.Linear(self.classifier_output_dim, self.num_labels)
 
         self.dropout = torch.nn.Dropout(dropout)
 
         self.loss = torch.nn.CrossEntropyLoss()
 
         initializer(self)
+
+    def featurize(
+        self,
+        record1: Dict[str, Any],
+        record2: Dict[str, Any],
+        label: Optional[str] = None,
+    ) -> Optional[Instance]:
+        """Tokenizes, indexes and embedds the two records and optionally adds the label
+
+        Parameters
+        ----------
+        record1 : Dict[str, Any]
+            First record
+        record2 : Dict[str, Any]
+            Second record
+        label : Optional[str]
+            Classification label
+
+        Returns
+        -------
+        instance
+            AllenNLP instance containing the two records plus optionally a label
+        """
+        record1_field = self.model.featurize(record1, aggregate=not self.multifield)
+        record2_field = self.model.featurize(record2, aggregate=not self.multifield)
+        instance = Instance(
+            {
+                "record1": record1_field.get("record"),
+                "record2": record2_field.get("record"),
+            }
+        )
+        return self.add_label(instance, label)
 
     @overrides
     def forward(
@@ -166,11 +214,11 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
         ----------
         record1
             The first input tokens.
-            The dictionary is the output of a ``TextField.as_array()``. It gives names to the tensors created by
+            The dictionary is the output of a ``*Field.as_array()``. It gives names to the tensors created by
             the ``TokenIndexer``s.
             In its most basic form, using a ``SingleIdTokenIndexer``, the dictionary is composed of:
             ``{"tokens": Tensor(batch_size, num_tokens)}``.
-            The keys of the dictionary are defined in the `model.yml` input.
+            The keys of the dictionary are defined in the `pipeline.yaml` config.
             The dictionary is designed to be passed on directly to a ``TextFieldEmbedder``, that has a
             ``TokenEmbedder`` for each key in the dictionary (except you set `allow_unmatched_keys` in the
             ``TextFieldEmbedder`` to False) and knows how to combine different word/character representations into a
@@ -202,26 +250,30 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
 
         # embedding and encoding of record1
         embedded_record1 = self.dropout(
-            self.text_field_embedder(record1, num_wrapping_dims=self.num_wrapping_dims)
+            self.model.forward(
+                record1, mask=mask_record1, num_wrapping_dims=self.num_wrapping_dims
+            )
         )
         encoded_record1 = self.dropout(
             self.encoder(embedded_record1, mask=mask_record1)
         )
         encoded2_record1 = (
-            self.dropout(self.td_encoder2(encoded_record1, mask=mask_record1))
+            self.dropout(self.encoder2(encoded_record1, mask=mask_record1))
             if self.encoder2
             else None
         )
 
         # embedding and encoding of record2
         embedded_record2 = self.dropout(
-            self.text_field_embedder(record2, num_wrapping_dims=self.num_wrapping_dims)
+            self.model.forward(
+                record2, mask=mask_record2, num_wrapping_dims=self.num_wrapping_dims
+            )
         )
         encoded_record2 = self.dropout(
             self.encoder(embedded_record2, mask=mask_record2)
         )
         encoded2_record2 = (
-            self.dropout(self.td_encoder2(encoded_record2, mask=mask_record2))
+            self.dropout(self.encoder2(encoded_record2, mask=mask_record2))
             if self.encoder2
             else None
         )
@@ -239,16 +291,8 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
 
         # the final forward layer
         logits = self.output_layer(self.classifier_feedforward(aggregated_records_cat))
-        probs = torch.nn.functional.softmax(logits, dim=-1)
 
-        output_dict = {"logits": logits, "class_probabilities": probs}
-        if label is not None:
-            loss = self.loss(logits, label)
-            for metric in self._biome_classifier_metrics.values():
-                metric(logits, label)
-            output_dict["loss"] = loss
-
-        return output_dict
+        return self.single_label_output(logits, label)
 
     def _textfield_matching(
         self,
@@ -261,6 +305,7 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
         encoded2_record1,
         encoded2_record2,
     ):
+        """Implements the Matching layer in case of a TextField input"""
         matching_vector_record1: List[torch.Tensor] = []
         matching_vector_record2: List[torch.Tensor] = []
 
@@ -338,6 +383,7 @@ class MultifieldBiMpm(BiomeClassifierMixin, Model):
         encoded2_record1,
         encoded2_record2,
     ):
+        """Implements the Matching layer in case of a ListField input"""
         multifield_matching_vector_record1: List[torch.Tensor] = []
         multifield_matching_vector_record2: List[torch.Tensor] = []
         multifield_matching_mask_record1: List[torch.Tensor] = []

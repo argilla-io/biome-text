@@ -1,4 +1,4 @@
-from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder
+from allennlp.modules import FeedForward, Seq2SeqEncoder, Seq2VecEncoder, BiMpmMatching
 
 from .defs import ComponentSpec
 
@@ -17,5 +17,11 @@ class Seq2SeqEncoderSpec(ComponentSpec[Seq2SeqEncoder]):
 
 class FeedForwardSpec(ComponentSpec[FeedForward]):
     """Layer spec for FeedForward components"""
+
+    pass
+
+
+class BiMpmMatchingSpec(ComponentSpec[BiMpmMatching]):
+    """Layer spec for BiMpmMatching components"""
 
     pass
