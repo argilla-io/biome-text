@@ -1,4 +1,5 @@
 import copy
+import datetime
 import inspect
 import logging
 import os
@@ -21,22 +22,24 @@ from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
 from dask_elk.client import DaskElasticClient
+from elasticsearch import Elasticsearch
 from fastapi import FastAPI
 
-from biome.text.api_new.modules.encoders import TimeDistributedEncoder
-from biome.text.api_new.modules.heads import TaskHead
-from . import constants, helpers
-from ._impl_model import AllennlpModel, _BaseModelImpl
-from .configuration import PipelineConfiguration
-from .data import DataSource
-from .errors import http_error_handling
-from .helpers import (
-    ElasticsearchExplore,
-    get_env_cuda_device,
+from biome.text.api_new import constants, helpers
+from biome.text.api_new._impl_model import AllennlpModel, _BaseModelImpl
+from biome.text.api_new.configuration import (
+    PipelineConfiguration,
+    TrainerConfiguration,
+    VocabularyConfiguration,
+)
+from biome.text.api_new.data import DataSource
+from biome.text.api_new.errors import http_error_handling
+from biome.text.api_new.helpers import (
     split_signature_params_by_predicate,
     update_method_signature,
-    yaml_to_dict,
 )
+from biome.text.api_new.modules.encoders import TimeDistributedEncoder
+from biome.text.api_new.modules.heads import TaskHead
 from .model import Model
 from .modules.heads.defs import TaskHeadSpec
 from ..commands.ui.ui import launch_ui
@@ -59,7 +62,7 @@ def __register(impl_class, overrides: bool = False):
 __register(__default_impl__, overrides=True)
 
 
-class ExploreConfiguration:
+class _ExploreConfiguration:
     """Configures an exploration run
     
     # Parameters
@@ -90,49 +93,115 @@ class ExploreConfiguration:
         self.metadata = metadata
 
 
-class VocabularyConfiguration:
-    """Configures a `Vocabulary` before it gets created from data
+class _ElasticsearchExplore:
+    """Elasticsearch data exploration class"""
 
-    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
+    def __init__(self, es_index: str, es_host: Optional[str] = None):
+        self.es_index = es_index
+        self.es_host = es_host or constants.DEFAULT_ES_HOST
+        if not self.es_host.startswith("http"):
+            self.es_host = f"http://{self.es_host}"
 
-    See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+        self.client = Elasticsearch(
+            hosts=es_host, retry_on_timeout=True, http_compress=True
+        )
+        self.es_doc = helpers.get_compatible_doc_type(self.client)
 
+    def create_explore_data_record(self, parameters: Dict[str, Any]):
+        """Creates an exploration data record data exploration"""
+
+        self.client.indices.create(
+            index=constants.BIOME_METADATA_INDEX,
+            body={
+                "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0}}
+            },
+            params=dict(ignore=400),
+        )
+
+        self.client.update(
+            index=constants.BIOME_METADATA_INDEX,
+            doc_type=constants.BIOME_METADATA_INDEX_DOC,
+            id=self.es_index,
+            body={
+                "doc": dict(
+                    name=self.es_index, created_at=datetime.datetime.now(), **parameters
+                ),
+                "doc_as_upsert": True,
+            },
+        )
+
+    def create_explore_data_index(self, force_delete: bool):
+        """Creates an explore data index if not exists or is forced"""
+        dynamic_templates = [
+            {
+                data_type: {
+                    "match_mapping_type": data_type,
+                    "path_match": path_match,
+                    "mapping": {
+                        "type": "text",
+                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    },
+                }
+            }
+            for data_type, path_match in [("*", "*.value"), ("string", "*")]
+        ]
+
+        if force_delete:
+            self.client.indices.delete(index=self.es_index, ignore=[400, 404])
+
+        self.client.indices.create(
+            index=self.es_index,
+            body={"mappings": {self.es_doc: {"dynamic_templates": dynamic_templates}}},
+            ignore=400,
+        )
+
+
+class _TrainConfiguration:
+    """Configures a training run
+    
     # Parameters
-        sources: `List[str]`
-        min_count: `Dict[str, int]`
-        max_vocab_size: `Union[int, Dict[str, int]]`
-        pretrained_files: `Optional[Dict[str, str]]`
-        only_include_pretrained_words: `bool`
-        tokens_to_add: `Dict[str, List[str]]`
-        min_pretrained_embeddings: `Dict[str, int]`
+        output: `str`
+             The experiment output path
+        vocab: `vocab`
+            The path to an existing vocabulary
+        trainer_path: `str`
+             The trainer file path
+        train_cfg: `str`
+            The train datasource file path
+        validation_cfg: `Optional[str]`
+            The validation datasource file path
+        test_cfg: `Optional[str]`
+            The test datasource file path
+        verbose: `bool`
+            Whether to show verbose logs (default is `False`)
     """
 
     def __init__(
         self,
-        sources: List[str],
-        min_count: Dict[str, int] = None,
-        max_vocab_size: Union[int, Dict[str, int]] = None,
-        pretrained_files: Optional[Dict[str, str]] = None,
-        only_include_pretrained_words: bool = False,
-        tokens_to_add: Dict[str, List[str]] = None,
-        min_pretrained_embeddings: Dict[str, int] = None,
+        output: str,
+        trainer: TrainerConfiguration,
+        vocab: Optional[str] = None,
+        train_cfg: str = "",
+        validation_cfg: Optional[str] = None,
+        test_cfg: Optional[str] = None,
+        verbose: bool = False,
     ):
-        self.sources = sources
-        self.pretrained_files = pretrained_files
-        self.min_count = min_count
-        self.max_vocab_size = max_vocab_size
-        self.only_include_pretrained_words = only_include_pretrained_words
-        self.tokens_to_add = tokens_to_add
-        self.min_pretrained_embeddings = min_pretrained_embeddings
+        self.output = output
+        self.vocab = vocab
+        self.trainer = trainer
+        self.training = train_cfg
+        self.validation = validation_cfg
+        self.test = test_cfg
+        self.verbose = verbose
 
 
 class Pipeline:
     """Manages NLP models configuration and actions.
 
     Use `Pipeline` for creating new models from a configuration or loading a pre-trained model.
-    
+
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
-    
+
     # Parameters
         pretrained_path: `Optional[str]`
             The path to the model.tar.gz of a pre-trained `Pipeline`
@@ -167,13 +236,13 @@ class Pipeline:
         cls, path: str, vocab_config: Optional[VocabularyConfiguration] = None
     ) -> "Pipeline":
         """Creates a pipeline from a config yaml file path
-        
+
         # Parameters
             path: `str`
                 The path to a YAML configuration file
             vocab_config: `Optional[VocabularyConfiguration]`
                 A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
-       
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
@@ -188,13 +257,13 @@ class Pipeline:
         vocab_config: Optional[VocabularyConfiguration] = None,
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
-        
+
             # Parameters
                 config: `Union[str, PipelineConfiguration]`
                     A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
                 vocab_config: `Optional[VocabularyConfiguration]`
                     A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
-            
+
             # Returns
                 pipeline: `Pipeline`
                     A configured pipeline
@@ -225,7 +294,7 @@ class Pipeline:
         # Parameters
             path: `str`
                 The path to the model.tar.gz file of a pre-trained `Pipeline`
-        
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
@@ -235,7 +304,7 @@ class Pipeline:
     def train(
         self,
         output: str,
-        trainer: str,
+        trainer: TrainerConfiguration,
         training: str,
         validation: Optional[str] = None,
         test: Optional[str] = None,
@@ -259,20 +328,20 @@ class Pipeline:
                 The path to an existing vocabulary
             verbose: `bool`
                 Turn on verbose logs
-        
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
         """
         self._model = self._model.train(mode=True)
 
-        return PipelineHelper.train(
+        return _PipelineHelper.train(
             self,
-            TrainConfiguration(
+            _TrainConfiguration(
                 vocab=vocab,
                 test_cfg=test,
                 output=output,
-                trainer_path=trainer,
+                trainer=trainer,
                 train_cfg=training,
                 validation_cfg=validation,
                 verbose=verbose,
@@ -285,7 +354,7 @@ class Pipeline:
         # Parameters
             args: `*args`
             kwargs: `**kwargs`
-        
+
         # Returns
             predictions: `Dict[str, numpy.ndarray]`
                 A dictionary containing the predictions and additional information
@@ -300,7 +369,7 @@ class Pipeline:
         # Parameters
             args: `*args`
             kwargs: `**kwargs`
-        
+
         # Returns
             predictions: `Dict[str, numpy.ndarray]`
                 A dictionary containing the predictions with token importance calculated using IntegratedGradients
@@ -314,15 +383,16 @@ class Pipeline:
         explore_id: Optional[str] = None,
         es_host: Optional[str] = None,
         batch_size: int = 500,
-        prediction_cache_size: int = 0,  # TODO: do we need caching for Explore runs as well or only on serving time?
+        prediction_cache_size: int = 0,
+        # TODO: do we need caching for Explore runs as well or only on serving time?
         explain: bool = False,
         force_delete: bool = True,
         **metadata,
     ) -> dd.DataFrame:
         """Launches Explore UI for a given datasource with current model
-        
+
         Running this method inside a an `IPython` notebook will try to render the UI directly in the notebook.
-        
+
         Running this outside a notebook will try to launch the standalone web application.
 
         # Parameters
@@ -340,12 +410,12 @@ class Pipeline:
                 Whether to extract and return explanations of token importance (default is `False`)
             force_delete: `bool`
                 Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
-        
+
         # Returns
             pipeline: `Pipeline`
                 A configured pipeline
         """
-        config = ExploreConfiguration(
+        config = _ExploreConfiguration(
             batch_size=batch_size,
             prediction_cache_size=prediction_cache_size,
             explain=explain,
@@ -353,31 +423,31 @@ class Pipeline:
             **metadata,
         )
 
-        es_config = ElasticsearchExplore(
+        es_config = _ElasticsearchExplore(
             es_index=explore_id or str(uuid.uuid1()),
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
-        explore_df = PipelineHelper.explore(self, ds_path, config, es_config)
+        explore_df = _PipelineHelper.explore(self, ds_path, config, es_config)
         self._show_explore(es_config)
 
         return explore_df
 
     def serve(self, port: int = 9998):
         """Launches a REST prediction service with current model in a specified port (default is `9998)
-        
+
         # Parameters
             port: `int`
                 The port to make available the prediction service
         """
         self._model = self._model.eval()
-        return PipelineHelper.serve(self, port)
+        return _PipelineHelper.serve(self, port)
 
     def set_head(self, type: Type[TaskHead], **params):
         """Sets a new task head for the pipeline
-        
+
         Use this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
-        
+
         # Parameters
             type: `Type[TaskHead]`
                 The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
@@ -427,31 +497,6 @@ class Pipeline:
         """The pipeline name. Equivalent to task head name"""
         return self.head.__class__.__name__
 
-    @property
-    def _allennlp_configuration(self):
-        base_config = {
-            "config": self.config.as_dict(),
-            "type": __default_impl__.__name__,
-        }
-
-        return {
-            "dataset_reader": base_config,
-            "model": base_config,
-            "iterator": {
-                "batch_size": 32,
-                "max_instances_in_memory": 128,
-                "sorting_keys": [
-                    [
-                        self.__forward_inputs()[0],
-                        "list_num_tokens"
-                        if isinstance(self.model.encoder, TimeDistributedEncoder)
-                        else "num_tokens",
-                    ]
-                ],
-                "type": "bucket",
-            },
-        }
-
     @staticmethod
     def __model_from_config(
         config: PipelineConfiguration, **extra_params
@@ -459,7 +504,7 @@ class Pipeline:
         """Creates a internal base model from pipeline configuration"""
         return __default_impl__.from_params(Params({"config": config}), **extra_params)
 
-    def _show_explore(self, elasticsearch: ElasticsearchExplore) -> None:
+    def _show_explore(self, elasticsearch: _ElasticsearchExplore) -> None:
         """Shows explore ui for data prediction exploration"""
 
         def is_service_up(url: str) -> bool:
@@ -524,16 +569,6 @@ class Pipeline:
         self._model = self.__model_from_config(self.config, vocab=vocab)
         return self
 
-    def __forward_inputs(self) -> List[str]:
-        """
-        Calculate the required head.forward arguments. We use this method
-        for automatically generate data iterator sorting keys
-        """
-        required, _ = split_signature_params_by_predicate(
-            self.head.forward, lambda p: p.default == inspect.Parameter.empty
-        )
-        return [p.name for p in required] or [None]
-
     @staticmethod
     def __model_from_archive(archive: Archive) -> __default_impl__:
         if not isinstance(archive.model, __default_impl__):
@@ -560,46 +595,7 @@ class Pipeline:
             )
 
 
-class TrainConfiguration:
-    """Configures a training run
-    
-    # Parameters
-        output: `str`
-             The experiment output path
-        vocab: `vocab`
-            The path to an existing vocabulary
-        trainer_path: `str`
-             The trainer file path
-        train_cfg: `str`
-            The train datasource file path
-        validation_cfg: `Optional[str]`
-            The validation datasource file path
-        test_cfg: `Optional[str]`
-            The test datasource file path
-        verbose: `bool`
-            Whether to show verbose logs (default is `False`)
-    """
-
-    def __init__(
-        self,
-        output: str,
-        vocab: Optional[str] = None,
-        trainer_path: str = "",
-        train_cfg: str = "",
-        validation_cfg: Optional[str] = None,
-        test_cfg: Optional[str] = None,
-        verbose: bool = False,
-    ):
-        self.output = output
-        self.vocab = vocab
-        self.trainer = trainer_path
-        self.training = train_cfg
-        self.validation = validation_cfg
-        self.test = test_cfg
-        self.verbose = verbose
-
-
-class PipelineHelper:
+class _PipelineHelper:
     """Extra pipeline methods"""
 
     __LOGGER = logging.getLogger(__name__)
@@ -636,40 +632,90 @@ class PipelineHelper:
         uvicorn.run(make_app(), host="0.0.0.0", port=port)
 
     @classmethod
-    def _to_allennlp_configuration(cls, config: TrainConfiguration) -> Dict[str, Any]:
-        trainer = {
-            **yaml_to_dict(config.trainer),
+    def _allennlp_configuration(
+        cls, pipeline: Pipeline, config: _TrainConfiguration
+    ) -> Dict[str, Any]:
+
+        def trainer_configuration(trainer: TrainerConfiguration) -> Dict[str, Any]:
+            """Creates trainer configuration dict"""
+            __excluded_keys = [
+                    "data_bucketing",
+                    "batch_size",
+                    "cache_instances",
+                    "in_memory_batches"
+                ]  # Data iteration attributes
+            return {
+                k: v
+                for k, v in vars(trainer).items()
+                if k
+                not in __excluded_keys
+            }
+
+        def iterator_configuration(pipeline: Pipeline, trainer: TrainerConfiguration) -> Dict[str, Any]:
+            """Creates a data iterator configuration"""
+
+            def _forward_inputs() -> List[str]:
+                """
+                Calculate the required head.forward arguments. We use this method
+                for automatically generate data iterator sorting keys
+                """
+                required, _ = split_signature_params_by_predicate(
+                    pipeline.head.forward,
+                    lambda p: p.default == inspect.Parameter.empty,
+                )
+                return [p.name for p in required] or [None]
+
+            iterator_config = {
+                "batch_size": trainer.batch_size,
+                "max_instances_in_memory": max(
+                    trainer.batch_size * trainer.in_memory_batches, trainer.batch_size
+                ),
+                "cache_instances": trainer.cache_instances,
+                "type": "basic",
+            }
+
+            if trainer.data_bucketing:
+                iterator_config.update(
+                    {
+                        "sorting_keys": [
+                            [
+                                _forward_inputs()[0],
+                                "list_num_tokens"
+                                if isinstance(
+                                    pipeline.model.encoder, TimeDistributedEncoder
+                                )
+                                else "num_tokens",
+                            ]
+                        ],
+                        "type": "bucket",
+                    }
+                )
+
+            return iterator_config
+
+        base_config = {
+            "config": pipeline.config.as_dict(),
+            "type": __default_impl__.__name__,
         }
-        trainer["trainer"]["type"] = "default"
-        # Add cuda device if necessary
-        trainer["trainer"]["cuda_device"] = trainer["trainer"].get(
-            "cuda_device", get_env_cuda_device()
-        )
-
-        datasets = {}
-        for key, path in [
-            ("train_data_path", config.training),
-            ("validation_data_path", config.validation),
-            ("test_data_path", config.test),
-        ]:
-            if path:
-                datasets[key] = path
-
-        return {**trainer, **datasets}
+        allennlp_config = {
+            "trainer": trainer_configuration(config.trainer),
+            "iterator": iterator_configuration(pipeline, config.trainer),
+            "dataset_reader": base_config,
+            "model": base_config,
+            "train_data_path": config.training,
+            "validation_data_path": config.validation,
+            "test_data_path": config.test,
+        }
+        return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
 
     @classmethod
-    def train(cls, pipeline: Pipeline, config: TrainConfiguration):
+    def train(cls, pipeline: Pipeline, config: _TrainConfiguration):
         logging_level = logging.INFO if config.verbose else logging.WARNING
         logging.getLogger("allennlp").setLevel(logging_level)
 
         cls.__LOGGER.info("Starting up learning process.")
 
-        fine_tune_params = Params(
-            {
-                **cls._to_allennlp_configuration(config),
-                **pipeline._allennlp_configuration,
-            }
-        )
+        fine_tune_params = Params(cls._allennlp_configuration(pipeline, config))
 
         # Force clean folder for run fine tuning properly
         # TODO: reuse vocab
@@ -694,8 +740,8 @@ class PipelineHelper:
         cls,
         pipeline: Pipeline,
         ds_path: str,
-        config: ExploreConfiguration,
-        elasticsearch: ElasticsearchExplore,
+        config: _ExploreConfiguration,
+        elasticsearch: _ElasticsearchExplore,
     ) -> dd.DataFrame:
         if config.prediction_cache > 0:
             pipeline.init_predictions_cache(config.prediction_cache)

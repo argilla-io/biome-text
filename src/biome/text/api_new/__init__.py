@@ -1,2 +1,2 @@
-from .configuration import PipelineConfiguration
-from .pipeline import Pipeline, VocabularyConfiguration
+from .configuration import PipelineConfiguration, VocabularyConfiguration
+from .pipeline import Pipeline

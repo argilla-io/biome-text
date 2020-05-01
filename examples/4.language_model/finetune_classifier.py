@@ -1,4 +1,6 @@
 from biome.text.api_new import Pipeline
+from biome.text.api_new.configuration import TrainerConfiguration
+from biome.text.api_new.helpers import yaml_to_dict
 from biome.text.api_new.modules.heads import TextClassification
 
 if __name__ == "__main__":
@@ -31,9 +33,10 @@ if __name__ == "__main__":
     ]
 
     pipe.set_head(TextClassification, pooler={"type": "boe"}, labels=labels)
+    trainer = TrainerConfiguration(**yaml_to_dict("configs/trainer.yml"))
     trained_pl = pipe.train(
         output="text_classifier_fine_tuned",
-        trainer="configs/trainer.yml",
+        trainer=trainer,
         training="configs/train.data.yml",
         validation="configs/val.data.yml",
     )
