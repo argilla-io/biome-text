@@ -1,0 +1,66 @@
+
+body
+  font-family: $primaryFontFamily 
+h1, h2, h3, h4 
+  font-family: $secondaryFontFamily 
+.sidebar
+  background: $sidebarBgColor
+  &__link
+    display: block !important
+  &__img
+    width: auto
+    margin: 2em auto
+    display: block
+  &-heading 
+    font-family: $secondaryFontFamily 
+  &-link
+    border-left: none !important
+    font-family: $secondaryFontFamily 
+    &:after
+      content: ''
+      width: 35px
+      height: 2px
+      background: none
+      display: block
+    &.active
+      &:after  
+        background: $accentColor
+.theme-default-content code
+  background-color: $codePillColor
+.go-to-top
+  background: white
+  height: 1.2rem !important
+  width: 1.2rem !important
+  border-radius: 13px
+  padding: 0.8rem
+  box-shadow: 0 2px 4px #929292
+.nav-link
+  font-weight: 600 !important
+  font-family: $secondaryFontFamily 
+@media screen and (min-width: $MQNarrow)
+  .navbar
+    position: relative
+    border-bottom: none
+    // line-height: 4.4em !important
+    margin-left: 320px
+    .home-link
+      display: none
+    .links 
+      position: relative !important
+      right: auto !important
+      max-width: 740px !important;
+      padding-left: 0 !important
+      margin: 0.7em auto;
+  .sidebar 
+    top: 0
+    z-index: 21
+    overflow: visible
+    border-right: none
+    > ul
+      overflow-y: auto
+      max-height: calc(100% - 120px)
+  .search-box input
+    border-width: 2px !important
+    border-radius: 2px !important
+    &:not(:focus)
+      border-color: #F5F5F5 !important

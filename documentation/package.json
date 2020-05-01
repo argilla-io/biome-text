@@ -1,0 +1,30 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "description": "Documentation",
+  "private": true,
+  "env": {
+    "apipath": "docs/nav.01.api/biome--nc/",
+    "package": "biome.text",
+    "templates_path": ".templates/"
+  },
+  "scripts": {
+    "clean:api": "rm -rf $npm_package_env_apipath",
+    "build:api": "pdoc -o $npm_package_env_apipath $npm_package_env_package --force --template-dir $npm_package_env_templates_path --html",
+    "rename:index": "find $npm_package_env_apipath | renamer --find index.md --replace README.md",
+    "rename:html": "find $npm_package_env_apipath | renamer --find .html --replace .md",
+    "rename": "yarn rename:html && yarn rename:index",
+    "build:docs": "yarn clean:api && yarn build:api && yarn rename",
+    "build:site": "yarn build:docs && vuepress build docs",
+    "dev:site": "yarn build:docs && vuepress dev docs",
+    "docs:dev": "yarn dev:site"
+  },
+  "devDependencies": {
+    "@vuepress/plugin-active-header-links": "^1.4.1",
+    "vuepress": "^1.4.1",
+    "renamer": "^2.0.0"
+  },
+  "dependencies": {
+    "vuepress-bar": "^0.3.0"
+  }
+}
