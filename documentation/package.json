@@ -13,11 +13,11 @@
     "build:api": "pdoc -o $npm_package_env_apipath $npm_package_env_package --force --template-dir $npm_package_env_templates_path --html",
     "rename:index": "find $npm_package_env_apipath | renamer --find index.md --replace README.md",
     "rename:html": "find $npm_package_env_apipath | renamer --find .html --replace .md",
-    "rename": "yarn rename:html && yarn rename:index",
-    "build:docs": "yarn clean:api && yarn build:api && yarn rename",
-    "build:site": "yarn build:docs && vuepress build docs",
-    "dev:site": "yarn build:docs && vuepress dev docs",
-    "docs:dev": "yarn dev:site"
+    "rename": "npm run rename:html && npm run rename:index",
+    "build:docs": "npm run clean:api && npm run build:api && yarn rename",
+    "build:site": "npm run build:docs && vuepress build docs",
+    "dev:site": "npm run build:docs && vuepress dev docs",
+    "docs:dev": "npm run dev:site"
   },
   "devDependencies": {
     "@vuepress/plugin-active-header-links": "^1.4.1",

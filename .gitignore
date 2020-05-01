@@ -1,5 +1,11 @@
 .esrunner
 
+documentation/**/nav.*.api
+documentation/site
+**/node_modules
+**/yarn.lock
+**/package-lock.json
+
 **/*.th
 **/*.tar.gz
 **/metrics*.json
