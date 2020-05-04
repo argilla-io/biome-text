@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 import yaml
 from biome.text.api_new.pipeline import Pipeline
+from biome.text.api_new.configuration import TrainerConfiguration
 
 
 @pytest.fixture
@@ -154,41 +155,32 @@ def pipeline_yaml(tmpdir, request):
 
 
 @pytest.fixture
-def trainer_yaml(tmpdir):
+def trainer_dict():
     trainer_dict = {
-        "trainer": {
-            "type": "default",
-            "cuda_device": -1,
-            "num_serialized_models_to_keep": 1,
-            "should_log_learning_rate": True,
-            "num_epochs": 1,
-            "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01},
-            "learning_rate_scheduler": {
-                "type": "reduce_on_plateau",
-                "factor": 0.2,
-                "mode": "min",
-                "patience": 1,
-            },
-            "validation_metric": "-loss",
-            "patience": 5,
+        "num_epochs": 1,
+        "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01},
+        "learning_rate_scheduler": {
+            "type": "reduce_on_plateau",
+            "factor": 0.2,
+            "mode": "min",
+            "patience": 1,
         },
+        "validation_metric": "-loss",
+        "patience": 5,
     }
-    trainer_yaml = tmpdir.join("trainer.yml")
-    with trainer_yaml.open("w") as f:
-        yaml.safe_dump(trainer_dict, f)
 
-    return str(trainer_yaml)
+    return trainer_dict
 
 
-def test_bimpm_learn(
-    pipeline_yaml, trainer_yaml, training_data_yaml,
+def test_bimpm_train(
+    pipeline_yaml, trainer_dict, training_data_yaml,
 ):
     pipeline = Pipeline.from_file(pipeline_yaml)
     pipeline.predict(record1="The one", record2="The other")
 
     pipeline.train(
         output="experiment",
-        trainer=trainer_yaml,
+        trainer=TrainerConfiguration(**trainer_dict),
         training=training_data_yaml,
         validation=training_data_yaml,
     )
