@@ -1,9 +1,9 @@
 import copy
 import datetime
+import glob
 import inspect
 import logging
 import os
-import shutil
 import time
 import uuid
 from inspect import Parameter
@@ -14,7 +14,6 @@ from urllib.error import URLError
 import numpy
 import uvicorn
 import yaml
-from allennlp.commands.fine_tune import fine_tune_model
 from allennlp.common import Params
 from allennlp.common.util import sanitize
 from allennlp.data import DatasetReader
@@ -64,7 +63,7 @@ __register(__default_impl__, overrides=True)
 
 class _ExploreConfiguration:
     """Configures an exploration run
-    
+
     # Parameters
         batch_size: `int`
             The batch size for indexing predictions (default is `500)
@@ -158,7 +157,7 @@ class _ElasticsearchExplore:
 
 class _TrainConfiguration:
     """Configures a training run
-    
+
     # Parameters
         output: `str`
              The experiment output path
@@ -174,6 +173,8 @@ class _TrainConfiguration:
             The test datasource file path
         verbose: `bool`
             Whether to show verbose logs (default is `False`)
+        extend_vocab: `bool`
+            Extends vocabulary namespaces with training data
     """
 
     def __init__(
@@ -185,6 +186,7 @@ class _TrainConfiguration:
         validation_cfg: Optional[str] = None,
         test_cfg: Optional[str] = None,
         verbose: bool = False,
+        extend_vocab: bool = True,
     ):
         self.output = output
         self.vocab = vocab
@@ -193,6 +195,7 @@ class _TrainConfiguration:
         self.validation = validation_cfg
         self.test = test_cfg
         self.verbose = verbose
+        self.extend_vocab = extend_vocab
 
 
 class Pipeline:
@@ -208,6 +211,8 @@ class Pipeline:
         config: `Optional[PipelineConfiguration]`
             A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
     """
+
+    __LOGGER = logging.getLogger(__name__)
 
     # TODO: Signature makes you think you can pass both a pretrained_path and a config, while only one option possible.
     def __init__(
@@ -274,6 +279,7 @@ class Pipeline:
         pipeline = cls(config=config)
 
         if vocab_config:
+            # TODO: better pipeline init with vocab preloading
             pipeline = cls._extend_vocab_from_sources(
                 pipeline,
                 sources=vocab_config.sources,
@@ -310,34 +316,76 @@ class Pipeline:
         test: Optional[str] = None,
         vocab: Optional[str] = None,
         verbose: bool = False,
+        extend_vocab: bool = True,
+        restore: bool = True,
     ) -> "Pipeline":
         """Launches a training run with the specified configurations and datasources
 
-        # Parameters
-            output: `str`
-                The experiment output path
-            trainer: `str`
-                The trainer file path
-            training: `str`
-                The train datasource file path
-            validation: `Optional[str]`
-                The validation datasource file path
-            test: `Optional[str]`
-                The test datasource file path
-            vocab: `Optional[str]`
-                The path to an existing vocabulary
-            verbose: `bool`
-                Turn on verbose logs
+        Parameters
+        ----------
+        output: `str`
+            The experiment output path
+        trainer: `str`
+            The trainer file path
+        training: `str`
+            The train datasource file path
+        validation: `Optional[str]`
+            The validation datasource file path
+        test: `Optional[str]`
+            The test datasource file path
+        vocab: `Optional[str]`
+            The path to an existing vocabulary
+        verbose: `bool`
+            Turn on verbose logs
+        extend_vocab: `bool`
+            Extends vocab tokens with training data
+        restore: `bool`
+            If enabled, tries to read previous training status from output folder and
+            continues training process from it
 
-        # Returns
-            pipeline: `Pipeline`
-                A configured pipeline
+        Returns
+        -------
+        pipeline: `Pipeline`
+            A configured pipeline
         """
-        self._model = self._model.train(mode=True)
+
+        def prepare_experiment_folder(output: str, restore: bool) -> None:
+            """If output folder already exists, we automatically recover the generated vocab in this folder.
+
+            Allows reuse the generated vocab if something went wrong in previous executions
+
+            Parameters
+            ----------
+            output
+                Path to the output folder
+            restore: `bool`
+                If False, drops all previous training states
+
+            Returns
+            -------
+            is_recovered
+                True if existing output folder is recovered, False if output folder does not exist.
+            """
+            if not os.path.isdir(output):
+                return
+
+            drop_patterns = [
+                os.path.join(output, "*.json"),
+                os.path.join(output, "**/events.out*"),
+            ]
+
+            if not restore:
+                drop_patterns.append(os.path.join(output, "*.th"))
+
+            for pattern in drop_patterns:
+                for file in glob.glob(pattern, recursive=True):
+                    os.remove(file)
+
+        prepare_experiment_folder(output, restore)
 
         return _PipelineHelper.train(
             self,
-            _TrainConfiguration(
+            config=_TrainConfiguration(
                 vocab=vocab,
                 test_cfg=test,
                 output=output,
@@ -345,6 +393,7 @@ class Pipeline:
                 train_cfg=training,
                 validation_cfg=validation,
                 verbose=verbose,
+                extend_vocab=extend_vocab,
             ),
         )
 
@@ -376,6 +425,10 @@ class Pipeline:
         """
         # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         return self._model.explain(*args, **kwargs)
+
+    def save_vocab(self, path: str) -> None:
+        """Save the pipeline vocabulary into a path"""
+        self._model.vocab.save_to_files(path)
 
     def explore(
         self,
@@ -553,6 +606,14 @@ class Pipeline:
         )
         show_func(url)
 
+    def _extend_vocab_from_files(self, from_path: str) -> "Pipeline":
+        """Load a vocab from a vocab folder path an set it to the currernt pipeline"""
+        vocab = self._model.vocab
+        self._model = self.__model_from_config(
+            self.config, vocab=vocab.from_files(from_path)
+        )
+        return self
+
     def _extend_vocab_from_sources(
         self, sources: List[str], **extra_args
     ) -> "Pipeline":
@@ -632,103 +693,90 @@ class _PipelineHelper:
         uvicorn.run(make_app(), host="0.0.0.0", port=port)
 
     @classmethod
-    def _allennlp_configuration(
-        cls, pipeline: Pipeline, config: _TrainConfiguration
-    ) -> Dict[str, Any]:
+    def train(cls, pipeline: Pipeline, config: _TrainConfiguration):
+        def allennlp_configuration(
+            pipeline: Pipeline, config: _TrainConfiguration
+        ) -> Dict[str, Any]:
+            """Creates a allennlp configuration for pipeline train experiment configuration"""
 
-        def trainer_configuration(trainer: TrainerConfiguration) -> Dict[str, Any]:
-            """Creates trainer configuration dict"""
-            __excluded_keys = [
+            def trainer_configuration(trainer: TrainerConfiguration) -> Dict[str, Any]:
+                """Creates trainer configuration dict"""
+                __excluded_keys = [
                     "data_bucketing",
                     "batch_size",
                     "cache_instances",
-                    "in_memory_batches"
+                    "in_memory_batches",
                 ]  # Data iteration attributes
-            return {
-                k: v
-                for k, v in vars(trainer).items()
-                if k
-                not in __excluded_keys
+                return {
+                    k: v for k, v in vars(trainer).items() if k not in __excluded_keys
+                }
+
+            def iterator_configuration(
+                pipeline: Pipeline, trainer: TrainerConfiguration
+            ) -> Dict[str, Any]:
+                """Creates a data iterator configuration"""
+
+                def _forward_inputs() -> List[str]:
+                    """
+                    Calculate the required head.forward arguments. We use this method
+                    for automatically generate data iterator sorting keys
+                    """
+                    required, _ = split_signature_params_by_predicate(
+                        pipeline.head.forward,
+                        lambda p: p.default == inspect.Parameter.empty,
+                    )
+                    return [p.name for p in required] or [None]
+
+                iterator_config = {
+                    "batch_size": trainer.batch_size,
+                    "max_instances_in_memory": max(
+                        trainer.batch_size * trainer.in_memory_batches,
+                        trainer.batch_size,
+                    ),
+                    "cache_instances": trainer.cache_instances,
+                    "type": "basic",
+                }
+
+                if trainer.data_bucketing:
+                    iterator_config.update(
+                        {
+                            "sorting_keys": [
+                                [
+                                    _forward_inputs()[0],
+                                    "list_num_tokens"
+                                    if isinstance(
+                                        pipeline.model.encoder, TimeDistributedEncoder
+                                    )
+                                    else "num_tokens",
+                                ]
+                            ],
+                            "type": "bucket",
+                        }
+                    )
+
+                return iterator_config
+
+            base_config = {
+                "config": pipeline.config.as_dict(),
+                "type": __default_impl__.__name__,
             }
-
-        def iterator_configuration(pipeline: Pipeline, trainer: TrainerConfiguration) -> Dict[str, Any]:
-            """Creates a data iterator configuration"""
-
-            def _forward_inputs() -> List[str]:
-                """
-                Calculate the required head.forward arguments. We use this method
-                for automatically generate data iterator sorting keys
-                """
-                required, _ = split_signature_params_by_predicate(
-                    pipeline.head.forward,
-                    lambda p: p.default == inspect.Parameter.empty,
-                )
-                return [p.name for p in required] or [None]
-
-            iterator_config = {
-                "batch_size": trainer.batch_size,
-                "max_instances_in_memory": max(
-                    trainer.batch_size * trainer.in_memory_batches, trainer.batch_size
-                ),
-                "cache_instances": trainer.cache_instances,
-                "type": "basic",
+            allennlp_config = {
+                "trainer": trainer_configuration(config.trainer),
+                "iterator": iterator_configuration(pipeline, config.trainer),
+                "dataset_reader": base_config,
+                "model": base_config,
+                "train_data_path": config.training,
+                "validation_data_path": config.validation,
+                "test_data_path": config.test,
             }
+            return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
 
-            if trainer.data_bucketing:
-                iterator_config.update(
-                    {
-                        "sorting_keys": [
-                            [
-                                _forward_inputs()[0],
-                                "list_num_tokens"
-                                if isinstance(
-                                    pipeline.model.encoder, TimeDistributedEncoder
-                                )
-                                else "num_tokens",
-                            ]
-                        ],
-                        "type": "bucket",
-                    }
-                )
-
-            return iterator_config
-
-        base_config = {
-            "config": pipeline.config.as_dict(),
-            "type": __default_impl__.__name__,
-        }
-        allennlp_config = {
-            "trainer": trainer_configuration(config.trainer),
-            "iterator": iterator_configuration(pipeline, config.trainer),
-            "dataset_reader": base_config,
-            "model": base_config,
-            "train_data_path": config.training,
-            "validation_data_path": config.validation,
-            "test_data_path": config.test,
-        }
-        return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
-
-    @classmethod
-    def train(cls, pipeline: Pipeline, config: _TrainConfiguration):
-        logging_level = logging.INFO if config.verbose else logging.WARNING
-        logging.getLogger("allennlp").setLevel(logging_level)
-
-        cls.__LOGGER.info("Starting up learning process.")
-
-        fine_tune_params = Params(cls._allennlp_configuration(pipeline, config))
-
-        # Force clean folder for run fine tuning properly
-        # TODO: reuse vocab
-        shutil.rmtree(config.output, ignore_errors=True)
-        # _recover_output_folder(config.output, fine_tune_params)
-
-        fine_tune_model(
-            model=pipeline._model,
-            params=fine_tune_params,
+        pipeline._model.launch_experiment(
+            params=Params(allennlp_configuration(pipeline, config)),
             serialization_dir=config.output,
-            extend_vocab=True,  # TODO: Allow parameterize
+            extend_vocab=config.extend_vocab,
             file_friendly_logging=True,
-        )
+        )  # pylint: disable=protected-access,
 
         return pipeline.__class__(
             pretrained_path=os.path.join(config.output, "model.tar.gz"),
