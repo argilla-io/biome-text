@@ -1,13 +1,15 @@
+from typing import Dict
+
 import pandas as pd
 import pytest
 import yaml
-from biome.text.api_new.pipeline import Pipeline
 from biome.text.api_new.configuration import TrainerConfiguration
+from biome.text.api_new.pipeline import Pipeline
 
 
 @pytest.fixture
-def training_data_yaml(tmpdir):
-    data_file = tmpdir.join("multifield.csv")
+def path_to_training_data_yaml(tmp_path) -> str:
+    data_file = tmp_path / "multifield.csv"
     df = pd.DataFrame(
         {
             "record1_1": ["record1_1", "record1_1 test", "record1_1 test this"],
@@ -20,7 +22,7 @@ def training_data_yaml(tmpdir):
     )
     df.to_csv(data_file, index=False)
 
-    yaml_file = tmpdir.join("training.yml")
+    yaml_file = tmp_path / "training.yml"
     yaml_dict = {
         "source": str(data_file),
         "mapping": {
@@ -31,11 +33,12 @@ def training_data_yaml(tmpdir):
     }
     with yaml_file.open("w") as f:
         yaml.safe_dump(yaml_dict, f)
+
     return str(yaml_file)
 
 
 @pytest.fixture(params=["singlefield", "multifield"])
-def pipeline_yaml(tmpdir, request):
+def path_to_pipeline_yaml(tmp_path, request) -> str:
     pipeline_dict = {
         "name": "biome-bimpm",
         "tokenizer": {"text_cleaning": {"rules": ["strip_spaces"]}},
@@ -147,7 +150,7 @@ def pipeline_yaml(tmpdir, request):
             ],
         },
     }
-    pipeline_yaml = tmpdir.join("pipeline.yml")
+    pipeline_yaml = tmp_path / "pipeline.yml"
     with pipeline_yaml.open("w") as f:
         yaml.safe_dump(pipeline_dict, f)
 
@@ -155,7 +158,7 @@ def pipeline_yaml(tmpdir, request):
 
 
 @pytest.fixture
-def trainer_dict():
+def trainer_dict() -> Dict:
     trainer_dict = {
         "num_epochs": 1,
         "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01},
@@ -173,14 +176,14 @@ def trainer_dict():
 
 
 def test_bimpm_train(
-    pipeline_yaml, trainer_dict, training_data_yaml,
+    path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml,
 ):
-    pipeline = Pipeline.from_file(pipeline_yaml)
+    pipeline = Pipeline.from_file(path_to_pipeline_yaml)
     pipeline.predict(record1="The one", record2="The other")
 
     pipeline.train(
         output="experiment",
         trainer=TrainerConfiguration(**trainer_dict),
-        training=training_data_yaml,
-        validation=training_data_yaml,
+        training=path_to_training_data_yaml,
+        validation=path_to_training_data_yaml,
     )
