@@ -7,6 +7,10 @@ module.exports = {
   title: 'biome-text',
   description: 'biome-text documentation',
   base: `/${baseContext}`,
+  plugins: [
+    '@goy/svg-icons',
+    '@vuepress/back-to-top'
+  ],
   themeConfig: {
     nav: [
       ...nav,
