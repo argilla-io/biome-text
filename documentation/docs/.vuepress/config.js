@@ -20,6 +20,6 @@ module.exports = {
     displayAllHeaders: true,
     sidebar,
     plugins: ['@vuepress/active-header-links'],
-    logo: '/assets/img/recognai.png',
+    // logo: '/assets/img/recognai.png',
   }
 }
