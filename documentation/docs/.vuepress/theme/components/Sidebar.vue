@@ -1,6 +1,10 @@
 <template>
   <aside class="sidebar">
-    <a class="sidebar__link" :href="$withBase('/')"><img class="sidebar__img" src="biome-text/assets/img/biome.png"></img></a>
+    <div class="sidebar__link">
+      <a :href="$withBase('/')">
+        <img class="sidebar__img" src="biome-text/assets/img/biome.png"></img>
+      </a>
+    </div>
     <NavLinks />
     <slot name="top" />
 
