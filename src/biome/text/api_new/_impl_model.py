@@ -3,18 +3,25 @@ import json
 import logging
 import os
 import pickle
+import re
 import warnings
+from copy import deepcopy
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type
+from tempfile import mkdtemp
+from typing import Any, Dict, Iterable, List, Optional, Type, Tuple
 
 import numpy
 import torch
 from allennlp.common import Params
-from allennlp.common.util import sanitize
-from allennlp.data import DatasetReader, Instance, Vocabulary
+from allennlp.common.checks import ConfigurationError
+from allennlp.common.util import prepare_environment, prepare_global_logging, sanitize
+from allennlp.data import Instance, Vocabulary, DatasetReader
 from allennlp.models import Model as AllennlpModel
+from allennlp.models.archival import CONFIG_NAME, archive_model
+from allennlp.training import Trainer
+from allennlp.training.util import evaluate
 from dask.dataframe import Series as DaskSeries
 
 from biome.text.api_new import PipelineConfiguration
@@ -53,6 +60,7 @@ class _DataSourceReader(DatasetReader):
     def __init__(self, data_keys: List[str]):
         super(_DataSourceReader, self).__init__(lazy=True)
         self._default_ds_mapping = {k: k for k in data_keys if k}
+        self.cache_data(mkdtemp(prefix="biome_ds"))
 
     __LOGGER = logging.getLogger(__name__)
 
@@ -98,6 +106,8 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     must be hidden to api users.
     """
 
+    __logger = logging.getLogger(__name__)
+
     def __init__(self, name: str, head: TaskHead):
 
         AllennlpModel.__init__(self, head.model.vocab)
@@ -120,7 +130,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         cls: Type["_BaseModelImpl"],
         params: Params,
         vocab: Optional[Vocabulary] = None,
-        **extras
+        **extras,
     ) -> "_BaseModelImpl":
         """
         Load the internal model implementation from params. We build manually each component from config sections.
@@ -281,3 +291,200 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         inputs.update(kwargs)
 
         return inputs
+
+    def launch_experiment(
+        self,
+        params: Params,
+        serialization_dir: str,
+        extend_vocab: bool = False,
+        file_friendly_logging: bool = False,
+        batch_weight_key: str = "",
+        embedding_sources_mapping: Dict[str, str] = None,
+    ) -> "_BaseModelImpl":
+        """
+        Fine tunes the given model, using a set of parameters that is largely identical to those used
+        for :func:`~allennlp.commands.train.train_model`, except that the ``model`` section is ignored,
+        if it is present (as we are already given a ``Model`` here).
+
+        The main difference between the logic done here and the logic done in ``train_model`` is that
+        here we do not worry about vocabulary construction or creating the model object.  Everything
+        else is the same.
+
+        Parameters
+        ----------
+        params : ``Params``
+            A parameter object specifying an AllenNLP Experiment
+        serialization_dir : ``str``
+            The directory in which to save results and logs.
+        extend_vocab: ``bool``, optional (default=False)
+            If ``True``, we use the new instances to extend your vocabulary.
+        file_friendly_logging : ``bool``, optional (default=False)
+            If ``True``, we add newlines to tqdm output, even on an interactive terminal, and we slow
+            down tqdm's output to only once every 10 seconds.
+        batch_weight_key : ``str``, optional (default="")
+            If non-empty, name of metric used to weight the loss on a per-batch basis.
+        embedding_sources_mapping: ``Dict[str, str]``, optional (default=None)
+            mapping from model paths to the pretrained embedding filepaths
+            used during fine-tuning.
+        """
+
+        from allennlp.data import DataIterator
+        from allennlp.models.model import _DEFAULT_WEIGHTS
+
+        logger = self.__logger
+
+        def datasets_from_params(
+            model: _BaseModelImpl, params: Params
+        ) -> Dict[str, Iterable[Instance]]:
+            """
+            Load all the datasets specified by the config.
+
+            Parameters
+            ----------
+            model : ``_BaseModelImpl``
+            params : ``Params``
+            """
+
+            params.pop("dataset_reader")
+            params.pop("validation_dataset_reader", None)
+            train_data_path = params.pop("train_data_path")
+
+            logger.info("Reading training data from %s", train_data_path)
+            datasets: Dict[str, Iterable[Instance]] = {
+                "train": model.read(train_data_path)
+            }
+
+            validation_data_path = params.pop("validation_data_path", None)
+            if validation_data_path is not None:
+                logger.info("Reading validation data from %s", validation_data_path)
+                datasets["validation"] = model.read(validation_data_path)
+
+            test_data_path = params.pop("test_data_path", None)
+            if test_data_path is not None:
+                logger.info("Reading test data from %s", test_data_path)
+                datasets["test"] = model.read(test_data_path)
+
+            return datasets
+
+        prepare_environment(params)
+        if os.path.exists(serialization_dir) and os.listdir(serialization_dir):
+            logger.info(
+                f"Serialization directory ({serialization_dir}) "
+                f"already exists and is not empty."
+            )
+
+        os.makedirs(serialization_dir, exist_ok=True)
+        prepare_global_logging(serialization_dir, file_friendly_logging)
+
+        serialization_params = deepcopy(params).as_dict(quiet=True)
+        with open(os.path.join(serialization_dir, CONFIG_NAME), "w") as param_file:
+            json.dump(serialization_params, param_file, indent=4)
+
+        params.pop("model", None)
+        vocabulary_params = params.pop("vocabulary", {})
+        if vocabulary_params.get("directory_path", None):
+            logger.warning(
+                "You passed `directory_path` in parameters for the vocabulary in "
+                "your configuration file, but it will be ignored. "
+            )
+
+        all_datasets = datasets_from_params(self, params)
+        vocab = self.vocab
+
+        if extend_vocab:
+            datasets_for_vocab_creation = set(
+                params.pop("datasets_for_vocab_creation", all_datasets)
+            )
+
+            for dataset in datasets_for_vocab_creation:
+                if dataset not in all_datasets:
+                    raise ConfigurationError(
+                        f"invalid 'dataset_for_vocab_creation' {dataset}"
+                    )
+
+            logger.info(
+                "Extending model vocabulary using %s data.",
+                ", ".join(datasets_for_vocab_creation),
+            )
+            vocab.extend_from_instances(
+                vocabulary_params,
+                (
+                    instance
+                    for key, dataset in all_datasets.items()
+                    for instance in dataset
+                    if key in datasets_for_vocab_creation
+                ),
+            )
+
+            self.extend_embedder_vocab(embedding_sources_mapping)
+
+        vocab.save_to_files(os.path.join(serialization_dir, "vocabulary"))
+
+        iterator = DataIterator.from_params(params.pop("iterator"))
+        iterator.index_with(self.vocab)
+
+        train_data = all_datasets["train"]
+        validation_data = all_datasets.get("validation")
+        test_data = all_datasets.get("test")
+
+        trainer_params = params.pop("trainer")
+        no_grad_regexes = trainer_params.pop("no_grad", ())
+        for name, parameter in self.named_parameters():
+            if any(re.search(regex, name) for regex in no_grad_regexes):
+                parameter.requires_grad_(False)
+
+        # TODO: Customize trainer for better biome integration
+        trainer = Trainer.from_params(
+            model=self,
+            serialization_dir=serialization_dir,
+            iterator=iterator,
+            train_data=train_data,
+            validation_data=validation_data,
+            params=trainer_params,
+        )
+        evaluate_on_test = params.pop_bool("evaluate_on_test", False)
+        params.assert_empty("base train command")
+        try:
+            metrics = trainer.train()
+        except KeyboardInterrupt:
+            # if we have completed an epoch, try to create a model archive.
+            if os.path.exists(os.path.join(serialization_dir, _DEFAULT_WEIGHTS)):
+                logging.info(
+                    "Fine-tuning interrupted by the user. Attempting to create "
+                    "a model archive using the current best epoch weights."
+                )
+                archive_model(
+                    serialization_dir, files_to_archive=params.files_to_archive
+                )
+            raise
+
+        # Evaluate
+        if test_data and evaluate_on_test:
+            logger.info("The model will be evaluated using the best epoch weights.")
+            test_metrics = evaluate(
+                self,
+                test_data,
+                data_iterator=iterator,
+                cuda_device=trainer._cuda_devices[
+                    0
+                ],  # pylint: disable=protected-access,
+                batch_weight_key=batch_weight_key,
+            )
+
+            for key, value in test_metrics.items():
+                metrics["test_" + key] = value
+
+        elif test_data:
+            logger.info(
+                "To evaluate on the test set after training, pass the "
+                "'evaluate_on_test' flag, or use the 'allennlp evaluate' command."
+            )
+
+        # Now tar up results
+        archive_model(serialization_dir, files_to_archive=params.files_to_archive)
+
+        metrics_json = json.dumps(metrics, indent=2)
+        with open(os.path.join(serialization_dir, "metrics.json"), "w") as metrics_file:
+            metrics_file.write(metrics_json)
+
+        return self
