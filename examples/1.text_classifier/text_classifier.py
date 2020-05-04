@@ -1,3 +1,5 @@
+import os
+
 from biome.text.api_new import Pipeline, VocabularyConfiguration
 from biome.text.api_new.configuration import TrainerConfiguration
 from biome.text.api_new.helpers import yaml_to_dict
@@ -5,10 +7,11 @@ from biome.text.api_new.helpers import yaml_to_dict
 if __name__ == "__main__":
     train = "train.data.yml"
     validation = "validation.data.yml"
+    training_folder = "experiment"
 
     pl = Pipeline.from_file(
         "text_classifier.yaml",
-        vocab_config=VocabularyConfiguration(sources=[train, validation]),
+        vocab_config=VocabularyConfiguration(sources=[train, validation],),
     )
 
     print(pl.predict(text="Header main. This is a test body!!!"))
@@ -16,10 +19,12 @@ if __name__ == "__main__":
     trainer_configuration = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
     trainer_configuration.data_bucketing = False
     trained_pl = pl.train(
-        output="experiment",
+        output=training_folder,
         trainer=trainer_configuration,
         training=train,
         validation=validation,
+        extend_vocab=False,
+        restore=True,
     )
 
     trained_pl.predict(text="Header main; This is a test body!!!")
