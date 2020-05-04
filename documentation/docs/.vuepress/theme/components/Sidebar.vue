@@ -2,7 +2,7 @@
   <aside class="sidebar">
     <div class="sidebar__link">
       <a :href="$withBase('/')">
-        <img class="sidebar__img" src="biome-text/assets/img/biome.png"></img>
+        <img class="sidebar__img" :src="$withBase("/assets/img/biome.png")"></img>
       </a>
     </div>
     <NavLinks />
