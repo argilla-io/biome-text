@@ -50,6 +50,11 @@ class Model(torch.nn.Module):
         embeddings = self._embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
 
+    def extend_vocab(self, vocab: Vocabulary, **kwargs):
+        """This method is automatically called when a base model updates the vocabulary"""
+        self.vocab = vocab
+        self._embedder = self.featurizer.build_embedder(self.vocab)
+
     @property
     def features(self) -> Dict[str, TokenIndexer]:
         return copy.deepcopy(self._features)
