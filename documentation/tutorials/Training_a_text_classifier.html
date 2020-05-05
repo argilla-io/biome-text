@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Training a short text classifier of German business names</title>
+    <meta name="generator" content="VuePress 1.4.1">
+    
+    <meta name="description" content="biome-text documentation">
+    <link rel="preload" href="/biome-text/assets/css/0.styles.f670437a.css" as="style"><link rel="preload" href="/biome-text/assets/js/app.77d13009.js" as="script"><link rel="preload" href="/biome-text/assets/js/3.352c1362.js" as="script"><link rel="preload" href="/biome-text/assets/js/2.578cbba8.js" as="script"><link rel="preload" href="/biome-text/assets/js/109.f882e793.js" as="script"><link rel="prefetch" href="/biome-text/assets/js/10.87431d31.js"><link rel="prefetch" href="/biome-text/assets/js/100.3cb08c1a.js"><link rel="prefetch" href="/biome-text/assets/js/101.465e4b3c.js"><link rel="prefetch" href="/biome-text/assets/js/102.eeab2cf3.js"><link rel="prefetch" href="/biome-text/assets/js/103.a681069c.js"><link rel="prefetch" href="/biome-text/assets/js/104.1e23323f.js"><link rel="prefetch" href="/biome-text/assets/js/105.a89cd273.js"><link rel="prefetch" href="/biome-text/assets/js/106.c64d4953.js"><link rel="prefetch" href="/biome-text/assets/js/107.1221c79b.js"><link rel="prefetch" href="/biome-text/assets/js/108.e86cc34a.js"><link rel="prefetch" href="/biome-text/assets/js/11.b54e13fb.js"><link rel="prefetch" href="/biome-text/assets/js/110.aba8a123.js"><link rel="prefetch" href="/biome-text/assets/js/111.5c3c8f99.js"><link rel="prefetch" href="/biome-text/assets/js/112.88ee480a.js"><link rel="prefetch" href="/biome-text/assets/js/113.f627531f.js"><link rel="prefetch" href="/biome-text/assets/js/114.85539d32.js"><link rel="prefetch" href="/biome-text/assets/js/115.c1edfd71.js"><link rel="prefetch" href="/biome-text/assets/js/116.be735f20.js"><link rel="prefetch" href="/biome-text/assets/js/117.bcc3e769.js"><link rel="prefetch" href="/biome-text/assets/js/118.1389331e.js"><link rel="prefetch" href="/biome-text/assets/js/119.da4365e6.js"><link rel="prefetch" href="/biome-text/assets/js/12.00965406.js"><link rel="prefetch" href="/biome-text/assets/js/120.6badd12a.js"><link rel="prefetch" href="/biome-text/assets/js/121.c57f6bb0.js"><link rel="prefetch" href="/biome-text/assets/js/122.b15dbd63.js"><link rel="prefetch" href="/biome-text/assets/js/123.1144e1b1.js"><link rel="prefetch" href="/biome-text/assets/js/124.a0785838.js"><link rel="prefetch" href="/biome-text/assets/js/125.f39face9.js"><link rel="prefetch" href="/biome-text/assets/js/13.3613d59c.js"><link rel="prefetch" href="/biome-text/assets/js/14.ff01cbd2.js"><link rel="prefetch" href="/biome-text/assets/js/15.60c168fc.js"><link rel="prefetch" href="/biome-text/assets/js/16.738cc64b.js"><link rel="prefetch" href="/biome-text/assets/js/17.8540337d.js"><link rel="prefetch" href="/biome-text/assets/js/18.a2f622ff.js"><link rel="prefetch" href="/biome-text/assets/js/19.20e8e603.js"><link rel="prefetch" href="/biome-text/assets/js/20.11529928.js"><link rel="prefetch" href="/biome-text/assets/js/21.9c642975.js"><link rel="prefetch" href="/biome-text/assets/js/22.4eef2435.js"><link rel="prefetch" href="/biome-text/assets/js/23.7e0bc255.js"><link rel="prefetch" href="/biome-text/assets/js/24.1fdc9459.js"><link rel="prefetch" href="/biome-text/assets/js/25.cacb3aec.js"><link rel="prefetch" href="/biome-text/assets/js/26.e1dd43db.js"><link rel="prefetch" href="/biome-text/assets/js/27.bd05b98a.js"><link rel="prefetch" href="/biome-text/assets/js/28.386bd532.js"><link rel="prefetch" href="/biome-text/assets/js/29.2e5e74e3.js"><link rel="prefetch" href="/biome-text/assets/js/30.4b9154df.js"><link rel="prefetch" href="/biome-text/assets/js/31.37fb7ac2.js"><link rel="prefetch" href="/biome-text/assets/js/32.0f46a081.js"><link rel="prefetch" href="/biome-text/assets/js/33.b037ca76.js"><link rel="prefetch" href="/biome-text/assets/js/34.9b2933a6.js"><link rel="prefetch" href="/biome-text/assets/js/35.86b28ad5.js"><link rel="prefetch" href="/biome-text/assets/js/36.bdf7ed52.js"><link rel="prefetch" href="/biome-text/assets/js/37.77eeef2b.js"><link rel="prefetch" href="/biome-text/assets/js/38.5c0e2c03.js"><link rel="prefetch" href="/biome-text/assets/js/39.f06f8180.js"><link rel="prefetch" href="/biome-text/assets/js/4.13cc2266.js"><link rel="prefetch" href="/biome-text/assets/js/40.40bf9c2f.js"><link rel="prefetch" href="/biome-text/assets/js/41.b9635467.js"><link rel="prefetch" href="/biome-text/assets/js/42.de2f6566.js"><link rel="prefetch" href="/biome-text/assets/js/43.275f099e.js"><link rel="prefetch" href="/biome-text/assets/js/44.1a79b352.js"><link rel="prefetch" href="/biome-text/assets/js/45.eacd8855.js"><link rel="prefetch" href="/biome-text/assets/js/46.5888ff88.js"><link rel="prefetch" href="/biome-text/assets/js/47.035263b4.js"><link rel="prefetch" href="/biome-text/assets/js/48.d7fbbdf4.js"><link rel="prefetch" href="/biome-text/assets/js/49.4159e470.js"><link rel="prefetch" href="/biome-text/assets/js/5.0bada868.js"><link rel="prefetch" href="/biome-text/assets/js/50.a1c09a40.js"><link rel="prefetch" href="/biome-text/assets/js/51.ec8d6865.js"><link rel="prefetch" href="/biome-text/assets/js/52.a42011ce.js"><link rel="prefetch" href="/biome-text/assets/js/53.6b7207dd.js"><link rel="prefetch" href="/biome-text/assets/js/54.e54c4535.js"><link rel="prefetch" href="/biome-text/assets/js/55.1104d40e.js"><link rel="prefetch" href="/biome-text/assets/js/56.80bf07b7.js"><link rel="prefetch" href="/biome-text/assets/js/57.ea5894dc.js"><link rel="prefetch" href="/biome-text/assets/js/58.4b0e915a.js"><link rel="prefetch" href="/biome-text/assets/js/59.0a16a929.js"><link rel="prefetch" href="/biome-text/assets/js/6.26b17a90.js"><link rel="prefetch" href="/biome-text/assets/js/60.fd8ff25d.js"><link rel="prefetch" href="/biome-text/assets/js/61.1519379b.js"><link rel="prefetch" href="/biome-text/assets/js/62.652d8ea2.js"><link rel="prefetch" href="/biome-text/assets/js/63.2a6f90df.js"><link rel="prefetch" href="/biome-text/assets/js/64.f43da3ca.js"><link rel="prefetch" href="/biome-text/assets/js/65.9d077bd4.js"><link rel="prefetch" href="/biome-text/assets/js/66.9774c6e8.js"><link rel="prefetch" href="/biome-text/assets/js/67.4b0236fe.js"><link rel="prefetch" href="/biome-text/assets/js/68.29526996.js"><link rel="prefetch" href="/biome-text/assets/js/69.f615c5fc.js"><link rel="prefetch" href="/biome-text/assets/js/7.18bf2586.js"><link rel="prefetch" href="/biome-text/assets/js/70.375d1e8d.js"><link rel="prefetch" href="/biome-text/assets/js/71.b7b1a9f2.js"><link rel="prefetch" href="/biome-text/assets/js/72.cbb9fe23.js"><link rel="prefetch" href="/biome-text/assets/js/73.1911eaa2.js"><link rel="prefetch" href="/biome-text/assets/js/74.f96f9f02.js"><link rel="prefetch" href="/biome-text/assets/js/75.699a4980.js"><link rel="prefetch" href="/biome-text/assets/js/76.72e52413.js"><link rel="prefetch" href="/biome-text/assets/js/77.023c1105.js"><link rel="prefetch" href="/biome-text/assets/js/78.85c04605.js"><link rel="prefetch" href="/biome-text/assets/js/79.69811999.js"><link rel="prefetch" href="/biome-text/assets/js/8.99786ee4.js"><link rel="prefetch" href="/biome-text/assets/js/80.f2244bad.js"><link rel="prefetch" href="/biome-text/assets/js/81.5a2a47cc.js"><link rel="prefetch" href="/biome-text/assets/js/82.bb456a22.js"><link rel="prefetch" href="/biome-text/assets/js/83.dc8bccaa.js"><link rel="prefetch" href="/biome-text/assets/js/84.1336feaf.js"><link rel="prefetch" href="/biome-text/assets/js/85.19ea603b.js"><link rel="prefetch" href="/biome-text/assets/js/86.12ac56ea.js"><link rel="prefetch" href="/biome-text/assets/js/87.e42fb4ec.js"><link rel="prefetch" href="/biome-text/assets/js/88.bec9a5e9.js"><link rel="prefetch" href="/biome-text/assets/js/89.2d244924.js"><link rel="prefetch" href="/biome-text/assets/js/9.d5e03599.js"><link rel="prefetch" href="/biome-text/assets/js/90.67bb4318.js"><link rel="prefetch" href="/biome-text/assets/js/91.c2a71fd7.js"><link rel="prefetch" href="/biome-text/assets/js/92.9fd6fb8a.js"><link rel="prefetch" href="/biome-text/assets/js/93.09f622b3.js"><link rel="prefetch" href="/biome-text/assets/js/94.140e3add.js"><link rel="prefetch" href="/biome-text/assets/js/95.8fd5cf14.js"><link rel="prefetch" href="/biome-text/assets/js/96.959784a7.js"><link rel="prefetch" href="/biome-text/assets/js/97.c20d61f0.js"><link rel="prefetch" href="/biome-text/assets/js/98.02e21def.js"><link rel="prefetch" href="/biome-text/assets/js/99.06bf9633.js">
+    <link rel="stylesheet" href="/biome-text/assets/css/0.styles.f670437a.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container"><header class="navbar"><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/biome-text/" class="home-link router-link-active"></a> <div class="links"><div class="search-box"><input aria-label="Search" autocomplete="off" spellcheck="false" value=""> <!----></div> <nav class="nav-links can-hide"><div class="nav-item"><a href="/biome-text/api/" class="nav-link">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/documentation/" class="nav-link router-link-active">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div> <!----></nav></div></header> <div class="sidebar-mask"></div> <aside class="sidebar"><div class="sidebar__link"><a href="/biome-text/"><img src="/biome-text/assets/img/biome.png" class="sidebar__img"></a></div> <nav class="nav-links"><div class="nav-item"><a href="/biome-text/api/" class="nav-link">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/documentation/" class="nav-link router-link-active">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>Get started</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/documentation/" class="sidebar-link">Installation</a></li><li><a href="/biome-text/documentation/concepts.html" class="sidebar-link">Concepts</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>Tutorials</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/documentation/tutorials/Training_a_text_classifier.html" class="active sidebar-link">Training a short text classifier of German business names</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/biome-text/documentation/tutorials/Training_a_text_classifier.html#explore-and-prepare-training-and-evaluation-data" class="sidebar-link">Explore and prepare training and evaluation data</a></li><li class="sidebar-sub-header"><a href="/biome-text/documentation/tutorials/Training_a_text_classifier.html#configure-your-biome-text-pipeline" class="sidebar-link">Configure your biome.text Pipeline</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/biome-text/documentation/tutorials/Training_a_text_classifier.html#pipeline-configuration-from-yaml" class="sidebar-link">Pipeline configuration from YAML</a></li><li class="sidebar-sub-header"><a href="/biome-text/documentation/tutorials/Training_a_text_classifier.html#testing-our-pipeline-before-training" class="sidebar-link">Testing our pipeline before training</a></li></ul></li></ul></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>User Guides</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/documentation/user-guides/01.training.html" class="sidebar-link">Model training from scratch</a></li><li><a href="/biome-text/documentation/user-guides/02.explore.html" class="sidebar-link">Model exploration and explanation</a></li><li><a href="/biome-text/documentation/user-guides/03.fine.tuning.html" class="sidebar-link">Model pre-training and fine-tuning</a></li><li><a href="/biome-text/documentation/user-guides/04.serving.html" class="sidebar-link">Model deployment</a></li><li><a href="/biome-text/documentation/user-guides/05.configurationl.html" class="sidebar-link">Configuration</a></li><li><a href="/biome-text/documentation/user-guides/06.cli.html" class="sidebar-link">CLI</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>Community</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/documentation/community/contributing.html" class="sidebar-link">Contributing</a></li><li><a href="/biome-text/documentation/community/get_help.html" class="sidebar-link">Getting help</a></li></ul></section></li></ul> </aside> <main class="page"> <div class="theme-default-content content__default"><h1 id="training-a-short-text-classifier-of-german-business-names"><a href="#training-a-short-text-classifier-of-german-business-names" class="header-anchor">#</a> Training a short text classifier of German business names</h1> <p>In this tutorial we will train a basic short-text classifier for predicting the sector of a business based only on its business name. For this we will use a training dataset with business names and business categories in German.</p> <p>The tutorial will guide you through the following steps:</p> <p></p><div class="table-of-contents"><ul><li><a href="#explore-and-prepare-training-and-evaluation-data">Explore and prepare training and evaluation data</a></li><li><a href="#configure-your-biome-text-pipeline">Configure your biome.text Pipeline</a><ul><li><a href="#pipeline-configuration-from-yaml">Pipeline configuration from YAML</a></li><li><a href="#testing-our-pipeline-before-training">Testing our pipeline before training</a></li></ul></li></ul></div><p></p> <h2 id="explore-and-prepare-training-and-evaluation-data"><a href="#explore-and-prepare-training-and-evaluation-data" class="header-anchor">#</a> Explore and prepare training and evaluation data</h2> <p>Let's take a look at the data we will use for training.</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>df <span class="token operator">=</span> pd<span class="token punctuation">.</span>read_csv<span class="token punctuation">(</span><span class="token string">'data/business.cat.10k.csv'</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span>
+</code></pre></div><div><style scoped="scoped">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&lt;!--beforebegin--&gt;&lt;div class=&quot;language- extra-class&quot;&gt;&lt;!--afterbegin--&gt;&lt;pre&gt;&lt;code&gt;.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;!--beforeend--&gt;&lt;/div&gt;&lt;!--afterend--&gt;</style> <table border="1" class="dataframe"><thead><tr style="text-align:right;"><th></th> <th>Unnamed: 0</th> <th>label</th> <th>text</th></tr></thead> <tbody><tr><th>0</th> <td>44310</td> <td>Tiefbau</td> <td>Baugeschäft Haßmann Gmbh Wörblitz</td></tr> <tr><th>1</th> <td>39433</td> <td>Restaurants</td> <td>Gaststätten, Restaurants - Sucos Do Brasil Coc...</td></tr> <tr><th>2</th> <td>8828</td> <td>Autowerkstätten</td> <td>Lankes Kfz-werkstatt</td></tr> <tr><th>3</th> <td>61668</td> <td>Werbeagenturen</td> <td>Feine Reklame Gesellschaft Für Strategische Kr...</td></tr> <tr><th>4</th> <td>34837</td> <td>Maler</td> <td>Müller Vladimir &amp; Co. Malermeister</td></tr> <tr><th>5</th> <td>1478</td> <td>Allgemeinärzte</td> <td>Renninger Arztpraxis Für Allgemeinmedizin Dr.</td></tr> <tr><th>6</th> <td>21584</td> <td>Friseure</td> <td>Coiffeur La Vie</td></tr> <tr><th>7</th> <td>34259</td> <td>Maler</td> <td>Kiesewalter Malermeister Thomas</td></tr> <tr><th>8</th> <td>10951</td> <td>Dienstleistungen</td> <td>Gerhard Pflaum Minden-herforder-verkehrs-servi...</td></tr> <tr><th>9</th> <td>36476</td> <td>Physiotherapie</td> <td>Hellriegel - Thoms - Feliksßen Rückenzentrum K...</td></tr></tbody></table></div> <p>As we can see we have two relevant columns <code>label</code> and <code>text</code>.</p> <p>Our classifier will be trained to predict the <code>label</code> given a <code>text</code>.</p> <p>Let's check the distribution of our <code>label</code> columns</p> <div class="language-python extra-class"><pre class="language-python"><code>pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>df<span class="token punctuation">.</span>label<span class="token punctuation">.</span>value_counts<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre></div><div><style scoped="scoped">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&lt;!--beforebegin--&gt;&lt;div class=&quot;language- extra-class&quot;&gt;&lt;!--afterbegin--&gt;&lt;pre&gt;&lt;code&gt;.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;!--beforeend--&gt;&lt;/div&gt;&lt;!--afterend--&gt;</style> <table border="1" class="dataframe"><thead><tr style="text-align:right;"><th></th> <th>label</th></tr></thead> <tbody><tr><th>Unternehmensberatungen</th> <td>775</td></tr> <tr><th>Friseure</th> <td>705</td></tr> <tr><th>Tiefbau</th> <td>627</td></tr> <tr><th>Dienstleistungen</th> <td>613</td></tr> <tr><th>Gebrauchtwagen</th> <td>567</td></tr> <tr><th>Restaurants</th> <td>526</td></tr> <tr><th>Architekturbüros</th> <td>523</td></tr> <tr><th>Elektriker</th> <td>513</td></tr> <tr><th>Vereine</th> <td>488</td></tr> <tr><th>Versicherungsvermittler</th> <td>462</td></tr> <tr><th>Sanitärinstallationen</th> <td>416</td></tr> <tr><th>Edv</th> <td>413</td></tr> <tr><th>Maler</th> <td>413</td></tr> <tr><th>Physiotherapie</th> <td>366</td></tr> <tr><th>Werbeagenturen</th> <td>362</td></tr> <tr><th>Apotheken</th> <td>346</td></tr> <tr><th>Vermittlungen</th> <td>345</td></tr> <tr><th>Hotels</th> <td>343</td></tr> <tr><th>Autowerkstätten</th> <td>332</td></tr> <tr><th>Elektrotechnik</th> <td>329</td></tr> <tr><th>Allgemeinärzte</th> <td>274</td></tr> <tr><th>Handelsvermittler Und -vertreter</th> <td>262</td></tr></tbody></table></div> <h2 id="configure-your-biome-text-pipeline"><a href="#configure-your-biome-text-pipeline" class="header-anchor">#</a> Configure your <code>biome.text</code> Pipeline</h2> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">from</span> biome<span class="token punctuation">.</span>text<span class="token punctuation">.</span>api_new <span class="token keyword">import</span> Pipeline
+<span class="token keyword">from</span> biome<span class="token punctuation">.</span>text<span class="token punctuation">.</span>api_new<span class="token punctuation">.</span>configuration <span class="token keyword">import</span> TrainerConfiguration
+<span class="token keyword">from</span> biome<span class="token punctuation">.</span>text<span class="token punctuation">.</span>api_new<span class="token punctuation">.</span>helpers <span class="token keyword">import</span> yaml_to_dict
+</code></pre></div><h3 id="pipeline-configuration-from-yaml"><a href="#pipeline-configuration-from-yaml" class="header-anchor">#</a> Pipeline configuration from YAML</h3> <p>A <code>biome.text</code> pipeline has the following main components:</p> <div class="language-yaml extra-class"><pre class="language-yaml"><code><span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token comment"># the name</span>
+
+<span class="token key atrule">tokenizer</span><span class="token punctuation">:</span> <span class="token comment"># how to tokenize input text</span>
+
+<span class="token key atrule">features</span><span class="token punctuation">:</span> <span class="token comment"># this input features of the model</span>
+
+<span class="token key atrule">encoder</span><span class="token punctuation">:</span> <span class="token comment"># the backbone model encoder</span>
+
+<span class="token key atrule">head</span><span class="token punctuation">:</span> <span class="token comment"># your task configuration</span>
+
+
+</code></pre></div><p>Our complete configuration for this tutorial is:</p> <div class="language-yaml extra-class"><pre class="language-yaml"><code><span class="token key atrule">name</span><span class="token punctuation">:</span> german<span class="token punctuation">-</span>business<span class="token punctuation">-</span>categories
+
+<span class="token key atrule">features</span><span class="token punctuation">:</span>
+    <span class="token key atrule">words</span><span class="token punctuation">:</span>
+        <span class="token key atrule">embedding_dim</span><span class="token punctuation">:</span> <span class="token number">100</span>
+        <span class="token key atrule">lowercase_tokens</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">chars</span><span class="token punctuation">:</span>
+        <span class="token key atrule">embedding_dim</span><span class="token punctuation">:</span> <span class="token number">8</span>
+        <span class="token key atrule">encoder</span><span class="token punctuation">:</span>
+            <span class="token key atrule">type</span><span class="token punctuation">:</span> cnn
+            <span class="token key atrule">num_filters</span><span class="token punctuation">:</span> <span class="token number">50</span>
+            <span class="token key atrule">ngram_filter_sizes</span><span class="token punctuation">:</span> <span class="token punctuation">[</span> <span class="token number">4</span> <span class="token punctuation">]</span>
+        <span class="token key atrule">dropout</span><span class="token punctuation">:</span> <span class="token number">0.2</span>
+
+<span class="token key atrule">encoder</span><span class="token punctuation">:</span>
+    <span class="token key atrule">hidden_size</span><span class="token punctuation">:</span> <span class="token number">512</span>
+    <span class="token key atrule">num_layers</span><span class="token punctuation">:</span> <span class="token number">2</span>
+    <span class="token key atrule">dropout</span><span class="token punctuation">:</span> <span class="token number">0.5</span>
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> lstm
+
+<span class="token key atrule">head</span><span class="token punctuation">:</span>
+    <span class="token key atrule">type</span><span class="token punctuation">:</span> TextClassification
+    <span class="token key atrule">pooler</span><span class="token punctuation">:</span>
+        <span class="token key atrule">type</span><span class="token punctuation">:</span> boe
+    <span class="token key atrule">labels</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">'Allgemeinärzte'</span><span class="token punctuation">,</span> <span class="token string">'Apotheken'</span><span class="token punctuation">,</span> <span class="token string">'Architekturbüros'</span><span class="token punctuation">,</span>
+             <span class="token string">'Autowerkstätten'</span><span class="token punctuation">,</span> <span class="token string">'Dienstleistungen'</span><span class="token punctuation">,</span> <span class="token string">'Edv'</span><span class="token punctuation">,</span> <span class="token string">'Elektriker'</span><span class="token punctuation">,</span>
+             <span class="token string">'Elektrotechnik'</span><span class="token punctuation">,</span> <span class="token string">'Friseure'</span><span class="token punctuation">,</span> <span class="token string">'Gebrauchtwagen'</span><span class="token punctuation">,</span>
+             <span class="token string">'Handelsvermittler Und -vertreter'</span><span class="token punctuation">,</span> <span class="token string">'Hotels'</span><span class="token punctuation">,</span> <span class="token string">'Maler'</span><span class="token punctuation">,</span>
+             <span class="token string">'Physiotherapie'</span><span class="token punctuation">,</span> <span class="token string">'Restaurants'</span><span class="token punctuation">,</span> <span class="token string">'Sanitärinstallationen'</span><span class="token punctuation">,</span>
+             <span class="token string">'Tiefbau'</span><span class="token punctuation">,</span> <span class="token string">'Unternehmensberatungen'</span><span class="token punctuation">,</span> <span class="token string">'Vereine'</span><span class="token punctuation">,</span> <span class="token string">'Vermittlungen'</span><span class="token punctuation">,</span>
+             <span class="token string">'Versicherungsvermittler'</span><span class="token punctuation">,</span> <span class="token string">'Werbeagenturen'</span><span class="token punctuation">]</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_file<span class="token punctuation">(</span><span class="token string">&quot;configs/text_classifier.yml&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>config<span class="token punctuation">.</span>as_dict<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>{'name': 'business-categories',
+ 'tokenizer': {'lang': 'en',
+  'skip_empty_tokens': False,
+  'max_sequence_length': None,
+  'max_nr_of_sentences': None,
+  'text_cleaning': None,
+  'segment_sentences': False},
+ 'features': {'words': {'embedding_dim': 100, 'lowercase_tokens': True},
+  'chars': {'embedding_dim': 8,
+   'encoder': {'type': 'cnn', 'num_filters': 50, 'ngram_filter_sizes': [4]},
+   'dropout': 0.2}},
+ 'encoder': {'hidden_size': 512,
+  'num_layers': 2,
+  'dropout': 0.5,
+  'type': 'lstm',
+  'input_size': 150},
+ 'head': {'type': 'TextClassification',
+  'pooler': {'type': 'boe'},
+  'labels': ['Allgemeinärzte',
+   'Apotheken',
+   'Architekturbüros',
+   'Autowerkstätten',
+   'Dienstleistungen',
+   'Edv',
+   'Elektriker',
+   'Elektrotechnik',
+   'Friseure',
+   'Gebrauchtwagen',
+   'Handelsvermittler Und -vertreter',
+   'Hotels',
+   'Maler',
+   'Physiotherapie',
+   'Restaurants',
+   'Sanitärinstallationen',
+   'Tiefbau',
+   'Unternehmensberatungen',
+   'Vereine',
+   'Vermittlungen',
+   'Versicherungsvermittler',
+   'Werbeagenturen']}}
+</code></pre></div><h3 id="testing-our-pipeline-before-training"><a href="#testing-our-pipeline-before-training" class="header-anchor">#</a> Testing our pipeline before training</h3> <p>It recommended to check that our pipeline is correctly setup using the <code>predict</code> method.</p> <div class="custom-block warning"><p class="custom-block-title">WARNING</p> <p>Our pipeline has not been trained before, so its weights are random. Do not expect its predictions to make sense for now.</p></div> <div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>predict<span class="token punctuation">(</span><span class="token string">'Some text'</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>{'logits': array([-0.0333772 , -0.01114595,  0.08185824,  0.00720856, -0.01808064,
+         0.0209163 , -0.04119281,  0.0234425 ,  0.00120479,  0.04529068,
+        -0.02560528,  0.03243363, -0.02825472,  0.01238234,  0.00707909,
+        -0.05999601,  0.05878261,  0.03128546, -0.01267068,  0.00673078,
+         0.01568662,  0.02453783], dtype=float32),
+ 'probs': array([0.04366268, 0.04464422, 0.04899553, 0.04547121, 0.0443357 ,
+        0.04609881, 0.04332276, 0.04621541, 0.04519903, 0.04723625,
+        0.04400334, 0.04663282, 0.04388691, 0.04570708, 0.04546533,
+        0.04251576, 0.04787787, 0.04657931, 0.04457621, 0.04544949,
+        0.04585836, 0.04626606], dtype=float32),
+ 'classes': {'Architekturbüros': 0.04899553209543228,
+  'Tiefbau': 0.047877874225378036,
+  'Gebrauchtwagen': 0.04723624885082245,
+  'Hotels': 0.04663281515240669,
+  'Unternehmensberatungen': 0.046579305082559586,
+  'Werbeagenturen': 0.046266064047813416,
+  'Elektrotechnik': 0.04621541127562523,
+  'Edv': 0.04609880968928337,
+  'Versicherungsvermittler': 0.04585836082696915,
+  'Physiotherapie': 0.04570708051323891,
+  'Autowerkstätten': 0.04547121003270149,
+  'Restaurants': 0.04546532779932022,
+  'Vermittlungen': 0.04544949159026146,
+  'Friseure': 0.04519902914762497,
+  'Apotheken': 0.04464422166347504,
+  'Vereine': 0.04457620531320572,
+  'Dienstleistungen': 0.04433570057153702,
+  'Handelsvermittler Und -vertreter': 0.04400334134697914,
+  'Maler': 0.04388691112399101,
+  'Allgemeinärzte': 0.04366267845034599,
+  'Elektriker': 0.04332275688648224,
+  'Sanitärinstallationen': 0.04251576215028763},
+ 'max_class': 'Architekturbüros',
+ 'max_class_prob': 0.04899553209543228,
+ 'label': 'Architekturbüros',
+ 'prob': 0.04899553209543228}
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>yaml_to_dict<span class="token punctuation">(</span><span class="token string">&quot;configs/trainer.yml&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>{'batch_size': 64,
+ 'num_epochs': 100,
+ 'optimizer': {'type': 'adam', 'lr': 0.01},
+ 'validation_metric': '-loss',
+ 'patience': 2}
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>trainer <span class="token operator">=</span> TrainerConfiguration<span class="token punctuation">(</span><span class="token operator">**</span>yaml_to_dict<span class="token punctuation">(</span><span class="token string">&quot;configs/trainer.yml&quot;</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>
+</code></pre></div></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="page-nav__button prev"><a href="/biome-text/documentation/concepts.html" class="prev"><span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-left" size="18px"></vp-icon></span>
+        Concepts
+      </a></span> <span class="page-nav__button next"><a href="/biome-text/documentation/user-guides/01.training.html">
+        Model training from scratch
+        <span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-right" size="18px"></vp-icon></span></a></span></p></div> <footer class="footer"><a href="https://www.recogn.ai/" target="_blank"><img src="/biome-text/assets/img/recognai.png" class="footer__img"></a></footer> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/biome-text/assets/js/app.77d13009.js" defer></script><script src="/biome-text/assets/js/3.352c1362.js" defer></script><script src="/biome-text/assets/js/2.578cbba8.js" defer></script><script src="/biome-text/assets/js/109.f882e793.js" defer></script>
+  </body>
+</html>
