@@ -213,6 +213,7 @@ class Pipeline:
     """
 
     __LOGGER = logging.getLogger(__name__)
+    __TRAINING_CACHE_DATA = "instances_data"
 
     # TODO: Signature makes you think you can pass both a pretrained_path and a config, while only one option possible.
     def __init__(
@@ -377,12 +378,16 @@ class Pipeline:
 
             if not restore:
                 drop_patterns.append(os.path.join(output, "*.th"))
+                drop_patterns.append(
+                    os.path.join(output, self.__TRAINING_CACHE_DATA, "*")
+                )
 
             for pattern in drop_patterns:
                 for file in glob.glob(pattern, recursive=True):
                     os.remove(file)
 
         prepare_experiment_folder(output, restore)
+        self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
 
         return _PipelineHelper.train(
             self,
