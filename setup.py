@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-
-from pip import __version__ as pip_version
-from setuptools import setup, find_namespace_packages
+import sys
 from typing import Tuple
 
+import setuptools
+from pip import __version__ as pip_version
+
 PIP_VERSION_REQUIRED = "19.1.1"
+# This setuptools version introduced `find_namespace_package`
+SETUPTOOLS_VERSION_REQUIRED = "40.1.0"
 
 
-def check_pip_version(required_version: str, version: str):
+def check_pip_version(required_version: str, version: str) -> bool:
     def version_str_2_numbers(version: str) -> Tuple[int, int, int]:
         version_fractions = [int(n) for n in version.split(".")]
         return tuple(
@@ -27,11 +30,28 @@ def check_pip_version(required_version: str, version: str):
         or (mayor == req_mayor and minor > req_minor)
         or (mayor == req_mayor and minor == req_minor and fixes >= fixes)
     ):
-        pass
-    else:
-        print(f"Minimal pip version should be {required_version}, found: {version}")
-        print(f"Please upgrade pip: pip install --upgrade pip")
-        exit(1)
+        return True
+
+    print(f"Minimal pip version should be {required_version}, found: {version}")
+    print(f"Please upgrade pip: pip install --upgrade pip")
+    return False
+
+
+def check_setuptools_version() -> bool:
+    # just check that the first 2 numbers are equal or bigger than the required version
+    setuptools_version = tuple(int(i) for i in setuptools.__version__.split(".")[:2])
+    setuptools_version_required = tuple(
+        int(i) for i in SETUPTOOLS_VERSION_REQUIRED.split(".")[:2]
+    )
+
+    if setuptools_version >= setuptools_version_required:
+        return True
+
+    print(
+        f"Minimal setuptools version should be {SETUPTOOLS_VERSION_REQUIRED}, found: {setuptools.__version__}\n"
+        "Please upgrade setuptools: pip install --upgrade setuptools"
+    )
+    return False
 
 
 def about_info(package: str):
@@ -47,12 +67,16 @@ def about_info(package: str):
 
 
 if __name__ == "__main__":
-    check_pip_version(PIP_VERSION_REQUIRED, pip_version)
+    if (
+        not check_pip_version(PIP_VERSION_REQUIRED, pip_version)
+        or not check_setuptools_version()
+    ):
+        sys.exit(1)
 
     package_name = "biome-text"
     about = about_info(package_name)
 
-    setup(
+    setuptools.setup(
         name=package_name,
         version=about["__version__"],
         description="Biome-text is a light-weight open source Natural Language Processing toolbox"
@@ -62,7 +86,7 @@ if __name__ == "__main__":
         url="https://www.recogn.ai/",
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
-        packages=find_namespace_packages("src"),
+        packages=setuptools.find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
             "allennlp~=0.9",
