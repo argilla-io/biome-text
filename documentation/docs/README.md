@@ -1,25 +1,22 @@
 ---
 home: true
 // heroImage: /assets/img/recognai.png
-heroText: I can edit this
-tagline: Hero subtitle
+heroText: biome.text
+tagline: Modern natural language processing library
 actionText: Get Started →
 actionLink: /documentation/
 features:
-- title: Simplicity First
-  details: Minimal setup with markdown-centered project structure helps you focus on writing.
-- title: Vue-Powered
-  details: Enjoy the dev experience of Vue + webpack, use Vue components in markdown, and develop custom themes with Vue.
-- title: Performant
-  details: VuePress generates pre-rendered static HTML for each page, and runs as an SPA once a page is loaded.
-footer: MIT Licensed | Copyright © 2020 Recognai
+- title: Easy to use
+  details: Create NLP custom models with powerful building blocks and simple workflows.
+- title: Powerful
+  details:  Benefit from the latest research and models in NLP from AllenNLP and Huggingface Transformers.
+- title: Industry-ready
+  details: Easily package and serve your models.
+footer: Apache License 2.0 | Copyright © 2020 Recognai
 ---
 
-# biome-text 
+# Install biome.text
 
-``` js
-export default {
-  name: 'MyComponent',
-  // ...
-}
+``` bash
+pip install biome-text
 ```
