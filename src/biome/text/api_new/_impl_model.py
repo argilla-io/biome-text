@@ -60,7 +60,6 @@ class _DataSourceReader(DatasetReader):
     def __init__(self, data_keys: List[str]):
         super(_DataSourceReader, self).__init__(lazy=True)
         self._default_ds_mapping = {k: k for k in data_keys if k}
-        self.cache_data(mkdtemp(prefix="biome_ds"))
 
     __LOGGER = logging.getLogger(__name__)
 
