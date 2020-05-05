@@ -4,12 +4,14 @@ import os
 import sys
 from typing import Tuple
 
-import setuptools
+try:
+    from setuptools import setup, find_namespace_packages
+except ImportError as error:
+    raise ImportError("Make sure you have setuptools >= 40.1.0 installed!") from error
+
 from pip import __version__ as pip_version
 
 PIP_VERSION_REQUIRED = "19.1.1"
-# This setuptools version introduced `find_namespace_package`
-SETUPTOOLS_VERSION_REQUIRED = "40.1.0"
 
 
 def check_pip_version(required_version: str, version: str) -> bool:
@@ -37,23 +39,6 @@ def check_pip_version(required_version: str, version: str) -> bool:
     return False
 
 
-def check_setuptools_version() -> bool:
-    # just check that the first 2 numbers are equal or bigger than the required version
-    setuptools_version = tuple(int(i) for i in setuptools.__version__.split(".")[:2])
-    setuptools_version_required = tuple(
-        int(i) for i in SETUPTOOLS_VERSION_REQUIRED.split(".")[:2]
-    )
-
-    if setuptools_version >= setuptools_version_required:
-        return True
-
-    print(
-        f"Minimal setuptools version should be {SETUPTOOLS_VERSION_REQUIRED}, found: {setuptools.__version__}\n"
-        "Please upgrade setuptools: pip install --upgrade setuptools"
-    )
-    return False
-
-
 def about_info(package: str):
     """Fetch about info """
     root = os.path.abspath(os.path.dirname(__file__))
@@ -67,16 +52,13 @@ def about_info(package: str):
 
 
 if __name__ == "__main__":
-    if (
-        not check_pip_version(PIP_VERSION_REQUIRED, pip_version)
-        or not check_setuptools_version()
-    ):
+    if not check_pip_version(PIP_VERSION_REQUIRED, pip_version):
         sys.exit(1)
 
     package_name = "biome-text"
     about = about_info(package_name)
 
-    setuptools.setup(
+    setup(
         name=package_name,
         version=about["__version__"],
         description="Biome-text is a light-weight open source Natural Language Processing toolbox"
@@ -86,7 +68,7 @@ if __name__ == "__main__":
         url="https://www.recogn.ai/",
         long_description=open("README.md").read(),
         long_description_content_type="text/markdown",
-        packages=setuptools.find_namespace_packages("src"),
+        packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
             "allennlp~=0.9",
