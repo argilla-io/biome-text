@@ -499,9 +499,11 @@ class Pipeline:
 
       
     def _filter_parameters_by_predicate(
-        self, predicate: Callable[[], bool]
+        self, predicate: Callable[[Parameter], bool]
     ) -> List[str]:
-        filtered_parameters = filter(predicate, self._model.named_parameters())
+        filtered_parameters = filter(
+            lambda t: predicate(t[1]), self._model.named_parameters()
+        )
         return [name for name, p in filtered_parameters]
 
     @property
