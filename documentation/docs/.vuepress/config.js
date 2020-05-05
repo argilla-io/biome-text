@@ -1,6 +1,6 @@
 const path = require("path");
 const { nav, sidebar } = require("vuepress-bar")(`${__dirname}/..`, options = { maxLevel: 1, addReadMeToFirstGroup: false, collapsable: false, });
-const baseContext = process.env.CONTEXT || 'docs'
+const baseContext = process.env.CONTEXT || 'docs/'
 
 module.exports = {
   dest: 'site',
