@@ -8,7 +8,7 @@ import time
 import uuid
 from inspect import Parameter
 from threading import Thread
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union, cast, Callable
 from urllib.error import URLError
 
 import numpy
@@ -549,6 +549,21 @@ class Pipeline:
     def type_name(self) -> str:
         """The pipeline name. Equivalent to task head name"""
         return self.head.__class__.__name__
+
+    @property
+    def trainable_parameters(self) -> int:
+        """
+        Return the number of trainable parameters.
+
+        This number could be change before an after a training process, since trainer could fix some of them.
+
+        """
+        return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+
+    @property
+    def trainable_parameter_names(self) -> List[str]:
+        """Returns the name of pipeline trainable parameters"""
+        return [name for name, p  in self._model.named_parameters() if p.requires_grad]
 
     @staticmethod
     def __model_from_config(

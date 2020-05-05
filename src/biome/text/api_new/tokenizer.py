@@ -47,6 +47,18 @@ class Tokenizer(FromParams):
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
     ):
+
+        # Allennlp get_spacy_model method works only for fully named models (en_core_web_sm) but no
+        # for already linked named (en, es)
+        # This is a workaround for mitigate those kind of errors. Just loading one more time, it's ok.
+        # See https://github.com/allenai/allennlp/issues/4201
+        import spacy
+
+        try:
+            spacy.load(lang, disable=['vectors', 'textcat','tagger' 'parser''ner'])
+        except OSError:
+            spacy.cli.download(lang)
+
         if segment_sentences is True:
             # TODO: check rule-based feat.
             segment_sentences = SpacySentenceSplitter(language=lang, rule_based=True)

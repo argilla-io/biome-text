@@ -10,7 +10,7 @@ class TimeDistributedEncoder(Seq2SeqEncoder):
         self._input_dim = encoder.get_input_dim()
         self._output_dim = encoder.get_output_dim()
         self._is_bidirectional = (
-            hasattr(encoder, "isis_bidirectional") and encoder.is_bidirectional()
+            hasattr(encoder, "is_bidirectional") and encoder.is_bidirectional()
         )
 
         self._encoder = TimeDistributed(encoder)
