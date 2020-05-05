@@ -5,6 +5,7 @@ from allennlp.common import Params
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
+from biome.text.api_new.commons import InmutableDict
 from biome.text.api_new.modules.specs import Seq2VecEncoderSpec
 
 Embedder = TextFieldEmbedder
@@ -124,14 +125,17 @@ class InputFeaturizer:
         """The configured feature names ("words", "chars", ...)"""
         return list(self.__dict__.keys())
 
-    @property
-    def features(self) -> Dict[str, TokenIndexer]:
-        """Get configured input features in terms of allennlp token indexers"""
+    def build_features(self) -> Dict[str, TokenIndexer]:
+        """
+        Build configured token indexers features in terms of allennlp token indexers.
+
+        The result configuration is inmutable
+        """
         # fmt: off
-        return {
+        return InmutableDict({
             feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
             for feature, config in self.config.items()
-        }
+        })
         # fmt: on
 
     def build_embedder(self, vocab: Vocabulary) -> Embedder:
