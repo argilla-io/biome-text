@@ -5,8 +5,8 @@ from biome.text.api_new.helpers import yaml_to_dict
 if __name__ == "__main__":
 
     pl = Pipeline.from_file("document_classifier.yaml")
-    print(f"Pipeline parameters: ({pl.trainable_parameters}, {pl.frozen_parameters})")
-
+    print(f"Pipeline parameters: {pl.trainable_parameter_names}")
+    print(f"Trainable parameters: {pl.trainable_parameters}")
     print(
         pl.predict(
             document=["Header main. This is a test body!!!", "The next phrase is here"]

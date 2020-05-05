@@ -497,24 +497,20 @@ class Pipeline:
         """The pipeline name. Equivalent to task head name"""
         return self.head.__class__.__name__
 
-      
-    def _filter_parameters_by_predicate(
-        self, predicate: Callable[[Parameter], bool]
-    ) -> List[str]:
-        filtered_parameters = filter(
-            lambda t: predicate(t[1]), self._model.named_parameters()
-        )
-        return [name for name, p in filtered_parameters]
+    @property
+    def trainable_parameters(self) -> int:
+        """
+        Return the number of trainable parameters.
+
+        This number could be change before an after a training process, since trainer could fix some of them.
+
+        """
+        return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property
-    def trainable_parameters(self) -> List[str]:
+    def trainable_parameter_names(self) -> List[str]:
         """Returns the name of pipeline trainable parameters"""
-        return self._filter_parameters_by_predicate(lambda p: p.requires_grad)
-
-    @property
-    def frozen_parameters(self) -> List[str]:
-        """Returns the number of frozen parameters of pipeline"""
-        return self._filter_parameters_by_predicate(lambda p: not p.requires_grad)
+        return [name for name, p  in self._model.named_parameters() if p.requires_grad]
 
     @staticmethod
     def __model_from_config(
