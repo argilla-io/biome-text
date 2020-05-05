@@ -174,8 +174,8 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     def update_vocab(self, vocab: Vocabulary):
         """Update the model vocabulary and re-launch all vocab updates methods"""
         self.vocab = vocab
-        # This method will call all model modules with extend_vocab method defined
-        self.extend_embedder_vocab()
+        self.head.model.extend_vocab(self.vocab)
+        self.head.extend_vocab(self.vocab)
 
     @property
     def inputs(self) -> List[str]:
