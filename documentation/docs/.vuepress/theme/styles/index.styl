@@ -36,9 +36,20 @@ h1, h2, h3, h4
   border-radius: 13px
   padding: 0.8rem
   box-shadow: 0 2px 4px #929292
+.nav-links
+  .nav-item:first-child
+    text-transform: uppercase
 .nav-link
   font-weight: 600 !important
   font-family: $secondaryFontFamily 
+.footer
+  //position: absolute
+  bottom: 1rem
+  margin-top: 5rem
+  text-align: center
+  &__img
+    max-width: 100px
+
 @media screen and (min-width: $MQNarrow)
   .navbar
     position: relative
