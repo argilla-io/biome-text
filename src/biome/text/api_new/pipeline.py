@@ -278,20 +278,8 @@ class Pipeline:
         if isinstance(config, str):
             config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
         pipeline = cls(config=config)
-
-        if vocab_config:
-            # TODO: better pipeline init with vocab preloading
-            vocab = cls._vocab_from_sources(
-                pipeline,
-                sources=vocab_config.sources,
-                max_vocab_size=vocab_config.max_vocab_size,
-                min_count=vocab_config.min_count,
-                pretrained_files=vocab_config.pretrained_files,
-                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-                tokens_to_add=vocab_config.tokens_to_add,
-            )
-            pipeline._model.update_vocab(vocab)
+        vocab = cls._load_vocabulary(pipeline.model.vocab, vocab_config)
+        pipeline._model.update_vocab(vocab)
 
         return pipeline
 
@@ -620,9 +608,18 @@ class Pipeline:
         )
         return self
 
-    def _vocab_from_sources(self, sources: List[str], **extra_args) -> Vocabulary:
+    @classmethod
+    def _vocab_from_path(cls, from_path) -> Optional[Vocabulary]:
+        try:
+            return Vocabulary.from_files(from_path)
+        except FileNotFoundError:
+            cls.__LOGGER.warning("%s folder not found", from_path)
+            return None
+
+    def _extend_vocab_from_sources(
+        self, vocab: Vocabulary, sources: List[str], **extra_args
+    ) -> Vocabulary:
         """Extends an already created vocabulary from a list of source dictionary"""
-        vocab = self._model.vocab
         vocab.extend_from_instances(
             params=Params(extra_args),
             instances=[
@@ -657,6 +654,44 @@ class Pipeline:
             self.__setattr__(
                 method.__name__, update_method_signature(new_signature, method)
             )
+
+    @classmethod
+    def _load_vocabulary(
+        cls, vocab: Vocabulary, vocab_config: Optional[VocabularyConfiguration]
+    ) -> Optional[Vocabulary]:
+        """
+        Extends a data vocabulary from a given configuration
+        Parameters
+        ----------
+        vocab: ``Vocabulary``
+            The source vocabulary
+        vocab_config: ``VocabularyConfiguration``
+            The vocab extension configuration
+
+        Returns
+        -------
+
+        An extended ``Vocabulary`` using the provided configuration
+
+        """
+
+        if not vocab_config:
+            return vocab
+
+        _vocab = cls._vocab_from_path(vocab_config.from_path) or vocab
+
+        if vocab_config.sources:
+            _vocab = cls._extend_vocab_from_sources(
+                _vocab,
+                sources=vocab_config.sources,
+                max_vocab_size=vocab_config.max_vocab_size,
+                min_count=vocab_config.min_count,
+                pretrained_files=vocab_config.pretrained_files,
+                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
+                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
+                tokens_to_add=vocab_config.tokens_to_add,
+            )
+        return _vocab
 
 
 class _PipelineHelper:

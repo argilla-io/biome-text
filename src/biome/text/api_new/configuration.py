@@ -129,25 +129,36 @@ class TrainerConfiguration:
 
 
 class VocabularyConfiguration:
-    """Configures a `Vocabulary` before it gets created from data
+    """Configures a ``Vocabulary`` before it gets created from data
 
-    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
+    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary``
 
     See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
 
-    # Parameters
-        sources: `List[str]`
-        min_count: `Dict[str, int]`
-        max_vocab_size: `Union[int, Dict[str, int]]`
-        pretrained_files: `Optional[Dict[str, str]]`
-        only_include_pretrained_words: `bool`
-        tokens_to_add: `Dict[str, List[str]]`
-        min_pretrained_embeddings: `Dict[str, int]`
+    Parameters
+    ----------
+    from_path: ``Optional[str]``
+        If provided, try to load model vocab from specified folder path
+    sources: ``List[str]``
+        List of datasources path used for vocab creation/extension
+    min_count: ``Dict[str, int]``
+        See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+    max_vocab_size: ``Union[int, Dict[str, int]]``
+        See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+    pretrained_files: ``Optional[Dict[str, str]]``
+        See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+    only_include_pretrained_words: ``bool``
+        See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+    tokens_to_add: ``Dict[str, List[str]]``
+        See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+    min_pretrained_embeddings: ``Dict[str, int]``
+        See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
     """
 
     def __init__(
         self,
-        sources: List[str],
+        from_path: Optional[str] = None,
+        sources: List[str] = None,
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,
@@ -155,7 +166,8 @@ class VocabularyConfiguration:
         tokens_to_add: Dict[str, List[str]] = None,
         min_pretrained_embeddings: Dict[str, int] = None,
     ):
-        self.sources = sources
+        self.from_path = from_path
+        self.sources = sources or []
         self.pretrained_files = pretrained_files
         self.min_count = min_count
         self.max_vocab_size = max_vocab_size
