@@ -9,9 +9,9 @@ features:
 - title: Easy to use
   details: Create NLP custom models with powerful building blocks and simple workflows.
 - title: Powerful
-  details:  Benefit from the latest research and models in NLP from AllenNLP and Huggingface Transformers.
+  details:  Benefit from the latest research and models in NLP powered by PyTorch, AllenNLP and Huggingface Transformers.
 - title: Industry-ready
-  details: Easily package and serve your models.
+  details: Easily package and serve your models in production.
 footer: Apache License 2.0 | Copyright © 2020 Recognai
 ---
 
