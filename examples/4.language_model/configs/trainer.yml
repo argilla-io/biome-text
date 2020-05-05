@@ -1,12 +1,10 @@
-iterator:
-  batch_size: 64
-trainer:
-  type: default
-  num_epochs: 100
-  optimizer:
-    type: adam
-    lr: 0.01
-  validation_metric: -loss
-  patience: 2
-  num_serialized_models_to_keep: 1
-  cuda_device: -1
+batch_size: 64
+
+num_epochs: 100
+
+optimizer:
+  type: adam
+  lr: 0.01
+
+validation_metric: -loss
+patience: 2

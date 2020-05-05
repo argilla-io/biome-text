@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union, List
 
 from allennlp.common import FromParams, Params
 
@@ -86,3 +86,79 @@ class PipelineConfiguration(FromParams):
             "encoder": self.encoder._config,
             "head": self.head._config,
         }
+
+
+class TrainerConfiguration:
+    """Trainer configuration"""
+
+    def __init__(
+        self,
+        optimizer: Dict[str, Any],
+        validation_metric: str = "-loss",
+        patience: Optional[int] = None,
+        shuffle: bool = True,
+        num_epochs: int = 20,
+        cuda_device: int = -1,
+        grad_norm: Optional[float] = None,
+        grad_clipping: Optional[float] = None,
+        learning_rate_scheduler: Optional[Dict[str, Any]] = None,
+        momentum_scheduler: Optional[Dict[str, Any]] = None,
+        moving_average: Optional[Dict[str, Any]] = None,
+        batch_size: Optional[int] = None,
+        cache_instances: bool = True,
+        in_memory_batches: int = 2,
+        data_bucketing: bool = True,
+    ):
+        self.optimizer = optimizer
+        self.validation_metric = validation_metric
+        self.patience = patience
+        self.shuffle = shuffle
+        self.num_epochs = num_epochs
+        self.cuda_device = cuda_device
+        self.grad_norm = grad_norm
+        self.grad_clipping = grad_clipping
+        self.learning_rate_scheduler = learning_rate_scheduler
+        self.momentum_scheduler = momentum_scheduler
+        self.moving_average = moving_average
+
+        # Data Iteration
+        self.batch_size = batch_size or 32
+        self.data_bucketing = data_bucketing or True
+        self.cache_instances = cache_instances or True
+        self.in_memory_batches = in_memory_batches
+
+
+class VocabularyConfiguration:
+    """Configures a `Vocabulary` before it gets created from data
+
+    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
+
+    See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
+
+    # Parameters
+        sources: `List[str]`
+        min_count: `Dict[str, int]`
+        max_vocab_size: `Union[int, Dict[str, int]]`
+        pretrained_files: `Optional[Dict[str, str]]`
+        only_include_pretrained_words: `bool`
+        tokens_to_add: `Dict[str, List[str]]`
+        min_pretrained_embeddings: `Dict[str, int]`
+    """
+
+    def __init__(
+        self,
+        sources: List[str],
+        min_count: Dict[str, int] = None,
+        max_vocab_size: Union[int, Dict[str, int]] = None,
+        pretrained_files: Optional[Dict[str, str]] = None,
+        only_include_pretrained_words: bool = False,
+        tokens_to_add: Dict[str, List[str]] = None,
+        min_pretrained_embeddings: Dict[str, int] = None,
+    ):
+        self.sources = sources
+        self.pretrained_files = pretrained_files
+        self.min_count = min_count
+        self.max_vocab_size = max_vocab_size
+        self.only_include_pretrained_words = only_include_pretrained_words
+        self.tokens_to_add = tokens_to_add
+        self.min_pretrained_embeddings = min_pretrained_embeddings

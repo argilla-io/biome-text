@@ -1,4 +1,6 @@
 from biome.text.api_new import Pipeline
+from biome.text.api_new.configuration import TrainerConfiguration
+from biome.text.api_new.helpers import yaml_to_dict
 
 if __name__ == "__main__":
 
@@ -11,9 +13,10 @@ if __name__ == "__main__":
         )
     )
 
+    trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
     trained_pl = pl.train(
         output="experiment",
-        trainer="trainer.yml",
+        trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
         verbose=True,
@@ -26,7 +29,7 @@ if __name__ == "__main__":
 
     trained_pl = trained_pl.train(
         output="experiment.v2",
-        trainer="trainer.yml",
+        trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
     )
