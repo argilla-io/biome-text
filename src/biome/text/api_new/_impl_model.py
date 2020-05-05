@@ -172,6 +172,12 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
 
+    def update_vocab(self, vocab: Vocabulary):
+        """Update the model vocabulary and re-launch all vocab updates methods"""
+        self.vocab = vocab
+        # This method will call all model modules with extend_vocab method defined
+        self.extend_embedder_vocab()
+
     @property
     def inputs(self) -> List[str]:
         """The model inputs. Corresponding to head.featurize required argument names"""
