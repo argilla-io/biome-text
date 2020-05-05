@@ -16,7 +16,7 @@ import uvicorn
 import yaml
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import DatasetReader
+from allennlp.data import DatasetReader, Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
@@ -280,7 +280,7 @@ class Pipeline:
 
         if vocab_config:
             # TODO: better pipeline init with vocab preloading
-            pipeline = cls._extend_vocab_from_sources(
+            vocab = cls._vocab_from_sources(
                 pipeline,
                 sources=vocab_config.sources,
                 max_vocab_size=vocab_config.max_vocab_size,
@@ -290,6 +290,7 @@ class Pipeline:
                 min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
                 tokens_to_add=vocab_config.tokens_to_add,
             )
+            pipeline._model.update_vocab(vocab)
 
         return pipeline
 
@@ -614,9 +615,7 @@ class Pipeline:
         )
         return self
 
-    def _extend_vocab_from_sources(
-        self, sources: List[str], **extra_args
-    ) -> "Pipeline":
+    def _vocab_from_sources(self, sources: List[str], **extra_args) -> Vocabulary:
         """Extends an already created vocabulary from a list of source dictionary"""
         vocab = self._model.vocab
         vocab.extend_from_instances(
@@ -627,8 +626,7 @@ class Pipeline:
                 for instance in self._model.read(data_source)
             ],
         )
-        self._model = self.__model_from_config(self.config, vocab=vocab)
-        return self
+        return vocab
 
     @staticmethod
     def __model_from_archive(archive: Archive) -> __default_impl__:
