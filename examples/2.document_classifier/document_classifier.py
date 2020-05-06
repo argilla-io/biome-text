@@ -1,4 +1,4 @@
-from biome.text import Pipeline,  TrainerConfiguration
+from biome.text import Pipeline, TrainerConfiguration
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
