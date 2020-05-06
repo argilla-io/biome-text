@@ -1,4 +1,4 @@
-from biome.text.api_new import Pipeline
+from biome.text import Pipeline
 
 if __name__ == "__main__":
 

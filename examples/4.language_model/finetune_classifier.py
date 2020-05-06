@@ -1,7 +1,7 @@
-from biome.text.api_new import Pipeline
-from biome.text.api_new.configuration import TrainerConfiguration
-from biome.text.api_new.helpers import yaml_to_dict
-from biome.text.api_new.modules.heads import TextClassification
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text.helpers import yaml_to_dict
+from biome.text.modules.heads import TextClassification
 
 if __name__ == "__main__":
     # load an existing pre-trained model
