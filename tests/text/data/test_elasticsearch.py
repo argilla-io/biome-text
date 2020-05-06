@@ -3,7 +3,7 @@ import os
 import pytest
 from dask.dataframe import DataFrame
 
-from biome.text.api_new.data.readers import ElasticsearchDataFrameReader
+from biome.text.data.readers import ElasticsearchDataFrameReader
 from tests.test_support import DaskSupportTest
 
 ES_HOST = os.getenv("ES_HOST", "http://localhost:9200")

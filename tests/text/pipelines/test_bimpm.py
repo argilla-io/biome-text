@@ -3,8 +3,8 @@ from typing import Dict
 import pandas as pd
 import pytest
 import yaml
-from biome.text.api_new.configuration import TrainerConfiguration
-from biome.text.api_new.pipeline import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import Pipeline
 
 
 @pytest.fixture
