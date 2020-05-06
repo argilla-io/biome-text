@@ -14,9 +14,7 @@ h1, h2, h3, h4
     margin: 2em auto
     display: block
   &-heading 
-    font-family: $secondaryFontFamily 
-  &-link
-    border-left: none !important
+    pointer-events: none
     font-family: $secondaryFontFamily 
     &:after
       content: ''
@@ -24,9 +22,13 @@ h1, h2, h3, h4
       height: 2px
       background: none
       display: block
-    &.active
+    &.open
+      color: $accentColor !important
       &:after  
         background: $accentColor
+  &-link
+    border-left: none !important
+    font-family: $secondaryFontFamily 
 .theme-default-content code
   background-color: $codePillColor
 .go-to-top
@@ -56,14 +58,24 @@ h1, h2, h3, h4
     border-bottom: none
     // line-height: 4.4em !important
     margin-left: 320px
+    .no-sidebar &
+      max-width: 960px
+      padding: 0 2.5rem
+      margin: auto
+      box-sizing: content-box;
+      .links
+        max-width: 100%
+        margin-left: 0
+        padding-left: 0 !important
     .home-link
       display: none
     .links 
       position: relative !important
       right: auto !important
       max-width: 740px !important;
-      padding-left: 0 !important
-      margin: 0.7em auto;
+      margin: 0.7em auto 0.7em 4.5em;
+  .page-nav
+    margin-left: 4.5rem !important  
   .sidebar 
     top: 0
     z-index: 21
@@ -77,3 +89,8 @@ h1, h2, h3, h4
     border-radius: 2px !important
     &:not(:focus)
       border-color: #F5F5F5 !important
+  .theme-default-content:not(.custom)
+      max-width: 740px
+      margin: 0 auto
+      padding: 2rem 2.5rem
+      margin-left: 4.5rem

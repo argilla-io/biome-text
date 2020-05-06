@@ -167,7 +167,7 @@ function flatten (items, res) {
   &__button
     border: 1px solid $borderColor
     border-radius: 3px
-    font-family: $secondaryFontFamily 
+    font-family: $secondaryFontFamily
     &:hover
       border-color: $textColor !important
     a
@@ -175,6 +175,10 @@ function flatten (items, res) {
       padding: 0.5em
       color: $textColor !important
       font-weight: 600
+      font-size: 0.75rem
+    &__icon
+      display: flex
+      align-items: center
     @media (max-width: $MQMobileNarrow)
       border: none
       a
