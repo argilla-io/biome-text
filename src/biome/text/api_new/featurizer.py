@@ -20,7 +20,7 @@ class _WordFeaturesSpecs:
         self,
         embedding_dim: int,
         lowercase_tokens: bool = False,
-        trainable: bool = False,
+        trainable: bool = True,
         weights_file: Optional[str] = None,
         **extra_params
     ):
@@ -51,7 +51,7 @@ class _CharacterFeaturesSpec:
         self,
         embedding_dim: int,
         encoder: Dict[str, Any],
-        dropout: int = 0.2,
+        dropout: int = 0.0,
         **extra_params
     ):
         self.config = {
@@ -74,16 +74,23 @@ class _CharacterFeaturesSpec:
 
 
 class InputFeaturizer:
+    """Transforms input text (words and/or characters) into indexes and embedding vectors.
+
+    This class defines two input features, words and chars for embeddings at word and character level respectively.
+
+    You can provide additional features by manually specify `indexer` and `embedder` configurations within each
+    input feature.
+
+    Parameters
+    ----------
+    words : ``Dict[str, Any]``
+        Dictionary defining how to index and embed words
+    chars : ``Dict[str, Any]``
+        Dictionary defining how to encode and embed characters
+    kwargs :
+        Additional params for setting up the features
     """
-    The input features class. Centralize the token_indexers and embedder configurations, since are very coupled.
-
-    This class define two input features: words and chars for embeddings at word and character level. In those cases,
-    the required configuration is specified in `_WordFeaturesSpecs` and `_CharacterFeaturesSpec` respectively
-
-    You can provide addittional features by manually specify `indexer` and `embedder` configurations.
-    """
-
-    __DEFAULT_CONFIG = {"embedding_dim": 8, "lowercase_tokens": True}
+    __DEFAULT_CONFIG = {"embedding_dim": 50}
     __INDEXER_KEYNAME = "indexer"
     __EMBEDDER_KEYNAME = "embedder"
 
@@ -96,6 +103,7 @@ class InputFeaturizer:
         chars: Optional[Dict[str, Any]] = None,
         **kwargs: Dict[str, Dict[str, Any]]
     ):
+        
         configuration = kwargs or {}
 
         if not (words or chars or configuration):
@@ -112,12 +120,22 @@ class InputFeaturizer:
 
     @classmethod
     def from_params(cls, params: Params) -> "InputFeaturizer":
-        """Load a input featurizer from allennlp params"""
+        """ Loads featurizer from ``allennlp.Params``
+        
+        Parameters
+        ----------
+        params : ``Params``
+            Params for the featurizer configuration
+
+        Returns
+        -------
+        An instance of ``InputFeaturizer``
+        """
         return cls(**params.as_dict())
 
     @property
     def config(self):
-        """The data module configuration"""
+        """The featurizer configuration"""
         return copy.deepcopy(self.__dict__)
 
     @property
@@ -126,10 +144,11 @@ class InputFeaturizer:
         return list(self.__dict__.keys())
 
     def build_features(self) -> Dict[str, TokenIndexer]:
-        """
-        Build configured token indexers features in terms of allennlp token indexers.
-
-        The result configuration is inmutable
+        """Builds configured token indexers features as allennlp token indexers.
+        
+        Returns
+        -------
+        An `InmutableDict` defining the token indexers of the featurizer
         """
         # fmt: off
         return InmutableDict({
@@ -139,7 +158,16 @@ class InputFeaturizer:
         # fmt: on
 
     def build_embedder(self, vocab: Vocabulary) -> Embedder:
-        """Build the allennlp `TextFieldEmbedder` from configured embedding features"""
+        """Builds a `TextFieldEmbedder` from configured embedding features
+        
+        Parameters
+        ----------
+        vocab : ``Vocabulary``
+            Vocabulary object to be used by the embedding layers
+        Returns
+        -------
+        A `TextFieldEmbedder`
+        """
         # fmt: off
         return TextFieldEmbedder.from_params(
             Params({
