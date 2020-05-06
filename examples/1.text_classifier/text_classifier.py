@@ -11,7 +11,10 @@ if __name__ == "__main__":
 
     pl = Pipeline.from_file(
         "text_classifier.yaml",
-        vocab_config=VocabularyConfiguration(sources=[train, validation]),
+        vocab_config=VocabularyConfiguration(
+            from_path=os.path.join(training_folder, "vocabulary"),
+            sources=[train, validation]
+        ),
     )
 
     print(pl.predict(text="Header main. This is a test body!!!"))
