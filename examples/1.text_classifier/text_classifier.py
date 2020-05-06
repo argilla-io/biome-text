@@ -24,7 +24,6 @@ if __name__ == "__main__":
         training=train,
         validation=validation,
         extend_vocab=False,
-        restore=True,
     )
 
     trained_pl.predict(text="Header main; This is a test body!!!")
