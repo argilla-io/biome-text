@@ -278,7 +278,7 @@ class Pipeline:
         if isinstance(config, str):
             config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
         pipeline = cls(config=config)
-        vocab = cls._load_vocabulary(pipeline.model.vocab, vocab_config)
+        vocab = cls._load_vocabulary(pipeline, vocab_config)
         pipeline._model.update_vocab(vocab)
 
         return pipeline
@@ -627,6 +627,8 @@ class Pipeline:
     def _vocab_from_path(cls, from_path) -> Optional[Vocabulary]:
         try:
             return Vocabulary.from_files(from_path)
+        except TypeError:
+            return None
         except FileNotFoundError:
             cls.__LOGGER.warning("%s folder not found", from_path)
             return None
@@ -672,14 +674,14 @@ class Pipeline:
 
     @classmethod
     def _load_vocabulary(
-        cls, vocab: Vocabulary, vocab_config: Optional[VocabularyConfiguration]
+        cls, pipeline:"Pipeline", vocab_config: Optional[VocabularyConfiguration]
     ) -> Optional[Vocabulary]:
         """
         Extends a data vocabulary from a given configuration
         Parameters
         ----------
-        vocab: ``Vocabulary``
-            The source vocabulary
+        pipeline: ``Pipeline``
+            The target pipeline
         vocab_config: ``VocabularyConfiguration``
             The vocab extension configuration
 
@@ -691,13 +693,14 @@ class Pipeline:
         """
 
         if not vocab_config:
-            return vocab
+            return pipeline.model.vocab
 
-        _vocab = cls._vocab_from_path(vocab_config.from_path) or vocab
+        _vocab = cls._vocab_from_path(vocab_config.from_path) or pipeline.model.vocab
 
         if vocab_config.sources:
             _vocab = cls._extend_vocab_from_sources(
-                _vocab,
+                pipeline,
+                vocab=_vocab,
                 sources=vocab_config.sources,
                 max_vocab_size=vocab_config.max_vocab_size,
                 min_count=vocab_config.min_count,
