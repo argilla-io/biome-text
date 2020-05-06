@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
+import sys
+from typing import Tuple
+
+try:
+    from setuptools import setup, find_namespace_packages
+except ImportError as error:
+    raise ImportError("Make sure you have setuptools >= 40.1.0 installed!") from error
 
 from pip import __version__ as pip_version
-from setuptools import setup, find_namespace_packages
-from typing import Tuple
 
 PIP_VERSION_REQUIRED = "19.1.1"
 
 
-def check_pip_version(required_version: str, version: str):
+def check_pip_version(required_version: str, version: str) -> bool:
     def version_str_2_numbers(version: str) -> Tuple[int, int, int]:
         version_fractions = [int(n) for n in version.split(".")]
         return tuple(
@@ -27,11 +32,11 @@ def check_pip_version(required_version: str, version: str):
         or (mayor == req_mayor and minor > req_minor)
         or (mayor == req_mayor and minor == req_minor and fixes >= fixes)
     ):
-        pass
-    else:
-        print(f"Minimal pip version should be {required_version}, found: {version}")
-        print(f"Please upgrade pip: pip install --upgrade pip")
-        exit(1)
+        return True
+
+    print(f"Minimal pip version should be {required_version}, found: {version}")
+    print(f"Please upgrade pip: pip install --upgrade pip")
+    return False
 
 
 def about_info(package: str):
@@ -47,7 +52,8 @@ def about_info(package: str):
 
 
 if __name__ == "__main__":
-    check_pip_version(PIP_VERSION_REQUIRED, pip_version)
+    if not check_pip_version(PIP_VERSION_REQUIRED, pip_version):
+        sys.exit(1)
 
     package_name = "biome-text"
     about = about_info(package_name)
