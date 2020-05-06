@@ -479,7 +479,7 @@ class _BaseModelImplTrainer:
                 if key in datasets_for_vocab_creation
             ),
         )
-
+        self.update_vocab(vocab=self._model.vocab)
         self._model.extend_embedder_vocab(self._embedding_sources_mapping)
 
     def test_evaluation(self) -> Dict[str, Any]:
