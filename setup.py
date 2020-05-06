@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 "pytest-pylint~=0.14.0",
                 "black",
                 "GitPython",
-                "pdoc3~=0.8.1"
+                "pdoc3~=0.8.1",
             ]
         },
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},

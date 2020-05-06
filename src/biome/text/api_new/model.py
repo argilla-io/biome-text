@@ -57,7 +57,7 @@ class Model(torch.nn.Module):
         for model_path, module in self.named_modules():
             if module == self:
                 continue
-            if hasattr(module, 'extend_vocab'):
+            if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
 
     @property

@@ -13,7 +13,7 @@ if __name__ == "__main__":
         "text_classifier.yaml",
         vocab_config=VocabularyConfiguration(
             from_path=os.path.join(training_folder, "vocabulary"),
-            sources=[train, validation]
+            sources=[train, validation],
         ),
     )
 

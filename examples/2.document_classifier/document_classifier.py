@@ -1,5 +1,8 @@
 from biome.text.api_new import Pipeline
-from biome.text.api_new.configuration import TrainerConfiguration, VocabularyConfiguration
+from biome.text.api_new.configuration import (
+    TrainerConfiguration,
+    VocabularyConfiguration,
+)
 from biome.text.api_new.helpers import yaml_to_dict
 
 if __name__ == "__main__":
