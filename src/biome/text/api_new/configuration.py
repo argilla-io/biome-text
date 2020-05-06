@@ -221,7 +221,7 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    from_path: ``Optional[str]``
+    from_path: `Optional[str]`
         If provided, try to load model vocab from specified folder path
     sources : `List[str]`
         Datasource paths to be used for data creation
