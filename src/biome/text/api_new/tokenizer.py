@@ -55,7 +55,7 @@ class Tokenizer(FromParams):
         import spacy
 
         try:
-            spacy.load(lang, disable=['vectors', 'textcat','tagger' 'parser''ner'])
+            spacy.load(lang, disable=["vectors", "textcat", "tagger" "parser" "ner"])
         except OSError:
             spacy.cli.download(lang)
 

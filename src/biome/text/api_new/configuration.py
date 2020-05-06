@@ -83,7 +83,7 @@ class PipelineConfiguration(FromParams):
             "name": self.name,
             "tokenizer": vars(self.tokenizer),
             "features": vars(self.features),
-            "head": self.head._config,
+            "head": self.head.config,
         }
 
         if self.encoder:
