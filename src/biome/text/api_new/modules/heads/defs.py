@@ -62,10 +62,8 @@ class TaskHead(torch.nn.Module, Registrable):
         super(TaskHead, self).__init__()
         self.model = model
 
-    def extend_vocab(self, vocab: Vocabulary, **kwargs):
+    def _update_vocab(self, vocab: Vocabulary, **kwargs):
         """This method is automatically called when a vocab is updated"""
-        if self.model.vocab != vocab:
-            self.model.vocab = vocab
         self._on_vocab_update()
 
     def _on_vocab_update(self):

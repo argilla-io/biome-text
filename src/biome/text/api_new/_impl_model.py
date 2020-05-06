@@ -174,8 +174,8 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     def update_vocab(self, vocab: Vocabulary):
         """Update the model vocabulary and re-launch all vocab updates methods"""
         self.vocab = vocab
-        self.head.model.extend_vocab(self.vocab)
-        self.head.extend_vocab(self.vocab)
+        self.head.model._update_vocab(vocab)  # pylint: disable=protected-access
+        self.head._update_vocab(vocab)  # pylint: disable=protected-access
 
     @property
     def inputs(self) -> List[str]:

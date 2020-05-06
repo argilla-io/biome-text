@@ -50,10 +50,15 @@ class Model(torch.nn.Module):
         embeddings = self._embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
 
-    def extend_vocab(self, vocab: Vocabulary, **kwargs):
-        """This method is automatically called when a base model updates the vocabulary"""
+    def _update_vocab(self, vocab: Vocabulary, **kwargs):
+        """This method is called when a base model updates the vocabulary"""
         self.vocab = vocab
-        self._embedder = self.featurizer.build_embedder(self.vocab)
+
+        for model_path, module in self.named_modules():
+            if module == self:
+                continue
+            if hasattr(module, 'extend_vocab'):
+                module.extend_vocab(self.vocab)
 
     @property
     def features(self) -> Dict[str, TokenIndexer]:
