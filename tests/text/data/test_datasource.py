@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from biome.data.sources import DataSource
+from biome.text.data import DataSource
 from tests import DaskSupportTest, RESOURCES_PATH
 
 FILES_PATH = os.path.join(RESOURCES_PATH, "data")
@@ -48,11 +48,6 @@ class DataSourceTest(DaskSupportTest):
 
             self.assertIn("label", df.columns)
             self.assertIn("tokens", df.columns)
-
-            bag = ds.to_mapped_bag().take(1)[0]
-
-            self.assertIn("label", bag)
-            self.assertIn("tokens", bag)
 
     def test_no_mapping(self):
 
