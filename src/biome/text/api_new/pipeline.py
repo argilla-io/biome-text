@@ -375,7 +375,9 @@ class Pipeline:
                     os.remove(file)
 
         prepare_experiment_folder(output, restore)
-        self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
+        # TODO: we need make deserializable the feature dict (InmutableDict class)
+        #  It fails otherwise
+        # self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
 
         return _PipelineHelper.train(
             self,
@@ -674,7 +676,7 @@ class Pipeline:
 
     @classmethod
     def _load_vocabulary(
-        cls, pipeline:"Pipeline", vocab_config: Optional[VocabularyConfiguration]
+        cls, pipeline: "Pipeline", vocab_config: Optional[VocabularyConfiguration]
     ) -> Optional[Vocabulary]:
         """
         Extends a data vocabulary from a given configuration
