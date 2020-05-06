@@ -1,5 +1,20 @@
 .esrunner
 
+documentation/**/nav.*.api
+documentation/site
+**/node_modules
+**/yarn.lock
+**/package-lock.json
+
+**/*.th
+**/*.tar.gz
+**/metrics*.json
+**/config.json
+**/events.out*
+**/vocabulary/*.txt
+
+examples/**/experiment*/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

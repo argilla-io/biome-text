@@ -1,0 +1,96 @@
+
+body
+  font-family: $primaryFontFamily 
+h1, h2, h3, h4 
+  font-family: $secondaryFontFamily 
+.sidebar
+  background: $sidebarBgColor
+  &__link
+    display: block !important
+    a
+      display: block !important
+  &__img
+    width: auto
+    margin: 2em auto
+    display: block
+  &-heading 
+    pointer-events: none
+    font-family: $secondaryFontFamily 
+    &:after
+      content: ''
+      width: 35px
+      height: 2px
+      background: none
+      display: block
+    &.open
+      color: $accentColor !important
+      &:after  
+        background: $accentColor
+  &-link
+    border-left: none !important
+    font-family: $secondaryFontFamily 
+.theme-default-content code
+  background-color: $codePillColor
+.go-to-top
+  background: white
+  height: 1.2rem !important
+  width: 1.2rem !important
+  border-radius: 13px
+  padding: 0.8rem
+  box-shadow: 0 2px 4px #929292
+.nav-links
+  .nav-item:first-child
+    text-transform: uppercase
+.nav-link
+  font-weight: 600 !important
+  font-family: $secondaryFontFamily 
+.footer
+  //position: absolute
+  bottom: 1rem
+  margin-top: 5rem
+  text-align: center
+  &__img
+    max-width: 100px
+
+@media screen and (min-width: $MQNarrow)
+  .navbar
+    position: relative
+    border-bottom: none
+    // line-height: 4.4em !important
+    margin-left: 320px
+    .no-sidebar &
+      max-width: 960px
+      padding: 0 2.5rem
+      margin: auto
+      box-sizing: content-box;
+      .links
+        max-width: 100%
+        margin-left: 0
+        padding-left: 0 !important
+    .home-link
+      display: none
+    .links 
+      position: relative !important
+      right: auto !important
+      max-width: 740px !important;
+      margin: 0.7em auto 0.7em 4.5em;
+  .page-nav
+    margin-left: 4.5rem !important  
+  .sidebar 
+    top: 0
+    z-index: 21
+    overflow: visible
+    border-right: none
+    > ul
+      overflow-y: auto
+      max-height: calc(100% - 120px)
+  .search-box input
+    border-width: 2px !important
+    border-radius: 2px !important
+    &:not(:focus)
+      border-color: #F5F5F5 !important
+  .theme-default-content:not(.custom)
+      max-width: 740px
+      margin: 0 auto
+      padding: 2rem 2.5rem
+      margin-left: 4.5rem

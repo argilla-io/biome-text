@@ -1,0 +1,25 @@
+name: my-token-classifier
+
+features:
+    words:
+        embedding_dim: 100
+        #trainable: false
+        #weights_file: https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.en.300.vec.gz
+    chars:
+        embedding_dim: 64
+        encoder:
+            type: gru
+            bidirectional: true
+            num_layers: 3
+            hidden_size: 100
+        dropout: 0.2
+
+encoder:
+    hidden_size: 10
+    num_layers: 2
+    dropout: 0.5
+    type: rnn
+
+head:
+    type: TokenClassification
+    labels: [ 'B-DRUG', 'I-DRUG', 'L-DRUG', 'O', 'U-DRUG' ]

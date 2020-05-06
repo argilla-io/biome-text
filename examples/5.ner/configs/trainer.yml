@@ -1,0 +1,9 @@
+batch_size: 16
+
+num_epochs: 15
+optimizer:
+  amsgrad: 'true'
+  type: adam
+  lr: 0.005
+validation_metric: +f1-measure-overall
+patience: 3

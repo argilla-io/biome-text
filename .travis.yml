@@ -7,26 +7,39 @@ python:
   - "3.7"
 
 before_install:
-  - echo "$RECOGNAI_PYPI_IP $RECOGNAI_PYPI_HOSTNAME" | sudo tee -a /etc/hosts
+  - sudo apt-get update
+  - sudo apt-get install nodejs -q -y
+
 # command to install dependencies
 install:
   - pip install -U pip
   - pip install -U six
 
 script:
-  - make dev dist
+  - make dev dist docs
 
 after_success:
   - pip install twine
 
 deploy:
-  skip_cleanup: true
-  provider: script
-  script: twine upload dist/*
-  on:
-    tags: true
-    branch:
-      - master
-      - releases/*
+  - skip_cleanup: true
+    provider: script
+    script: twine upload dist/*
+    on:
+      tags: true
+      branch:
+        - master
+        - releases/*
+  - provider: pages
+    skip_cleanup: true
+    local_dir: documentation/site
+    github_token: $GITHUB_TOKEN # A token generated on GitHub allowing Travis to push code on you repository. Set in the Travis settings page of your repository, as a secure variable
+    keep_history: true
+    on:
+      tags: true
+      branch:
+        - master
+        - releases/*
+        - feature/*
 env:
   - ES_DOC=doc

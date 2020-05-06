@@ -1,4 +1,4 @@
-.PHONY: default test dist install dev
+.PHONY: default test dist install dev docs
 default: help
 
 check: ## applies a code pylint with autopep8 reformating
@@ -16,6 +16,9 @@ install: ## install package
 
 dev: ## install package in development mode
 	@pip install --upgrade -e .[testing]
+
+docs: ## build the documentation site
+	@cd documentation && npm install && npm run build:site
 
 upgrade-classifier-ui: ## updates the biome-classifier-ui interface artifact
 	@curl \
