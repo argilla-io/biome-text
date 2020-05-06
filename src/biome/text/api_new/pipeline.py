@@ -563,7 +563,7 @@ class Pipeline:
     @property
     def trainable_parameter_names(self) -> List[str]:
         """Returns the name of pipeline trainable parameters"""
-        return [name for name, p  in self._model.named_parameters() if p.requires_grad]
+        return [name for name, p in self._model.named_parameters() if p.requires_grad]
 
     @staticmethod
     def __model_from_config(
@@ -790,7 +790,6 @@ class _PipelineHelper:
             params=Params(allennlp_configuration(pipeline, config)),
             serialization_dir=config.output,
             extend_vocab=config.extend_vocab,
-            file_friendly_logging=True,
         )  # pylint: disable=protected-access,
 
         return pipeline.__class__(
