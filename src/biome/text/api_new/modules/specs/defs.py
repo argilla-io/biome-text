@@ -5,6 +5,7 @@ from typing import Any, Dict, Generic, Optional, Type, TypeVar
 from allennlp.common import FromParams, Params
 from allennlp.modules.seq2seq_encoders import _Seq2SeqWrapper
 from allennlp.modules.seq2vec_encoders import _Seq2VecWrapper
+from allennlp.modules.bimpm_matching import BiMpmMatching
 
 
 def _find_input_attribute(component: Any) -> str:
@@ -12,6 +13,8 @@ def _find_input_attribute(component: Any) -> str:
     input_dim_attribute = None
     if isinstance(component, (_Seq2SeqWrapper, _Seq2VecWrapper)):
         input_dim_attribute = "input_size"
+    elif component is BiMpmMatching:
+        input_dim_attribute = "hidden_dim"
     else:
         init_method_keys = inspect.signature(component.__init__).parameters.keys()
         for param_name in ["embedding_dim", "input_dim"]:

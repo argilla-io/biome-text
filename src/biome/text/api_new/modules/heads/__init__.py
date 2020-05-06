@@ -5,6 +5,7 @@ from .record_classification import RecordClassification, RecordClassificationSpe
 from .text_classification import TextClassification, TextClassificationSpec
 from .token_classification import TokenClassification, TokenClassificationSpec
 from .language_modelling import LanguageModelling, LanguageModellingSpec
+from .bimpm_classification import BiMpm
 # fmt: on
 
 for head in [
@@ -13,5 +14,6 @@ for head in [
     DocumentClassification,
     RecordClassification,
     LanguageModelling,
+    BiMpm,
 ]:
     head.register(overrides=True)
