@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 import numpy
 import torch
 from allennlp.common import Registrable
-from allennlp.data import Instance
+from allennlp.data import Instance, Vocabulary
 
 from biome.text.api_new.model import Model
 from biome.text.api_new.modules.specs import ComponentSpec
@@ -61,6 +61,18 @@ class TaskHead(torch.nn.Module, Registrable):
     def __init__(self, model: Model):
         super(TaskHead, self).__init__()
         self.model = model
+
+    def _update_vocab(self, vocab: Vocabulary, **kwargs):
+        """This method is automatically called when a vocab is updated"""
+        self._on_vocab_update()
+
+    def _on_vocab_update(self):
+        """
+        Actions when vocab is updated. Rebuild here modules that initialization depends on some vocab metric
+
+        At this point, the model.vocab is already updated, so it could be used for architecture update
+        """
+        pass
 
     @classmethod
     def register(cls, overrides: bool = False, **kwargs):

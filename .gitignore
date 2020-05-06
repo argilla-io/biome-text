@@ -13,6 +13,8 @@ documentation/site
 **/events.out*
 **/vocabulary/*.txt
 
+examples/**/experiment*/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

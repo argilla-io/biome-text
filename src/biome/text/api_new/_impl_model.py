@@ -1,3 +1,4 @@
+import base64
 import inspect
 import json
 import logging
@@ -9,7 +10,6 @@ from copy import deepcopy
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from tempfile import mkdtemp
 from typing import Any, Dict, Iterable, List, Optional, Type, Tuple
 
 import numpy
@@ -170,6 +170,12 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         except KeyError as error:
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
+
+    def update_vocab(self, vocab: Vocabulary):
+        """Update the model vocabulary and re-launch all vocab updates methods"""
+        self.vocab = vocab
+        self.head.model._update_vocab(vocab)  # pylint: disable=protected-access
+        self.head._update_vocab(vocab)  # pylint: disable=protected-access
 
     @property
     def inputs(self) -> List[str]:
@@ -473,8 +479,7 @@ class _BaseModelImplTrainer:
                 if key in datasets_for_vocab_creation
             ),
         )
-
-        self._model.extend_embedder_vocab(self._embedding_sources_mapping)
+        self._model.update_vocab(vocab=self._model.vocab)
 
     def test_evaluation(self) -> Dict[str, Any]:
         """

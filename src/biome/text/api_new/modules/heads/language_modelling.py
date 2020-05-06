@@ -73,6 +73,12 @@ class LanguageModelling(TaskHead):
             embedding_dim=self.model.encoder.get_output_dim(),
         )
 
+    def _on_vocab_update(self):
+        self._loss = SoftmaxLoss(
+            num_words=vocabulary.words_vocab_size(self.model.vocab),
+            embedding_dim=self.model.encoder.get_output_dim(),
+        )
+
     def featurize(self, text: str) -> Optional[Instance]:
         return self.model.featurize(text, to_field="text", aggregate=True)
 

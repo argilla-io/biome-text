@@ -16,7 +16,7 @@ import uvicorn
 import yaml
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import DatasetReader
+from allennlp.data import DatasetReader, Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
@@ -213,6 +213,7 @@ class Pipeline:
     """
 
     __LOGGER = logging.getLogger(__name__)
+    __TRAINING_CACHE_DATA = "instances_data"
 
     # TODO: Signature makes you think you can pass both a pretrained_path and a config, while only one option possible.
     def __init__(
@@ -277,19 +278,8 @@ class Pipeline:
         if isinstance(config, str):
             config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
         pipeline = cls(config=config)
-
-        if vocab_config:
-            # TODO: better pipeline init with vocab preloading
-            pipeline = cls._extend_vocab_from_sources(
-                pipeline,
-                sources=vocab_config.sources,
-                max_vocab_size=vocab_config.max_vocab_size,
-                min_count=vocab_config.min_count,
-                pretrained_files=vocab_config.pretrained_files,
-                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-                tokens_to_add=vocab_config.tokens_to_add,
-            )
+        vocab = cls._load_vocabulary(pipeline, vocab_config)
+        pipeline._model.update_vocab(vocab)
 
         return pipeline
 
@@ -376,12 +366,18 @@ class Pipeline:
 
             if not restore:
                 drop_patterns.append(os.path.join(output, "*.th"))
+                drop_patterns.append(
+                    os.path.join(output, self.__TRAINING_CACHE_DATA, "*")
+                )
 
             for pattern in drop_patterns:
                 for file in glob.glob(pattern, recursive=True):
                     os.remove(file)
 
         prepare_experiment_folder(output, restore)
+        # TODO: we need make deserializable the feature dict (InmutableDict class)
+        #  It fails otherwise
+        # self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
 
         return _PipelineHelper.train(
             self,
@@ -629,11 +625,20 @@ class Pipeline:
         )
         return self
 
+    @classmethod
+    def _vocab_from_path(cls, from_path) -> Optional[Vocabulary]:
+        try:
+            return Vocabulary.from_files(from_path)
+        except TypeError:
+            return None
+        except FileNotFoundError:
+            cls.__LOGGER.warning("%s folder not found", from_path)
+            return None
+
     def _extend_vocab_from_sources(
-        self, sources: List[str], **extra_args
-    ) -> "Pipeline":
+        self, vocab: Vocabulary, sources: List[str], **extra_args
+    ) -> Vocabulary:
         """Extends an already created vocabulary from a list of source dictionary"""
-        vocab = self._model.vocab
         vocab.extend_from_instances(
             params=Params(extra_args),
             instances=[
@@ -642,8 +647,7 @@ class Pipeline:
                 for instance in self._model.read(data_source)
             ],
         )
-        self._model = self.__model_from_config(self.config, vocab=vocab)
-        return self
+        return vocab
 
     @staticmethod
     def __model_from_archive(archive: Archive) -> __default_impl__:
@@ -669,6 +673,45 @@ class Pipeline:
             self.__setattr__(
                 method.__name__, update_method_signature(new_signature, method)
             )
+
+    @classmethod
+    def _load_vocabulary(
+        cls, pipeline: "Pipeline", vocab_config: Optional[VocabularyConfiguration]
+    ) -> Optional[Vocabulary]:
+        """
+        Extends a data vocabulary from a given configuration
+        Parameters
+        ----------
+        pipeline: ``Pipeline``
+            The target pipeline
+        vocab_config: ``VocabularyConfiguration``
+            The vocab extension configuration
+
+        Returns
+        -------
+
+        An extended ``Vocabulary`` using the provided configuration
+
+        """
+
+        if not vocab_config:
+            return pipeline.model.vocab
+
+        _vocab = cls._vocab_from_path(vocab_config.from_path) or pipeline.model.vocab
+
+        if vocab_config.sources:
+            _vocab = cls._extend_vocab_from_sources(
+                pipeline,
+                vocab=_vocab,
+                sources=vocab_config.sources,
+                max_vocab_size=vocab_config.max_vocab_size,
+                min_count=vocab_config.min_count,
+                pretrained_files=vocab_config.pretrained_files,
+                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
+                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
+                tokens_to_add=vocab_config.tokens_to_add,
+            )
+        return _vocab
 
 
 class _PipelineHelper:

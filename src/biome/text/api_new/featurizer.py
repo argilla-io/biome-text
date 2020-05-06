@@ -90,6 +90,7 @@ class InputFeaturizer:
     kwargs :
         Additional params for setting up the features
     """
+
     __DEFAULT_CONFIG = {"embedding_dim": 50}
     __INDEXER_KEYNAME = "indexer"
     __EMBEDDER_KEYNAME = "embedder"
@@ -103,7 +104,7 @@ class InputFeaturizer:
         chars: Optional[Dict[str, Any]] = None,
         **kwargs: Dict[str, Dict[str, Any]]
     ):
-        
+
         configuration = kwargs or {}
 
         if not (words or chars or configuration):
