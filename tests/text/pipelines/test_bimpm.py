@@ -186,4 +186,5 @@ def test_bimpm_train(
         trainer=TrainerConfiguration(**trainer_dict),
         training=path_to_training_data_yaml,
         validation=path_to_training_data_yaml,
+        restore=False,
     )
