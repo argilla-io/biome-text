@@ -19,11 +19,6 @@ from allennlp.common.util import sanitize
 from allennlp.data import DatasetReader, Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
-from dask import dataframe as dd
-from dask_elk.client import DaskElasticClient
-from elasticsearch import Elasticsearch
-from fastapi import FastAPI
-
 from biome.text._impl_model import AllennlpModel, _BaseModelImpl
 from biome.text.configuration import (
     PipelineConfiguration,
@@ -36,8 +31,13 @@ from biome.text.helpers import (
     split_signature_params_by_predicate,
     update_method_signature,
 )
-from . import constants, helpers
 from biome.text.ui import launch_ui
+from dask import dataframe as dd
+from dask_elk.client import DaskElasticClient
+from elasticsearch import Elasticsearch
+from fastapi import FastAPI
+
+from . import constants, helpers
 from .model import Model
 from .modules.encoders import TimeDistributedEncoder
 from .modules.heads import TaskHead
@@ -181,21 +181,17 @@ class _TrainConfiguration:
         self,
         output: str,
         trainer: TrainerConfiguration,
-        vocab: Optional[str] = None,
         train_cfg: str = "",
         validation_cfg: Optional[str] = None,
         test_cfg: Optional[str] = None,
         verbose: bool = False,
-        extend_vocab: bool = True,
     ):
         self.output = output
-        self.vocab = vocab
         self.trainer = trainer
         self.training = train_cfg
         self.validation = validation_cfg
         self.test = test_cfg
         self.verbose = verbose
-        self.extend_vocab = extend_vocab
 
 
 class Pipeline:
@@ -238,20 +234,20 @@ class Pipeline:
         self.__update_prediction_signatures()
 
     @classmethod
-    def from_file(
-        cls, path: str, vocab_config: Optional[VocabularyConfiguration] = None
-    ) -> "Pipeline":
+    def from_file(cls, path: str, vocab_config: VocabularyConfiguration) -> "Pipeline":
         """Creates a pipeline from a config yaml file path
 
-        # Parameters
-            path: `str`
-                The path to a YAML configuration file
-            vocab_config: `Optional[VocabularyConfiguration]`
-                A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
+        Parameters
+        ----------
+        path: `str`
+            The path to a YAML configuration file
+        vocab_config: `Optional[VocabularyConfiguration]`
+            A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
 
-        # Returns
-            pipeline: `Pipeline`
-                A configured pipeline
+        Returns
+        -------
+        pipeline: `Pipeline`
+            A configured pipeline
         """
         with open(path) as yamL_file:
             return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
@@ -264,15 +260,17 @@ class Pipeline:
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
-            # Parameters
-                config: `Union[str, PipelineConfiguration]`
-                    A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
-                vocab_config: `Optional[VocabularyConfiguration]`
-                    A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
+        Parameters
+        ----------
+            config: `Union[str, PipelineConfiguration]`
+                A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
+            vocab_config: `Optional[VocabularyConfiguration]`
+                A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
 
-            # Returns
-                pipeline: `Pipeline`
-                    A configured pipeline
+        Returns
+        -------
+            pipeline: `Pipeline`
+                A configured pipeline
         """
 
         if isinstance(config, str):
@@ -304,9 +302,8 @@ class Pipeline:
         training: str,
         validation: Optional[str] = None,
         test: Optional[str] = None,
-        vocab: Optional[str] = None,
         verbose: bool = False,
-        extend_vocab: bool = True,
+        extend_vocab: bool = False,
         restore: bool = True,
     ) -> "Pipeline":
         """Launches a training run with the specified configurations and datasources
@@ -323,8 +320,6 @@ class Pipeline:
             The validation datasource file path
         test: `Optional[str]`
             The test datasource file path
-        vocab: `Optional[str]`
-            The path to an existing vocabulary
         verbose: `bool`
             Turn on verbose logs
         extend_vocab: `bool`
@@ -378,18 +373,22 @@ class Pipeline:
         # TODO: we need make deserializable the feature dict (InmutableDict class)
         #  It fails otherwise
         # self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
+        if extend_vocab:
+            vocab = self._extend_vocab_from_sources(
+                self.model.vocab,
+                sources=[ds for ds in [training, validation, test] if ds],
+            )
+            self._model.update_vocab(vocab)
 
         return _PipelineHelper.train(
             self,
             config=_TrainConfiguration(
-                vocab=vocab,
                 test_cfg=test,
                 output=output,
                 trainer=trainer,
                 train_cfg=training,
                 validation_cfg=validation,
                 verbose=verbose,
-                extend_vocab=extend_vocab,
             ),
         )
 
@@ -832,7 +831,6 @@ class _PipelineHelper:
         pipeline._model.launch_experiment(
             params=Params(allennlp_configuration(pipeline, config)),
             serialization_dir=config.output,
-            extend_vocab=config.extend_vocab,
         )  # pylint: disable=protected-access,
 
         return pipeline.__class__(
