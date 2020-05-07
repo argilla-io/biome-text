@@ -361,7 +361,6 @@ class _BaseModelImplTrainer:
         self._iterator = None
         self._trainer = None
         self._all_datasets = self.datasets_from_params()
-        self._evaluate_on_test = self._params.pop_bool("evaluate_on_test", False)
 
         self._setup()
 
@@ -493,14 +492,6 @@ class _BaseModelImplTrainer:
         if not test_data:
             return {}
 
-        if test_data and not self._evaluate_on_test:
-            self.__LOGGER.info(
-                "To evaluate on the test set after training, pass the "
-                "'evaluate_on_test' flag, or use the 'allennlp evaluate' command."
-            )
-            return {}
-
-        # Evaluate
         self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
         return evaluate(
             self._model,
