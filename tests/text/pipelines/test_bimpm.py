@@ -3,7 +3,7 @@ from typing import Dict
 import pandas as pd
 import pytest
 import yaml
-from biome.text import TrainerConfiguration
+from biome.text import TrainerConfiguration, VocabularyConfiguration
 from biome.text import Pipeline
 
 
@@ -178,7 +178,10 @@ def trainer_dict() -> Dict:
 def test_bimpm_train(
     path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml,
 ):
-    pipeline = Pipeline.from_file(path_to_pipeline_yaml)
+    pipeline = Pipeline.from_file(
+        path_to_pipeline_yaml,
+        vocab_config=VocabularyConfiguration(sources=[path_to_training_data_yaml]),
+    )
     pipeline.predict(record1="The one", record2="The other")
 
     pipeline.train(
