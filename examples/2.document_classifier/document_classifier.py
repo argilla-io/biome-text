@@ -1,4 +1,4 @@
-from biome.text import Pipeline, TrainerConfiguration
+from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
@@ -31,6 +31,8 @@ if __name__ == "__main__":
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
+        extend_vocab=True,
+        restore=False,
     )
 
     trained_pl.predict(
