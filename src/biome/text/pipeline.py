@@ -215,8 +215,6 @@ class Pipeline:
     __LOGGER = logging.getLogger(__name__)
     __TRAINING_CACHE_DATA = "instances_data"
 
-    logging.getLogger("allennlp").setLevel(logging.WARNING)
-
     # TODO: Signature makes you think you can pass both a pretrained_path and a config, while only one option possible.
     def __init__(
         self,
