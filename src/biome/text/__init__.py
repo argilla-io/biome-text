@@ -3,7 +3,12 @@ from warnings import warn_explicit
 
 import pkg_resources
 
-from biome.text.pipelines import Pipeline
+from .pipeline import (
+    Pipeline,
+    PipelineConfiguration,
+    TrainerConfiguration,
+    VocabularyConfiguration,
+)
 
 warnings.showwarning = warn_explicit
 

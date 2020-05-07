@@ -80,7 +80,6 @@ if __name__ == "__main__":
             "lxml~=4.5.0",
             "fastapi~=0.52.0",
             "uvicorn~=0.11.0",
-            "biome-data~=0.2.0",
             "dask[complete]~=2.10.0",
             "msgpack~=0.6.0",
             "cachey~=0.1.0",  # required by dask.cache

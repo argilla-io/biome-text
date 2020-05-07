@@ -1,6 +1,6 @@
 import os
 
-from biome.text.api_new.data import DataSource
+from biome.text.data import DataSource
 from tests import DaskSupportTest, RESOURCES_PATH
 
 FILES_PATH = os.path.join(RESOURCES_PATH, "data")

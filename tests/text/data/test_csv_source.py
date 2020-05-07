@@ -1,4 +1,4 @@
-from biome.data.sources import DataSource
+from biome.text.data import DataSource
 import os
 
 from tests import DaskSupportTest, RESOURCES_PATH

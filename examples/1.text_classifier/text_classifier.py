@@ -1,8 +1,7 @@
 import os
 
-from biome.text.api_new import Pipeline, VocabularyConfiguration
-from biome.text.api_new.configuration import TrainerConfiguration
-from biome.text.api_new.helpers import yaml_to_dict
+from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration
+from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
     train = "train.data.yml"

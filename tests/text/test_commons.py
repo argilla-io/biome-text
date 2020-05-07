@@ -1,6 +1,6 @@
 import pytest
 
-from biome.text.api_new.commons import InmutableDict
+from biome.text.commons import InmutableDict
 
 
 class TestInmutableDict:
@@ -12,3 +12,5 @@ class TestInmutableDict:
 
         with pytest.raises(TypeError):
             dict.a = 100
+
+    # TODO: Test a serialization/deserialization

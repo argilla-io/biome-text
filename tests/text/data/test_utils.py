@@ -2,7 +2,7 @@ import unittest
 
 from distributed import LocalCluster
 
-from biome.text.api_new.data.utils import (
+from biome.text.data.helpers import (
     configure_dask_cluster,
     close_dask_client,
     get_nested_property_from_data,

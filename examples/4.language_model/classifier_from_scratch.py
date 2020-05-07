@@ -1,6 +1,6 @@
-from biome.text.api_new import Pipeline
-from biome.text.api_new.configuration import TrainerConfiguration
-from biome.text.api_new.helpers import yaml_to_dict
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
     pl = Pipeline.from_file("configs/text_classifier.yml")
