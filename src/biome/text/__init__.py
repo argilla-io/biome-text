@@ -3,8 +3,6 @@ from warnings import warn_explicit
 
 import pkg_resources
 
-from .data import DataSource
-from .model import Model
 from .pipeline import (
     Pipeline,
     PipelineConfiguration,
