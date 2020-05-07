@@ -1,7 +1,7 @@
 import click
 from click import Path
 
-from biome.text.pipeline import Pipeline
+from biome.text import Pipeline
 
 
 @click.command("serve", help="Serves pipeline as rest api service")

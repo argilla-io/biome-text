@@ -4,7 +4,7 @@ from typing import Optional
 import click
 from click import Path
 
-from biome.text.pipeline import Pipeline, VocabularyConfiguration
+from biome.text import Pipeline, VocabularyConfiguration
 
 
 @click.command("train", help="Train a pipeline")
