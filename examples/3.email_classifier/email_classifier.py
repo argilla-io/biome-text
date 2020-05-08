@@ -1,4 +1,4 @@
-from biome.text import Pipeline, TrainerConfiguration
+from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
@@ -18,6 +18,7 @@ if __name__ == "__main__":
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
+        extend_vocab=VocabularyConfiguration(sources=["validation.data.yml"]),
     )
 
     trained_pl.predict(
@@ -25,18 +26,3 @@ if __name__ == "__main__":
     )
     trained_pl.head.extend_labels(["other"])
     trained_pl.explore(ds_path="validation.data.yml")
-
-    trained_pl = trained_pl.train(
-        output="experiment.v2",
-        trainer=trainer,
-        training="train.data.yml",
-        validation="validation.data.yml",
-    )
-
-    trained_pl.predict(
-        subject="Header main. This is a test body!!!", body="The next phrase is here"
-    )
-
-    pl.head.extend_labels(["yes", "no"])
-    pl.explore(ds_path="validation.data.yml", explain=True)
-    # pl.serve()

@@ -9,11 +9,7 @@ if __name__ == "__main__":
     training_folder = "experiment"
 
     pl = Pipeline.from_file(
-        "text_classifier.yaml",
-        vocab_config=VocabularyConfiguration(
-            from_path=os.path.join(training_folder, "vocabulary"),
-            sources=[train, validation],
-        ),
+        "text_classifier.yaml", vocab_path=os.path.join(training_folder, "vocabulary")
     )
 
     print(pl.predict(text="Header main. This is a test body!!!"))
@@ -25,7 +21,7 @@ if __name__ == "__main__":
         trainer=trainer_configuration,
         training=train,
         validation=validation,
-        extend_vocab=False,
+        extend_vocab=VocabularyConfiguration(sources=[train, validation]),
     )
 
     trained_pl.predict(text="Header main; This is a test body!!!")

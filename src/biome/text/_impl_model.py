@@ -300,7 +300,6 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         self,
         params: Params,
         serialization_dir: str,
-        extend_vocab: bool = False,
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
     ) -> "_BaseModelImpl":
@@ -310,7 +309,6 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
             self,
             params,
             serialization_dir,
-            extend_vocab,
             batch_weight_key,
             embedding_sources_mapping,
         )
@@ -331,8 +329,6 @@ class _BaseModelImplTrainer:
         A parameter object specifying an AllenNLP Experiment
     serialization_dir : ``str``
         The directory in which to save results and logs.
-    extend_vocab: ``bool``, optional (default=False)
-        If ``True``, we use the new instances to extend your vocabulary.
     batch_weight_key : ``str``, optional (default="")
         If non-empty, name of metric used to weight the loss on a per-batch basis.
     embedding_sources_mapping: ``Dict[str, str]``, optional (default=None)
@@ -347,14 +343,12 @@ class _BaseModelImplTrainer:
         model: _BaseModelImpl,
         params: Params,
         serialization_dir: str,
-        extend_vocab: bool = False,
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
     ):
         self._model = model
         self._params = params
         self._serialization_dir = serialization_dir
-        self._extend_vocab = extend_vocab
         self._batch_weight_key = batch_weight_key
         self._embedding_sources_mapping = embedding_sources_mapping
 
@@ -387,9 +381,6 @@ class _BaseModelImplTrainer:
             json.dump(serialization_params, param_file, indent=4)
 
         self._params.pop("model", None)
-
-        if self._extend_vocab:
-            self.extend_vocab(self._all_datasets)
 
         vocab = self._model.vocab
         vocab.save_to_files(os.path.join(self._serialization_dir, "vocabulary"))
@@ -441,43 +432,6 @@ class _BaseModelImplTrainer:
             datasets["test"] = self._model.read(test_data_path)
 
         return datasets
-
-    def extend_vocab(self, source_datasets: Dict[str, Iterable[Instance]]):
-        """
-        Extends the inner model vocabulary from source datasets
-
-        Parameters
-        ----------
-        source_datasets: ``Dict[str, Iterable[Instance]]``
-            The source datasets
-        """
-
-        datasets_for_vocab_creation = set(
-            self._params.pop("datasets_for_vocab_creation", source_datasets)
-        )
-
-        for dataset in datasets_for_vocab_creation:
-            if dataset not in source_datasets:
-                raise ConfigurationError(
-                    f"invalid 'dataset_for_vocab_creation' {dataset}"
-                )
-
-        self.__LOGGER.info(
-            "Extending model vocabulary using %s data.",
-            ", ".join(datasets_for_vocab_creation),
-        )
-
-        vocabulary_params = self._params.pop("vocabulary", {})
-        self._model.vocab.extend_from_instances(
-            vocabulary_params,
-            (
-                instance
-                for key, dataset in source_datasets.items()
-                for instance in dataset
-                if key in datasets_for_vocab_creation
-            ),
-        )
-        self._model.update_vocab(vocab=self._model.vocab)
 
     def test_evaluation(self) -> Dict[str, Any]:
         """

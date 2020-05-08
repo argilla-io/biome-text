@@ -1,9 +1,9 @@
-from biome.text import Pipeline, TrainerConfiguration
+from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
 
-    pl = Pipeline.from_file("document_classifier.yaml")
+    pl = Pipeline.from_file("document_classifier.yaml", vocab_path="not_found_folder")
     print(f"Pipeline parameters: {pl.trainable_parameter_names}")
     print(f"Trainable parameters: {pl.trainable_parameters}")
     print(
@@ -13,33 +13,22 @@ if __name__ == "__main__":
     )
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
-    trained_pl = pl.train(
+    pl.train(
         output="experiment",
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
         verbose=True,
+        restore=False,
+        extend_vocab=VocabularyConfiguration(
+            sources=["train.data.yml"], min_count={"words": 10}
+        ),
     )
 
-    trained_pl.predict(
+    pl.predict(
         document=["Header main. This is a test body!!!", "The next phrase is here"]
     )
+    pl.explore(ds_path="validation.data.yml")
+
+    trained_pl = Pipeline.from_pretrained("experiment/model.tar.gz")
     trained_pl.explore(ds_path="validation.data.yml")
-
-    trained_pl = trained_pl.train(
-        output="experiment.v2",
-        trainer=trainer,
-        training="train.data.yml",
-        validation="validation.data.yml",
-    )
-
-    trained_pl.predict(
-        document=["Header main. This is a test body!!!", "The next phrase is here"]
-    )
-
-    pl.head.extend_labels(["yes", "no"])
-    pl.explore(
-        explore_id="test-document-explore", ds_path="validation.data.yml",
-    )
-
-    # pl.serve()
