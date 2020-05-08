@@ -216,17 +216,18 @@ class Pipeline:
         self,
         pretrained_path: Optional[str] = None,
         config: Optional[PipelineConfiguration] = None,
+        **extra_args
     ):
 
         self._binary = pretrained_path
         self._config = copy.deepcopy(config)
 
         if self._binary:
-            archive = load_archive(self._binary)
+            archive = load_archive(self._binary, **extra_args)
             self._model = self.__model_from_archive(archive)
             self._config = self.__config_from_archive(archive)
         else:
-            self._model = self.__model_from_config(self.config)
+            self._model = self.__model_from_config(self.config, **extra_args)
 
         if not isinstance(self._model, __default_impl__):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
@@ -234,13 +235,15 @@ class Pipeline:
         self.__update_prediction_signatures()
 
     @classmethod
-    def from_file(cls, path: str) -> "Pipeline":
+    def from_file(cls, path: str, vocab_path: Optional[str] = None) -> "Pipeline":
         """Creates a pipeline from a config yaml file path
 
         Parameters
         ----------
         path: `str`
             The path to a YAML configuration file
+        vocab_path: `Optional[str]`
+            If provided, the pipeline vocab will be loaded from this path
 
         Returns
         -------
@@ -248,30 +251,32 @@ class Pipeline:
             A configured pipeline
         """
         with open(path) as yamL_file:
-            return cls.from_config(yamL_file.read())
+            return cls.from_config(yamL_file.read(), vocab_path=vocab_path)
 
     @classmethod
     def from_config(
         cls,
         config: Union[str, PipelineConfiguration],
+        vocab_path: Optional[str] = None
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
         Parameters
         ----------
-            config: `Union[str, PipelineConfiguration]`
-                A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
-
+        config: `Union[str, PipelineConfiguration]`
+            A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
+        vocab_path: `Optional[str]`
+            If provided, the pipeline vocab will be loaded from this path
 
         Returns
         -------
-            pipeline: `Pipeline`
-                A configured pipeline
+        pipeline: `Pipeline`
+            A configured pipeline
         """
 
         if isinstance(config, str):
             config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
-        return cls(config=config)
+        return cls(config=config, vocab=cls._vocab_from_path(vocab_path))
 
     @classmethod
     def from_pretrained(cls, path: str, **kwargs) -> "Pipeline":
@@ -606,17 +611,11 @@ class Pipeline:
         )
         show_func(url)
 
-    def _extend_vocab_from_files(self, from_path: str) -> "Pipeline":
-        """Load a vocab from a vocab folder path an set it to the currernt pipeline"""
-        vocab = self._model.vocab
-        self._model = self.__model_from_config(
-            self.config, vocab=vocab.from_files(from_path)
-        )
-        return self
-
     @classmethod
-    def _vocab_from_path(cls, from_path) -> Optional[Vocabulary]:
+    def _vocab_from_path(cls, from_path: str) -> Optional[Vocabulary]:
         try:
+            if not from_path:
+                return None
             return Vocabulary.from_files(from_path)
         except TypeError:
             return None
