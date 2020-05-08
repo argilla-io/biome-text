@@ -20,7 +20,9 @@ if __name__ == "__main__":
         validation="validation.data.yml",
         verbose=True,
         restore=False,
-        extend_vocab=VocabularyConfiguration(sources=["train.data.yml"], min_count={"words": 10}),
+        extend_vocab=VocabularyConfiguration(
+            sources=["train.data.yml"], min_count={"words": 10}
+        ),
     )
 
     pl.predict(

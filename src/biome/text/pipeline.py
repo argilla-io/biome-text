@@ -216,7 +216,7 @@ class Pipeline:
         self,
         pretrained_path: Optional[str] = None,
         config: Optional[PipelineConfiguration] = None,
-        **extra_args
+        **extra_args,
     ):
 
         self._binary = pretrained_path
@@ -255,9 +255,7 @@ class Pipeline:
 
     @classmethod
     def from_config(
-        cls,
-        config: Union[str, PipelineConfiguration],
-        vocab_path: Optional[str] = None
+        cls, config: Union[str, PipelineConfiguration], vocab_path: Optional[str] = None
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
