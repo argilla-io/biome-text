@@ -316,7 +316,7 @@ head:
 
 
 ```python
-pl = Pipeline.from_file("configs/text_classifier.yml")
+pl = Pipeline.from_yaml("configs/text_classifier.yml")
 ```
 
 
