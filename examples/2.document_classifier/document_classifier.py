@@ -3,7 +3,7 @@ from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
 
-    pl = Pipeline.from_file("document_classifier.yaml")
+    pl = Pipeline.from_file("document_classifier.yaml", vocab_path="not_found_folder")
     print(f"Pipeline parameters: {pl.trainable_parameter_names}")
     print(f"Trainable parameters: {pl.trainable_parameters}")
     print(

@@ -8,7 +8,7 @@ if __name__ == "__main__":
     validation = "validation.data.yml"
     training_folder = "experiment"
 
-    pl = Pipeline.from_file("text_classifier.yaml")
+    pl = Pipeline.from_file("text_classifier.yaml", vocab_path=os.path.join(training_folder, "vocabulary"))
 
     print(pl.predict(text="Header main. This is a test body!!!"))
 
