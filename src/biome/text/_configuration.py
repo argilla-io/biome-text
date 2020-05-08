@@ -1,11 +1,25 @@
 import datetime
 from typing import Any, Dict, Optional
 
+from allennlp.data import DatasetReader
+from biome.text import constants
+from biome.text._impl_model import AllennlpModel, _BaseModelImpl
 from elasticsearch import Elasticsearch
 
-from biome.text import constants
 from . import helpers
 from .configuration import TrainerConfiguration
+
+_ModelImpl = _BaseModelImpl
+
+
+def __register(impl_class, overrides: bool = False):
+    """Register the impl. class in allennlp components registry"""
+
+    AllennlpModel.register(impl_class.__name__, exist_ok=overrides)(impl_class)
+    DatasetReader.register(impl_class.__name__, exist_ok=overrides)(impl_class)
+
+
+__register(_ModelImpl, overrides=True)
 
 
 class ExploreConfiguration:
@@ -106,12 +120,11 @@ class ElasticsearchExplore:
 class TrainConfiguration:
     """Configures a training run
 
-    # Parameters
+    Parameters
+    ----------
         output: `str`
              The experiment output path
-        vocab: `vocab`
-            The path to an existing vocabulary
-        trainer_path: `str`
+        trainer: `str`
              The trainer file path
         train_cfg: `str`
             The train datasource file path
@@ -121,8 +134,6 @@ class TrainConfiguration:
             The test datasource file path
         verbose: `bool`
             Whether to show verbose logs (default is `False`)
-        extend_vocab: `bool`
-            Extends vocabulary namespaces with training data
     """
 
     def __init__(
