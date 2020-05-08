@@ -234,15 +234,13 @@ class Pipeline:
         self.__update_prediction_signatures()
 
     @classmethod
-    def from_file(cls, path: str, vocab_config: VocabularyConfiguration) -> "Pipeline":
+    def from_file(cls, path: str) -> "Pipeline":
         """Creates a pipeline from a config yaml file path
 
         Parameters
         ----------
         path: `str`
             The path to a YAML configuration file
-        vocab_config: `Optional[VocabularyConfiguration]`
-            A `PipelineConfiguration` object defining the configuration of a fresh `Pipeline`.
 
         Returns
         -------
@@ -250,13 +248,12 @@ class Pipeline:
             A configured pipeline
         """
         with open(path) as yamL_file:
-            return cls.from_config(yamL_file.read(), vocab_config=vocab_config)
+            return cls.from_config(yamL_file.read())
 
     @classmethod
     def from_config(
         cls,
         config: Union[str, PipelineConfiguration],
-        vocab_config: Optional[VocabularyConfiguration] = None,
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
@@ -264,8 +261,7 @@ class Pipeline:
         ----------
             config: `Union[str, PipelineConfiguration]`
                 A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
-            vocab_config: `Optional[VocabularyConfiguration]`
-                A `VocabularyConfiguration` object for associating a vocabulary to the pipeline
+
 
         Returns
         -------
@@ -275,21 +271,19 @@ class Pipeline:
 
         if isinstance(config, str):
             config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
-        pipeline = cls(config=config)
-        vocab = cls._load_vocabulary(pipeline, vocab_config)
-        pipeline._model.update_vocab(vocab)
-
-        return pipeline
+        return cls(config=config)
 
     @classmethod
     def from_pretrained(cls, path: str, **kwargs) -> "Pipeline":
         """Loads a pipeline from a pre-trained pipeline from a model.tar.gz file path
 
-        # Parameters
+        Parameters
+        ----------
             path: `str`
                 The path to the model.tar.gz file of a pre-trained `Pipeline`
 
-        # Returns
+        Returns
+        -------
             pipeline: `Pipeline`
                 A configured pipeline
         """
@@ -303,7 +297,7 @@ class Pipeline:
         validation: Optional[str] = None,
         test: Optional[str] = None,
         verbose: bool = False,
-        extend_vocab: bool = False,
+        extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = True,
     ) -> "Pipeline":
         """Launches a training run with the specified configurations and datasources
@@ -322,8 +316,8 @@ class Pipeline:
             The test datasource file path
         verbose: `bool`
             Turn on verbose logs
-        extend_vocab: `bool`
-            Extends vocab tokens with training data
+        extend_vocab: `Optional[VocabularyConfiguration]`
+            Extends vocab tokens with provided configuration
         restore: `bool`
             If enabled, tries to read previous training status from output folder and
             continues training process from it
@@ -374,11 +368,7 @@ class Pipeline:
         #  It fails otherwise
         # self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
         if extend_vocab:
-            vocab = self._extend_vocab_from_sources(
-                self.model.vocab,
-                sources=[ds for ds in [training, validation, test] if ds],
-            )
-            self._model.update_vocab(vocab)
+            self._extend_vocab(vocab_config=extend_vocab)
 
         return _PipelineHelper.train(
             self,
@@ -673,44 +663,40 @@ class Pipeline:
                 method.__name__, update_method_signature(new_signature, method)
             )
 
-    @classmethod
     def _load_vocabulary(
-        cls, pipeline: "Pipeline", vocab_config: Optional[VocabularyConfiguration]
+        self, vocab_config: VocabularyConfiguration
     ) -> Optional[Vocabulary]:
         """
         Extends a data vocabulary from a given configuration
+
         Parameters
         ----------
-        pipeline: ``Pipeline``
-            The target pipeline
-        vocab_config: ``VocabularyConfiguration``
+        vocab_config: `VocabularyConfiguration`
             The vocab extension configuration
 
         Returns
         -------
-
-        An extended ``Vocabulary`` using the provided configuration
+        vocab: `Optional[Vocabulary]`
+            An extended ``Vocabulary`` using the provided configuration
 
         """
 
-        if not vocab_config:
-            return pipeline.model.vocab
+        return self._extend_vocab_from_sources(
+            vocab=self.model.vocab,
+            sources=vocab_config.sources,
+            max_vocab_size=vocab_config.max_vocab_size,
+            min_count=vocab_config.min_count,
+            pretrained_files=vocab_config.pretrained_files,
+            only_include_pretrained_words=vocab_config.only_include_pretrained_words,
+            min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
+            tokens_to_add=vocab_config.tokens_to_add,
+        )
 
-        _vocab = cls._vocab_from_path(vocab_config.from_path) or pipeline.model.vocab
-
-        if vocab_config.sources:
-            _vocab = cls._extend_vocab_from_sources(
-                pipeline,
-                vocab=_vocab,
-                sources=vocab_config.sources,
-                max_vocab_size=vocab_config.max_vocab_size,
-                min_count=vocab_config.min_count,
-                pretrained_files=vocab_config.pretrained_files,
-                only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-                min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-                tokens_to_add=vocab_config.tokens_to_add,
-            )
-        return _vocab
+    def _extend_vocab(self, vocab_config: VocabularyConfiguration) -> None:
+        """Extend vocab if no vocab extension was launched before"""
+        vocabulary = self._load_vocabulary(vocab_config)
+        self._model.update_vocab(vocabulary)
+        self._vocab_extended = True
 
 
 class _PipelineHelper:
