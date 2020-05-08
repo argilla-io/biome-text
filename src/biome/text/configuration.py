@@ -221,8 +221,6 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    from_path: `Optional[str]`
-        If provided, try to load model vocab from specified folder path
     sources : `List[str]`
         Datasource paths to be used for data creation
     min_count : `Dict[str, int]`, optional (default=None)
@@ -241,8 +239,7 @@ class VocabularyConfiguration:
 
     def __init__(
         self,
-        from_path: Optional[str] = None,
-        sources: List[str] = None,
+        sources: List[str],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,
@@ -250,8 +247,7 @@ class VocabularyConfiguration:
         tokens_to_add: Dict[str, List[str]] = None,
         min_pretrained_embeddings: Dict[str, int] = None,
     ):
-        self.from_path = from_path
-        self.sources = sources or []
+        self.sources = sources
         self.pretrained_files = pretrained_files
         self.min_count = min_count
         self.max_vocab_size = max_vocab_size
