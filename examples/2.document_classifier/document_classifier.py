@@ -13,35 +13,20 @@ if __name__ == "__main__":
     )
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
-    trained_pl = pl.train(
+    pl.train(
         output="experiment",
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
         verbose=True,
-    )
-
-    trained_pl.predict(
-        document=["Header main. This is a test body!!!", "The next phrase is here"]
-    )
-    trained_pl.explore(ds_path="validation.data.yml")
-
-    trained_pl = trained_pl.train(
-        output="experiment.v2",
-        trainer=trainer,
-        training="train.data.yml",
-        validation="validation.data.yml",
-        extend_vocab=True,
         restore=False,
+        extend_vocab=VocabularyConfiguration(sources=["train.data.yml"], min_count={"words": 10}),
     )
 
-    trained_pl.predict(
+    pl.predict(
         document=["Header main. This is a test body!!!", "The next phrase is here"]
     )
+    pl.explore(ds_path="validation.data.yml")
 
-    pl.head.extend_labels(["yes", "no"])
-    pl.explore(
-        explore_id="test-document-explore", ds_path="validation.data.yml",
-    )
-
-    # pl.serve()
+    trained_pl = Pipeline.from_pretrained("experiment/model.tar.gz")
+    trained_pl.explore(ds_path="validation.data.yml")
