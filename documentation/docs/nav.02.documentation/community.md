@@ -1,5 +1,0 @@
-# Community
-
-## Getting help
-
-## Contributing
