@@ -13,6 +13,6 @@ if __name__ == "__main__":
         training=train,
         validation=validation,
         extend_vocab=VocabularyConfiguration(
-            sources=[train, validation], min_count={"words": 12}
+            sources=[train, validation]
         ),
     )

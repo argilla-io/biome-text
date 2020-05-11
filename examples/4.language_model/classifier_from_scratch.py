@@ -11,6 +11,6 @@ if __name__ == "__main__":
         training="configs/train.data.yml",
         validation="configs/val.data.yml",
         extend_vocab=VocabularyConfiguration(
-            sources=["configs/train.data.yml"], min_count={"words": 12}
+            sources=["configs/train.data.yml"]
         ),
     )
