@@ -3,7 +3,7 @@ from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
 
-    pl = Pipeline.from_file("document_classifier.yaml", vocab_path="not_found_folder")
+    pl = Pipeline.from_yaml("document_classifier.yaml", vocab_path="not_found_folder")
     print(f"Pipeline parameters: {pl.trainable_parameter_names}")
     print(f"Trainable parameters: {pl.trainable_parameters}")
     print(
@@ -19,12 +19,12 @@ if __name__ == "__main__":
         training="train.data.yml",
         validation="validation.data.yml",
         verbose=True,
-        restore=False,
         extend_vocab=VocabularyConfiguration(
             sources=["train.data.yml"], min_count={"words": 10}
         ),
     )
 
+    pl = Pipeline.from_pretrained("experiment/model.tar.gz")
     pl.predict(
         document=["Header main. This is a test body!!!", "The next phrase is here"]
     )
