@@ -149,7 +149,7 @@ class InputFeaturizer:
         
         Returns
         -------
-        An `InmutableDict` defining the token indexers of the featurizer
+        An dictionary defining the token indexers of the featurizer
         """
         # fmt: off
         return {
