@@ -4,7 +4,8 @@ from typing import Optional
 import click
 from click import Path
 
-from biome.text import Pipeline, VocabularyConfiguration
+from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text.helpers import yaml_to_dict
 
 
 @click.command("train", help="Train a pipeline")
@@ -27,20 +28,18 @@ def learn(
     _, extension = os.path.splitext(pipeline_path)
     extension = extension[1:].lower()
     pipeline = (
-        Pipeline.from_file(
-            pipeline_path,
-            vocab_config=VocabularyConfiguration(
-                sources=[ds for ds in [training, validation, test] if ds]
-            ),
-        )
+        Pipeline.from_yaml(pipeline_path)
         if extension in ["yaml", "yml"]
         else Pipeline.from_pretrained(pipeline_path)
     )
     pipeline.train(
         output=output,
-        trainer=trainer,
+        trainer=TrainerConfiguration(**yaml_to_dict(trainer)),
         training=training,
         validation=validation,
         test=test,
+        extend_vocab=VocabularyConfiguration(
+            sources=[ds for ds in [training, validation, test] if ds]
+        ),
         verbose=verbose,
     )

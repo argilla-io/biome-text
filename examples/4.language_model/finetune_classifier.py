@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     pipe.set_head(TextClassification, pooler={"type": "boe"}, labels=labels)
     trainer = TrainerConfiguration(**yaml_to_dict("configs/trainer.yml"))
-    trained_pl = pipe.train(
+    pipe.train(
         output="text_classifier_fine_tuned",
         trainer=trainer,
         training="configs/train.data.yml",

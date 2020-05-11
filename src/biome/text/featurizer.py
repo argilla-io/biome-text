@@ -149,13 +149,13 @@ class InputFeaturizer:
         
         Returns
         -------
-        An `InmutableDict` defining the token indexers of the featurizer
+        An dictionary defining the token indexers of the featurizer
         """
         # fmt: off
-        return InmutableDict({
+        return {
             feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
             for feature, config in self.config.items()
-        })
+        }
         # fmt: on
 
     def build_embedder(self, vocab: Vocabulary) -> Embedder:

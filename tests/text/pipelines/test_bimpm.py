@@ -178,7 +178,7 @@ def trainer_dict() -> Dict:
 def test_bimpm_train(
     path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml,
 ):
-    pipeline = Pipeline.from_file(path_to_pipeline_yaml,)
+    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
     pipeline.predict(record1="The one", record2="The other")
 
     pipeline.train(
