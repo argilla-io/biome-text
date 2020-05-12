@@ -8,7 +8,7 @@ from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import Perplexity
 
 from biome.text.featurizer import InputFeaturizer
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.modules.specs import ComponentSpec
 from biome.text.vocabulary import vocabulary
 from .defs import TaskHead, TaskName, TaskOutput
@@ -50,16 +50,16 @@ class LanguageModelling(TaskHead):
     def task_name(self) -> TaskName:
         return TaskName.language_modelling
 
-    def __init__(self, model: Model, dropout: float = None) -> None:
-        super(LanguageModelling, self).__init__(model)
+    def __init__(self, backbone: BackboneEncoder, dropout: float = None) -> None:
+        super(LanguageModelling, self).__init__(backbone)
 
-        if not model.featurizer.words:
+        if not backbone.featurizer.words:
             raise ConfigurationError(
                 "`LanguageModelling` defines a word-level next token language model. "
                 "Please check your `features` configuration to enable at least `words` features."
             )
 
-        self._forward_dim = model.encoder.get_output_dim()
+        self._forward_dim = backbone.encoder.get_output_dim()
 
         if dropout:
             self._dropout = torch.nn.Dropout(dropout)
@@ -69,25 +69,25 @@ class LanguageModelling(TaskHead):
         self.metrics = {"perplexity": Perplexity()}
 
         self._loss = SoftmaxLoss(
-            num_words=vocabulary.words_vocab_size(self.model.vocab),
-            embedding_dim=self.model.encoder.get_output_dim(),
+            num_words=vocabulary.words_vocab_size(self.backbone.vocab),
+            embedding_dim=self.backbone.encoder.get_output_dim(),
         )
 
     def _on_vocab_update(self):
         self._loss = SoftmaxLoss(
-            num_words=vocabulary.words_vocab_size(self.model.vocab),
-            embedding_dim=self.model.encoder.get_output_dim(),
+            num_words=vocabulary.words_vocab_size(self.backbone.vocab),
+            embedding_dim=self.backbone.encoder.get_output_dim(),
         )
 
     def featurize(self, text: str) -> Optional[Instance]:
-        return self.model.featurize(text, to_field="text", aggregate=True)
+        return self.backbone.featurize(text, to_field="text", aggregate=True)
 
     def forward(  # type: ignore
         self, text: Dict[str, torch.Tensor]
     ) -> TaskOutput:
 
         mask = get_text_field_mask(text)
-        contextual_embeddings = self.model.forward(text, mask)
+        contextual_embeddings = self.backbone.forward(text, mask)
 
         token_ids = text.get(InputFeaturizer.WORDS)
         assert isinstance(contextual_embeddings, torch.Tensor)

@@ -11,7 +11,7 @@ from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator, util
 from overrides import overrides
 
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.heads.classification.defs import ClassificationHead
 from biome.text.modules.specs import (
@@ -37,7 +37,7 @@ class BiMpm(ClassificationHead):
 
     Parameters
     ----------
-    model : ``Model``
+    backbone : ``BackboneEncoder``
         Takes care of the embedding
     labels : `List[str]`
         List of labels
@@ -70,7 +70,7 @@ class BiMpm(ClassificationHead):
 
     def __init__(
         self,
-        model: Model,
+        backbone: BackboneEncoder,
         labels: List[str],
         matcher_word: BiMpmMatchingSpec,
         encoder: Seq2SeqEncoderSpec,
@@ -85,7 +85,7 @@ class BiMpm(ClassificationHead):
         multifield: bool = True,
         initializer: InitializerApplicator = InitializerApplicator(),
     ):
-        super(BiMpm, self).__init__(model, labels)
+        super(BiMpm, self).__init__(backbone, labels)
 
         self.multifield = multifield
         self.num_wrapping_dims = 1 if multifield else 0
@@ -93,16 +93,16 @@ class BiMpm(ClassificationHead):
             self._multifield_matching if multifield else self._textfield_matching
         )
         if self.multifield:
-            self.model.encoder = TimeDistributedEncoder(self.model.encoder)
+            self.backbone.encoder = TimeDistributedEncoder(self.backbone.encoder)
 
         self.encoder: Seq2SeqEncoder = encoder.input_dim(
-            self.model.encoder.get_output_dim()
+            self.backbone.encoder.get_output_dim()
         ).compile()
         if multifield:
             self.encoder: Seq2SeqEncoder = TimeDistributedEncoder(self.encoder)
 
         self.matcher_word: BiMpmMatching = matcher_word.input_dim(
-            self.model.encoder.get_output_dim()
+            self.backbone.encoder.get_output_dim()
         ).compile()
 
         input_dim_matcher = self.encoder.get_output_dim()
@@ -191,8 +191,8 @@ class BiMpm(ClassificationHead):
         instance
             AllenNLP instance containing the two records plus optionally a label
         """
-        record1_field = self.model.featurize(record1, aggregate=not self.multifield)
-        record2_field = self.model.featurize(record2, aggregate=not self.multifield)
+        record1_field = self.backbone.featurize(record1, aggregate=not self.multifield)
+        record2_field = self.backbone.featurize(record2, aggregate=not self.multifield)
         instance = Instance(
             {
                 "record1": record1_field.get("record"),
@@ -250,7 +250,7 @@ class BiMpm(ClassificationHead):
 
         # embedding and encoding of record1
         embedded_record1 = self.dropout(
-            self.model.forward(
+            self.backbone.forward(
                 record1, mask=mask_record1, num_wrapping_dims=self.num_wrapping_dims
             )
         )
@@ -265,7 +265,7 @@ class BiMpm(ClassificationHead):
 
         # embedding and encoding of record2
         embedded_record2 = self.dropout(
-            self.model.forward(
+            self.backbone.forward(
                 record2, mask=mask_record2, num_wrapping_dims=self.num_wrapping_dims
             )
         )

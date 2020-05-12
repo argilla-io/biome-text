@@ -8,7 +8,7 @@ from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.modules.specs import ComponentSpec, FeedForwardSpec
 from biome.text.vocabulary import vocabulary
 from .defs import TaskHead, TaskName, TaskOutput
@@ -19,14 +19,14 @@ class TokenClassification(TaskHead):
 
     def __init__(
         self,
-        model: Model,
+        backbone: BackboneEncoder,
         labels: List[str],
         label_encoding: Optional[str] = "BIOUL",
         dropout: Optional[float] = None,
         feedforward: Optional[FeedForwardSpec] = None,
     ) -> None:
-        super(TokenClassification, self).__init__(model)
-        vocabulary.set_labels(self.model.vocab, labels)
+        super(TokenClassification, self).__init__(backbone)
+        vocabulary.set_labels(self.backbone.vocab, labels)
 
         if dropout:
             self.dropout = torch.nn.Dropout(dropout)
@@ -36,20 +36,21 @@ class TokenClassification(TaskHead):
         self._feedforward: FeedForward = (
             None
             if not feedforward
-            else feedforward.input_dim(model.encoder.get_output_dim()).compile()
+            else feedforward.input_dim(backbone.encoder.get_output_dim()).compile()
         )
         # output layers
         self._classifier_input_dim = (
             self._feedforward.get_output_dim()
             if self._feedforward
-            else model.encoder.get_output_dim()
+            else backbone.encoder.get_output_dim()
         )
         # we want this linear applied to each token in the sequence
         self._label_projection_layer = TimeDistributed(
             torch.nn.Linear(self._classifier_input_dim, self.num_labels)
         )
         constraints = allowed_transitions(
-            label_encoding, vocabulary.get_index_to_labels_dictionary(self.model.vocab)
+            label_encoding,
+            vocabulary.get_index_to_labels_dictionary(self.backbone.vocab),
         )
         self._crf = ConditionalRandomField(
             self.num_labels, constraints, include_start_end_transitions=True
@@ -57,7 +58,7 @@ class TokenClassification(TaskHead):
         self._metrics = {
             "accuracy": CategoricalAccuracy(),
             "f1": SpanBasedF1Measure(
-                self.model.vocab,
+                self.backbone.vocab,
                 tag_namespace=vocabulary.LABELS_NAMESPACE,
                 label_encoding=label_encoding,
             ),
@@ -71,7 +72,9 @@ class TokenClassification(TaskHead):
         # Text is  pre-tokenized
         text = [Token(t) for t in text]
 
-        instance = Instance({"text": TextField(text, self.model.features)})
+        # TODO: hide backbone features and use backbone.featurize method.
+        #  The solution should define a noop tokenizer
+        instance = Instance({"text": TextField(text, self.backbone.features)})
 
         if labels:
             instance.add_field(
@@ -92,7 +95,7 @@ class TokenClassification(TaskHead):
         self, text: Dict[str, torch.Tensor], labels: torch.IntTensor = None
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
-        embedded_text = self.model.forward(text, mask)
+        embedded_text = self.backbone.forward(text, mask)
 
         if self.dropout:
             encoded_text = self.dropout(embedded_text)
@@ -114,7 +117,7 @@ class TokenClassification(TaskHead):
             probs=class_probabilities,
             mask=mask,
             tags=[
-                [vocabulary.label_for_index(self.model.vocab, idx) for idx in tags]
+                [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
                 for tags in predicted_tags
             ],
         )

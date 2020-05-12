@@ -107,7 +107,7 @@ def _allennlp_configuration(
                             _forward_inputs()[0],
                             "list_num_tokens"
                             if isinstance(
-                                pipeline.model.encoder, TimeDistributedEncoder
+                                pipeline.backbone.encoder, TimeDistributedEncoder
                             )
                             else "num_tokens",
                         ]

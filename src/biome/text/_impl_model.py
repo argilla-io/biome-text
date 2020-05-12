@@ -27,7 +27,7 @@ from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
 from .helpers import split_signature_params_by_predicate
-from .model import Model
+from .backbone import BackboneEncoder
 from .modules.heads import TaskHead
 from .vocabulary import vocabulary
 
@@ -100,7 +100,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     """
     This class is an internal implementation for connect biome.text concepts with allennlp implementation details
 
-    This class manage the internal head + model architecture, keeping the allennlnlp Model lifecycle. This class
+    This class manage the internal head + backbone encoder, keeping the allennlnlp Model lifecycle. This class
     must be hidden to api users.
     """
 
@@ -108,7 +108,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
 
     def __init__(self, name: str, head: TaskHead):
 
-        AllennlpModel.__init__(self, head.model.vocab)
+        AllennlpModel.__init__(self, head.backbone.vocab)
 
         self.name = name
         self.head = head
@@ -143,7 +143,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         return cls(
             name=config.name,
             head=config.head.compile(
-                model=Model(
+                backbone=BackboneEncoder(
                     vocab=vocab
                     or vocabulary.empty_vocab(featurizer=config.features.compile()),
                     tokenizer=config.tokenizer.compile(),
@@ -173,7 +173,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     def update_vocab(self, vocab: Vocabulary):
         """Update the model vocabulary and re-launch all vocab updates methods"""
         self.vocab = vocab
-        self.head.model._update_vocab(vocab)  # pylint: disable=protected-access
+        self.head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
         self.head._update_vocab(vocab)  # pylint: disable=protected-access
 
     @property
