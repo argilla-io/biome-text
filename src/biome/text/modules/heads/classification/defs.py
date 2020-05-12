@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional, Union
 
-import numpy
 import torch
 from allennlp.data import Instance
 from allennlp.data.fields import LabelField, MultiLabelField
@@ -72,15 +71,15 @@ class ClassificationHead(TaskHead):
         return TaskName.text_classification
 
     def process_output(self, output: TaskOutput) -> TaskOutput:
-        def labels_with_probabilities(probabilities: numpy.array) -> Dict[str, float]:
+        def labels_with_probabilities(probabilities: torch.Tensor) -> Dict[str, float]:
             """
             Calculates the descendant sorted label + probs dictionary
             using all output classes (not only predicted)
             """
-            all_classes_probs = numpy.append(
-                probabilities, numpy.zeros(self.num_labels - len(probabilities))
+            all_classes_probs = torch.cat(
+                [probabilities, torch.zeros(self.num_labels - len(probabilities))]
             )
-            sorted_indexes_by_prob = numpy.argsort(all_classes_probs).tolist()[::-1]
+            sorted_indexes_by_prob = torch.argsort(all_classes_probs, descending=True).tolist()
             return {
                 vocabulary.label_for_index(self.backbone.vocab, idx): all_classes_probs[
                     idx
@@ -89,9 +88,6 @@ class ClassificationHead(TaskHead):
             }
 
         probs_batch = output.probs
-
-        if not isinstance(probs_batch, numpy.ndarray):
-            probs_batch = probs_batch.data.numpy()
 
         output_map_probs = []
         max_classes = []
