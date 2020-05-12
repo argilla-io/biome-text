@@ -6,7 +6,7 @@ from allennlp.data import Instance
 from allennlp.data.fields import LabelField, MultiLabelField
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.vocabulary import vocabulary
 from ..defs import TaskHead, TaskName, TaskOutput
 
@@ -14,9 +14,11 @@ from ..defs import TaskHead, TaskName, TaskOutput
 class ClassificationHead(TaskHead):
     """Base abstract class for classification problems"""
 
-    def __init__(self, model: Model, labels: List[str], multilabel: bool = False):
-        super(ClassificationHead, self).__init__(model)
-        vocabulary.set_labels(self.model.vocab, labels)
+    def __init__(
+        self, backbone: BackboneEncoder, labels: List[str], multilabel: bool = False
+    ):
+        super(ClassificationHead, self).__init__(backbone)
+        vocabulary.set_labels(self.backbone.vocab, labels)
 
         # label related configurations
         self._multilabel = multilabel
@@ -80,7 +82,7 @@ class ClassificationHead(TaskHead):
             )
             sorted_indexes_by_prob = numpy.argsort(all_classes_probs).tolist()[::-1]
             return {
-                vocabulary.label_for_index(self.model.vocab, idx): all_classes_probs[
+                vocabulary.label_for_index(self.backbone.vocab, idx): all_classes_probs[
                     idx
                 ]
                 for idx in sorted_indexes_by_prob

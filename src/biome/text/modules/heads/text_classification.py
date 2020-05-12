@@ -8,7 +8,7 @@ from allennlp.data.fields import TextField
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.modules.specs import (
     ComponentSpec,
     FeedForwardSpec,
@@ -29,16 +29,16 @@ class TextClassification(ClassificationHead):
 
     def __init__(
         self,
-        model: Model,
+        backbone: BackboneEncoder,
         pooler: Seq2VecEncoderSpec,
         labels: List[str],
         feedforward: Optional[FeedForwardSpec] = None,
         multilabel: bool = False,
     ) -> None:
 
-        super(TextClassification, self).__init__(model, labels, multilabel)
+        super(TextClassification, self).__init__(backbone, labels, multilabel)
 
-        self.pooler = pooler.input_dim(self.model.encoder.get_output_dim()).compile()
+        self.pooler = pooler.input_dim(self.backbone.encoder.get_output_dim()).compile()
         self.feedforward = (
             None
             if not feedforward
@@ -51,7 +51,7 @@ class TextClassification(ClassificationHead):
     def featurize(
         self, text: Any, label: Optional[Union[int, str, List[Union[int, str]]]] = None
     ) -> Optional[Instance]:
-        instance = self.model.featurize(
+        instance = self.backbone.featurize(
             text, to_field=self.forward_arg_name, aggregate=True
         )
         return self.add_label(instance, label, to_field=self.label_name)
@@ -61,7 +61,7 @@ class TextClassification(ClassificationHead):
     ) -> TaskOutput:
 
         mask = get_text_field_mask(text)
-        embedded_text = self.model.forward(text, mask)
+        embedded_text = self.backbone.forward(text, mask)
         embedded_text = self.pooler(embedded_text, mask=mask)
 
         if self.feedforward is not None:
@@ -86,12 +86,12 @@ class TextClassification(ClassificationHead):
         ]
         text_tensor = input_tokens_ids.get(self.forward_arg_name)
         mask = get_text_field_mask(text_tensor, num_wrapping_dims=num_wrapping_dims)
-        text_embeddings = self.model.embedder.forward(
+        text_embeddings = self.backbone.embedder.forward(
             text_tensor, num_wrapping_dims=num_wrapping_dims
         )
 
         label_id = vocabulary.index_for_label(
-            self.model.vocab, prediction.get(self.label_name)
+            self.backbone.vocab, prediction.get(self.label_name)
         )
         attributions, delta = ig.attribute(
             text_embeddings,
@@ -118,7 +118,7 @@ class TextClassification(ClassificationHead):
         self, embeddings: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
         """Explain embeddings for single text classification task"""
-        embedded_text = self.model.encoder.forward(embeddings, mask)
+        embedded_text = self.backbone.encoder.forward(embeddings, mask)
         embedded_text = self.pooler.forward(embedded_text)
         if self.feedforward:
             embedded_text = self.feedforward.forward(embedded_text)

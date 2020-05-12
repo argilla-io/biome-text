@@ -1,6 +1,6 @@
 .esrunner
 
-documentation/**/nav.*.api
+documentation/docs/api/biome/text/
 documentation/site
 **/node_modules
 **/yarn.lock

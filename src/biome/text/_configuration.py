@@ -124,7 +124,7 @@ class TrainConfiguration:
     ----------
         output: `str`
              The experiment output path
-        trainer: `str`
+        trainer: `TrainerConfiguration`
              The trainer file path
         train_cfg: `str`
             The train datasource file path
