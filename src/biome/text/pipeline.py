@@ -315,7 +315,7 @@ class Pipeline:
         """
 
         self._config.head = TaskHeadSpec(type=type.__name__, **params)
-        self._model.head = self._config.head.compile(model=self.model)
+        self._model.head = self._config.head.compile(backbone=self.backbone)
 
     @property
     def name(self):
@@ -333,7 +333,7 @@ class Pipeline:
         return self._model.output
 
     @property
-    def model(self) -> BackboneEncoder:
+    def backbone(self) -> BackboneEncoder:
         """Gets pipeline backbone encoder"""
         return self.head.backbone
 
@@ -425,7 +425,7 @@ class Pipeline:
         """
 
         return self._extend_vocab_from_sources(
-            vocab=self.model.vocab,
+            vocab=self.backbone.vocab,
             sources=vocab_config.sources,
             max_vocab_size=vocab_config.max_vocab_size,
             min_count=vocab_config.min_count,
