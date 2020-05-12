@@ -12,8 +12,8 @@ from .tokenizer import Tokenizer
 from .vocabulary import Vocabulary
 
 
-class Model(torch.nn.Module):
-    """Model definition. All models used in pipelines must configure this model class"""
+class BackboneEncoder(torch.nn.Module):
+    """Backbone Encoder definition. All models used in pipelines must configure this model class"""
 
     def __init__(
         self,
@@ -22,7 +22,7 @@ class Model(torch.nn.Module):
         featurizer: InputFeaturizer,
         encoder: Optional[Encoder] = None,
     ):
-        super(Model, self).__init__()
+        super(BackboneEncoder, self).__init__()
 
         self.vocab = vocab
         self.tokenizer = tokenizer
@@ -86,6 +86,7 @@ class Model(torch.nn.Module):
         If aggregate flag is enabled, the resultant instance will contains a single TextField's
         with all record fields; otherwhise, a ListField of TextFields.
         """
+        # TODO: Allow exclude record keys in data tokenization phase
         data = record
         record_tokens = self._data_tokens(data)
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})

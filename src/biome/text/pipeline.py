@@ -28,7 +28,7 @@ from ._configuration import (
     TrainConfiguration,
     _ModelImpl,
 )
-from .model import Model
+from .backbone import BackboneEncoder
 from .modules.heads import TaskHead
 from .modules.heads.defs import TaskHeadSpec
 
@@ -73,7 +73,7 @@ class Pipeline:
 
     @classmethod
     def from_config(
-            cls, config: Union[str, PipelineConfiguration], vocab_path: Optional[str] = None
+        cls, config: Union[str, PipelineConfiguration], vocab_path: Optional[str] = None
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
@@ -111,15 +111,15 @@ class Pipeline:
         return _PreTrainedPipeline(pretrained_path=path, **kwargs)
 
     def train(
-            self,
-            output: str,
-            trainer: TrainerConfiguration,
-            training: str,
-            validation: Optional[str] = None,
-            test: Optional[str] = None,
-            verbose: bool = False,
-            extend_vocab: Optional[VocabularyConfiguration] = None,
-            restore: bool = True,
+        self,
+        output: str,
+        trainer: TrainerConfiguration,
+        training: str,
+        validation: Optional[str] = None,
+        test: Optional[str] = None,
+        verbose: bool = False,
+        extend_vocab: Optional[VocabularyConfiguration] = None,
+        restore: bool = True,
     ) -> None:
         """Launches a training run with the specified configurations and datasources
 
@@ -164,7 +164,7 @@ class Pipeline:
         )
 
         model.launch_experiment(
-            params=Params(_allennlp_configuration(self, config, )),
+            params=Params(_allennlp_configuration(self, config)),
             serialization_dir=output,
         )
 
@@ -228,16 +228,16 @@ class Pipeline:
         self._model.vocab.save_to_files(path)
 
     def explore(
-            self,
-            ds_path: str,
-            explore_id: Optional[str] = None,
-            es_host: Optional[str] = None,
-            batch_size: int = 500,
-            prediction_cache_size: int = 0,
-            # TODO: do we need caching for Explore runs as well or only on serving time?
-            explain: bool = False,
-            force_delete: bool = True,
-            **metadata,
+        self,
+        ds_path: str,
+        explore_id: Optional[str] = None,
+        es_host: Optional[str] = None,
+        batch_size: int = 500,
+        prediction_cache_size: int = 0,
+        # TODO: do we need caching for Explore runs as well or only on serving time?
+        explain: bool = False,
+        force_delete: bool = True,
+        **metadata,
     ) -> dd.DataFrame:
         """Launches Explore UI for a given datasource with current model
 
@@ -333,9 +333,9 @@ class Pipeline:
         return self._model.output
 
     @property
-    def model(self) -> Model:
-        """Gets pipeline backbone model"""
-        return self.head.model
+    def model(self) -> BackboneEncoder:
+        """Gets pipeline backbone encoder"""
+        return self.head.backbone
 
     @property
     def head(self) -> TaskHead:
@@ -379,7 +379,7 @@ class Pipeline:
             return None
 
     def _extend_vocab_from_sources(
-            self, vocab: Vocabulary, sources: List[str], **extra_args
+        self, vocab: Vocabulary, sources: List[str], **extra_args
     ) -> Vocabulary:
         """Extends an already created vocabulary from a list of source dictionary"""
         vocab.extend_from_instances(
@@ -407,7 +407,7 @@ class Pipeline:
             )
 
     def _load_vocabulary(
-            self, vocab_config: VocabularyConfiguration
+        self, vocab_config: VocabularyConfiguration
     ) -> Optional[Vocabulary]:
         """
         Extends a data vocabulary from a given configuration
@@ -459,7 +459,7 @@ class _BlankPipeline(Pipeline):
 
     @staticmethod
     def __model_from_config(
-            config: PipelineConfiguration, **extra_params
+        config: PipelineConfiguration, **extra_params
     ) -> _ModelImpl:
         """Creates a internal base model from pipeline configuration"""
         return _ModelImpl.from_params(Params({"config": config}), **extra_params)
