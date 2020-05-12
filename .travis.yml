@@ -26,20 +26,14 @@ deploy:
     provider: script
     script: twine upload dist/*
     on:
-      tags: true
-      branch:
-        - master
-        - releases/*
+      condition: $TRAVIS_BRANCH == "master" || -n $TRAVIS_TAG
   - provider: pages
     skip_cleanup: true
     local_dir: documentation/site
     github_token: $GITHUB_TOKEN # A token generated on GitHub allowing Travis to push code on you repository. Set in the Travis settings page of your repository, as a secure variable
     keep_history: true
     on:
-      tags: true
-      branch:
-        - master
-        - releases/*
-        - feature/*
+      condition: $TRAVIS_BRANCH == "master" || -n $TRAVIS_TAG
+
 env:
   - ES_DOC=doc
