@@ -68,7 +68,12 @@ def _allennlp_configuration(
             "cache_instances",
             "in_memory_batches",
         ]  # Data iteration attributes
-        return {k: v for k, v in vars(trainer).items() if k not in __excluded_keys}
+        trainer_config = {k: v for k, v in vars(trainer).items() if k not in __excluded_keys}
+        trainer_config.update({
+            "num_serialized_models_to_keep": 1,
+            "should_log_learning_rate": True
+        })
+        return trainer_config
 
     def iterator_configuration(
         pipeline: Pipeline, trainer: TrainerConfiguration

@@ -116,9 +116,9 @@ class PipelineConfiguration(FromParams):
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
     head : ``TaskHeadSpec``
         The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
-    tokenizer : ``TokenizerConfiguration``, optional
+    tokenizer : `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.
-    encoder : ``Seq2SeqEncoderSpec``
+    encoder : `Seq2SeqEncoderSpec`
         The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderSpec`
     """
 
