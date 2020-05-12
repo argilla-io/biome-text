@@ -56,11 +56,13 @@ class _HashList(list):
 class _DataSourceReader(DatasetReader):
     """Base Allennlp DataSource reader"""
 
-    def __init__(self, data_keys: List[str]):
-        super(_DataSourceReader, self).__init__(lazy=True)
-        self._default_ds_mapping = {k: k for k in data_keys if k}
-
     __LOGGER = logging.getLogger(__name__)
+
+    # The default datasource mapping could change over time
+    _default_ds_mapping: Dict[str, str] = None
+
+    def __init__(self):
+        super(_DataSourceReader, self).__init__(lazy=True)
 
     def _read(self, file_path: str) -> Iterable[Instance]:
         """An generator that yields `Instance`s that are fed to the model
@@ -109,19 +111,20 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     def __init__(self, name: str, head: TaskHead):
 
         AllennlpModel.__init__(self, head.backbone.vocab)
+        _DataSourceReader.__init__(self)
+        self._head = None
 
         self.name = name
-        self.head = head
+        self.set_head(head)
 
+    def _update_head_related_attributes(self):
+        """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
         required, optional = split_signature_params_by_predicate(
-            self.head.featurize, lambda p: p.default == inspect.Parameter.empty
+            self._head.featurize, lambda p: p.default == inspect.Parameter.empty
         )
-        self._inputs = self.head.inputs() or [p.name for p in required]
+        self._inputs = self._head.inputs() or [p.name for p in required]
         self._output = ([p.name for p in optional] or [None])[0]
-
-        _DataSourceReader.__init__(
-            self, data_keys=[k for k in self.inputs + [self.output]]
-        )
+        self._default_ds_mapping = {k: k for k in self._inputs + [self._output] if k}
 
     @classmethod
     def from_params(
@@ -153,19 +156,29 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
             ),
         )
 
+    @property
+    def head(self) -> TaskHead:
+        """Get the model head"""
+        return self._head
+
+    def set_head(self, head: TaskHead) -> None:
+        """Set a head and update related model attributes"""
+        self._head = head
+        self._update_head_related_attributes()
+
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""
-        head_output = self.head.forward(*args, **kwargs)
-        return self.head.process_output(head_output).as_dict()
+        head_output = self._head.forward(*args, **kwargs)
+        return self._head.process_output(head_output).as_dict()
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Fetch metrics defined in head layer"""
-        return self.head.get_metrics(reset)
+        return self._head.get_metrics(reset)
 
     def text_to_instance(self, **inputs: Dict[str, Any]) -> Optional[Instance]:
         """Applies the head featurize method"""
         try:
-            return self.head.featurize(**inputs)
+            return self._head.featurize(**inputs)
         except KeyError as error:
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
@@ -173,8 +186,8 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     def update_vocab(self, vocab: Vocabulary):
         """Update the model vocabulary and re-launch all vocab updates methods"""
         self.vocab = vocab
-        self.head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
-        self.head._update_vocab(vocab)  # pylint: disable=protected-access
+        self._head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
+        self._head._update_vocab(vocab)  # pylint: disable=protected-access
 
     @property
     def inputs(self) -> List[str]:
@@ -287,7 +300,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         instance = self.text_to_instance(**inputs)
         prediction = self.forward_on_instance(instance)
 
-        return self.head.prediction_explain(prediction=prediction, instance=instance)
+        return self._head.prediction_explain(prediction=prediction, instance=instance)
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
         """Returns model input data dictionary"""

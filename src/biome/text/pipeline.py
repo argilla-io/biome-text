@@ -307,15 +307,16 @@ class Pipeline:
 
         Use this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
 
-        # Parameters
-            type: `Type[TaskHead]`
-                The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
-            params: `**kwargs`
-                The `TaskHead` specific parameters (e.g., classification head needs a `pooler` layer)
+        Parameters
+        ----------
+        type: `Type[TaskHead]`
+            The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
+        params: `**kwargs`
+            The `TaskHead` specific parameters (e.g., classification head needs a `pooler` layer)
         """
 
         self._config.head = TaskHeadSpec(type=type.__name__, **params)
-        self._model.head = self._config.head.compile(backbone=self.backbone)
+        self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
     @property
     def name(self):
