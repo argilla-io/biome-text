@@ -37,6 +37,9 @@ try:
 except ModuleNotFoundError:
     import json
 
+logging.getLogger("allennlp").setLevel(logging.WARNING)
+logging.getLogger("elasticsearch").setLevel(logging.WARNING)
+
 
 class Pipeline:
     """Manages NLP models configuration and actions.
@@ -146,27 +149,36 @@ class Pipeline:
         """
         from ._helpers import _allennlp_configuration
 
-        self.__prepare_experiment_folder(output, restore)
-        self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
+        allennlp_logger = logging.getLogger("allennlp")
 
-        if extend_vocab:
-            self._extend_vocab(vocab_config=extend_vocab)
 
-        # The original pipeline keeps unchanged
-        model = copy.deepcopy(self._model)
-        config = TrainConfiguration(
-            test_cfg=test,
-            output=output,
-            trainer=trainer,
-            train_cfg=training,
-            validation_cfg=validation,
-            verbose=verbose,
-        )
+        try:
+            if verbose:
+                allennlp_logger.setLevel(logging.INFO)
 
-        model.launch_experiment(
-            params=Params(_allennlp_configuration(self, config)),
-            serialization_dir=output,
-        )
+            self.__prepare_experiment_folder(output, restore)
+            self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
+
+            if extend_vocab:
+                self._extend_vocab(vocab_config=extend_vocab)
+
+            # The original pipeline keeps unchanged
+            model = copy.deepcopy(self._model)
+            config = TrainConfiguration(
+                test_cfg=test,
+                output=output,
+                trainer=trainer,
+                train_cfg=training,
+                validation_cfg=validation,
+                verbose=verbose,
+            )
+
+            model.launch_experiment(
+                params=Params(_allennlp_configuration(self, config, )),
+                serialization_dir=output,
+            )
+        finally:
+            allennlp_logger.setLevel(logging.WARNING)
 
     def __prepare_experiment_folder(self, output: str, restore: bool) -> None:
         """Prepare experiment folder depending of if required experiment restore or not
