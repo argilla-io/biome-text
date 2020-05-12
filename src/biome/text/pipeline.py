@@ -174,7 +174,7 @@ class Pipeline:
             )
 
             model.launch_experiment(
-                params=Params(_allennlp_configuration(self, config, )),
+                params=Params(_allennlp_configuration(self, config)),
                 serialization_dir=output,
             )
         finally:
