@@ -12,12 +12,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import numpy
+import allennlp
 import torch
 from allennlp.common import Params
-from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import prepare_environment, prepare_global_logging, sanitize
 from allennlp.data import DatasetReader, Instance, Vocabulary
-from allennlp.models import Model as AllennlpModel
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
@@ -53,85 +52,41 @@ class _HashList(list):
         return pickle.dumps(self).__hash__()
 
 
-class _DataSourceReader(DatasetReader):
-    """Base Allennlp DataSource reader"""
-
-    def __init__(self, data_keys: List[str]):
-        super(_DataSourceReader, self).__init__(lazy=True)
-        self._default_ds_mapping = {k: k for k in data_keys if k}
-
-    __LOGGER = logging.getLogger(__name__)
-
-    def _read(self, file_path: str) -> Iterable[Instance]:
-        """An generator that yields `Instance`s that are fed to the model
-
-        This method is implicitly called when training the model.
-        The predictor uses the `self.text_to_instance_with_data_filter` method.
-
-        Parameters
-        ----------
-        file_path
-            Path to the configuration file (yml) of the data source.
-
-        Yields
-        ------
-        instance
-            An `Instance` that is fed to the model
-        """
-        data_source = DataSource.from_yaml(
-            file_path, default_mapping=self._default_ds_mapping
-        )
-        self.__LOGGER.debug("Read data set from %s", file_path)
-        dataframe = data_source.to_mapped_dataframe()
-        instances: DaskSeries = dataframe.apply(
-            lambda x: self.text_to_instance(**x.to_dict()),
-            axis=1,
-            meta=(None, "object"),
-        )
-
-        return (instance for _, instance in instances.iteritems() if instance)
-
-    def text_to_instance(self, **inputs) -> Instance:
-        """ Convert an input text data into a allennlp Instance"""
-        raise NotImplementedError
-
-
-class _BaseModelImpl(AllennlpModel, _DataSourceReader):
+class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
     """
-    This class is an internal implementation for connect biome.text concepts with allennlp implementation details
+    This class represents pipeline model implementation for connect biome.text concepts with
+    allennlp implementation details
 
-    This class manage the internal head + backbone encoder, keeping the allennlnlp Model lifecycle. This class
-    must be hidden to api users.
+    This class manage the head + backbone encoder, keeping the allennlnlp Model lifecycle. This class
+    should be hidden to api users.
     """
-
-    __logger = logging.getLogger(__name__)
 
     def __init__(self, name: str, head: TaskHead):
+        allennlp.models.Model.__init__(self, head.backbone.vocab)
+        allennlp.data.DatasetReader.__init__(self, lazy=True)
 
-        AllennlpModel.__init__(self, head.backbone.vocab)
-
+        self._head = None
         self.name = name
-        self.head = head
+        self.set_head(head)
 
+    def _update_head_related_attributes(self):
+        """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
         required, optional = split_signature_params_by_predicate(
-            self.head.featurize, lambda p: p.default == inspect.Parameter.empty
+            self._head.featurize, lambda p: p.default == inspect.Parameter.empty
         )
-        self._inputs = self.head.inputs() or [p.name for p in required]
+        self._inputs = self._head.inputs() or [p.name for p in required]
         self._output = ([p.name for p in optional] or [None])[0]
-
-        _DataSourceReader.__init__(
-            self, data_keys=[k for k in self.inputs + [self.output]]
-        )
+        self._default_ds_mapping = {k: k for k in self._inputs + [self._output] if k}
 
     @classmethod
     def from_params(
-        cls: Type["_BaseModelImpl"],
+        cls: Type["PipelineModel"],
         params: Params,
         vocab: Optional[Vocabulary] = None,
         **extras,
-    ) -> "_BaseModelImpl":
+    ) -> "PipelineModel":
         """
-        Load the internal model implementation from params. We build manually each component from config sections.
+        Load the model implementation from params. We build manually each component from config sections.
 
         The param keys matches exactly with keys in yaml configuration files
         """
@@ -153,19 +108,29 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
             ),
         )
 
+    @property
+    def head(self) -> TaskHead:
+        """Get the model head"""
+        return self._head
+
+    def set_head(self, head: TaskHead) -> None:
+        """Set a head and update related model attributes"""
+        self._head = head
+        self._update_head_related_attributes()
+
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""
-        head_output = self.head.forward(*args, **kwargs)
-        return self.head.process_output(head_output).as_dict()
+        head_output = self._head.forward(*args, **kwargs)
+        return self._head.process_output(head_output).as_dict()
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Fetch metrics defined in head layer"""
-        return self.head.get_metrics(reset)
+        return self._head.get_metrics(reset)
 
     def text_to_instance(self, **inputs: Dict[str, Any]) -> Optional[Instance]:
         """Applies the head featurize method"""
         try:
-            return self.head.featurize(**inputs)
+            return self._head.featurize(**inputs)
         except KeyError as error:
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
@@ -173,8 +138,8 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
     def update_vocab(self, vocab: Vocabulary):
         """Update the model vocabulary and re-launch all vocab updates methods"""
         self.vocab = vocab
-        self.head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
-        self.head._update_vocab(vocab)  # pylint: disable=protected-access
+        self._head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
+        self._head._update_vocab(vocab)  # pylint: disable=protected-access
 
     @property
     def inputs(self) -> List[str]:
@@ -287,7 +252,7 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         instance = self.text_to_instance(**inputs)
         prediction = self.forward_on_instance(instance)
 
-        return self.head.prediction_explain(prediction=prediction, instance=instance)
+        return self._head.prediction_explain(prediction=prediction, instance=instance)
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
         """Returns model input data dictionary"""
@@ -302,10 +267,10 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         serialization_dir: str,
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
-    ) -> "_BaseModelImpl":
+    ) -> "PipelineModel":
         """Launch a local experiment for model training"""
 
-        trainer = _BaseModelImplTrainer(
+        trainer = PipelineModelTrainer(
             self,
             params,
             serialization_dir,
@@ -316,14 +281,42 @@ class _BaseModelImpl(AllennlpModel, _DataSourceReader):
         model, _ = trainer.train()
         return model
 
+    def _read(self, file_path: str) -> Iterable[Instance]:
+        """An generator that yields `Instance`s that are fed to the model
 
-class _BaseModelImplTrainer:
+        This method is implicitly called when training the model.
+        The predictor uses the `self.text_to_instance_with_data_filter` method.
+
+        Parameters
+        ----------
+        file_path
+            Path to the configuration file (yml) of the data source.
+
+        Yields
+        ------
+        instance
+            An `Instance` that is fed to the model
+        """
+        data_source = DataSource.from_yaml(
+            file_path, default_mapping=self._default_ds_mapping
+        )
+        dataframe = data_source.to_mapped_dataframe()
+        instances: DaskSeries = dataframe.apply(
+            lambda x: self.text_to_instance(**x.to_dict()),
+            axis=1,
+            meta=(None, "object"),
+        )
+
+        return (instance for _, instance in instances.iteritems() if instance)
+
+
+class PipelineModelTrainer:
     """
-    Default trainer for ``_BaseModelImpl``
+    Default trainer for ``PipelineModel``
 
     Arguments
     ----------
-    model : ``_BaseModelImpl``
+    model : ``PipelineModel``
         The trainable model
     params : ``Params``
         A parameter object specifying an AllenNLP Experiment
@@ -340,7 +333,7 @@ class _BaseModelImplTrainer:
 
     def __init__(
         self,
-        model: _BaseModelImpl,
+        model: PipelineModel,
         params: Params,
         serialization_dir: str,
         batch_weight_key: str = "",
@@ -457,7 +450,7 @@ class _BaseModelImplTrainer:
             batch_weight_key=self._batch_weight_key,
         )
 
-    def train(self) -> Tuple[_BaseModelImpl, Dict[str, Any]]:
+    def train(self) -> Tuple[PipelineModel, Dict[str, Any]]:
         """
         Train the inner model with given configuration on initialization
 
