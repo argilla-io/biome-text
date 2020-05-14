@@ -20,6 +20,8 @@ cache:
   - $HOME/.cache/pip
 
 before_install:
+  - git rev-parse --abbrev-ref HEAD
+  - git branch --remote --contains
   - echo $TRAVIS_BRANCH
   - sudo apt-get update
   - sudo apt-get install nodejs -q -y
@@ -27,9 +29,16 @@ before_install:
 install:
   - pip install -U pip
   - pip install -U six
+  - make dev
 
 script:
-  - make dev dist docs
+  # - make test
+  - echo 1
+
+after_success:
+  - python setup.py sdist bdist_wheel
+  - ls -lrt dist
+  - make docs
 
 before_deploy:
   - pip install twine
