@@ -6,6 +6,7 @@ from allennlp.data.fields import ListField, TextField
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
+from .errors import WrongValueError
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
 from .tokenizer import Tokenizer
@@ -59,10 +60,6 @@ class BackboneEncoder(torch.nn.Module):
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
 
-    @property
-    def features(self) -> Dict[str, TokenIndexer]:
-        return self._features
-
     def __tokenize_text(self, text: str) -> List[Token]:
         return self.tokenizer.tokenize_text(text)
 
@@ -79,16 +76,40 @@ class BackboneEncoder(torch.nn.Module):
         record: Union[str, List[str], Dict[str, Any]],
         to_field: str = "record",
         aggregate: bool = False,
+        tokenize: bool = True,
     ) -> Instance:
         """
         Generate a allennlp Instance from a record input.
 
         If aggregate flag is enabled, the resultant instance will contains a single TextField's
         with all record fields; otherwhise, a ListField of TextFields.
+
+        Parameters
+        ----------
+        record: `Union[str, List[str], Dict[str, Any]]`
+            input data
+        to_field: `str`
+            field name in returned instance
+        aggregate: `bool`
+            set data aggregation flag
+        tokenize: `bool`
+            If disabled, skip tokenization phase, and pass record data as tokenized token list.
+
+        Returns
+        -------
+
+        instance: `Instance`
+
         """
         # TODO: Allow exclude record keys in data tokenization phase
         data = record
-        record_tokens = self._data_tokens(data)
+
+        if tokenize:
+            record_tokens = self._data_tokens(data)
+        else:
+            if not isinstance(data, List):
+                raise WrongValueError("record must be a list of string when tokenization is disabled")
+            record_tokens = [[Token(t) for t in data]]
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
 
     def _data_tokens(self, data: Any) -> List[List[Token]]:

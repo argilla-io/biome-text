@@ -69,12 +69,8 @@ class TokenClassification(TaskHead):
     def featurize(
         self, text: List[str], labels: Optional[Union[List[str], List[int]]] = None
     ) -> Optional[Instance]:
-        # Text is  pre-tokenized
-        text = [Token(t) for t in text]
 
-        # TODO: hide backbone features and use backbone.featurize method.
-        #  The solution should define a noop tokenizer
-        instance = Instance({"text": TextField(text, self.backbone.features)})
+        instance = self.backbone.featurize(text, to_field="text", tokenize=False, aggregate=True)
 
         if labels:
             instance.add_field(
