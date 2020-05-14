@@ -1,11 +1,12 @@
 # Installation
 
-You can install biome-text with pip or by installing from source.
+You can install biome-text with pip or from source.
 
 
 ## Pip
 
-You can install everything required for library. This is often the right choice:
+
+The recommended way of installing the library is using pip. You can install everything required for library:
 ```shell
 pip install biome-text
 ```
@@ -19,7 +20,7 @@ cd biome-text
 python -m pip install .
 ````
 
-If `make` command is enabled in your system, you can use already defined make directives:
+If the `make` command is enabled in your system, you can use already defined make directives:
 
 ````shell
 make install
@@ -29,7 +30,7 @@ or
 ````shell
 make dev
 ````
-for an developer installation
+for a developer installation
 
 You can see defined directives as follow:
 ````shell script
