@@ -7,6 +7,7 @@ python:
   - "3.7"
 
 before_install:
+  - echo $TRAVIS_BRANCH
   - sudo apt-get update
   - sudo apt-get install nodejs -q -y
 
@@ -34,16 +35,18 @@ deploy:
     script:
     - twine upload dist/*
     on:
-      branch: master
+      condition: $TRAVIS_BRANCH == "master"
 
   - skip_cleanup: true
     provider: script
     script: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
     on:
-      branch: releases/#157
+      all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^releases\/.+$
 
   - skip_cleanup: true
     provider: script
     script: twine upload dist/*
     on:
+      all_branches: true
       tags: true

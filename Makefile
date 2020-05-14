@@ -19,7 +19,7 @@ dev: ## install package in development mode
 
 docs: ## build the documentation site
 	@cd documentation && npm install && npm run build:site
-
+# TODO: remove it
 upgrade-classifier-ui: ## updates the biome-classifier-ui interface artifact
 	@curl \
     --output src/biome/text/commands/ui/classifier.tar.gz \
