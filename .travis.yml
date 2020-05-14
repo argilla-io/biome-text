@@ -30,11 +30,11 @@ deploy:
       condition: $TRAVIS_BRANCH == "master" || -n $TRAVIS_TAG
 
   - skip_cleanup: true
-      provider: script
-      script:
-      - twine upload dist/*
-      on:
-        branch: master
+    provider: script
+    script:
+    - twine upload dist/*
+    on:
+      branch: master
 
   - skip_cleanup: true
     provider: script
