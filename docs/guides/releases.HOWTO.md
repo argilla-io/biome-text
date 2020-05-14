@@ -27,7 +27,7 @@ git tag -a 1.3.0 -m "version 1.3.0"
 git push origin 1.3.0
 ```
 
-This action will trigger a ci pipeline where all related resources will be created
+This action will trigger a ci pipeline where all related resources will be deployed
 
 
 ## Release of a patch version
@@ -49,7 +49,7 @@ git checkout -b bugfix/#<id_of_related_issue>
 Follow common dev process (PR + approvals ...) and squash fix into release branch, then check all 
 release stuff (version, documentation, pypi-test, tests,...) 
 
-Create fix tag if everything is fine
+Finally, create fix tag if everything is fine
 
 ```shell
 git tag -a 1.3.4 -m "version 1.3.4"
