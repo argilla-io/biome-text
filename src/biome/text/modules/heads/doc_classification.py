@@ -90,9 +90,9 @@ class DocumentClassification(ClassificationHead):
         embedded_text = self.backbone.forward(document, mask, num_wrapping_dims=1)
         embedded_text = self.tokens_pooler(embedded_text, mask=mask)
 
-        mask = get_text_field_mask(
-            {self.forward_arg_name: embedded_text}
-        )  # Add an extra dimension to tensor mask
+        # Here we need to mask the TextFields that only contain the padding token -> last dimension only contains False
+        # Those fields were added to possibly equalize the batch.
+        mask = torch.sum(mask, -1) > 0
         embedded_text = self.encoder(embedded_text, mask=mask)
         embedded_text = self.pooler(embedded_text, mask=mask)
 
