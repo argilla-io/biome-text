@@ -76,10 +76,16 @@ class ClassificationHead(TaskHead):
             Calculates the descendant sorted label + probs dictionary
             using all output classes (not only predicted)
             """
-            all_classes_probs = torch.cat(
-                [probabilities, torch.zeros(self.num_labels - len(probabilities))]
+            all_classes_probs = torch.zeros(
+                self.num_labels,
+                device=probabilities.get_device()
+                if torch.cuda.is_available()
+                else None,
             )
-            sorted_indexes_by_prob = torch.argsort(all_classes_probs, descending=True).tolist()
+            all_classes_probs[:probabilities.size()[0]] = probabilities
+            sorted_indexes_by_prob = torch.argsort(
+                all_classes_probs, descending=True
+            ).tolist()
             return {
                 vocabulary.label_for_index(self.backbone.vocab, idx): all_classes_probs[
                     idx
