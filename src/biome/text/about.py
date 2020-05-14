@@ -28,14 +28,12 @@ def package_version(version: str):
 
     def get_version_from_branch(repository: git.Git) -> Optional[str]:
         """Extract version from release branch name"""
-        current_branch = repository.rev_parse("--abbrev-ref", "HEAD")
+        current_remote_branch = repository.branch("--remote", "--contains")
+        if "releases/" in current_remote_branch:
+            return current_remote_branch.split("/")[-1]
+        return None
 
-        dropped_releases = current_branch.replace("releases/", "")
-        if current_branch == dropped_releases:
-            return None
-        return dropped_releases
-
-    def version_matches(release_branch_version:str, configured_version:str)->bool:
+    def version_matches(release_branch_version: str, configured_version: str) -> bool:
         """Checks if a version matches with related release branch version"""
         minor_release = tuple(release_branch_version.split(".")[:2])
         minor_configured = tuple(configured_version.split(".")[:2])
