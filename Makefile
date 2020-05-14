@@ -18,7 +18,7 @@ dev: ## install package in development mode
 	@pip install --upgrade -e .[testing]
 
 docs: ## build the documentation site
-	@cd documentation && npm install && npm run build:site
+	@cd docs && npm install && npm run build:site
 
 upgrade-classifier-ui: ## updates the biome-classifier-ui interface artifact
 	@curl \
