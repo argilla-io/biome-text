@@ -20,62 +20,52 @@ Biome-text complements the excellent library AllenNLP by providing the following
 
 * **Fully-compatible with AllenNLP**
 
-## Install
-Biome-text supports Python 3.6 and can be installed using pip and conda.
+## Installation
 
-## pip
-For installing biome-text with pip, it is highly recommended to install packages in a virtual environment to avoid conflicts with other installations and system packages.
+You can install biome-text with pip or from source.
 
-```bash
-python -m venv .env
-source .env/bin/activate
-pip install --upgrade pip
-pip install https://github.com/recognai/biome-text.git
+
+### Pip
+
+
+The recommended way of installing the library is using pip. You can install everything required for library:
+```shell
+pip install biome-text
 ```
 
-## conda
-We provide a conda environment to install most of the package dependencies. We require you to clone this repository and run: 
+### Install from Source
+To install biome-text from source, clone the repository from github:
 
-```bash
-conda env create -f environment.yml
-conda activate biome
+````shell
+git clone https://github.com/recognai/biome-text.git
+cd biome-text
+python -m pip install .
+````
+
+If the `make` command is enabled in your system, you can use already defined make directives:
+
+````shell
+make install
+````  
+
+or 
+````shell
 make dev
-```
+````
+for a developer installation
 
-Check the installation by running:
+You can see defined directives as follow:
+````shell script
+make help
+````
 
-```bash
-biome --help
-```
-You should see the available commands:
-```
-usage: biome [-h]  ...
+### Test
+Test biome-text with pytest
 
-Run biome
-
-optional arguments:
-  -h, --help  show this help message and exit
-
-Commands:
-  
-    predict   Use a trained model to make predictions.
-    explore   Explore your data
-    serve     Run the web service.
-    learn     Make a model learn
-    vocab     Build a vocabulary
-```
-
-<!-- ## Getting started
-The best way to get started is to check our get started Github project [Biome classifiers]() which gives you access to pre-trained, pre-configured state of the art classification models. 
-
-You can also read our article ["Introducing Recognai Biome: learn, predict, explore...(TBD)""]() on Medium.
-
-Biome-text can be installed as a Python library using `pip`:
-
-```bash
-pip install https://github.com/recognai/biome-text.git
-``` -->
-
+````shell script
+cd biome-text
+pytest
+````
 ## Working with Biome: Learn, predict, explore
 Biome-text has a very similar workflow to AllenNLP, extending existing commands and defining new ones.
 
