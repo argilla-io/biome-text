@@ -24,6 +24,10 @@ class MissingArgumentError(ValidationError):
         return f"Missing argument '{self.arg_name}'"
 
 
+class WrongValueError(ValidationError):
+    """Wrong value error"""
+
+
 class http_error_handling:
     """Error handling for http error transcription"""
 
