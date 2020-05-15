@@ -40,10 +40,11 @@ before_deploy:
 deploy:
   - provider: pages
     skip_cleanup: true
-    local_dir: documentation/site
+    local_dir: docs/site
     github_token: $GITHUB_TOKEN
     keep_history: true
     on:
+      all_branches: true
       condition: $TRAVIS_BRANCH == "master" || -n $TRAVIS_TAG
 
   - skip_cleanup: true
@@ -51,7 +52,7 @@ deploy:
     script:
     - twine upload dist/*
     on:
-      condition: $TRAVIS_BRANCH == "master"
+      branch: master
 
   - skip_cleanup: true
     provider: script
