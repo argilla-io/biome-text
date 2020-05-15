@@ -70,7 +70,9 @@ class TokenClassification(TaskHead):
         self, text: List[str], labels: Optional[Union[List[str], List[int]]] = None
     ) -> Optional[Instance]:
 
-        instance = self.backbone.featurize(text, to_field="text", tokenize=False, aggregate=True)
+        instance = self.backbone.featurize(
+            text, to_field="text", tokenize=False, aggregate=True
+        )
 
         if labels:
             instance.add_field(

@@ -151,7 +151,6 @@ class Pipeline:
 
         allennlp_logger = logging.getLogger("allennlp")
 
-
         try:
             if verbose:
                 allennlp_logger.setLevel(logging.INFO)

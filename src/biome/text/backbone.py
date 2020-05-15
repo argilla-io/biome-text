@@ -1,12 +1,11 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
-from allennlp.data import Instance, Token, TokenIndexer
+from allennlp.data import Instance, Token
 from allennlp.data.fields import ListField, TextField
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
-from .errors import WrongValueError
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
 from .tokenizer import Tokenizer
