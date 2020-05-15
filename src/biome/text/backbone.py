@@ -104,12 +104,9 @@ class BackboneEncoder(torch.nn.Module):
         # TODO: Allow exclude record keys in data tokenization phase
         data = record
 
-        if tokenize:
-            record_tokens = self._data_tokens(data)
-        else:
-            if not isinstance(data, List):
-                raise WrongValueError("record must be a list of string when tokenization is disabled")
-            record_tokens = [[Token(t) for t in data]]
+        record_tokens = (
+            self._data_tokens(data) if tokenize else [[Token(t) for t in data]]
+        )
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
 
     def _data_tokens(self, data: Any) -> List[List[Token]]:
