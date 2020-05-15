@@ -22,6 +22,7 @@ if __name__ == "__main__":
         training=train,
         validation=validation,
         extend_vocab=VocabularyConfiguration(sources=[train, validation]),
+        verbose=True,
     )
 
     trained_pl = Pipeline.from_pretrained(os.path.join(training_folder, "model.tar.gz"))

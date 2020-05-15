@@ -225,7 +225,7 @@ def is_relative_file_system_path(string: str) -> bool:
     if not isinstance(string, str):
         return False
     # we require the files to have a file name extension ... ¯\_(ツ)_/¯
-    if not extension_from_path(string):
+    if not os.path.isdir(string) and not extension_from_path(string):
         return False
     # check if a domain name
     if string.lower().startswith(

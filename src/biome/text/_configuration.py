@@ -1,22 +1,24 @@
 import datetime
 from typing import Any, Dict, Optional
 
-from allennlp.data import DatasetReader
+import allennlp
 from biome.text import constants
-from biome.text._impl_model import AllennlpModel, _BaseModelImpl
+from biome.text._model import PipelineModel
 from elasticsearch import Elasticsearch
 
 from . import helpers
 from .configuration import TrainerConfiguration
 
-_ModelImpl = _BaseModelImpl
+_ModelImpl = PipelineModel
 
 
 def __register(impl_class, overrides: bool = False):
     """Register the impl. class in allennlp components registry"""
 
-    AllennlpModel.register(impl_class.__name__, exist_ok=overrides)(impl_class)
-    DatasetReader.register(impl_class.__name__, exist_ok=overrides)(impl_class)
+    allennlp.models.Model.register(impl_class.__name__, exist_ok=overrides)(impl_class)
+    allennlp.data.DatasetReader.register(impl_class.__name__, exist_ok=overrides)(
+        impl_class
+    )
 
 
 __register(_ModelImpl, overrides=True)
@@ -124,7 +126,7 @@ class TrainConfiguration:
     ----------
         output: `str`
              The experiment output path
-        trainer: `str`
+        trainer: `TrainerConfiguration`
              The trainer file path
         train_cfg: `str`
             The train datasource file path

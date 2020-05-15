@@ -10,7 +10,7 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.specs import (
     ComponentSpec,
@@ -34,7 +34,7 @@ class DocumentClassification(ClassificationHead):
 
     def __init__(
         self,
-        model: Model,
+        backbone: BackboneEncoder,
         pooler: Seq2VecEncoderSpec,
         labels: List[str],
         tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
@@ -44,16 +44,18 @@ class DocumentClassification(ClassificationHead):
     ) -> None:
 
         super(DocumentClassification, self).__init__(
-            model, labels=labels, multilabel=multilabel
+            backbone, labels=labels, multilabel=multilabel
         )
 
-        self.model.encoder = TimeDistributedEncoder(model.encoder)
+        self.backbone.encoder = TimeDistributedEncoder(backbone.encoder)
 
         # layers
         self.tokens_pooler = TimeDistributedEncoder(
-            BagOfEmbeddingsEncoder(embedding_dim=self.model.encoder.get_output_dim())
+            BagOfEmbeddingsEncoder(embedding_dim=self.backbone.encoder.get_output_dim())
             if not tokens_pooler
-            else tokens_pooler.input_dim(self.model.encoder.get_output_dim()).compile()
+            else tokens_pooler.input_dim(
+                self.backbone.encoder.get_output_dim()
+            ).compile()
         )
         self.encoder = (
             PassThroughEncoder(self.tokens_pooler.get_output_dim())
@@ -76,7 +78,7 @@ class DocumentClassification(ClassificationHead):
         document: Any,
         label: Optional[Union[int, str, List[Union[int, str]]]] = None,
     ) -> Optional[Instance]:
-        instance = self.model.featurize(document, to_field=self.forward_arg_name)
+        instance = self.backbone.featurize(document, to_field=self.forward_arg_name)
         return self.add_label(instance, label, to_field=self.label_name)
 
     def forward(
@@ -85,12 +87,12 @@ class DocumentClassification(ClassificationHead):
         mask = get_text_field_mask(
             document, num_wrapping_dims=1
         )  # Why num_wrapping_dims=1 !?
-        embedded_text = self.model.forward(document, mask, num_wrapping_dims=1)
+        embedded_text = self.backbone.forward(document, mask, num_wrapping_dims=1)
         embedded_text = self.tokens_pooler(embedded_text, mask=mask)
 
-        mask = get_text_field_mask(
-            {self.forward_arg_name: embedded_text}
-        )  # Add an extra dimension to tensor mask
+        # Here we need to mask the TextFields that only contain the padding token -> last dimension only contains False
+        # Those fields were added to possibly equalize the batch.
+        mask = torch.sum(mask, -1) > 0
         embedded_text = self.encoder(embedded_text, mask=mask)
         embedded_text = self.pooler(embedded_text, mask=mask)
 
@@ -119,12 +121,12 @@ class DocumentClassification(ClassificationHead):
         mask = get_text_field_mask(
             document_tensors, num_wrapping_dims=num_wrapping_dims
         )
-        text_embeddings = self.model.embedder.forward(
+        text_embeddings = self.backbone.embedder.forward(
             document_tensors, num_wrapping_dims=num_wrapping_dims
         )
 
         label_id = vocabulary.index_for_label(
-            self.model.vocab, prediction.get(self.label_name)
+            self.backbone.vocab, prediction.get(self.label_name)
         )
         attributions, delta = ig.attribute(
             text_embeddings,
@@ -158,7 +160,7 @@ class DocumentClassification(ClassificationHead):
         self, embeddings: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
         """Embedding interpret for ListField shapes"""
-        embedded_text = self.model.encoder.forward(embeddings, mask)
+        embedded_text = self.backbone.encoder.forward(embeddings, mask)
         embedded_text = self.tokens_pooler(embedded_text, mask=mask)
 
         mask = get_text_field_mask(

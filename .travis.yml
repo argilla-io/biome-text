@@ -6,40 +6,63 @@ services:
 python:
   - "3.7"
 
+env:
+# unify pip cache location for all platforms
+# use cache for big builds like pandas (to minimise build time).
+# If issues, clear cache
+# https://docs.travis-ci.com/user/caching/#Clearing-Caches
+  global:
+    - PIP_CACHE_DIR="$HOME/.cache/pip"
+
+cache:
+  pip: true
+  directories:
+  - $HOME/.cache/pip
+
 before_install:
   - sudo apt-get update
   - sudo apt-get install nodejs -q -y
 
-# command to install dependencies
 install:
   - pip install -U pip
   - pip install -U six
+  - make dev
 
 script:
-  - make dev dist docs
+  - make test docs
 
 after_success:
+  - python setup.py sdist bdist_wheel
+
+before_deploy:
   - pip install twine
 
 deploy:
+  - provider: pages
+    skip_cleanup: true
+    local_dir: documentation/site
+    github_token: $GITHUB_TOKEN
+    keep_history: true
+    on:
+      condition: $TRAVIS_BRANCH == "master" || -n $TRAVIS_TAG
+
+  - skip_cleanup: true
+    provider: script
+    script:
+    - twine upload dist/*
+    on:
+      condition: $TRAVIS_BRANCH == "master"
+
+  - skip_cleanup: true
+    provider: script
+    script: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+    on:
+      all_branches: true
+      condition: $TRAVIS_BRANCH =~ ^releases\/.+$
+
   - skip_cleanup: true
     provider: script
     script: twine upload dist/*
     on:
+      all_branches: true
       tags: true
-      branch:
-        - master
-        - releases/*
-  - provider: pages
-    skip_cleanup: true
-    local_dir: documentation/site
-    github_token: $GITHUB_TOKEN # A token generated on GitHub allowing Travis to push code on you repository. Set in the Travis settings page of your repository, as a secure variable
-    keep_history: true
-    on:
-      tags: true
-      branch:
-        - master
-        - releases/*
-        - feature/*
-env:
-  - ES_DOC=doc

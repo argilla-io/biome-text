@@ -6,7 +6,7 @@ import torch
 from allennlp.common import Registrable
 from allennlp.data import Instance, Vocabulary
 
-from biome.text.model import Model
+from biome.text.backbone import BackboneEncoder
 from biome.text.modules.specs import ComponentSpec
 from biome.text.vocabulary import vocabulary
 
@@ -58,9 +58,9 @@ class TaskName(Enum):
 class TaskHead(torch.nn.Module, Registrable):
     """Base task head class"""
 
-    def __init__(self, model: Model):
+    def __init__(self, backbone: BackboneEncoder):
         super(TaskHead, self).__init__()
-        self.model = model
+        self.backbone = backbone
 
     def _update_vocab(self, vocab: Vocabulary, **kwargs):
         """This method is automatically called when a vocab is updated"""
@@ -82,7 +82,7 @@ class TaskHead(torch.nn.Module, Registrable):
     @property
     def labels(self) -> List[str]:
         """The configured vocab labels"""
-        return vocabulary.get_labels(self.model.vocab)
+        return vocabulary.get_labels(self.backbone.vocab)
 
     @property
     def num_labels(self):
@@ -91,7 +91,7 @@ class TaskHead(torch.nn.Module, Registrable):
 
     def extend_labels(self, labels: List[str]):
         """Extends the number of labels"""
-        vocabulary.extend_labels(self.model.vocab, labels)
+        vocabulary.extend_labels(self.backbone.vocab, labels)
 
     def task_name(self) -> TaskName:
         """The task head name"""
