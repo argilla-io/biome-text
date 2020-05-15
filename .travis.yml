@@ -29,10 +29,7 @@ install:
   - make dev
 
 script:
-  - make test docs
-
-after_success:
-  - python setup.py sdist bdist_wheel
+  - make dist docs
 
 before_deploy:
   - pip install twine
