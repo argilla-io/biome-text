@@ -49,8 +49,7 @@ deploy:
     script:
     - twine upload dist/*
     on:
-      all_branches: true
-      # branch: master
+      branch: master
 
   - skip_cleanup: true
     provider: script
