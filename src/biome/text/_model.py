@@ -308,7 +308,6 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         """An generator that yields `Instance`s that are fed to the model
 
         This method is implicitly called when training the model.
-        The predictor uses the `self.text_to_instance_with_data_filter` method.
 
         Parameters
         ----------

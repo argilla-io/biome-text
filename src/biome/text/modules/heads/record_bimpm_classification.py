@@ -28,17 +28,17 @@ from biome.text.featurizer import _WordFeaturesSpecs, _CharacterFeaturesSpec
 
 class RecordBiMpm(ClassificationHead):
     """
-    This `Model` is a version of AllenNLPs implementation of the BiMPM model described in
+    This `Model` is loosely based on the AllenNLP implementation of the BiMPM model described in
     `Bilateral Multi-Perspective Matching for Natural Language Sentences <https://arxiv.org/abs/1702.03814>`_
-    by Zhiguo Wang et al., 2017. It was adapted to deal with customer record data.
+    by Zhiguo Wang et al., 2017. It was adapted to deal with record pairs.
 
     This version also allows you to leave out the backward matching,
-    providing the possibility to use transformers for the encoding layers.
+    providing the possibility to use transformers for the record encoding layer.
 
     Parameters
     ----------
     backbone : `BackboneEncoder`
-        Takes care of the embedding
+        Takes care of the embedding and optionally of the language encoding
     labels : `List[str]`
         List of labels
     field_encoder : `Seq2VecEncoder`
@@ -153,7 +153,9 @@ class RecordBiMpm(ClassificationHead):
                 "record2": record2_instance.get("record"),
             }
         )
-        return self.add_label(instance, label)
+        instance = self.add_label(instance, label)
+
+        return instance
 
     def forward(
         self,  # type: ignore
@@ -190,12 +192,8 @@ class RecordBiMpm(ClassificationHead):
             A scalar loss to be optimised.
         """
         # embeding and encoding (field context)
-        (
-            field_encoded_record1,
-            field_encoded_record2,
-            record_mask_record1,
-            record_mask_record2,
-        ) = self._field_encoding(record1, record2)
+        field_encoded_record1, record_mask_record1 = self._field_encoding(record1)
+        field_encoded_record2, record_mask_record2 = self._field_encoding(record2)
 
         # encoding (record context), matching, aggregation, classification
         logits = self._bimpm_forward(
@@ -210,56 +208,36 @@ class RecordBiMpm(ClassificationHead):
         return output
 
     def _field_encoding(
-        self,
-        record1: Dict[str, torch.LongTensor],
-        record2: Dict[str, torch.LongTensor],
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        self, record: Dict[str, torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Embeds and encodes the records in a field context.
 
         We do this in a helper function to reuse it for the `explain_prediction` method.
 
         Parameters
         ----------
-        record1
-            See `self.forward`
-        record2
+        record
             See `self.forward`
 
         Returns
         -------
-        field_encoded_record1
-        field_encoded_record2
-        record_mask_record1
-        record_mask_record2
+        field_encoded_record
+        record_mask
         """
-        field_mask_record1 = util.get_text_field_mask(record1, num_wrapping_dims=1)
-        field_mask_record2 = util.get_text_field_mask(record2, num_wrapping_dims=1)
+        field_mask = util.get_text_field_mask(record, num_wrapping_dims=1)
 
-        # embedding and encoding of record1 (field context)
-        embedded_record1 = self._dropout(
-            self.backbone.forward(record1, mask=field_mask_record1, num_wrapping_dims=1)
+        # embedding and encoding of one record (field context)
+        embedded_record = self._dropout(
+            self.backbone.forward(record, mask=field_mask, num_wrapping_dims=1)
         )
-        field_encoded_record1 = self._dropout(
-            self._field_encoder(embedded_record1, mask=field_mask_record1)
-        )
-
-        # embedding and encoding of record2 (field context)
-        embedded_record2 = self._dropout(
-            self.backbone.forward(record2, mask=field_mask_record2, num_wrapping_dims=1)
-        )
-        field_encoded_record2 = self._dropout(
-            self._field_encoder(embedded_record2, mask=field_mask_record2)
+        field_encoded_record = self._dropout(
+            self._field_encoder(embedded_record, mask=field_mask)
         )
 
-        record_mask_record1 = torch.sum(field_mask_record1, -1) > 0
-        record_mask_record2 = torch.sum(field_mask_record2, -1) > 0
+        # mask for the record encoder
+        record_mask = torch.sum(field_mask, -1) > 0
 
-        return (
-            field_encoded_record1,
-            field_encoded_record2,
-            record_mask_record1,
-            record_mask_record2,
-        )
+        return field_encoded_record, record_mask
 
     def _bimpm_forward(
         self,
@@ -390,6 +368,8 @@ class RecordBiMpm(ClassificationHead):
         """Calculates attributions for each data field in the record by integrating the gradients.
 
         TODO: I would rename this method to `explain_prediction`
+        TODO: optimize: for the prediction we already embedded and field encoded the records.
+            Also, the forward passes here are always done on cpu!
 
         Parameters
         ----------
@@ -398,31 +378,62 @@ class RecordBiMpm(ClassificationHead):
 
         Returns
         -------
-
+        prediction_dict
+            The prediction dictionary with a newly added "explain" key
         """
-
         batch = Batch([instance])
         tokens_ids = batch.as_tensor_dict()
 
-        field_tokens_record1 = self._get_field_tokens(tokens_ids.get("record1"))
-        field_tokens_record2 = self._get_field_tokens(tokens_ids.get("record2"))
-
-        (
-            field_encoded_record1,
-            field_encoded_record2,
-            record_mask_record1,
-            record_mask_record2,
-        ) = self._field_encoding(
-            record1=tokens_ids.get("record1"), record2=tokens_ids.get("record2")
+        # get attributions for each field
+        field_encoded_record1, record_mask_record1 = self._field_encoding(
+            tokens_ids.get("record1")
+        )
+        field_encoded_record2, record_mask_record2 = self._field_encoding(
+            tokens_ids.get("record2")
         )
 
         ig = IntegratedGradients(self._bimpm_forward)
 
+        # prediction_target = np.argmax(prediction["probs"])
+        # # duplicate case:
+        # # Here we integrate each record along the path from the null vector -> record1/2
+        # # assuming that the null vector provides the highest "not duplicate" score.
+        # if prediction_target == 0:
+        #     ig_attribute_record1 = ig.attribute(
+        #         inputs=(field_encoded_record1, field_encoded_record2),
+        #         baselines=(torch.zeros_like(field_encoded_record1), field_encoded_record2),
+        #         additional_forward_args=(record_mask_record1, record_mask_record2),
+        #         # we fix the target since we want negative integrals always to be associated
+        #         # to the "not_duplicate" case and positive ones to the "duplicate" case
+        #         target=0,
+        #         return_convergence_delta=True,
+        #     )
+        #
+        #     ig_attribute_record2 = ig.attribute(
+        #         inputs=(field_encoded_record1, field_encoded_record2),
+        #         baselines=(field_encoded_record1, torch.zeros_like(field_encoded_record2)),
+        #         additional_forward_args=(record_mask_record1, record_mask_record2),
+        #         # we fix the target since we want negative integrals always to be associated
+        #         # to the "not_duplicate" case and positive ones to the "duplicate" case
+        #         target=0,
+        #         return_convergence_delta=True,
+        #     )
+        #
+        # # not duplicate case:
+        # # Here we integrate each record along the path from record2/1 -> record1/2
+        # # assuming that the same record provides the highest "duplicate" score.
+        # elif prediction_target == 1:
+        #     ...
+        # else:
+        #     raise RuntimeError("The `explain` method is only implemented for a binary classification task: "
+        #                        "[duplicate, not_duplicate]")
         ig_attribute_record1 = ig.attribute(
             inputs=(field_encoded_record1, field_encoded_record2),
             baselines=(field_encoded_record2, field_encoded_record2),
             additional_forward_args=(record_mask_record1, record_mask_record2),
-            target=1,
+            # we fix the target since we want negative integrals always to be associated
+            # to the "not_duplicate" case and positive ones to the "duplicate" case
+            target=0,
             return_convergence_delta=True,
         )
 
@@ -430,7 +441,9 @@ class RecordBiMpm(ClassificationHead):
             inputs=(field_encoded_record1, field_encoded_record2),
             baselines=(field_encoded_record1, field_encoded_record1),
             additional_forward_args=(record_mask_record1, record_mask_record2),
-            target=1,
+            # we fix the target since we want negative integrals always to be associated
+            # to the "not_duplicate" case and positive ones to the "duplicate" case
+            target=0,
             return_convergence_delta=True,
         )
 
@@ -441,16 +454,24 @@ class RecordBiMpm(ClassificationHead):
             ig_attribute_record2, 1
         )
 
+        # get tokens corresponding to the attributions
+        field_tokens_record1 = self._get_field_tokens(tokens_ids.get("record1"))
+        field_tokens_record2 = self._get_field_tokens(tokens_ids.get("record2"))
+
         return {
             **prediction,
             "explain": {
                 "record1": [
                     {"token": token, "attribution": attribution}
-                    for token, attribution in zip(field_tokens_record1, attributions_record1)
+                    for token, attribution in zip(
+                        field_tokens_record1, attributions_record1
+                    )
                 ],
                 "record2": [
                     {"token": token, "attribution": attribution}
-                    for token, attribution in zip(field_tokens_record2, attributions_record2)
+                    for token, attribution in zip(
+                        field_tokens_record2, attributions_record2
+                    )
                 ],
                 "delta_record1": delta_record1,
                 "delta_record2": delta_record2,
