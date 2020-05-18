@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
 
-from .featurizer import InputFeaturizer
+from .featurizer import CharsFeaturesSpec, InputFeaturizer, WordsFeaturesSpecs
 from .modules.encoders import Encoder
 from .modules.heads import TaskHeadSpec
 from .tokenizer import Tokenizer
@@ -23,27 +23,26 @@ class FeaturesConfiguration(FromParams):
     Example:
     
     ```python
-    words = {'embedding_dim': 100}
-    chars = {'embedding_dim': 16, 'encoder': {'type': 'gru'}}
+    words = WordsFeaturesSpecs(embedding_dim=100)
+    chars = CharsFeaturesSpec(embedding_dim=16, encoder={'type': 'gru'})
     config = FeaturesConfiguration(words,chars)
     ```
     
     Parameters
     ----------
-    words : ``Dict[str, Any]``
-    
-    chars: ``Dict[str, Any]``
+    words : `WordsFeaturesSpecs`
+    chars: `CharsFeaturesSpec`
     extra_params
     """
 
     def __init__(
         self,
-        words: Optional[Dict[str, Any]] = None,
-        chars: Optional[Dict[str, Any]] = None,
+        words: Optional[WordsFeaturesSpecs] = None,
+        chars: Optional[CharsFeaturesSpec] = None,
         **extra_params
     ):
-        self.words = words or {}
-        self.chars = chars or {}
+        self.words = words or None
+        self.chars = chars or None
 
         for k, v in extra_params.items():
             self.__setattr__(k, v)
@@ -52,7 +51,14 @@ class FeaturesConfiguration(FromParams):
     def from_params(
         cls: Type["FeaturesConfiguration"], params: Params, **extras
     ) -> "FeaturesConfiguration":
-        return cls(**params.as_dict(), **extras)
+
+        words = params.pop("words", None)
+        words = WordsFeaturesSpecs(**words.as_dict(quiet=True)) if words else None
+
+        chars = params.pop("chars", None)
+        chars = CharsFeaturesSpec(**chars.as_dict(quiet=True)) if chars else None
+
+        return cls(words=words, chars=chars, **params.pop("extra_params", {}), **extras)
 
     def compile(self) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
@@ -68,7 +74,7 @@ class FeaturesConfiguration(FromParams):
         -------
         The configured `InputFeaturizer`
         """
-        return InputFeaturizer.from_params(Params(copy.deepcopy(vars(self))))
+        return InputFeaturizer(**vars(self))
 
 
 class TokenizerConfiguration(FromParams):
