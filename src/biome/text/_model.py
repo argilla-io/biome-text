@@ -11,22 +11,22 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
-import numpy
 import allennlp
+import numpy
 import torch
 from allennlp.common import Params
-from allennlp.common.util import prepare_environment, prepare_global_logging, sanitize
+from allennlp.common.util import prepare_environment, sanitize
 from allennlp.data import DatasetReader, Instance, Vocabulary
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from dask.dataframe import Series as DaskSeries
 
+from .backbone import BackboneEncoder
 from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
 from .helpers import split_signature_params_by_predicate
-from .backbone import BackboneEncoder
 from .modules.heads import TaskHead
 from .vocabulary import vocabulary
 
@@ -365,7 +365,6 @@ class PipelineModelTrainer:
             )
 
         os.makedirs(self._serialization_dir, exist_ok=True)
-        prepare_global_logging(self._serialization_dir, file_friendly_logging=True)
 
         serialization_params = deepcopy(self._params).as_dict(quiet=True)
         with open(
