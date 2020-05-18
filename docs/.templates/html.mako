@@ -27,33 +27,38 @@
 <%def name="ident(name)"><span class="ident">${name}</span></%def>
 
 <%def name="show_func(f,label)">
-    <h3 id="${f.refname}">${f.name} <Badge text="${label}"/></h3>
+
+<pre class="title">
+
+${"### "}${f.name} <Badge text="${label}"/>
+</pre>
+
     <dt>
-        <%
-            params = f.params(annotate=show_type_annotations, link=link)
-            return_type = get_annotation(f.return_annotation, '->')
-            params_list = True
-            if len(params) <=1:
-                params = ', '.join(params)
-                params_list = False
-        %>
-        ## FUNCTION, METHODS CODE DEFINITION VIEW 
-        <div class="language-python extra-class">
+      <%
+          params = f.params(annotate=show_type_annotations, link=link)
+          return_type = get_annotation(f.return_annotation, '->')
+          params_list = True
+          if len(params) <=1:
+              params = ', '.join(params)
+              params_list = False
+      %>
+      ## FUNCTION, METHODS CODE DEFINITION VIEW 
+      <div class="language-python extra-class">
         <pre class="language-python">
-<code>
-% if not params_list:
-<span class="token keyword">${f.funcdef()}</span> ${ident(f.name)}</span>(<span>${params})${return_type}</span>
-% else:
-<span class="token keyword">${f.funcdef()}</span> ${ident(f.name)} (</span>
-% for p in params:
-   ${p},
-% endfor
-) ${return_type}
-% endif
-</code>
+          <code>
+          % if not params_list:
+          <span class="token keyword">${f.funcdef()}</span> ${ident(f.name)}</span>(<span>${params})${return_type}</span>
+          % else:
+          <span class="token keyword">${f.funcdef()}</span> ${ident(f.name)} (</span>
+          % for p in params:
+            ${p},
+          % endfor
+          ) ${return_type}
+          % endif
+          </code>
         </pre>
-        </div>
-      </dt>
+      </div>
+    </dt>
     <dd>${show_desc(f)}</dd>
   </%def>
 
@@ -63,33 +68,31 @@
   docstring = glimpse(d.docstring) if short or inherits else d.docstring
   %>
   % if d.inherits:
-      <p class="inheritance">
           <em>Inherited from:</em>
           % if hasattr(d.inherits, 'cls'):
               <code>${link(d.inherits.cls)}</code>.<code>${link(d.inherits, d.name)}</code>
           % else:
               <code>${link(d.inherits)}</code>
           % endif
-      </p>
   % endif
-  <div class="desc${inherits}">${docstring | to_html}</div>
+  ${docstring | to_html}
 </%def>
 
 <%def name="show_module_list(modules)">
-<h1>Python module list</h1>
+  <h1>Python module list</h1>
 
-% if not modules:
-  <p>No modules found.</p>
-% else:
-  <dl id="http-server-module-list">
-  % for name, desc in modules:
-      <div class="flex">
-      <dt><a href="${link_prefix}${name}">${name}</a></dt>
-      <dd>${desc | glimpse, to_html}</dd>
-      </div>
-  % endfor
-  </dl>
-% endif
+  % if not modules:
+    <p>No modules found.</p>
+  % else:
+    <dl id="http-server-module-list">
+    % for name, desc in modules:
+        <div class="flex">
+        <dt><a href="${link_prefix}${name}">${name}</a></dt>
+        <dd>${desc | glimpse, to_html}</dd>
+        </div>
+    % endfor
+    </dl>
+  % endif
 </%def>
 
 <%def name="show_column_list(items)">
@@ -114,39 +117,33 @@
   # ${module.name} ${'<Badge text="Namespace"/>' if module.is_namespace else  \
 '<Badge text="Package"/>' if module.is_package and not module.supermodule else \
 '<Badge text="Module"/>'}
+<div></div>
 
   ${module.docstring | to_html}
   
     % if submodules:
     <h2 class="section-title" id="header-submodules">Sub-modules</h2>
-    <dl>
     % for m in submodules:
-      <dt><code class="name">${link(m)}</code></dt>
-      <dd>${show_desc(m, short=True)}</dd>
+      <code class="name">${link(m)}</code>
+      ${show_desc(m, short=True)}
     % endfor
-    </dl>
     % endif
 
     % if variables:
     <h2 class="section-title" id="header-variables">Global variables</h2>
-    <dl>
     % for v in variables:
       <% return_type = get_annotation(v.type_annotation) %>
       <dt id="${v.refname}"><code class="name">var ${ident(v.name)}${return_type}</code></dt>
-      <dd>${show_desc(v)}</dd>
+      ${show_desc(v)}
     % endfor
-    </dl>
     % endif
 
     % if functions:
-    <dl>
     % for f in functions:
       ${show_func(f, "Function")}
     % endfor
-    </dl>
     % endif
     % if classes:
-    <dl>
     % for c in classes:
       <%
       class_vars = c.class_variables(show_inherited_members, sort=sort_identifiers)
@@ -161,28 +158,44 @@
         params = ', '.join(params)
         params_list = False
       %>
-      <h2 id="${c.refname}">${c.name} <Badge text="Class"/></h2>
-      ## CLASS DEFINITION VIEW
-      <dt>
-      <div class="language-python extra-class">
-        <pre class="language-python">
-    <code>
-% if params_list:
-<span class="token keyword">class</span> ${ident(c.name)} (</span>
-% for p in params:
-    <span>${p}</span><span>,</span>
-% endfor
-<span>)</span>
-% else:
-<span class="token keyword">class</span> ${ident(c.name)} (${params})</span>
-% endif
-    </code></pre></div>
-      </dt>
 
-      <dd>${show_desc(c)}
+<div></div>
+<pre class="title">
+ 
+${"## "}${c.name} <Badge text="Class"/>
+</pre>
+
+      ## CLASS DEFINITION VIEW
+   
+   
+          <pre class="language-python">
+            <code>
+              % if params_list:
+              <span class="token keyword">class</span> ${ident(c.name)} (</span>
+              % for p in params:
+                  <span>${p}</span><span>,</span>
+              % endfor
+              <span>)</span>
+              % else:
+              <span class="token keyword">class</span> ${ident(c.name)} (${params})</span>
+              % endif
+            </code>
+          </pre>
+     
+     
+
+      ${show_desc(c)}
+
 
       % if mro:
-          <h3>Ancestors</h3>
+
+<pre class="title">
+
+
+${"### "}${"Ancestors"}
+</pre>
+
+
           <ul class="hlist">
           % for cls in mro:
               <li>${link(cls)}</li>
@@ -191,7 +204,12 @@
       %endif
 
       % if subclasses:
-          <h3>Subclasses</h3>
+<pre class="title">
+
+${"### "}${"Subclasses"}
+</pre>
+
+
           <ul class="hlist">
           % for sub in subclasses:
               <li>${link(sub)}</li>
@@ -199,7 +217,13 @@
           </ul>
       % endif
       % if class_vars:
-          <h3>Class variables</h3>
+
+<pre class="title">
+
+
+${"### Class variables"}
+</pre>
+
           <dl>
           % for v in class_vars:
               <% return_type = get_annotation(v.type_annotation) %>
@@ -216,7 +240,13 @@
           </dl>
       % endif
       % if inst_vars:
-          <h3>Instance variables</h3>
+
+<pre class="title">
+
+
+${"### Instance variables"}
+</pre>
+
           <dl>
           % for v in inst_vars:
               <% return_type = get_annotation(v.type_annotation) %>
@@ -238,7 +268,13 @@
               members = c.inherited_members()
           %>
           % if members:
-              <h3>Inherited members</h3>
+
+<pre class="title">
+
+
+${"### Inherited members"}
+</pre>
+
               <ul class="hlist">
               % for cls, mems in members:
                   <li><code><b>${link(cls)}</b></code>:
@@ -253,10 +289,7 @@
               </ul>
           % endif
       % endif
-
-      </dd>
     % endfor
-    </dl>
     % endif
 </%def>
 
