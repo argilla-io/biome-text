@@ -366,7 +366,7 @@ class PipelineModelTrainer:
 
         os.makedirs(self._serialization_dir, exist_ok=True)
 
-        serialization_params = deepcopy(self._params).as_dict(quiet=True)
+        serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
         with open(
             os.path.join(self._serialization_dir, CONFIG_NAME), "w"
         ) as param_file:
