@@ -10,27 +10,33 @@ from biome.text.data import DataSource
 
 @pytest.fixture
 def path_to_training_data_yaml(tmp_path) -> str:
-    data_file = tmp_path / "multifield.csv"
+    data_file = tmp_path / "record_pairs.json"
     df = pd.DataFrame(
         {
-            "record1_1": ["record1_1", "record1_1 test", "record1_1 test this"],
-            "record1_2": ["record1_2", "record1_2 test", "record1_2 test this"],
-            "record1_3": ["record1_3", "record1_3 test", "record1_3 test this"],
-            "record2_1": ["record2_1", "record2_1 test", "record2_1 test this"],
-            "record2_2": ["record2_2", "record2_2 test", "record2_2 test this"],
-            "label": [1, 0, 1],
+            "record1": [
+                {"@fist_name": "Hans", "@last_name": "Peter"},
+                {"@fist_name": "Heinrich", "@last_name": "Meier"},
+                {"@fist_name": "Hans", "@last_name": "Peter"},
+            ],
+            "record2": [
+                {"@fist_name": "Hans", "@last_name": "Petre"},
+                {"@fist_name": "Heinz", "@last_name": "Meier"},
+                {"@fist_name": "Hansel", "@last_name": "Peter"},
+            ],
+            "label": ["duplicate", "not_duplicate", "duplicate"],
         }
     )
-    df.to_csv(data_file, index=False)
+    df.to_json(data_file, lines=True, orient="records")
 
     yaml_file = tmp_path / "training.yml"
     yaml_dict = {
         "source": str(data_file),
-        "mapping": {
-            "record1": ["record1_1", "record1_2", "record1_3"],
-            "record2": ["record2_1", "record2_2"],
-            "label": "label",
-        },
+        "attributes": {"flatten": False}
+        # "mapping": {
+        #     "record1": "record1",
+        #     "record2": "record2",
+        #     "label": "label",
+        # },
     }
     with yaml_file.open("w") as f:
         yaml.safe_dump(yaml_dict, f)
@@ -38,8 +44,8 @@ def path_to_training_data_yaml(tmp_path) -> str:
     return str(yaml_file)
 
 
-@pytest.fixture(params=["singlefield", "multifield"])
-def path_to_pipeline_yaml(tmp_path, request) -> str:
+@pytest.fixture
+def path_to_pipeline_yaml(tmp_path) -> str:
     pipeline_dict = {
         "name": "biome-bimpm",
         "tokenizer": {"text_cleaning": {"rules": ["strip_spaces"]}},
@@ -53,7 +59,7 @@ def path_to_pipeline_yaml(tmp_path, request) -> str:
             #     },
             # },
             "words": {
-                "embedding_dim": 32,
+                "embedding_dim": 2,
                 "lowercase_tokens": True,
                 "trainable": True,
                 "embedder": {"padding_index": 0},
@@ -77,11 +83,11 @@ def path_to_pipeline_yaml(tmp_path, request) -> str:
             #     },
             # },
             "chars": {
-                "embedding_dim": 32,
-                "dropout": 0.2,
+                "embedding_dim": 2,
+                "dropout": 0.1,
                 "encoder": {
                     "type": "gru",
-                    "hidden_size": 112,
+                    "hidden_size": 2,
                     "num_layers": 1,
                     "bidirectional": True,
                 },
@@ -90,58 +96,51 @@ def path_to_pipeline_yaml(tmp_path, request) -> str:
             },
         },
         "head": {
-            "type": "BiMpm",
-            "labels": ["1", "0"],
-            "multifield": request.param == "multifield",
-            "dropout": 0.2,
-            "encoder": {
-                "type": "lstm",
+            "type": "RecordBiMpm",
+            "labels": ["duplicate", "not_duplicate"],
+            "dropout": 0.1,
+            "field_encoder": {
+                "type": "gru",
                 "bidirectional": False,
-                # "input_size": 256,
-                "hidden_size": 64,
+                # "input_size": 4,
+                "hidden_size": 4,
                 "num_layers": 1,
             },
-            "matcher_word": {
-                "is_forward": True,
-                # "hidden_dim": 256,
-                "num_perspectives": 10,
-                "with_full_match": False,
+            "record_encoder": {
+                "type": "gru",
+                "bidirectional": True,
+                # "input_size": 4,
+                "hidden_size": 2,
+                "num_layers": 1,
             },
             "matcher_forward": {
                 "is_forward": True,
-                # "hidden_dim": 64,
-                "num_perspectives": 21,
+                # "hidden_dim": 2,
+                "num_perspectives": 10,
+                "with_full_match": False,
             },
-            "encoder2": {
-                "type": "lstm",
-                "bidirectional": False,
-                # "input_size": 64,
-                "hidden_size": 32,
-                "num_layers": 1,
-            },
-            "matcher2_forward": {
-                "is_forward": True,
-                # "hidden_dim": 32,
-                "num_perspectives": 21,
+            "matcher_backward": {
+                "is_forward": False,
+                # "hidden_dim": 2,
+                "num_perspectives": 10,
             },
             "aggregator": {
-                "type": "lstm",
+                "type": "gru",
                 "bidirectional": True,
-                # "input_size": 264,
-                "hidden_size": 32,
-                "num_layers": 2,
-                "dropout": 0.2,
+                # "input_size": ??,
+                "hidden_size": 2,
+                "num_layers": 1,
             },
             "classifier_feedforward": {
-                # "input_dim": 128,
+                # "input_dim": 8,
                 "num_layers": 1,
-                "hidden_dims": [64],
+                "hidden_dims": [4],
                 "activations": ["relu"],
-                "dropout": [0.2],
+                "dropout": [0.1],
             },
             "initializer": [
-                ["output_layer.weight", {"type": "xavier_normal"}],
-                ["output_layer.bias", {"type": "constant", "val": 0}],
+                ["_output_layer.weight", {"type": "xavier_normal"}],
+                ["_output_layer.bias", {"type": "constant", "val": 0}],
                 [".*linear_layers.*weight", {"type": "xavier_normal"}],
                 [".*linear_layers.*bias", {"type": "constant", "val": 0}],
                 [".*weight_ih.*", {"type": "xavier_normal"}],
@@ -162,25 +161,17 @@ def path_to_pipeline_yaml(tmp_path, request) -> str:
 def trainer_dict() -> Dict:
     trainer_dict = {
         "num_epochs": 1,
-        "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.01},
-        "learning_rate_scheduler": {
-            "type": "reduce_on_plateau",
-            "factor": 0.2,
-            "mode": "min",
-            "patience": 1,
-        },
-        "validation_metric": "-loss",
-        "patience": 5,
+        "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.002},
     }
 
     return trainer_dict
 
 
-def test_bimpm_train(
-    path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml,
+def test_record_bimpm_train(
+    path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml, tmp_path
 ):
     pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
-    pipeline.predict(record1="The one", record2="The other")
+    pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Peter"})
     pipeline.create_vocabulary(
         VocabularyConfiguration(
             sources=[DataSource.from_yaml(path_to_training_data_yaml)]
@@ -188,7 +179,7 @@ def test_bimpm_train(
     )
 
     pipeline.train(
-        output="experiment",
+        output=str(tmp_path / "record_bimpm_experiment"),
         trainer=TrainerConfiguration(**trainer_dict),
         training=path_to_training_data_yaml,
         validation=path_to_training_data_yaml,
