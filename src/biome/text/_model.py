@@ -16,7 +16,7 @@ import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
-from allennlp.data import DatasetReader, Instance, Vocabulary
+from allennlp.data import DatasetReader, Instance, Vocabulary, DataLoader
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
@@ -353,7 +353,6 @@ class PipelineModelTrainer:
 
     def _setup(self):
         """Setup the trainer components and local resources"""
-        from allennlp.data import DataIterator
 
         prepare_environment(self._params)
         if os.path.exists(self._serialization_dir) and os.listdir(
@@ -377,8 +376,18 @@ class PipelineModelTrainer:
         vocab = self._model.vocab
         vocab.save_to_files(os.path.join(self._serialization_dir, "vocabulary"))
 
-        self._iterator = DataIterator.from_params(self._params.pop("iterator"))
-        self._iterator.index_with(vocab)
+        #self._iterator = DataIterator.from_params(self._params.pop("iterator"))
+        #self._iterator.index_with(vocab)
+        for dataset in self._all_datasets.values():
+            dataset.index_with(vocab)
+            
+        self._dataloader = DataLoader(dataset=self._all_datasets["train"])
+        
+        if self._all_datasets.get("validation"):
+            self._validation_dataloader = DataLoader(dataset=self._all_datasets["validation"])
+        
+        if self._all_datasets.get("test"):
+            self._test_dataloader = DataLoader(dataset=self._all_datasets["test"])
 
         trainer_params = self._params.pop("trainer")
         no_grad_regexes = trainer_params.pop(
@@ -392,9 +401,8 @@ class PipelineModelTrainer:
         self._trainer = Trainer.from_params(
             model=self._model,
             serialization_dir=self._serialization_dir,
-            iterator=self._iterator,
-            train_data=self._all_datasets["train"],
-            validation_data=self._all_datasets.get("validation"),
+            data_loader=self._dataloader,
+            validation_data_loader=self._validation_dataloader,
             params=trainer_params,
         )
 
@@ -434,15 +442,14 @@ class PipelineModelTrainer:
         Test metrics information
 
         """
-        test_data = self._all_datasets.get("test")
-        if not test_data:
+        
+        if not self._all_datasets.get('test'):
             return {}
 
         self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
         return evaluate(
             self._model,
-            test_data,
-            data_iterator=self._iterator,
+            data_loader=self._test_dataloader,
             cuda_device=self._trainer._cuda_devices[
                 0
             ],  # pylint: disable=protected-access
@@ -488,5 +495,5 @@ class PipelineModelTrainer:
     def save_best_model(self):
         """Packages the best model as tar.gz archive"""
         archive_model(
-            self._serialization_dir, files_to_archive=self._params.files_to_archive
+            self._serialization_dir,# TODO: not available in 1.0 , do we need this ? files_to_archive=self._params.files_to_archive
         )

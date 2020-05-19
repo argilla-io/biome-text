@@ -2,7 +2,7 @@ batch_size: 64
 cache_instances: "true"
 num_epochs: 4
 optimizer:
-  amsgrad: "true"
+  amsgrad: true
   type: adam
 validation_metric: +accuracy
 patience: 2

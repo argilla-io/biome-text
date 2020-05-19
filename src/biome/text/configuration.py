@@ -196,7 +196,7 @@ class TrainerConfiguration:
         self.optimizer = optimizer
         self.validation_metric = validation_metric
         self.patience = patience
-        self.shuffle = shuffle
+        #self.shuffle = shuffle # TODO: We need to check where this param goes now for 1.0
         self.num_epochs = num_epochs
         self.cuda_device = cuda_device
         self.grad_norm = grad_norm

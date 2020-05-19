@@ -3,6 +3,7 @@ import glob
 import inspect
 import logging
 import os
+import pathlib
 import uuid
 from inspect import Parameter
 from typing import Any, Dict, List, Optional, Type, Union, cast
@@ -156,8 +157,11 @@ class Pipeline:
                 allennlp_logger.setLevel(logging.INFO)
 
             self.__prepare_experiment_folder(output, restore)
-            self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
-
+            # TODO: Gross hack, this used to be a public method cache_data
+            # now in 1.0 this must be done when instantiating the reader, can we do that?
+            self._model._cache_directory = pathlib.Path(os.path.join(output, self.__TRAINING_CACHE_DATA))
+            os.makedirs(self._model._cache_directory, exist_ok=True)
+            
             if extend_vocab:
                 self._extend_vocab(vocab_config=extend_vocab)
 
@@ -395,7 +399,7 @@ class Pipeline:
     ) -> Vocabulary:
         """Extends an already created vocabulary from a list of source dictionary"""
         vocab.extend_from_instances(
-            params=Params(extra_args),
+            #params=Params(extra_args), # TODO: allen 1.0 method does not allow params
             instances=[
                 instance
                 for data_source in sources

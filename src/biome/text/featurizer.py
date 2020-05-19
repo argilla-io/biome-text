@@ -172,7 +172,7 @@ class InputFeaturizer:
         A `TextFieldEmbedder`
         """
         # fmt: off
-        return BasicTextFieldEmbedder.from_params(
+        return TextFieldEmbedder.from_params(
             Params({ "token_embedders": {
                 feature: config[self.__EMBEDDER_KEYNAME]
                 for feature, config in self.config.items()} }
