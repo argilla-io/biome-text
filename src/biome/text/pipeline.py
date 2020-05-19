@@ -113,6 +113,35 @@ class Pipeline:
         """
         return _PreTrainedPipeline(pretrained_path=path, **kwargs)
 
+    def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
+        """Initialize the prediction logging.
+
+        If initialized, all predictions will be logged to a file called *predictions.json* in the `output_dir`.
+
+        Parameters
+        ----------
+        output_dir: str
+            Path to the folder in which we create the *predictions.json* file.
+        max_logging_size: int
+            Max disk size use for prediction logs
+        """
+        max_bytes = max_logging_size * 1000000
+        max_bytes_per_file = 2000000
+        n_backups = int(max_bytes / max_bytes_per_file)
+        self._model.init_prediction_logger(
+            output_dir, max_bytes=max_bytes_per_file, backup_count=n_backups
+        )
+
+    def init_prediction_cache(self, max_size: int) -> None:
+        """Initialize cache for input predictions
+
+        Parameters
+        ----------
+        max_size
+            Save up to max_size most recent (inputs).
+        """
+        self._model.init_prediction_cache(max_size)
+
     def train(
         self,
         output: str,
@@ -449,6 +478,9 @@ class Pipeline:
 
     def _extend_vocab(self, vocab_config: VocabularyConfiguration) -> None:
         """Extend vocab if no vocab extension was launched before"""
+        # TODO: model vocab reference must be inmutable but not content.
+        #  updated_vocab method must be protected and without parametes (since vocab is already updated)
+        #  So better called `on_vocab_updated`
         vocabulary = self._load_vocabulary(vocab_config)
         self._model.update_vocab(vocabulary)
 
