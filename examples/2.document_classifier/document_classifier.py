@@ -18,7 +18,6 @@ if __name__ == "__main__":
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
-        verbose=True,
         extend_vocab=VocabularyConfiguration(
             sources=["train.data.yml"], min_count={"words": 10}
         ),
