@@ -8,7 +8,7 @@ from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import Perplexity
 
 from biome.text.featurizer import InputFeaturizer
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
 from biome.text.vocabulary import vocabulary
 from .defs import TaskHead, TaskName, TaskOutput
@@ -50,7 +50,7 @@ class LanguageModelling(TaskHead):
     def task_name(self) -> TaskName:
         return TaskName.language_modelling
 
-    def __init__(self, backbone: BackboneEncoder, dropout: float = None) -> None:
+    def __init__(self, backbone: ModelBackbone, dropout: float = None) -> None:
         super(LanguageModelling, self).__init__(backbone)
 
         if not backbone.featurizer.words:

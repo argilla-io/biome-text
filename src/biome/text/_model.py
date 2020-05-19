@@ -22,7 +22,7 @@ from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from dask.dataframe import Series as DaskSeries
 
-from .backbone import BackboneEncoder
+from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
@@ -98,7 +98,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         return cls(
             name=config.name,
             head=config.head.compile(
-                backbone=BackboneEncoder(
+                backbone=ModelBackbone(
                     vocab=vocab
                     or vocabulary.empty_vocab(featurizer=config.features.compile()),
                     tokenizer=config.tokenizer.compile(),

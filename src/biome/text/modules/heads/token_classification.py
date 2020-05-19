@@ -8,7 +8,7 @@ from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec, FeedForwardSpec
 from biome.text.vocabulary import vocabulary
 from .defs import TaskHead, TaskName, TaskOutput
@@ -19,7 +19,7 @@ class TokenClassification(TaskHead):
 
     def __init__(
         self,
-        backbone: BackboneEncoder,
+        backbone: ModelBackbone,
         labels: List[str],
         label_encoding: Optional[str] = "BIOUL",
         dropout: Optional[float] = None,

@@ -28,7 +28,7 @@ from ._configuration import (
     TrainConfiguration,
     _ModelImpl,
 )
-from .backbone import BackboneEncoder
+from .backbone import ModelBackbone
 from .modules.heads import TaskHead
 from .modules.heads.defs import TaskHeadSpec
 
@@ -112,6 +112,35 @@ class Pipeline:
                 A configured pipeline
         """
         return _PreTrainedPipeline(pretrained_path=path, **kwargs)
+
+    def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
+        """Initialize the prediction logging.
+
+        If initialized, all predictions will be logged to a file called *predictions.json* in the `output_dir`.
+
+        Parameters
+        ----------
+        output_dir: str
+            Path to the folder in which we create the *predictions.json* file.
+        max_logging_size: int
+            Max disk size to use for prediction logs
+        """
+        max_bytes = max_logging_size * 1000000
+        max_bytes_per_file = 2000000
+        n_backups = int(max_bytes / max_bytes_per_file)
+        self._model.init_prediction_logger(
+            output_dir, max_bytes=max_bytes_per_file, backup_count=n_backups
+        )
+
+    def init_prediction_cache(self, max_size: int) -> None:
+        """Initialize cache for input predictions
+
+        Parameters
+        ----------
+        max_size
+            Save up to max_size most recent (inputs).
+        """
+        self._model.init_prediction_cache(max_size)
 
     def train(
         self,
@@ -345,7 +374,7 @@ class Pipeline:
         return self._model.output
 
     @property
-    def backbone(self) -> BackboneEncoder:
+    def backbone(self) -> ModelBackbone:
         """Gets pipeline backbone encoder"""
         return self.head.backbone
 
@@ -466,7 +495,6 @@ class Pipeline:
             min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
             tokens_to_add=vocab_config.tokens_to_add,
         )
-
 
 class _BlankPipeline(Pipeline):
     """
