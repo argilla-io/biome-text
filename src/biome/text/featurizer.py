@@ -1,4 +1,6 @@
 import copy
+
+from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from typing import Any, Dict, Optional
 
 from allennlp.common import Params
@@ -170,10 +172,10 @@ class InputFeaturizer:
         A `TextFieldEmbedder`
         """
         # fmt: off
-        return TextFieldEmbedder.from_params(
-            Params({
+        return BasicTextFieldEmbedder.from_params(
+            Params({ "token_embedders": {
                 feature: config[self.__EMBEDDER_KEYNAME]
-                for feature, config in self.config.items()}
+                for feature, config in self.config.items()} }
             ),
             vocab=vocab
         )

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy
 import torch
 from allennlp.data import Instance
-from allennlp.data.dataset import Batch
+from allennlp.data import Batch
 from allennlp.data.fields import ListField, TextField
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder

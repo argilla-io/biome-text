@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy
 import torch
 from allennlp.data import Instance
-from allennlp.data.dataset import Batch
+from allennlp.data import Batch
 from allennlp.data.fields import TextField
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients

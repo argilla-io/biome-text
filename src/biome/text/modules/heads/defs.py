@@ -77,7 +77,7 @@ class TaskHead(torch.nn.Module, Registrable):
     @classmethod
     def register(cls, overrides: bool = False, **kwargs):
         """Enables the task head component for pipeline loading"""
-        super(TaskHead, TaskHead).register(cls.__name__, overrides)(cls)
+        super(TaskHead, TaskHead).register(name=cls.__name__, exist_ok=overrides)(cls)
 
     @property
     def labels(self) -> List[str]:

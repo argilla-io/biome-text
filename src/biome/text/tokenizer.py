@@ -2,9 +2,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from allennlp.common import FromParams
 from allennlp.data import Token
-from allennlp.data.tokenizers import SentenceSplitter, WordTokenizer
+from allennlp.data.tokenizers import SentenceSplitter, SpacyTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
-from allennlp.data.tokenizers.word_splitter import SpacyWordSplitter
 
 from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
 
@@ -70,8 +69,8 @@ class Tokenizer(FromParams):
         self.max_sequence_length = max_sequence_length
         self.text_cleaning = text_cleaning or DefaultTextCleaning()
 
-        self._base_tokenizer = WordTokenizer(
-            word_splitter=SpacyWordSplitter(language=self.lang),
+        self._base_tokenizer = SpacyTokenizer(
+            language=self.lang,
             start_tokens=start_tokens,
             end_tokens=end_tokens,
         )

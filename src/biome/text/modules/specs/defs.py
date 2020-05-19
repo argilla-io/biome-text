@@ -4,14 +4,14 @@ from typing import Any, Dict, Generic, Optional, Type, TypeVar
 
 from allennlp.common import FromParams, Params
 from allennlp.modules.bimpm_matching import BiMpmMatching
-from allennlp.modules.seq2seq_encoders import _Seq2SeqWrapper
-from allennlp.modules.seq2vec_encoders import _Seq2VecWrapper
+from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
+from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 
 
 def _find_input_attribute(component: Any) -> str:
     """Find the properly input dimension attribute name for a given component"""
     input_dim_attribute = None
-    if isinstance(component, (_Seq2SeqWrapper, _Seq2VecWrapper)):
+    if isinstance(component, (PytorchSeq2SeqWrapper, PytorchSeq2VecWrapper)):
         input_dim_attribute = "input_size"
     elif component is BiMpmMatching:
         input_dim_attribute = "hidden_dim"

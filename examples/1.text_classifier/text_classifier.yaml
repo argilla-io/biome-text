@@ -1,9 +1,9 @@
 name: text-classifier
 
-tokenizer:
-    text_cleaning:
-        rules:
-            - strip_spaces
+#tokenizer:
+#    text_cleaning:
+#        rules:
+#            - strip_spaces
 
 features:
     words:
