@@ -119,7 +119,7 @@ class TaskHead(torch.nn.Module, Registrable):
         """Build extra parameters over basic task output"""
         return output
 
-    def prediction_explain(
+    def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance
     ) -> Dict[str, Any]:
         """Adds embedding explanations information to prediction output"""
