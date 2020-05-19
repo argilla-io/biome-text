@@ -8,7 +8,7 @@ from allennlp.data.fields import TextField
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import (
     ComponentSpec,
     FeedForwardSpec,
@@ -29,7 +29,7 @@ class TextClassification(ClassificationHead):
 
     def __init__(
         self,
-        backbone: BackboneEncoder,
+        backbone: ModelBackbone,
         pooler: Seq2VecEncoderSpec,
         labels: List[str],
         feedforward: Optional[FeedForwardSpec] = None,

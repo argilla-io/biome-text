@@ -28,7 +28,7 @@ from ._configuration import (
     TrainConfiguration,
     _ModelImpl,
 )
-from .backbone import BackboneEncoder
+from .backbone import ModelBackbone
 from .modules.heads import TaskHead
 from .modules.heads.defs import TaskHeadSpec
 
@@ -340,7 +340,7 @@ class Pipeline:
         return self._model.output
 
     @property
-    def backbone(self) -> BackboneEncoder:
+    def backbone(self) -> ModelBackbone:
         """Gets pipeline backbone encoder"""
         return self.head.backbone
 

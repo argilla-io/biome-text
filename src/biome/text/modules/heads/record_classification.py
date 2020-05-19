@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 
 from allennlp.data import Instance
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import (
     ComponentSpec,
     FeedForwardSpec,
@@ -22,7 +22,7 @@ class RecordClassification(DocumentClassification):
 
     def __init__(
         self,
-        backbone: BackboneEncoder,
+        backbone: ModelBackbone,
         pooler: Seq2VecEncoderSpec,
         labels: List[str],
         record_keys: List[str],

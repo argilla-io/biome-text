@@ -12,8 +12,23 @@ from .tokenizer import Tokenizer
 from .vocabulary import Vocabulary
 
 
-class BackboneEncoder(torch.nn.Module):
-    """Backbone Encoder definition. All models used in pipelines must configure this model class"""
+class ModelBackbone(torch.nn.Module):
+    """The backbone of the model.
+
+     It is composed of a tokenizer, featurizer and an encoder.
+     This component of the model can be pretrained and used with different task heads.
+
+     Parameters
+     ----------
+     vocab : `Vocabulary`
+        The vocabulary of the pipeline
+    tokenizer : `Tokenizer`
+        Tokenizes the input depending on its type (str, List[str], Dict[str, Any])
+    featurizer : `InputFeaturizer`
+        Defines the input features of the tokens, indexes and embeds them.
+    encoder : Encoder
+        Outputs an encoded sequence of the tokens
+    """
 
     def __init__(
         self,
@@ -22,7 +37,7 @@ class BackboneEncoder(torch.nn.Module):
         featurizer: InputFeaturizer,
         encoder: Optional[Encoder] = None,
     ):
-        super(BackboneEncoder, self).__init__()
+        super(ModelBackbone, self).__init__()
 
         self.vocab = vocab
         self.tokenizer = tokenizer

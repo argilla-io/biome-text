@@ -5,7 +5,7 @@ from allennlp.data import Instance
 from allennlp.data.fields import LabelField, MultiLabelField
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.vocabulary import vocabulary
 from ..defs import TaskHead, TaskName, TaskOutput
 
@@ -14,7 +14,7 @@ class ClassificationHead(TaskHead):
     """Base abstract class for classification problems"""
 
     def __init__(
-        self, backbone: BackboneEncoder, labels: List[str], multilabel: bool = False
+        self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
     ):
         super(ClassificationHead, self).__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)

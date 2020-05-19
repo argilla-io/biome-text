@@ -10,7 +10,7 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.specs import (
     ComponentSpec,
@@ -34,7 +34,7 @@ class DocumentClassification(ClassificationHead):
 
     def __init__(
         self,
-        backbone: BackboneEncoder,
+        backbone: ModelBackbone,
         pooler: Seq2VecEncoderSpec,
         labels: List[str],
         tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
