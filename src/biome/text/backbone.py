@@ -59,17 +59,6 @@ class BackboneEncoder(torch.nn.Module):
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
 
-    def __tokenize_text(self, text: str) -> List[Token]:
-        return self.tokenizer.tokenize_text(text)
-
-    def __tokenize_document(self, document: List[str]) -> List[List[Token]]:
-        return self.tokenizer.tokenize_document(document)
-
-    def __tokenize_record(
-        self, record: Dict[str, Any]
-    ) -> Dict[str, Tuple[List[Token], List[Token]]]:
-        return self.tokenizer.tokenize_record(record)
-
     def featurize(
         self,
         record: Union[str, List[str], Dict[str, Any]],
@@ -113,11 +102,11 @@ class BackboneEncoder(torch.nn.Module):
         if isinstance(data, dict):
             return [
                 key_tokens + value_tokens
-                for key_tokens, value_tokens in self.__tokenize_record(data).values()
+                for key_tokens, value_tokens in self.tokenizer.tokenize_record(data).values()
             ]
         if isinstance(data, str):
-            return [self.__tokenize_text(data)]
-        return self.__tokenize_document(data)
+            return [self.tokenizer.tokenize_text(data)]
+        return self.tokenizer.tokenize_document(data)
 
     def _tokens_to_field(
         self, tokens: List[List[Token]], aggregate: bool
