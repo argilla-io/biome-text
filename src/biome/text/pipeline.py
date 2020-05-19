@@ -120,7 +120,6 @@ class Pipeline:
         training: str,
         validation: Optional[str] = None,
         test: Optional[str] = None,
-        verbose: bool = False,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = True,
     ) -> None:
@@ -138,8 +137,6 @@ class Pipeline:
             The validation datasource file path
         test: `Optional[str]`
             The test datasource file path
-        verbose: `bool`
-            Turn on verbose logs
         extend_vocab: `Optional[VocabularyConfiguration]`
             Extends vocab tokens with provided configuration
         restore: `bool`
@@ -152,8 +149,7 @@ class Pipeline:
         allennlp_logger = logging.getLogger("allennlp")
 
         try:
-            if verbose:
-                allennlp_logger.setLevel(logging.INFO)
+            allennlp_logger.setLevel(logging.INFO)
 
             self.__prepare_experiment_folder(output, restore)
             self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
@@ -169,7 +165,6 @@ class Pipeline:
                 trainer=trainer,
                 train_cfg=training,
                 validation_cfg=validation,
-                verbose=verbose,
             )
 
             model.launch_experiment(

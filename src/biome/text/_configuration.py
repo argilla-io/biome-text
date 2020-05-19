@@ -134,8 +134,6 @@ class TrainConfiguration:
             The validation datasource file path
         test_cfg: `Optional[str]`
             The test datasource file path
-        verbose: `bool`
-            Whether to show verbose logs (default is `False`)
     """
 
     def __init__(
@@ -145,11 +143,9 @@ class TrainConfiguration:
         train_cfg: str = "",
         validation_cfg: Optional[str] = None,
         test_cfg: Optional[str] = None,
-        verbose: bool = False,
     ):
         self.output = output
         self.trainer = trainer
         self.training = train_cfg
         self.validation = validation_cfg
         self.test = test_cfg
-        self.verbose = verbose
