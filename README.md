@@ -28,7 +28,8 @@ You can install biome-text with pip or from source.
 ### Pip
 
 
-The recommended way of installing the library is using pip. You can install everything required for library:
+The recommended way of installing the library is using pip. You can install everything required for the library:
+
 ```shell
 pip install biome-text
 ```
