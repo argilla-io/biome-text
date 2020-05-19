@@ -106,7 +106,7 @@ export default {
       border-color $accentColor
       padding 0
       .algolia-docsearch-suggestion--category-header
-        padding 0.9em;
+        padding 0.9em 1.25em;
         margin-top 0
         background $accentColor
         color #fff
