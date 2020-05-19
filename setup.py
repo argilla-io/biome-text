@@ -102,6 +102,7 @@ if __name__ == "__main__":
                 "black",
                 "GitPython",
                 "pdoc3~=0.8.1",
+                "pytest-notebook~=0.6.0",
             ]
         },
         package_data={
