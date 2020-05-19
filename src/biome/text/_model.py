@@ -135,9 +135,10 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
 
-    def update_vocab(self, vocab: Vocabulary):
-        """Update the model vocabulary and re-launch all vocab updates methods"""
+    def set_vocab(self, vocab: Vocabulary):
+        """Replace the current vocab and reload all model layer"""
         self.vocab = vocab
+        # TODO: remove vocab argument and use already updated self.vocab
         self._head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
         self._head._update_vocab(vocab)  # pylint: disable=protected-access
 
