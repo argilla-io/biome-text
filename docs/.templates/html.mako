@@ -44,19 +44,19 @@ ${"### "}${f.name} <Badge text="${label}"/>
       %>
       ## FUNCTION, METHODS CODE DEFINITION VIEW 
       <div class="language-python extra-class">
-        <pre class="language-python">
-          <code>
-          % if not params_list:
-          <span class="token keyword">${f.funcdef()}</span> ${ident(f.name)}</span>(<span>${params})${return_type}</span>
-          % else:
-          <span class="token keyword">${f.funcdef()}</span> ${ident(f.name)} (</span>
-          % for p in params:
-            ${p},
-          % endfor
-          ) ${return_type}
-          % endif
-          </code>
-        </pre>
+<pre class="language-python">
+<code>
+% if not params_list:
+<span class="token keyword">${f.funcdef()}</span> ${ident(f.name)}</span>(<span>${params})${return_type}</span>
+% else:
+<span class="token keyword">${f.funcdef()}</span> ${ident(f.name)} (</span>
+% for p in params:
+  ${p},
+% endfor
+) ${return_type}
+% endif
+</code>
+</pre>
       </div>
     </dt>
     <dd>${show_desc(f)}</dd>
@@ -168,19 +168,19 @@ ${"## "}${c.name} <Badge text="Class"/>
       ## CLASS DEFINITION VIEW
    
    
-          <pre class="language-python">
-            <code>
-              % if params_list:
-              <span class="token keyword">class</span> ${ident(c.name)} (</span>
-              % for p in params:
-                  <span>${p}</span><span>,</span>
-              % endfor
-              <span>)</span>
-              % else:
-              <span class="token keyword">class</span> ${ident(c.name)} (${params})</span>
-              % endif
-            </code>
-          </pre>
+<pre class="language-python">
+  <code>
+    % if params_list:
+    <span class="token keyword">class</span> ${ident(c.name)} (</span>
+    % for p in params:
+        <span>${p}</span><span>,</span>
+    % endfor
+    <span>)</span>
+    % else:
+    <span class="token keyword">class</span> ${ident(c.name)} (${params})</span>
+    % endif
+  </code>
+</pre>
      
      
 
