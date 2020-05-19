@@ -10,7 +10,7 @@ from .modules.specs import Seq2VecEncoderSpec
 Embedder = TextFieldEmbedder
 
 
-class WordsFeaturesSpecs:
+class WordFeatures:
     """Feature configuration at word level"""
 
     namespace = "words"
@@ -57,7 +57,7 @@ class WordsFeaturesSpecs:
         return data
 
 
-class CharsFeaturesSpec:
+class CharFeatures:
     """Feature configuration at character level"""
 
     namespace = "chars"
@@ -113,44 +113,44 @@ class InputFeaturizer:
 
     Parameters
     ----------
-    words : `WordsFeaturesSpecs`
+    word : `WordFeatures`
         Dictionary defining how to index and embed words
-    chars : `CharsFeaturesSpec`
+    char : `CharFeatures`
         Dictionary defining how to encode and embed characters
     kwargs :
         Additional params for setting up the features
     """
 
-    __DEFAULT_CONFIG = WordsFeaturesSpecs(embedding_dim=50)
+    __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
     __INDEXER_KEYNAME = "indexer"
     __EMBEDDER_KEYNAME = "embedder"
 
-    WORDS = WordsFeaturesSpecs.namespace
-    CHARS = CharsFeaturesSpec.namespace
+    WORDS = WordFeatures.namespace
+    CHARS = CharFeatures.namespace
 
     def __init__(
         self,
         vocab: Vocabulary,
-        words: Optional[WordsFeaturesSpecs] = None,
-        chars: Optional[CharsFeaturesSpec] = None,
+        word: Optional[WordFeatures] = None,
+        char: Optional[CharFeatures] = None,
         **kwargs: Dict[str, Dict[str, Any]]
     ):
 
         configuration = kwargs or {}
-        if not (words or chars or configuration):
-            words = self.__DEFAULT_CONFIG
+        if not (word or char or configuration):
+            word = self.__DEFAULT_CONFIG
 
-        if words:
-            self.words = words
-        if chars:
-            self.chars = chars
+        if word:
+            self.word = word
+        if char:
+            self.char = char
 
         for k, v in configuration.items():
             self.__setattr__(k, v)
 
         self._config = kwargs or {}
         self._config.update(
-            {spec.namespace: spec.config for spec in [words, chars] if spec}
+            {spec.namespace: spec.config for spec in [word, char] if spec}
         )
 
         self.indexer = {
