@@ -1,4 +1,3 @@
-
 body
   font-family: $primaryFontFamily 
 h1, h2, h3, h4 
@@ -52,6 +51,8 @@ pre.title
 .nav-link
   font-weight: 600 !important
   font-family: $secondaryFontFamily 
+.search-box input
+  border-radius 0 !important
 .footer
   //position: absolute
   bottom: 1rem
@@ -92,11 +93,21 @@ pre.title
     > ul
       overflow-y: auto
       max-height: calc(100% - 120px)
+    .sidebar-sub-headers .sidebar-sub-headers
+      display none
+    .active + .sidebar-sub-headers .sidebar-sub-headers
+      display block
   .search-box input
     border-width: 2px !important
     border-radius: 2px !important
+    color $accentColor !important
+    min-width: 250px !important
+    padding-left 0.5rem !important
+    // background-image url('@vuepress/search.svg') !important
+    background-position calc(100% - 1rem) !important
+    height 2.5rem !important
     &:not(:focus)
-      border-color: #F5F5F5 !important
+      border-color $accentColor !important
   .theme-default-content:not(.custom)
       max-width: 740px
       margin: 0 auto

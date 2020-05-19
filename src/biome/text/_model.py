@@ -22,7 +22,7 @@ from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from dask.dataframe import Series as DaskSeries
 
-from .backbone import BackboneEncoder
+from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
@@ -100,7 +100,8 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         return cls(
             name=config.name,
             head=config.head.compile(
-                backbone=BackboneEncoder(
+
+                backbone=ModelBackbone(
                     vocab,
                     tokenizer=config.tokenizer.compile(),
                     featurizer=config.features.compile(vocab),
@@ -253,7 +254,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         instance = self.text_to_instance(**inputs)
         prediction = self.forward_on_instance(instance)
 
-        return self._head.prediction_explain(prediction=prediction, instance=instance)
+        return self._head.explain_prediction(prediction=prediction, instance=instance)
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
         """Returns model input data dictionary"""
