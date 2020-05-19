@@ -121,7 +121,7 @@ class Pipeline:
         validation: Optional[str] = None,
         test: Optional[str] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
-        restore: bool = True,
+        restore: bool = False,
     ) -> None:
         """Launches a training run with the specified configurations and datasources
 
