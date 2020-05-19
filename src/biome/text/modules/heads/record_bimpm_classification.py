@@ -362,12 +362,11 @@ class RecordBiMpm(ClassificationHead):
 
         return matching_vector_record1_cat, matching_vector_record2_cat
 
-    def prediction_explain(
+    def explain_prediction(
         self, prediction: Dict[str, np.array], instance: Instance
     ) -> Dict[str, Any]:
         """Calculates attributions for each data field in the record by integrating the gradients.
 
-        TODO: I would rename this method to `explain_prediction`
         TODO: optimize: for the prediction we already embedded and field encoded the records.
             Also, the forward passes here are always done on cpu!
 
@@ -458,6 +457,7 @@ class RecordBiMpm(ClassificationHead):
         field_tokens_record1 = self._get_field_tokens(tokens_ids.get("record1"))
         field_tokens_record2 = self._get_field_tokens(tokens_ids.get("record2"))
 
+        # TODO: the exact format is still to be discussed
         return {
             **prediction,
             "explain": {
