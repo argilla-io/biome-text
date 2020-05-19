@@ -169,17 +169,17 @@ ${"## "}${c.name} <Badge text="Class"/>
    
    
 <pre class="language-python">
-  <code>
-    % if params_list:
-    <span class="token keyword">class</span> ${ident(c.name)} (</span>
-    % for p in params:
-        <span>${p}</span><span>,</span>
-    % endfor
-    <span>)</span>
-    % else:
-    <span class="token keyword">class</span> ${ident(c.name)} (${params})</span>
-    % endif
-  </code>
+<code>
+% if params_list:
+<span class="token keyword">class</span> ${ident(c.name)} (</span>
+% for p in params:
+    <span>${p}</span><span>,</span>
+% endfor
+<span>)</span>
+% else:
+<span class="token keyword">class</span> ${ident(c.name)} (${params})</span>
+% endif
+</code>
 </pre>
      
      
