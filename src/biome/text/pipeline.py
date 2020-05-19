@@ -123,7 +123,7 @@ class Pipeline:
         output_dir: str
             Path to the folder in which we create the *predictions.json* file.
         max_logging_size: int
-            Max disk size use for prediction logs
+            Max disk size to use for prediction logs
         """
         max_bytes = max_logging_size * 1000000
         max_bytes_per_file = 2000000
