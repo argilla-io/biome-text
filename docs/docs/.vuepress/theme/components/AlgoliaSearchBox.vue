@@ -118,7 +118,7 @@ export default {
           background #F0E7FF
           box-shadow none
       .algolia-docsearch-suggestion--wrapper
-        padding 1.25em
+        padding 0.9em 1.25em;
         &:hover
           background: #F5F5F6
         &:after
