@@ -4,6 +4,8 @@ from allennlp.data import Vocabulary
 
 from .featurizer import InputFeaturizer
 
+# TODO: convert class into helper functions
+
 
 class vocabulary:
     """Manages vocabulary tasks and fetches vocabulary information
@@ -125,26 +127,27 @@ class vocabulary:
         vocab.add_tokens_to_namespace(labels, namespace=cls.LABELS_NAMESPACE)
 
     @classmethod
-    def empty_vocab(
-        cls, featurizer: InputFeaturizer, labels: List[str] = None
-    ) -> Vocabulary:
-        """Generates a "mock" empty vocabulary for a given `InputFeaturizer`
+    def empty_vocab(cls, features: List[str], labels: List[str] = None) -> Vocabulary:
+        """Generates a "mock" empty vocabulary for a given features set
         
-        This method generate a mock vocabulary for the featurized namespaces.
-        TODO: Clarify? --> If default model use another tokens indexer key name, the pipeline model won't be loaded from configuration
-        # Parameters
-            featurizer: `InputFeaturizer`
-                A featurizer for which to create the vocabulary
+        This method generate a mock vocabulary for the each feature namespace
+
+        Parameters
+        ----------
+            features: `List[str]`
+                A list for feature names
             labels: `List[str]`
                 The label strings to add to the vocabulary
-        # Returns
+        Returns
+        -------
             vocabulary: `allennlp.data.Vocabulary`
                 The instantiated vocabulary
         """
         labels = labels or []
         vocab = Vocabulary()
         vocabulary.extend_labels(vocab, labels=labels)
-        for namespace in featurizer.feature_keys:
+        for namespace in features:
+            # TODO: better empty vocab creation
             vocab.add_token_to_namespace("a", namespace=namespace)
         return vocab
 

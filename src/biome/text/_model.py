@@ -99,8 +99,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             name=config.name,
             head=config.head.compile(
                 backbone=BackboneEncoder(
-                    vocab=vocab
-                    or vocabulary.empty_vocab(featurizer=config.features.compile()),
+                    vocab=vocab or vocabulary.empty_vocab(features=config.features.keys),
                     tokenizer=config.tokenizer.compile(),
                     featurizer=config.features.compile(),
                     encoder=config.encoder,
