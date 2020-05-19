@@ -140,7 +140,7 @@ class Tokenizer(FromParams):
 
     def tokenize_record(
         self, record: Dict[str, Any]
-    ) -> Dict[str, Tuple[List[Token], List[List[Token]]]]:
+    ) -> List[List[Token]]:
         """ Tokenizes a record-like structure containing text inputs
         
         Use this to keep information about the record-like data structure as input features to the model.
@@ -152,14 +152,17 @@ class Tokenizer(FromParams):
             
         Returns
         -------
-        tokens: `Dict[str, Tuple[List[Token], List[List[Token]]]]`
-            A dictionary with two lists of `Token`'s for each record entry: `key` and `value` tokens.
+        tokens: `List[List[Token]]`
+            A list of tokenized fields as token list
         """
         data = self._sanitize_dict(record)
-        return {
-            key: (self._tokenize(key), self.tokenize_text(value))
+
+        return [
+            tokenized_key + sentence
             for key, value in data.items()
-        }
+            for tokenized_key in [self._tokenize(key)]
+            for sentence in self.tokenize_text(value)
+        ]
 
     def _value_as_string(self, value: Any) -> str:
         """Converts a value data into its string representation"""
