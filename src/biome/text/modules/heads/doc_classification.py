@@ -102,7 +102,7 @@ class DocumentClassification(ClassificationHead):
         logits = self._classification_layer(embedded_text)
         return self.calculate_output(logits=logits, label=label)
 
-    def prediction_explain(
+    def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance
     ) -> Dict[str, Any]:
         """Here, we must apply transformations for manage ListFields tensors shapes"""

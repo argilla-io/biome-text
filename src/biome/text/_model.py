@@ -252,7 +252,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         instance = self.text_to_instance(**inputs)
         prediction = self.forward_on_instance(instance)
 
-        return self._head.prediction_explain(prediction=prediction, instance=instance)
+        return self._head.explain_prediction(prediction=prediction, instance=instance)
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
         """Returns model input data dictionary"""
