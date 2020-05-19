@@ -95,13 +95,15 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         if not isinstance(config, PipelineConfiguration):
             config = PipelineConfiguration.from_params(config)
 
+        vocab = vocab or vocabulary.empty_vocab(features=config.features.keys)
+
         return cls(
             name=config.name,
             head=config.head.compile(
                 backbone=BackboneEncoder(
-                    vocab=vocab or vocabulary.empty_vocab(features=config.features.keys),
+                    vocab,
                     tokenizer=config.tokenizer.compile(),
-                    featurizer=config.features.compile(),
+                    featurizer=config.features.compile(vocab),
                     encoder=config.encoder,
                 )
             ),

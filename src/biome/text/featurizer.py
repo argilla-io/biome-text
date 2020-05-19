@@ -130,6 +130,7 @@ class InputFeaturizer:
 
     def __init__(
         self,
+        vocab: Vocabulary,
         words: Optional[WordsFeaturesSpecs] = None,
         chars: Optional[CharsFeaturesSpec] = None,
         **kwargs: Dict[str, Dict[str, Any]]
@@ -147,51 +148,25 @@ class InputFeaturizer:
         for k, v in configuration.items():
             self.__setattr__(k, v)
 
+        self._config = kwargs or {}
+        self._config.update(
+            {spec.namespace: spec.config for spec in [words, chars] if spec}
+        )
+
+        self.indexer = {
+            feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
+            for feature, config in self._config.items()
+        }
+        self.embedder = TextFieldEmbedder.from_params(
+            Params(
+                {
+                    feature: config[self.__EMBEDDER_KEYNAME]
+                    for feature, config in self._config.items()
+                }
+            ),
+            vocab=vocab,
+        )
+
     @property
     def config(self) -> Dict[str, Any]:
-        """The featurizer configuration"""
-        config = copy.deepcopy(self.__dict__)
-        for key in [WordsFeaturesSpecs.namespace, CharsFeaturesSpec.namespace]:
-            if config.get(key):
-                config[key] = config[key].config
-        return config
-
-    @property
-    def feature_keys(self):
-        """The configured feature names ("words", "chars", ...)"""
-        return list(self.config.keys())
-
-    def build_features(self) -> Dict[str, TokenIndexer]:
-        """Builds configured token indexers features as allennlp token indexers.
-        
-        Returns
-        -------
-        An dictionary defining the token indexers of the featurizer
-        """
-        # fmt: off
-        return {
-            feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
-            for feature, config in self.config.items()
-        }
-        # fmt: on
-
-    def build_embedder(self, vocab: Vocabulary) -> Embedder:
-        """Builds a `TextFieldEmbedder` from configured embedding features
-        
-        Parameters
-        ----------
-        vocab : ``Vocabulary``
-            Vocabulary object to be used by the embedding layers
-        Returns
-        -------
-        A `TextFieldEmbedder`
-        """
-        # fmt: off
-        return TextFieldEmbedder.from_params(
-            Params({
-                feature: config[self.__EMBEDDER_KEYNAME]
-                for feature, config in self.config.items()}
-            ),
-            vocab=vocab
-        )
-        # fmt: on
+        return copy.deepcopy(self._config)

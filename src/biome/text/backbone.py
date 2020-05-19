@@ -27,17 +27,15 @@ class BackboneEncoder(torch.nn.Module):
         self.vocab = vocab
         self.tokenizer = tokenizer
         self.featurizer = featurizer
-        self._features = self.featurizer.build_features()
-        self._embedder = featurizer.build_embedder(self.vocab)
         self.encoder = (
-            encoder.input_dim(self._embedder.get_output_dim()).compile()
+            encoder.input_dim(self.embedder.get_output_dim()).compile()
             if encoder
-            else PassThroughEncoder(self._embedder.get_output_dim())
+            else PassThroughEncoder(self.embedder.get_output_dim())
         )
 
     @property
     def embedder(self) -> TextFieldEmbedder:
-        return self._embedder
+        return self.featurizer.embedder
 
     def forward(
         self,
@@ -46,16 +44,15 @@ class BackboneEncoder(torch.nn.Module):
         num_wrapping_dims: int = 0,
     ) -> torch.Tensor:
         """Applies embedding + encoder layers"""
-        embeddings = self._embedder(text, num_wrapping_dims=num_wrapping_dims)
+        embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
 
     def _update_vocab(self, vocab: Vocabulary, **kwargs):
         """This method is called when a base model updates the vocabulary"""
         self.vocab = vocab
 
-        for model_path, module in self.named_modules():
-            if module == self:
-                continue
+        # This loop applies only for embedding layer.
+        for model_path, module in self.embedder.named_modules():
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
 
@@ -129,8 +126,11 @@ class BackboneEncoder(torch.nn.Module):
         if aggregate:
             return TextField(
                 [token for entry_tokens in tokens for token in entry_tokens],
-                self._features,
+                self.featurizer.indexer,
             )
         return ListField(
-            [TextField(entry_tokens, self._features) for entry_tokens in tokens]
+            [
+                TextField(entry_tokens, self.featurizer.indexer)
+                for entry_tokens in tokens
+            ]
         )

@@ -2,6 +2,7 @@ import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
+from allennlp.data import Vocabulary
 
 from .featurizer import CharsFeaturesSpec, InputFeaturizer, WordsFeaturesSpecs
 from .modules.encoders import Encoder
@@ -60,7 +61,12 @@ class FeaturesConfiguration(FromParams):
 
         return cls(words=words, chars=chars, **params.pop("extra_params", {}), **extras)
 
-    def compile(self) -> InputFeaturizer:
+    @property
+    def keys(self) -> List[str]:
+        """Gets the key features"""
+        return [key for key in vars(self)]
+
+    def compile(self, vocab: Vocabulary) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
         
         :::tip
@@ -74,7 +80,7 @@ class FeaturesConfiguration(FromParams):
         -------
         The configured `InputFeaturizer`
         """
-        return InputFeaturizer(**vars(self))
+        return InputFeaturizer(vocab=vocab, **vars(self))
 
 
 class TokenizerConfiguration(FromParams):
