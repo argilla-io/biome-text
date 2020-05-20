@@ -12,8 +12,23 @@ from .tokenizer import Tokenizer
 from .vocabulary import Vocabulary
 
 
-class BackboneEncoder(torch.nn.Module):
-    """Backbone Encoder definition. All models used in pipelines must configure this model class"""
+class ModelBackbone(torch.nn.Module):
+    """The backbone of the model.
+
+     It is composed of a tokenizer, featurizer and an encoder.
+     This component of the model can be pretrained and used with different task heads.
+
+     Parameters
+     ----------
+     vocab : `Vocabulary`
+        The vocabulary of the pipeline
+    tokenizer : `Tokenizer`
+        Tokenizes the input depending on its type (str, List[str], Dict[str, Any])
+    featurizer : `InputFeaturizer`
+        Defines the input features of the tokens, indexes and embeds them.
+    encoder : Encoder
+        Outputs an encoded sequence of the tokens
+    """
 
     def __init__(
         self,
@@ -22,22 +37,20 @@ class BackboneEncoder(torch.nn.Module):
         featurizer: InputFeaturizer,
         encoder: Optional[Encoder] = None,
     ):
-        super(BackboneEncoder, self).__init__()
+        super(ModelBackbone, self).__init__()
 
         self.vocab = vocab
         self.tokenizer = tokenizer
         self.featurizer = featurizer
-        self._features = self.featurizer.build_features()
-        self._embedder = featurizer.build_embedder(self.vocab)
         self.encoder = (
-            encoder.input_dim(self._embedder.get_output_dim()).compile()
+            encoder.input_dim(self.embedder.get_output_dim()).compile()
             if encoder
-            else PassThroughEncoder(self._embedder.get_output_dim())
+            else PassThroughEncoder(self.embedder.get_output_dim())
         )
 
     @property
     def embedder(self) -> TextFieldEmbedder:
-        return self._embedder
+        return self.featurizer.embedder
 
     def forward(
         self,
@@ -46,29 +59,17 @@ class BackboneEncoder(torch.nn.Module):
         num_wrapping_dims: int = 0,
     ) -> torch.Tensor:
         """Applies embedding + encoder layers"""
-        embeddings = self._embedder(text, num_wrapping_dims=num_wrapping_dims)
+        embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
 
     def _update_vocab(self, vocab: Vocabulary, **kwargs):
         """This method is called when a base model updates the vocabulary"""
         self.vocab = vocab
 
-        for model_path, module in self.named_modules():
-            if module == self:
-                continue
+        # This loop applies only for embedding layer.
+        for model_path, module in self.embedder.named_modules():
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
-
-    def __tokenize_text(self, text: str) -> List[Token]:
-        return self.tokenizer.tokenize_text(text)
-
-    def __tokenize_document(self, document: List[str]) -> List[List[Token]]:
-        return self.tokenizer.tokenize_document(document)
-
-    def __tokenize_record(
-        self, record: Dict[str, Any]
-    ) -> Dict[str, Tuple[List[Token], List[Token]]]:
-        return self.tokenizer.tokenize_record(record)
 
     def featurize(
         self,
@@ -111,13 +112,10 @@ class BackboneEncoder(torch.nn.Module):
     def _data_tokens(self, data: Any) -> List[List[Token]]:
         """Convert data into a list of list of token depending on data type"""
         if isinstance(data, dict):
-            return [
-                key_tokens + value_tokens
-                for key_tokens, value_tokens in self.__tokenize_record(data).values()
-            ]
+            return self.tokenizer.tokenize_record(data)
         if isinstance(data, str):
-            return [self.__tokenize_text(data)]
-        return self.__tokenize_document(data)
+            return self.tokenizer.tokenize_text(data)
+        return self.tokenizer.tokenize_document(data)
 
     def _tokens_to_field(
         self, tokens: List[List[Token]], aggregate: bool
@@ -129,8 +127,11 @@ class BackboneEncoder(torch.nn.Module):
         if aggregate:
             return TextField(
                 [token for entry_tokens in tokens for token in entry_tokens],
-                self._features,
+                self.featurizer.indexer,
             )
         return ListField(
-            [TextField(entry_tokens, self._features) for entry_tokens in tokens]
+            [
+                TextField(entry_tokens, self.featurizer.indexer)
+                for entry_tokens in tokens
+            ]
         )

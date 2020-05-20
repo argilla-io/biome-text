@@ -1,5 +1,8 @@
 name: text-classifier
 
+tokenizer:
+    segment_sentences: true
+
 features:
     words:
         embedding_dim: 100

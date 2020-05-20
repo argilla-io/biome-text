@@ -28,7 +28,7 @@ from ._configuration import (
     TrainConfiguration,
     _ModelImpl,
 )
-from .backbone import BackboneEncoder
+from .backbone import ModelBackbone
 from .modules.heads import TaskHead
 from .modules.heads.defs import TaskHeadSpec
 
@@ -113,6 +113,35 @@ class Pipeline:
         """
         return _PreTrainedPipeline(pretrained_path=path, **kwargs)
 
+    def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
+        """Initialize the prediction logging.
+
+        If initialized, all predictions will be logged to a file called *predictions.json* in the `output_dir`.
+
+        Parameters
+        ----------
+        output_dir: str
+            Path to the folder in which we create the *predictions.json* file.
+        max_logging_size: int
+            Max disk size to use for prediction logs
+        """
+        max_bytes = max_logging_size * 1000000
+        max_bytes_per_file = 2000000
+        n_backups = int(max_bytes / max_bytes_per_file)
+        self._model.init_prediction_logger(
+            output_dir, max_bytes=max_bytes_per_file, backup_count=n_backups
+        )
+
+    def init_prediction_cache(self, max_size: int) -> None:
+        """Initialize cache for input predictions
+
+        Parameters
+        ----------
+        max_size
+            Save up to max_size most recent (inputs).
+        """
+        self._model.init_prediction_cache(max_size)
+
     def train(
         self,
         output: str,
@@ -120,9 +149,8 @@ class Pipeline:
         training: str,
         validation: Optional[str] = None,
         test: Optional[str] = None,
-        verbose: bool = False,
         extend_vocab: Optional[VocabularyConfiguration] = None,
-        restore: bool = True,
+        restore: bool = False,
     ) -> None:
         """Launches a training run with the specified configurations and datasources
 
@@ -138,8 +166,6 @@ class Pipeline:
             The validation datasource file path
         test: `Optional[str]`
             The test datasource file path
-        verbose: `bool`
-            Turn on verbose logs
         extend_vocab: `Optional[VocabularyConfiguration]`
             Extends vocab tokens with provided configuration
         restore: `bool`
@@ -152,24 +178,27 @@ class Pipeline:
         allennlp_logger = logging.getLogger("allennlp")
 
         try:
-            if verbose:
-                allennlp_logger.setLevel(logging.INFO)
+            allennlp_logger.setLevel(logging.INFO)
 
             self.__prepare_experiment_folder(output, restore)
-            self._model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
-
-            if extend_vocab:
-                self._extend_vocab(vocab_config=extend_vocab)
-
             # The original pipeline keeps unchanged
             model = copy.deepcopy(self._model)
+            model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
+
+            vocab = None
+            if restore:
+                vocab = self.load_vocabulary(os.path.join(output, "vocabulary"))
+            if extend_vocab and not vocab:
+                vocab = self.extend_vocabulary(model.vocab, vocab_config=extend_vocab)
+            if vocab:
+                model.set_vocab(vocab)
+            # TODO: empty vocab check
             config = TrainConfiguration(
                 test_cfg=test,
                 output=output,
                 trainer=trainer,
                 train_cfg=training,
                 validation_cfg=validation,
-                verbose=verbose,
             )
 
             model.launch_experiment(
@@ -234,7 +263,7 @@ class Pipeline:
         # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         return self._model.explain(*args, **kwargs)
 
-    def save_vocab(self, path: str) -> None:
+    def save_vocabulary(self, path: str) -> None:
         """Save the pipeline vocabulary into a path"""
         self._model.vocab.save_to_files(path)
 
@@ -345,7 +374,7 @@ class Pipeline:
         return self._model.output
 
     @property
-    def backbone(self) -> BackboneEncoder:
+    def backbone(self) -> ModelBackbone:
         """Gets pipeline backbone encoder"""
         return self.head.backbone
 
@@ -418,26 +447,46 @@ class Pipeline:
                 method.__name__, update_method_signature(new_signature, method)
             )
 
-    def _load_vocabulary(
-        self, vocab_config: VocabularyConfiguration
-    ) -> Optional[Vocabulary]:
+    @staticmethod
+    def load_vocabulary(vocab_path: str) -> Optional[Vocabulary]:
+        """
+        Loads a vocabulary from a path
+        Parameters
+        ----------
+        vocab_path: str
+            The vocab folder path
+
+        Returns
+        -------
+        An operative `allennlp.data.Vocabulary`
+        """
+        try:
+            return Vocabulary.from_files(vocab_path)
+        except FileNotFoundError:
+            return None
+
+    def extend_vocabulary(
+        self, vocab: Vocabulary, vocab_config: VocabularyConfiguration
+    ) -> Vocabulary:
         """
         Extends a data vocabulary from a given configuration
 
         Parameters
         ----------
+        vocab: `Vocabulary`
+            The source vocabulary
         vocab_config: `VocabularyConfiguration`
             The vocab extension configuration
 
         Returns
         -------
-        vocab: `Optional[Vocabulary]`
-            An extended ``Vocabulary`` using the provided configuration
+        vocab: `Vocabulary`
+            An extended `Vocabulary` using the provided configuration
 
         """
 
         return self._extend_vocab_from_sources(
-            vocab=self.backbone.vocab,
+            vocab=vocab,
             sources=vocab_config.sources,
             max_vocab_size=vocab_config.max_vocab_size,
             min_count=vocab_config.min_count,
@@ -446,12 +495,6 @@ class Pipeline:
             min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
             tokens_to_add=vocab_config.tokens_to_add,
         )
-
-    def _extend_vocab(self, vocab_config: VocabularyConfiguration) -> None:
-        """Extend vocab if no vocab extension was launched before"""
-        vocabulary = self._load_vocabulary(vocab_config)
-        self._model.update_vocab(vocabulary)
-
 
 class _BlankPipeline(Pipeline):
     """

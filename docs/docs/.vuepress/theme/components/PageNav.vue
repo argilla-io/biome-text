@@ -172,7 +172,7 @@ function flatten (items, res) {
       border-color: $textColor !important
     a
       display: flex
-      padding: 0.5em
+      padding: 0.9em
       color: $textColor !important
       font-weight: 600
       font-size: 0.75rem

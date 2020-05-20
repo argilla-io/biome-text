@@ -52,6 +52,10 @@ pre.title
 .nav-link
   font-weight: 600 !important
   font-family: $secondaryFontFamily 
+.external__icon
+  margin-left 0.3em
+.search-box input
+  border-radius 0 !important
 .footer
   //position: absolute
   bottom: 1rem
@@ -66,6 +70,8 @@ pre.title
     border-bottom: none
     // line-height: 4.4em !important
     margin-left: 320px
+    .nav-link.external
+      font-size 12px
     .no-sidebar &
       max-width: 960px
       padding: 0 2.5rem
@@ -92,11 +98,20 @@ pre.title
     > ul
       overflow-y: auto
       max-height: calc(100% - 120px)
+    .sidebar-sub-headers .sidebar-sub-headers
+      display none
+    .active + .sidebar-sub-headers .sidebar-sub-headers
+      display block
   .search-box input
     border-width: 2px !important
     border-radius: 2px !important
+    color $accentColor !important
+    min-width: 250px !important
+    padding-left 0.5rem !important
+    background-position calc(100% - 1rem) !important
+    height 2.5rem !important
     &:not(:focus)
-      border-color: #F5F5F5 !important
+      border-color $accentColor !important
   .theme-default-content:not(.custom)
       max-width: 740px
       margin: 0 auto

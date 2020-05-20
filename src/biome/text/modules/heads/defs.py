@@ -6,7 +6,7 @@ import torch
 from allennlp.common import Registrable
 from allennlp.data import Instance, Vocabulary
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
 from biome.text.vocabulary import vocabulary
 
@@ -58,7 +58,7 @@ class TaskName(Enum):
 class TaskHead(torch.nn.Module, Registrable):
     """Base task head class"""
 
-    def __init__(self, backbone: BackboneEncoder):
+    def __init__(self, backbone: ModelBackbone):
         super(TaskHead, self).__init__()
         self.backbone = backbone
 
@@ -119,7 +119,7 @@ class TaskHead(torch.nn.Module, Registrable):
         """Build extra parameters over basic task output"""
         return output
 
-    def prediction_explain(
+    def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance
     ) -> Dict[str, Any]:
         """Adds embedding explanations information to prediction output"""

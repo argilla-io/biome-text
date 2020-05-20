@@ -5,16 +5,15 @@ from allennlp.common import Params
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
-from .commons import InmutableDict
 from .modules.specs import Seq2VecEncoderSpec
 
 Embedder = TextFieldEmbedder
 
 
-class _WordFeaturesSpecs:
-    """Simplifies word level features configuration """
+class WordFeatures:
+    """Feature configuration at word level"""
 
-    namespace = "words"
+    namespace = "word"
 
     def __init__(
         self,
@@ -24,28 +23,44 @@ class _WordFeaturesSpecs:
         weights_file: Optional[str] = None,
         **extra_params
     ):
-        self.config = {
+        self.embedding_dim = embedding_dim
+        self.lowercase_tokens = lowercase_tokens
+        self.trainable = trainable
+        self.weights_file = weights_file
+        self.extra_params = extra_params
+
+    @property
+    def config(self):
+        config = {
             "indexer": {
                 "type": "single_id",
-                "lowercase_tokens": lowercase_tokens,
+                "lowercase_tokens": self.lowercase_tokens,
                 "namespace": self.namespace,
             },
             "embedder": {
-                "embedding_dim": embedding_dim,
+                "embedding_dim": self.embedding_dim,
                 "vocab_namespace": self.namespace,
-                "trainable": trainable,
-                **({"pretrained_file": weights_file} if weights_file else {}),
+                "trainable": self.trainable,
+                **({"pretrained_file": self.weights_file} if self.weights_file else {}),
             },
         }
 
-        for k in extra_params:
-            self.config[k] = {**extra_params[k], **self.config.get(k)}
+        for k in self.extra_params:
+            config[k] = {**self.extra_params[k], **config.get(k)}
+
+        return config
+
+    def to_json(self):
+        data = vars(self)
+        data.update(data.pop("extra_params"))
+
+        return data
 
 
-class _CharacterFeaturesSpec:
-    """Simplifies character level features configuration"""
+class CharFeatures:
+    """Feature configuration at character level"""
 
-    namespace = "chars"
+    namespace = "char"
 
     def __init__(
         self,
@@ -54,23 +69,38 @@ class _CharacterFeaturesSpec:
         dropout: int = 0.0,
         **extra_params
     ):
-        self.config = {
+        self.embedding_dim = embedding_dim
+        self.encoder = encoder
+        self.dropout = dropout
+        self.extra_params = extra_params
+
+    @property
+    def config(self):
+        config = {
             "indexer": {"type": "characters", "namespace": self.namespace},
             "embedder": {
                 "type": "character_encoding",
                 "embedding": {
-                    "embedding_dim": embedding_dim,
+                    "embedding_dim": self.embedding_dim,
                     "vocab_namespace": self.namespace,
                 },
-                "encoder": Seq2VecEncoderSpec(**encoder)
-                .input_dim(embedding_dim)
+                "encoder": Seq2VecEncoderSpec(**self.encoder)
+                .input_dim(self.embedding_dim)
                 .config,
-                "dropout": dropout,
+                "dropout": self.dropout,
             },
         }
 
-        for k, v in extra_params.items():
-            self.config[k] = {**extra_params[k], **self.config.get(k)}
+        for k, v in self.extra_params.items():
+            config[k] = {**self.extra_params[k], **config.get(k)}
+
+        return config
+
+    def to_json(self):
+        data = vars(self)
+        data.update(data.pop("extra_params"))
+
+        return data
 
 
 class InputFeaturizer:
@@ -83,101 +113,60 @@ class InputFeaturizer:
 
     Parameters
     ----------
-    words : ``Dict[str, Any]``
+    word : `WordFeatures`
         Dictionary defining how to index and embed words
-    chars : ``Dict[str, Any]``
+    char : `CharFeatures`
         Dictionary defining how to encode and embed characters
     kwargs :
         Additional params for setting up the features
     """
 
-    __DEFAULT_CONFIG = {"embedding_dim": 50}
+    __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
     __INDEXER_KEYNAME = "indexer"
     __EMBEDDER_KEYNAME = "embedder"
 
-    WORDS = _WordFeaturesSpecs.namespace
-    CHARS = _CharacterFeaturesSpec.namespace
+    WORDS = WordFeatures.namespace
+    CHARS = CharFeatures.namespace
 
     def __init__(
         self,
-        words: Optional[Dict[str, Any]] = None,
-        chars: Optional[Dict[str, Any]] = None,
+        vocab: Vocabulary,
+        word: Optional[WordFeatures] = None,
+        char: Optional[CharFeatures] = None,
         **kwargs: Dict[str, Dict[str, Any]]
     ):
 
         configuration = kwargs or {}
+        if not (word or char or configuration):
+            word = self.__DEFAULT_CONFIG
 
-        if not (words or chars or configuration):
-            words = self.__DEFAULT_CONFIG
-
-        if words:
-            self.words = _WordFeaturesSpecs(**words).config
-
-        if chars:
-            self.chars = _CharacterFeaturesSpec(**chars).config
+        if word:
+            self.word = word
+        if char:
+            self.char = char
 
         for k, v in configuration.items():
             self.__setattr__(k, v)
 
-    @classmethod
-    def from_params(cls, params: Params) -> "InputFeaturizer":
-        """ Loads featurizer from ``allennlp.Params``
-        
-        Parameters
-        ----------
-        params : ``Params``
-            Params for the featurizer configuration
-
-        Returns
-        -------
-        An instance of ``InputFeaturizer``
-        """
-        return cls(**params.as_dict())
-
-    @property
-    def config(self):
-        """The featurizer configuration"""
-        return copy.deepcopy(self.__dict__)
-
-    @property
-    def feature_keys(self):
-        """The configured feature names ("words", "chars", ...)"""
-        return list(self.__dict__.keys())
-
-    def build_features(self) -> Dict[str, TokenIndexer]:
-        """Builds configured token indexers features as allennlp token indexers.
-        
-        Returns
-        -------
-        An dictionary defining the token indexers of the featurizer
-        """
-        # fmt: off
-        return {
-            feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
-            for feature, config in self.config.items()
-        }
-        # fmt: on
-
-    def build_embedder(self, vocab: Vocabulary) -> Embedder:
-        """Builds a `TextFieldEmbedder` from configured embedding features
-        
-        Parameters
-        ----------
-        vocab : ``Vocabulary``
-            Vocabulary object to be used by the embedding layers
-        Returns
-        -------
-        A `TextFieldEmbedder`
-        """
-        # fmt: off
-        return TextFieldEmbedder.from_params(
-            Params({
-                feature: config[self.__EMBEDDER_KEYNAME]
-                for feature, config in self.config.items()}
-            ),
-            vocab=vocab
+        self._config = kwargs or {}
+        self._config.update(
+            {spec.namespace: spec.config for spec in [word, char] if spec}
         )
-        # fmt: on
 
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
+        self.indexer = {
+            feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
+            for feature, config in self._config.items()
+        }
+        self.embedder = TextFieldEmbedder.from_params(
+            Params(
+                {
+                    feature: config[self.__EMBEDDER_KEYNAME]
+                    for feature, config in self._config.items()
+                }
+            ),
+            vocab=vocab,
+        )
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        return copy.deepcopy(self._config)

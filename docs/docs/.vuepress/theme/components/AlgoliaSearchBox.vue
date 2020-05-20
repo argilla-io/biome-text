@@ -75,12 +75,15 @@ export default {
 </script>
 
 <style lang="stylus">
+input 
+  background-image url('search.svg') !important
 .algolia-search-wrapper
   & > span
     vertical-align middle
   .algolia-autocomplete
     line-height normal
     .ds-dropdown-menu
+      min-width 410px !important
       background-color #fff
       border 2px solid $accentColor
       border-radius 0
@@ -104,22 +107,26 @@ export default {
     .algolia-docsearch-suggestion
       border-color $accentColor
       padding 0
+      overflow visible
       .algolia-docsearch-suggestion--category-header
-        padding 0.9em;
+        padding 0.9em 1.25em;
         margin-top 0
         background $accentColor
         color #fff
         font-weight 600
         font-size 15px
         border none
+        float none !important
+        margin-top: -1px;
         .algolia-docsearch-suggestion--highlight
           color $accentColor
           background #F0E7FF
           box-shadow none
       .algolia-docsearch-suggestion--wrapper
-        padding 0.9em
+        padding 0.9em 1.25em
+        float none !important
         &:hover
-          background: #FCFCFC
+          background: #F5F5F6
         &:after
           content ""
           border-bottom 1px solid $accentColor
@@ -155,10 +162,13 @@ export default {
           margin-right 0.5em
       .algolia-docsearch-suggestion--content
         padding-bottom 0.5em
+        float none
         &:before
           display none
     .algolia-docsearch-footer
       border-color $accentColor
+      margin-right 20px !important
+      margin-bottom 10px !important
     .ds-cursor .algolia-docsearch-suggestion--content
       color $textColor
       background-color: transparent !important

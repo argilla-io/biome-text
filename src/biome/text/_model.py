@@ -22,7 +22,7 @@ from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from dask.dataframe import Series as DaskSeries
 
-from .backbone import BackboneEncoder
+from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
@@ -95,14 +95,16 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         if not isinstance(config, PipelineConfiguration):
             config = PipelineConfiguration.from_params(config)
 
+        vocab = vocab or vocabulary.empty_vocab(features=config.features.keys)
+
         return cls(
             name=config.name,
             head=config.head.compile(
-                backbone=BackboneEncoder(
-                    vocab=vocab
-                    or vocabulary.empty_vocab(featurizer=config.features.compile()),
+
+                backbone=ModelBackbone(
+                    vocab,
                     tokenizer=config.tokenizer.compile(),
-                    featurizer=config.features.compile(),
+                    featurizer=config.features.compile(vocab),
                     encoder=config.encoder,
                 )
             ),
@@ -135,9 +137,10 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
 
-    def update_vocab(self, vocab: Vocabulary):
-        """Update the model vocabulary and re-launch all vocab updates methods"""
+    def set_vocab(self, vocab: Vocabulary):
+        """Replace the current vocab and reload all model layer"""
         self.vocab = vocab
+        # TODO: remove vocab argument and use already updated self.vocab
         self._head.backbone._update_vocab(vocab)  # pylint: disable=protected-access
         self._head._update_vocab(vocab)  # pylint: disable=protected-access
 
@@ -252,7 +255,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         instance = self.text_to_instance(**inputs)
         prediction = self.forward_on_instance(instance)
 
-        return self._head.prediction_explain(prediction=prediction, instance=instance)
+        return self._head.explain_prediction(prediction=prediction, instance=instance)
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
         """Returns model input data dictionary"""
@@ -366,7 +369,7 @@ class PipelineModelTrainer:
 
         os.makedirs(self._serialization_dir, exist_ok=True)
 
-        serialization_params = deepcopy(self._params).as_dict(quiet=True)
+        serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
         with open(
             os.path.join(self._serialization_dir, CONFIG_NAME), "w"
         ) as param_file:

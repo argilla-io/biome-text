@@ -11,7 +11,7 @@ from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator, util
 from overrides import overrides
 
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.heads.classification.defs import ClassificationHead
 from biome.text.modules.specs import (
@@ -37,7 +37,7 @@ class BiMpm(ClassificationHead):
 
     Parameters
     ----------
-    backbone : ``BackboneEncoder``
+    backbone : `ModelBackbone`
         Takes care of the embedding
     labels : `List[str]`
         List of labels
@@ -70,7 +70,7 @@ class BiMpm(ClassificationHead):
 
     def __init__(
         self,
-        backbone: BackboneEncoder,
+        backbone: ModelBackbone,
         labels: List[str],
         matcher_word: BiMpmMatchingSpec,
         encoder: Seq2SeqEncoderSpec,

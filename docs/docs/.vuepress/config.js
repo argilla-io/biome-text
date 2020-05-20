@@ -24,6 +24,7 @@ module.exports = {
   ],
   themeConfig: {
     sidebarDepth: 4,
+    displayAllHeaders: true,
     nav: [
       { text: 'API', link: '/api/'},
       { text: 'Documentation', link: '/documentation/'},
@@ -34,7 +35,7 @@ module.exports = {
       '/api/': [{
           title: 'API',
           children: getSidebarChildren('docs/api'),
-          collapsable: false
+          collapsable: false,
       }],
       '/documentation/': [
       {

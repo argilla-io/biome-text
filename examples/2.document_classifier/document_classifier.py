@@ -11,6 +11,8 @@ if __name__ == "__main__":
             document=["Header main. This is a test body!!!", "The next phrase is here"]
         )
     )
+    # See how is running record tokenization
+    pl.explain(document=dict(record1="this is the field", record2="The next segment. This is another sentence again"))
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
     pl.train(
@@ -18,7 +20,6 @@ if __name__ == "__main__":
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
-        verbose=True,
         extend_vocab=VocabularyConfiguration(
             sources=["train.data.yml"], min_count={"words": 10}
         ),
