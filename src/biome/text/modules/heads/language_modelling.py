@@ -10,7 +10,7 @@ from allennlp.training.metrics import Perplexity
 from biome.text.featurizer import InputFeaturizer
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
-from biome.text.vocabulary import vocabulary
+from biome.text import vocabulary
 from .defs import TaskHead, TaskName, TaskOutput
 
 

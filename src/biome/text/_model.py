@@ -20,6 +20,7 @@ from allennlp.data import DatasetReader, Instance, Vocabulary
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
+from biome.text.vocabulary import _EmptyVocab
 from dask.dataframe import Series as DaskSeries
 
 from .backbone import ModelBackbone
@@ -28,7 +29,6 @@ from .data import DataSource
 from .errors import MissingArgumentError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
-from .vocabulary import vocabulary
 
 
 class _HashDict(dict):
@@ -95,12 +95,11 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         if not isinstance(config, PipelineConfiguration):
             config = PipelineConfiguration.from_params(config)
 
-        vocab = vocab or vocabulary.empty_vocab(features=config.features.keys)
+        vocab = vocab or _EmptyVocab(namespaces=config.features.keys)
 
         return cls(
             name=config.name,
             head=config.head.compile(
-
                 backbone=ModelBackbone(
                     vocab,
                     tokenizer=config.tokenizer.compile(),
