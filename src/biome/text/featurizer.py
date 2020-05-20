@@ -13,7 +13,7 @@ Embedder = TextFieldEmbedder
 class WordFeatures:
     """Feature configuration at word level"""
 
-    namespace = "words"
+    namespace = "word"
 
     def __init__(
         self,
@@ -60,7 +60,7 @@ class WordFeatures:
 class CharFeatures:
     """Feature configuration at character level"""
 
-    namespace = "chars"
+    namespace = "char"
 
     def __init__(
         self,
