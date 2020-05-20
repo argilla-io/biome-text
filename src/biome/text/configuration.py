@@ -160,7 +160,6 @@ class TrainerConfiguration:
     optimizer
     validation_metric
     patience
-    shuffle
     num_epochs
     cuda_device
     grad_norm
@@ -179,7 +178,6 @@ class TrainerConfiguration:
         optimizer: Dict[str, Any],
         validation_metric: str = "-loss",
         patience: Optional[int] = None,
-        shuffle: bool = True,
         num_epochs: int = 20,
         cuda_device: int = -1,
         grad_norm: Optional[float] = None,
@@ -196,7 +194,6 @@ class TrainerConfiguration:
         self.optimizer = optimizer
         self.validation_metric = validation_metric
         self.patience = patience
-        #self.shuffle = shuffle # TODO: We need to check where this param goes now for 1.0
         self.num_epochs = num_epochs
         self.cuda_device = cuda_device
         self.grad_norm = grad_norm

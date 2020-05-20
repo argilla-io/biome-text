@@ -9,6 +9,8 @@ from copy import deepcopy
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+from torch.utils.data.dataset import Dataset
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Type
 
 import allennlp
@@ -16,7 +18,7 @@ import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
-from allennlp.data import DatasetReader, Instance, Vocabulary, DataLoader
+from allennlp.data import DatasetReader, Instance, Vocabulary, DataLoader, BatchSampler
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
@@ -378,16 +380,27 @@ class PipelineModelTrainer:
 
         #self._iterator = DataIterator.from_params(self._params.pop("iterator"))
         #self._iterator.index_with(vocab)
+        iterator_config = self._params.pop("iterator")
+        
         for dataset in self._all_datasets.values():
             dataset.index_with(vocab)
-            
-        self._dataloader = DataLoader(dataset=self._all_datasets["train"])
+        
+        self._dataloader = DataLoader(
+            dataset=self._all_datasets["train"],
+            batch_size=iterator_config["batch_size"]
+        )
         
         if self._all_datasets.get("validation"):
-            self._validation_dataloader = DataLoader(dataset=self._all_datasets["validation"])
+            self._validation_dataloader = DataLoader(
+                dataset=self._all_datasets["validation"],
+                batch_size=iterator_config["batch_size"]
+            )
         
         if self._all_datasets.get("test"):
-            self._test_dataloader = DataLoader(dataset=self._all_datasets["test"])
+            self._test_dataloader = DataLoader(
+                dataset=self._all_datasets["test"],
+                batch_size=iterator_config["batch_size"]
+            )
 
         trainer_params = self._params.pop("trainer")
         no_grad_regexes = trainer_params.pop(
@@ -406,7 +419,7 @@ class PipelineModelTrainer:
             params=trainer_params,
         )
 
-    def datasets_from_params(self) -> Dict[str, Iterable[Instance]]:
+    def datasets_from_params(self) -> Dict[str, Dataset]:
         """
         Load all the datasets specified by the config.
 
@@ -417,7 +430,7 @@ class PipelineModelTrainer:
         train_data_path = self._params.pop("train_data_path")
 
         self.__LOGGER.info("Reading training data from %s", train_data_path)
-        datasets: Dict[str, Iterable[Instance]] = {
+        datasets: Dict[str, Dataset] = {
             "train": self._model.read(train_data_path)
         }
 
