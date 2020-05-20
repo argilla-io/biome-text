@@ -8,7 +8,7 @@ from allennlp.data import Instance, Vocabulary
 
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
-from biome.text.vocabulary import vocabulary
+from biome.text import vocabulary
 
 
 class TaskOutput:

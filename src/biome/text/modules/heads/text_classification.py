@@ -14,7 +14,7 @@ from biome.text.modules.specs import (
     FeedForwardSpec,
     Seq2VecEncoderSpec,
 )
-from biome.text.vocabulary import vocabulary
+from biome.text import vocabulary
 from .classification.defs import ClassificationHead
 from .defs import TaskOutput
 

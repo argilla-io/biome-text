@@ -6,7 +6,7 @@ from allennlp.data.fields import LabelField, MultiLabelField
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 from biome.text.backbone import ModelBackbone
-from biome.text.vocabulary import vocabulary
+from biome.text import vocabulary
 from ..defs import TaskHead, TaskName, TaskOutput
 
 
@@ -28,7 +28,7 @@ class ClassificationHead(TaskHead):
         # metrics and loss
         self.metrics = {"accuracy": CategoricalAccuracy()}
         if self._multilabel:
-            # TODO: for multilabel we want to calculate F1 per label and/or ROC-AUC
+            # TODO: for multi-label we want to calculate F1 per label and/or ROC-AUC
             self._loss = torch.nn.BCEWithLogitsLoss()
         else:
             # metrics, some AllenNLP models use the names _accuracy or _metrics, so we have to be more specific.
@@ -82,7 +82,7 @@ class ClassificationHead(TaskHead):
                 if torch.cuda.is_available()
                 else None,
             )
-            all_classes_probs[:probabilities.size()[0]] = probabilities
+            all_classes_probs[: probabilities.size()[0]] = probabilities
             sorted_indexes_by_prob = torch.argsort(
                 all_classes_probs, descending=True
             ).tolist()
