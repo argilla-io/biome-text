@@ -95,14 +95,16 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         if not isinstance(config, PipelineConfiguration):
             config = PipelineConfiguration.from_params(config)
 
+        vocab = vocab or vocabulary.empty_vocab(features=config.features.keys)
+
         return cls(
             name=config.name,
             head=config.head.compile(
+
                 backbone=ModelBackbone(
-                    vocab=vocab
-                    or vocabulary.empty_vocab(featurizer=config.features.compile()),
+                    vocab,
                     tokenizer=config.tokenizer.compile(),
-                    featurizer=config.features.compile(),
+                    featurizer=config.features.compile(vocab),
                     encoder=config.encoder,
                 )
             ),
@@ -367,7 +369,7 @@ class PipelineModelTrainer:
 
         os.makedirs(self._serialization_dir, exist_ok=True)
 
-        serialization_params = deepcopy(self._params).as_dict(quiet=True)
+        serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
         with open(
             os.path.join(self._serialization_dir, CONFIG_NAME), "w"
         ) as param_file:

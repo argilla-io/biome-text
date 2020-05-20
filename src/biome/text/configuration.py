@@ -2,8 +2,9 @@ import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
+from allennlp.data import Vocabulary
 
-from .featurizer import InputFeaturizer
+from .featurizer import CharFeatures, InputFeaturizer, WordFeatures
 from .modules.encoders import Encoder
 from .modules.heads import TaskHeadSpec
 from .tokenizer import Tokenizer
@@ -23,27 +24,26 @@ class FeaturesConfiguration(FromParams):
     Example:
     
     ```python
-    words = {'embedding_dim': 100}
-    chars = {'embedding_dim': 16, 'encoder': {'type': 'gru'}}
-    config = FeaturesConfiguration(words,chars)
+    word = WordFeatures(embedding_dim=100)
+    char = CharFeatures(embedding_dim=16, encoder={'type': 'gru'})
+    config = FeaturesConfiguration(word, char)
     ```
     
     Parameters
     ----------
-    words : ``Dict[str, Any]``
-    
-    chars: ``Dict[str, Any]``
+    word : `WordFeatures`
+    char: `CharFeatures`
     extra_params
     """
 
     def __init__(
         self,
-        words: Optional[Dict[str, Any]] = None,
-        chars: Optional[Dict[str, Any]] = None,
+        word: Optional[WordFeatures] = None,
+        char: Optional[CharFeatures] = None,
         **extra_params
     ):
-        self.words = words or {}
-        self.chars = chars or {}
+        self.word = word or None
+        self.char = char or None
 
         for k, v in extra_params.items():
             self.__setattr__(k, v)
@@ -52,9 +52,21 @@ class FeaturesConfiguration(FromParams):
     def from_params(
         cls: Type["FeaturesConfiguration"], params: Params, **extras
     ) -> "FeaturesConfiguration":
-        return cls(**params.as_dict(), **extras)
 
-    def compile(self) -> InputFeaturizer:
+        word = params.pop("word", params.pop("words", None))  # TODO: remove backward
+        word = WordFeatures(**word.as_dict(quiet=True)) if word else None
+
+        char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
+        char = CharFeatures(**char.as_dict(quiet=True)) if char else None
+
+        return cls(word, char, **params.as_dict(), **extras)
+
+    @property
+    def keys(self) -> List[str]:
+        """Gets the key features"""
+        return [key for key in vars(self)]
+
+    def compile(self, vocab: Vocabulary) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
         
         :::tip
@@ -68,7 +80,7 @@ class FeaturesConfiguration(FromParams):
         -------
         The configured `InputFeaturizer`
         """
-        return InputFeaturizer.from_params(Params(copy.deepcopy(vars(self))))
+        return InputFeaturizer(vocab=vocab, **vars(self))
 
 
 class TokenizerConfiguration(FromParams):
