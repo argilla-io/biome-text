@@ -112,12 +112,9 @@ class ModelBackbone(torch.nn.Module):
     def _data_tokens(self, data: Any) -> List[List[Token]]:
         """Convert data into a list of list of token depending on data type"""
         if isinstance(data, dict):
-            return [
-                key_tokens + value_tokens
-                for key_tokens, value_tokens in self.tokenizer.tokenize_record(data).values()
-            ]
+            return self.tokenizer.tokenize_record(data)
         if isinstance(data, str):
-            return [self.tokenizer.tokenize_text(data)]
+            return self.tokenizer.tokenize_text(data)
         return self.tokenizer.tokenize_document(data)
 
     def _tokens_to_field(

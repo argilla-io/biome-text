@@ -76,19 +76,43 @@ class Tokenizer(FromParams):
             end_tokens=end_tokens,
         )
 
-    def tokenize_text(self, text: str) -> List[Token]:
-        """ Tokenizes a text string
+    def tokenize_text(self, text: str) -> List[List[Token]]:
+        """
+        Tokenizes a text string applying sentence segmentation, if enabled
 
-        Use this for the simplest case where your input is just a `str`
+        Parameters
+        ----------
+        text: `str`
+            The input text
 
-        # Parameters
-            text: `str`
-            
-        # Returns
-            tokens: `List[Token]`
+        Returns
+        -------
+        A list of list of `Token`.
+
+        If no sentence segmentation is enabled, or just one sentence is found in text
+        the first level list will contain just one element: the tokenized text.
+
+        """
+        return self.tokenize_document([text])
+
+    def _tokenize(self, text: str) -> List[Token]:
+        """Tokenizes an input text string
+
+        The simplest case where your input is just a `str`. For a text tokenization with
+        sentence segmentation, see `tokenize_text`
+
+
+        Parameters
+        ----------
+        text: `str`
+            The input text
+        Returns
+        -------
+        tokens: `List[Token]`
+
         """
         return self._base_tokenizer.tokenize(
-            self._text_cleaning(text)[: self.max_sequence_length]
+            self.text_cleaning(text)[: self.max_sequence_length]
         )
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
@@ -96,15 +120,14 @@ class Tokenizer(FromParams):
 
         Use this to account for hierarchical text structures (e.g., a paragraph is a list of sentences)
 
-        # Parameters
-            document: `List[str]`
+        Parameters
+        ----------
+        document: `List[str]`
             A `List` with text inputs, e.g., sentences
             
-        # Returns
-            tokens: `List[List[Token]]`
-        """
-        """
-        TODO: clarify?: The resultant length list could differs if segment sentences flag is enabled
+        Returns
+        -------
+        tokens: `List[List[Token]]`
         """
         sentences = document
         if self.segment_sentences:
@@ -113,34 +136,33 @@ class Tokenizer(FromParams):
                 for sentences in self.segment_sentences.batch_split_sentences(document)
                 for sentence in sentences
             ]
-        return [
-            self.tokenize_text(sentence)
-            for sentence in sentences[: self.max_nr_of_sentences]
-        ]
+        return [self._tokenize(sentence) for sentence in sentences[: self.max_nr_of_sentences]]
 
     def tokenize_record(
         self, record: Dict[str, Any]
-    ) -> Dict[str, Tuple[List[Token], List[Token]]]:
+    ) -> List[List[Token]]:
         """ Tokenizes a record-like structure containing text inputs
         
         Use this to keep information about the record-like data structure as input features to the model.
         
-        # Parameters
-            record: `Dict[str, Any]`
+        Parameters
+        ----------
+        record: `Dict[str, Any]`
             A `Dict` with arbitrary "fields" containing text.
             
-        # Returns
-            tokens: `Dict[str, Tuple[List[Token], List[Token]]]`
-                A dictionary with two lists of `Token`'s for each record entry: `key` and `value` tokens.
+        Returns
+        -------
+        tokens: `List[List[Token]]`
+            A list of tokenized fields as token list
         """
         data = self._sanitize_dict(record)
-        return {
-            key: (self.tokenize_text(key), self.tokenize_text(value))
-            for key, value in data.items()
-        }
 
-    def _text_cleaning(self, text) -> str:
-        return self.text_cleaning(text)
+        return [
+            tokenized_key + sentence
+            for key, value in data.items()
+            for tokenized_key in [self._tokenize(key)]
+            for sentence in self.tokenize_text(value)
+        ]
 
     def _value_as_string(self, value: Any) -> str:
         """Converts a value data into its string representation"""
