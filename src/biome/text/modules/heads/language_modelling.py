@@ -53,7 +53,7 @@ class LanguageModelling(TaskHead):
     def __init__(self, backbone: ModelBackbone, dropout: float = None) -> None:
         super(LanguageModelling, self).__init__(backbone)
 
-        if not backbone.featurizer.words:
+        if not backbone.featurizer.word:
             raise ConfigurationError(
                 "`LanguageModelling` defines a word-level next token language model. "
                 "Please check your `features` configuration to enable at least `words` features."
