@@ -21,12 +21,10 @@ class TaskOutput:
     def __init__(
         self,
         logits: torch.Tensor,
-        probs: torch.Tensor,
         loss: Optional[torch.Tensor] = None,
         **extra_data
     ):
         self.logits = logits
-        self.probs = probs
         self.loss = loss
 
         for k, v in extra_data.items():
@@ -115,9 +113,22 @@ class TaskHead(torch.nn.Module, Registrable):
         """Converts incoming data into an allennlp `Instance`, used for pyTorch tensors generation"""
         raise NotImplementedError
 
-    def process_output(self, output: TaskOutput) -> TaskOutput:
-        """Build extra parameters over basic task output"""
-        return output
+    def decode(self, output: TaskOutput) -> Dict[str, Any]:
+        """Completes the output for the prediction
+
+        The base implementation just transforms the output to an output_dict.
+
+        Parameters
+        ----------
+        output
+            The output from the head's forward method
+
+        Returns
+        -------
+        output_dict
+            Completed output
+        """
+        return output.as_dict()
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance

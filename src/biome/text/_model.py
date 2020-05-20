@@ -21,6 +21,7 @@ from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from biome.text.vocabulary import _EmptyVocab
+from biome.text.modules.heads import TaskOutput
 from dask.dataframe import Series as DaskSeries
 
 from .backbone import ModelBackbone
@@ -121,8 +122,26 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
 
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""
-        head_output = self._head.forward(*args, **kwargs)
-        return self._head.process_output(head_output).as_dict()
+        head_output: TaskOutput = self._head.forward(*args, **kwargs)
+        # we don't want to break AllenNLP API -> as_dict()
+        return head_output.as_dict()
+
+    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+        """Completes the output for the prediction
+
+        Parameters
+        ----------
+        output_dict
+            The `TaskOutput` from the model's forward method as dict
+
+        Returns
+        -------
+        output_dict
+            Completed output
+        """
+        # we don't want to break AllenNLP API: dict -> TaskOutput
+        output = TaskOutput(**output_dict)
+        return self._head.decode(output)
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Fetch metrics defined in head layer"""
