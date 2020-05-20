@@ -496,6 +496,7 @@ class Pipeline:
             tokens_to_add=vocab_config.tokens_to_add,
         )
 
+
 class _BlankPipeline(Pipeline):
     """
     Parameters
