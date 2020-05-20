@@ -1,3 +1,4 @@
+
 body
   font-family: $primaryFontFamily 
 h1, h2, h3, h4 
@@ -51,6 +52,8 @@ pre.title
 .nav-link
   font-weight: 600 !important
   font-family: $secondaryFontFamily 
+.external__icon
+  margin-left 0.3em
 .search-box input
   border-radius 0 !important
 .footer
@@ -67,6 +70,8 @@ pre.title
     border-bottom: none
     // line-height: 4.4em !important
     margin-left: 320px
+    .nav-link.external
+      font-size 12px
     .no-sidebar &
       max-width: 960px
       padding: 0 2.5rem
@@ -103,7 +108,6 @@ pre.title
     color $accentColor !important
     min-width: 250px !important
     padding-left 0.5rem !important
-    // background-image url('@vuepress/search.svg') !important
     background-position calc(100% - 1rem) !important
     height 2.5rem !important
     &:not(:focus)
