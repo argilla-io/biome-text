@@ -58,7 +58,7 @@ def path_to_pipeline_yaml(tmp_path) -> str:
             #         "padding_index": 0,
             #     },
             # },
-            "words": {
+            "word": {
                 "embedding_dim": 2,
                 "lowercase_tokens": True,
                 "trainable": True,
@@ -82,7 +82,7 @@ def path_to_pipeline_yaml(tmp_path) -> str:
             #         "dropout": 0.2,
             #     },
             # },
-            "chars": {
+            "char": {
                 "embedding_dim": 2,
                 "dropout": 0.1,
                 "encoder": {
@@ -171,7 +171,7 @@ def test_record_bimpm_train(
     path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml, tmp_path
 ):
     pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
-    pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Peter"})
+    pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
     pipeline.create_vocabulary(
         VocabularyConfiguration(
             sources=[DataSource.from_yaml(path_to_training_data_yaml)]

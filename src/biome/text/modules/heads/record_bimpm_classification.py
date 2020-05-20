@@ -11,7 +11,7 @@ from allennlp.modules import (
 )
 from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator, util
-from biome.text.backbone import BackboneEncoder
+from biome.text.backbone import ModelBackbone
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.heads import TaskOutput
 from biome.text.modules.heads.classification.defs import ClassificationHead
@@ -23,7 +23,7 @@ from biome.text.modules.specs import (
 )
 from captum.attr import IntegratedGradients
 
-from biome.text.featurizer import _WordFeaturesSpecs, _CharacterFeaturesSpec
+from biome.text.featurizer import WordFeatures, CharFeatures
 
 
 class RecordBiMpm(ClassificationHead):
@@ -37,7 +37,7 @@ class RecordBiMpm(ClassificationHead):
 
     Parameters
     ----------
-    backbone : `BackboneEncoder`
+    backbone : `ModelBackbone`
         Takes care of the embedding and optionally of the language encoding
     labels : `List[str]`
         List of labels
@@ -62,7 +62,7 @@ class RecordBiMpm(ClassificationHead):
 
     def __init__(
         self,
-        backbone: BackboneEncoder,
+        backbone: ModelBackbone,
         labels: List[str],
         field_encoder: Seq2VecEncoderSpec,
         record_encoder: Seq2SeqEncoderSpec,
@@ -491,23 +491,23 @@ class RecordBiMpm(ClassificationHead):
         """
         field_tokens = []
 
-        if _WordFeaturesSpecs.namespace in record_token_ids:
+        if WordFeatures.namespace in record_token_ids:
             # batch size is 1 -> [0]
-            for field in record_token_ids[_WordFeaturesSpecs.namespace][0]:
+            for field in record_token_ids[WordFeatures.namespace][0]:
                 tokens = []
                 for word_idx in field:
                     # skipp padding
                     if word_idx.item() == 0:
                         continue
                     token = self.backbone.vocab.get_token_from_index(
-                        word_idx.item(), namespace=_WordFeaturesSpecs.namespace
+                        word_idx.item(), namespace=WordFeatures.namespace
                     )
                     tokens.append(token)
                 field_tokens.append(" ".join(tokens))
 
-        elif _CharacterFeaturesSpec.namespace in record_token_ids:
+        elif CharFeatures.namespace in record_token_ids:
             # batch size is 1 -> [0]
-            for field in record_token_ids[_CharacterFeaturesSpec.namespace][0]:
+            for field in record_token_ids[CharFeatures.namespace][0]:
                 tokens = []
                 for word in field:
                     token = []
