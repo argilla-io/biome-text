@@ -71,7 +71,7 @@ if __name__ == "__main__":
         packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=0.9.0",
+            "allennlp~=1.0.0rc4",
             "click~=7.0.0",
             "smart_open~=1.8.0",
             "coloredlogs~=10.0.0",
