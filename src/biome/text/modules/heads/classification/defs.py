@@ -70,7 +70,7 @@ class ClassificationHead(TaskHead):
     def task_name(self) -> TaskName:
         return TaskName.text_classification
 
-    def decode(self, output: TaskOutput) -> Dict[str, Any]:
+    def decode(self, output: TaskOutput) -> TaskOutput:
         """Completes the output for the prediction
 
         Mainly adds probabilities and keys for the UI.
@@ -82,8 +82,7 @@ class ClassificationHead(TaskHead):
 
         Returns
         -------
-        output_dict
-            Completed output
+        completed_output
         """
         if self._multilabel:
             probabilities = output.logits.sigmoid()

@@ -123,7 +123,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""
         head_output: TaskOutput = self._head.forward(*args, **kwargs)
-        # we don't want to break AllenNLP API -> as_dict()
+        # we don't want to break AllenNLP API: TaskOutput -> as_dict()
         return head_output.as_dict()
 
     def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
@@ -139,9 +139,10 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         output_dict
             Completed output
         """
-        # we don't want to break AllenNLP API: dict -> TaskOutput
+        # we don't want to break AllenNLP API: dict -> TaskOutput -> dict
         output = TaskOutput(**output_dict)
-        return self._head.decode(output)
+        completed_output = self._head.decode(output)
+        return completed_output.as_dict()
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Fetch metrics defined in head layer"""

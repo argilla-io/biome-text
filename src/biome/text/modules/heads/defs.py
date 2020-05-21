@@ -113,10 +113,10 @@ class TaskHead(torch.nn.Module, Registrable):
         """Converts incoming data into an allennlp `Instance`, used for pyTorch tensors generation"""
         raise NotImplementedError
 
-    def decode(self, output: TaskOutput) -> Dict[str, Any]:
+    def decode(self, output: TaskOutput) -> TaskOutput:
         """Completes the output for the prediction
 
-        The base implementation just transforms the output to an output_dict.
+        The base implementation adds nothing.
 
         Parameters
         ----------
@@ -125,10 +125,9 @@ class TaskHead(torch.nn.Module, Registrable):
 
         Returns
         -------
-        output_dict
-            Completed output
+        completed_output
         """
-        return output.as_dict()
+        return output
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance
