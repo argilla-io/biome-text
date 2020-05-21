@@ -110,7 +110,7 @@ class ClassificationHead(TaskHead):
         output.label = max_classes
         output.prob = max_classes_prob
 
-        return output.as_dict()
+        return output
 
     def _labels_with_probabilities(
         self, probabilities: torch.Tensor
