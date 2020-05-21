@@ -70,6 +70,15 @@ pre.title
     border-bottom: none
     // line-height: 4.4em !important
     margin-left: 320px
+    .nav-links 
+      display flex
+      width 100%
+      align-items center
+      margin-left 3em
+      margin-right -1em
+      .nav-item
+        width: auto
+        margin-left auto
     .nav-link.external
       font-size 12px
     .no-sidebar &
@@ -110,7 +119,8 @@ pre.title
     padding-left 0.5rem !important
     background-position calc(100% - 1rem) !important
     height 2.5rem !important
-    &:not(:focus)
+    border-color $sidebarBgColor !important
+    &:focus
       border-color $accentColor !important
   .theme-default-content:not(.custom)
       max-width: 740px
