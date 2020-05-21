@@ -1,7 +1,7 @@
 import logging
 import os.path
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import dask.dataframe as dd
 import yaml
@@ -181,29 +181,9 @@ class DataSource:
             return value.to_dict()
         return value.iloc[0]
 
-    @staticmethod
-    def _row2dict(
-        row: Tuple, columns: List[str], default_path: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """ Convert a pandas row into a dict object """
-        idx = row[0]
-        data = row[1:]
-
-        # For duplicated column names, pandas append a index prefix with dots '.' We prevent
-        # index failures by replacing for '_'
-        sanitized_columns = [column.replace(".", "_") for column in columns]
-        data = dict([(ID, idx)] + list(zip(sanitized_columns, data)))
-
-        # DataFrame.read_csv allows include path column called `path`
-        data[RESOURCE] = data.get(
-            RESOURCE, data.get(PATH_COLUMN_NAME, str(default_path))
-        )
-
-        return data
-
     @classmethod
     def from_yaml(
-        cls: "DataSource", file_path: str, default_mapping: Dict[str, str] = None
+        cls: Type["DataSource"], file_path: str, default_mapping: Dict[str, str] = None
     ) -> "DataSource":
         """Create a data source from a yaml file.
 
@@ -228,20 +208,8 @@ class DataSource:
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
         mapping = cfg_dict.pop("mapping", default_mapping)
-        # backward compatibility
-        if not mapping:
-            try:
-                mapping = cfg_dict.pop("forward")
-                warnings.warn(
-                    "The key 'forward' is deprecated! Please use the 'mapping' key in the future.",
-                    DeprecationWarning,
-                )
-            except KeyError:
-                pass
 
-        mapping = cls._make_backward_compatible(mapping) if mapping else None
-
-        return cls(**cfg_dict, mapping=mapping)
+        return cls(mapping=mapping, **cfg_dict)
 
     @staticmethod
     def _make_backward_compatible(mapping: Dict) -> Dict:
