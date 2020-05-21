@@ -20,7 +20,7 @@ from allennlp.data import DatasetReader, Instance, Vocabulary
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
-from biome.text.vocabulary import _EmptyVocab
+from biome.text import vocabulary
 from dask.dataframe import Series as DaskSeries
 
 from .backbone import ModelBackbone
@@ -95,7 +95,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         if not isinstance(config, PipelineConfiguration):
             config = PipelineConfiguration.from_params(config)
 
-        vocab = vocab or _EmptyVocab(namespaces=config.features.keys)
+        vocab = vocab or vocabulary.empty_vocabulary(namespaces=config.features.keys)
 
         return cls(
             name=config.name,
