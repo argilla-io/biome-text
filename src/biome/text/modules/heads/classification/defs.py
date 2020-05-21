@@ -70,37 +70,32 @@ class ClassificationHead(TaskHead):
     def task_name(self) -> TaskName:
         return TaskName.text_classification
 
-    def process_output(self, output: TaskOutput) -> TaskOutput:
-        def labels_with_probabilities(probabilities: torch.Tensor) -> Dict[str, float]:
-            """
-            Calculates the descendant sorted label + probs dictionary
-            using all output classes (not only predicted)
-            """
-            all_classes_probs = torch.zeros(
-                self.num_labels,
-                device=probabilities.get_device()
-                if torch.cuda.is_available()
-                else None,
-            )
-            all_classes_probs[: probabilities.size()[0]] = probabilities
-            sorted_indexes_by_prob = torch.argsort(
-                all_classes_probs, descending=True
-            ).tolist()
-            return {
-                vocabulary.label_for_index(self.backbone.vocab, idx): all_classes_probs[
-                    idx
-                ]
-                for idx in sorted_indexes_by_prob
-            }
+    def decode(self, output: TaskOutput) -> TaskOutput:
+        """Completes the output for the prediction
 
-        probs_batch = output.probs
+        Mainly adds probabilities and keys for the UI.
+
+        Parameters
+        ----------
+        output
+            The output from the head's forward method
+
+        Returns
+        -------
+        completed_output
+        """
+        if self._multilabel:
+            probabilities = output.logits.sigmoid()
+        else:
+            probabilities = torch.nn.functional.softmax(output.logits, dim=-1)
+        output.probs = probabilities
 
         output_map_probs = []
         max_classes = []
         max_classes_prob = []
         if self.num_labels > 0:
-            for probs in probs_batch:
-                labels_with_prob = labels_with_probabilities(probs)
+            for probs in probabilities:
+                labels_with_prob = self._labels_with_probabilities(probs)
                 output_map_probs.append(labels_with_prob)
 
                 label, prob = list(labels_with_prob.items())[0]
@@ -109,13 +104,34 @@ class ClassificationHead(TaskHead):
 
         output.classes = output_map_probs
 
-        output.max_class = max_classes
-        output.max_class_prob = max_classes_prob
+        output.max_class = max_classes  # deprecated
+        output.max_class_prob = max_classes_prob  # deprecated
 
         output.label = max_classes
         output.prob = max_classes_prob
 
         return output
+
+    def _labels_with_probabilities(
+        self, probabilities: torch.Tensor
+    ) -> Dict[str, float]:
+        """
+        Calculates the descendant sorted label + probs dictionary
+        using all output classes (not only predicted)
+        """
+        all_classes_probs = torch.zeros(
+            self.num_labels,
+            device=probabilities.get_device() if torch.cuda.is_available() else None,
+        )
+        all_classes_probs[: probabilities.size()[0]] = probabilities
+        sorted_indexes_by_prob = torch.argsort(
+            all_classes_probs, descending=True
+        ).tolist()
+
+        return {
+            vocabulary.label_for_index(self.backbone.vocab, idx): all_classes_probs[idx]
+            for idx in sorted_indexes_by_prob
+        }
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Get the metrics of our classifier, see :func:`~allennlp_2.models.Model.get_metrics`.
@@ -161,9 +177,7 @@ class ClassificationHead(TaskHead):
     def single_label_output(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None,
     ) -> TaskOutput:
-        output = TaskOutput(
-            logits=logits, probs=torch.nn.functional.softmax(logits, dim=-1)
-        )
+        output = TaskOutput(logits=logits)
 
         if label is not None:
             output.loss = self._loss(logits, label.long())
@@ -175,7 +189,7 @@ class ClassificationHead(TaskHead):
     def multi_label_output(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None,
     ) -> TaskOutput:
-        output = TaskOutput(logits=logits, probs=logits.sigmoid())
+        output = TaskOutput(logits=logits)
 
         if label is not None:
             # casting long to float for BCELoss
