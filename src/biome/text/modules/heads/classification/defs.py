@@ -104,10 +104,9 @@ class ClassificationHead(TaskHead):
 
         output.classes = output_map_probs
 
-        output.max_class = max_classes
-        output.max_class_prob = max_classes_prob
+        output.max_class = max_classes  # deprecated
+        output.max_class_prob = max_classes_prob  # deprecated
 
-        # TODO: This is just a duplicate of output.max_class. Revise if it is still necessary!
         output.label = max_classes
         output.prob = max_classes_prob
 
