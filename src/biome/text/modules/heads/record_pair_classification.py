@@ -26,14 +26,17 @@ from captum.attr import IntegratedGradients
 from biome.text.featurizer import WordFeatures, CharFeatures
 
 
-class RecordBiMpm(ClassificationHead):
-    """
-    This `Model` is loosely based on the AllenNLP implementation of the BiMPM model described in
-    `Bilateral Multi-Perspective Matching for Natural Language Sentences <https://arxiv.org/abs/1702.03814>`_
-    by Zhiguo Wang et al., 2017. It was adapted to deal with record pairs.
+class RecordPairClassification(ClassificationHead):
+    """Classifies the relation between a pair of records using a matching layer.
 
-    This version also allows you to leave out the backward matching,
-    providing the possibility to use transformers for the record encoding layer.
+    The input for models using this `TaskHead` are two *records* with one or more *data fields* each, and a label
+    describing their relationship.
+    If you would like a meaningful explanation of the model's prediction,
+    both records must consist of the same number of *data fields* and hold them in the same order.
+
+    The architecture is loosely based on the AllenNLP implementation of the BiMPM model described in
+    `Bilateral Multi-Perspective Matching for Natural Language Sentences <https://arxiv.org/abs/1702.03814>`_
+    by Zhiguo Wang et al., 2017, and was adapted to deal with record pairs.
 
     Parameters
     ----------
@@ -73,7 +76,7 @@ class RecordBiMpm(ClassificationHead):
         dropout: float = 0.1,
         initializer: InitializerApplicator = InitializerApplicator(),
     ):
-        super(RecordBiMpm, self).__init__(backbone, labels)
+        super(RecordPairClassification, self).__init__(backbone, labels)
 
         # This is needed for the TrainerConfig to choose the right 'sorting_keys'
         self.backbone.encoder = TimeDistributedEncoder(self.backbone.encoder)

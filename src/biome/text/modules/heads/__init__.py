@@ -5,7 +5,7 @@ from .language_modelling import LanguageModelling, LanguageModellingSpec
 from .record_classification import RecordClassification, RecordClassificationSpec
 from .text_classification import TextClassification, TextClassificationSpec
 from .token_classification import TokenClassification, TokenClassificationSpec
-from .record_bimpm_classification import RecordBiMpm
+from .record_pair_classification import RecordPairClassification
 
 # fmt: on
 
@@ -15,6 +15,6 @@ for head in [
     DocumentClassification,
     RecordClassification,
     LanguageModelling,
-    RecordBiMpm,
+    RecordPairClassification,
 ]:
     head.register(overrides=True)

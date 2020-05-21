@@ -96,7 +96,7 @@ def path_to_pipeline_yaml(tmp_path) -> str:
             },
         },
         "head": {
-            "type": "RecordBiMpm",
+            "type": "RecordPairClassification",
             "labels": ["duplicate", "not_duplicate"],
             "dropout": 0.1,
             "field_encoder": {
