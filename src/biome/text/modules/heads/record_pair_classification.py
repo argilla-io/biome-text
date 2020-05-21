@@ -519,7 +519,7 @@ class RecordPairClassification(ClassificationHead):
                         if char_idx.item() == 0:
                             continue
                         char = self.backbone.vocab.get_token_from_index(
-                            char_idx.item(), namespace=_CharacterFeaturesSpec.namespace
+                            char_idx.item(), namespace=CharFeatures.namespace
                         )
                         token.append(char)
                     if token:
