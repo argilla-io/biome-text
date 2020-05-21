@@ -20,7 +20,7 @@ class CsvDatasourceTest(DaskSupportTest):
         ds = DataSource(
             format="csv",
             source=os.path.join(FILES_PATH, "trailing_coma_in_headers.csv"),
-            attributes=dict(sep=";"),
+            sep=";",
         )
         df = ds.to_dataframe().compute()
         self.assertIn("name", df.columns)
