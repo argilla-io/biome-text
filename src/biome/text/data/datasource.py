@@ -101,10 +101,13 @@ class DataSource:
         ]
         for column in data_frame.columns:
             try:
-                data_frame[column] = data_frame[column].fillna(value="")
-            except ValueError:
+                column_data = data_frame[column]
+                if column_data.dtype.name == "category":
+                    column_data = column_data.cat.add_categories("")
+                data_frame[column] = column_data.fillna(value="")
+            except ValueError as ex:
                 self._logger.warning(
-                    "Cannot set NaN's as empty string for column %s", column
+                    "Cannot set NaN's as empty string for column <%s>: %s", column, ex
                 )
         return data_frame
 
