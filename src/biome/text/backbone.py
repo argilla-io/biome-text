@@ -41,16 +41,14 @@ class ModelBackbone(torch.nn.Module):
 
         self.vocab = vocab
         self.tokenizer = tokenizer
+        # TODO: review featurizer here!
         self.featurizer = featurizer
+        self.embedder = featurizer.embedder
         self.encoder = (
             encoder.input_dim(self.embedder.get_output_dim()).compile()
             if encoder
             else PassThroughEncoder(self.embedder.get_output_dim())
         )
-
-    @property
-    def embedder(self) -> TextFieldEmbedder:
-        return self.featurizer.embedder
 
     def forward(
         self,
@@ -67,7 +65,7 @@ class ModelBackbone(torch.nn.Module):
         self.vocab = vocab
 
         # This loop applies only for embedding layer.
-        for model_path, module in self.embedder.named_modules():
+        for model_path, module in self.named_modules():
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
 
