@@ -198,7 +198,8 @@ class Pipeline:
             if vocabulary.is_empty(model.vocab, self.config.features.keys):
                 raise EmptyVocabError(
                     "Found an empty vocabulary. "
-                    "Please load a vocabulary or define the vocab extension properly"
+                    "Please load a vocabulary using vocab_path parameter when loading pipeline  "
+                    " or define the vocab extension with the extend_vocab parameter using a VocabularyConfiguration."
                 )
 
             config = TrainConfiguration(
