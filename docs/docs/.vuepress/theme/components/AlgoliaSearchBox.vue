@@ -77,6 +77,8 @@ export default {
 <style lang="stylus">
 input 
   background-image url('search.svg') !important
+input:focus 
+  background-image url('search-orange.svg') !important
 .algolia-search-wrapper
   & > span
     vertical-align middle

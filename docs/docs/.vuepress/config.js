@@ -25,6 +25,7 @@ module.exports = {
   themeConfig: {
     sidebarDepth: 4,
     displayAllHeaders: true,
+    searchPlaceholder: 'search',
     nav: [
       { text: 'API', link: '/api/'},
       { text: 'Documentation', link: '/documentation/'},
