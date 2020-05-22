@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 from allennlp.data import Instance, Token, TokenIndexer
 from allennlp.data.fields import ListField, TextField
 from biome.text.tokenizer import Tokenizer
-
+from biome.text.features import WordFeatures
 
 class InputFeaturizer:
     """Transforms input text (words and/or characters) into indexes and embedding vectors.
@@ -30,8 +30,6 @@ class InputFeaturizer:
     @property
     def has_word_features(self) -> bool:
         """Checks if word features is already configured as part of featurization"""
-        from biome.text.configuration import WordFeatures
-
         return WordFeatures.namespace in self.indexer
 
     def featurize(

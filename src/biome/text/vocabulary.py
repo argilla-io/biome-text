@@ -89,7 +89,7 @@ def words_vocab_size(vocab: Vocabulary) -> int:
     size: `int`
         The vocabulary size for the words namespace
     """
-    from biome.text.configuration import WordFeatures
+    from biome.text.features import WordFeatures
 
     return vocab.get_vocab_size(WordFeatures.namespace)
 
