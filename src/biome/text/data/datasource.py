@@ -1,7 +1,7 @@
 import logging
 import os.path
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import dask.dataframe as dd
 import yaml
@@ -66,28 +66,20 @@ class DataSource:
     def __init__(
         self,
         source: Optional[Union[str, List[str]]] = None,
-        attributes: Optional[Dict[str, Any]] = None,
         mapping: Optional[Dict[str, Union[List[str], str]]] = None,
         format: Optional[str] = None,
         **kwargs,
     ):
-        if kwargs:
-            warnings.warn(
-                "Passing keyword arguments is deprecated and will be disabled."
-                " Please, use attributes argument instead",
-                DeprecationWarning,
-            )
-        kwargs = kwargs or {}
 
         self.source = source
-        self.attributes = attributes or {}
+        self.attributes = kwargs or {}
         self.mapping = mapping or {}
 
         if not format and source:
             format = self.__format_from_source(source)
 
         source_reader, defaults = self._find_reader(format)
-        reader_arguments = {**defaults, **kwargs, **self.attributes}
+        reader_arguments = {**defaults, **self.attributes}
 
         data_frame = (
             source_reader(source, **reader_arguments)
@@ -109,10 +101,13 @@ class DataSource:
         ]
         for column in data_frame.columns:
             try:
-                data_frame[column] = data_frame[column].fillna(value="")
-            except ValueError:
+                column_data = data_frame[column]
+                if column_data.dtype.name == "category":
+                    column_data = column_data.cat.add_categories("")
+                data_frame[column] = column_data.fillna(value="")
+            except ValueError as ex:
                 self._logger.warning(
-                    "Cannot set NaN's as empty string for column %s", column
+                    "Cannot set NaN's as empty string for column <%s>: %s", column, ex
                 )
         return data_frame
 
@@ -181,29 +176,9 @@ class DataSource:
             return value.to_dict()
         return value.iloc[0]
 
-    @staticmethod
-    def _row2dict(
-        row: Tuple, columns: List[str], default_path: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """ Convert a pandas row into a dict object """
-        idx = row[0]
-        data = row[1:]
-
-        # For duplicated column names, pandas append a index prefix with dots '.' We prevent
-        # index failures by replacing for '_'
-        sanitized_columns = [column.replace(".", "_") for column in columns]
-        data = dict([(ID, idx)] + list(zip(sanitized_columns, data)))
-
-        # DataFrame.read_csv allows include path column called `path`
-        data[RESOURCE] = data.get(
-            RESOURCE, data.get(PATH_COLUMN_NAME, str(default_path))
-        )
-
-        return data
-
     @classmethod
     def from_yaml(
-        cls: "DataSource", file_path: str, default_mapping: Dict[str, str] = None
+        cls: Type["DataSource"], file_path: str, default_mapping: Dict[str, str] = None
     ) -> "DataSource":
         """Create a data source from a yaml file.
 
@@ -227,60 +202,10 @@ class DataSource:
         path_keys = ["path", "source"]
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
-        mapping = cfg_dict.pop("mapping", default_mapping)
-        # backward compatibility
-        if not mapping:
-            try:
-                mapping = cfg_dict.pop("forward")
-                warnings.warn(
-                    "The key 'forward' is deprecated! Please use the 'mapping' key in the future.",
-                    DeprecationWarning,
-                )
-            except KeyError:
-                pass
-
-        mapping = cls._make_backward_compatible(mapping) if mapping else None
-
-        return cls(**cfg_dict, mapping=mapping)
-
-    @staticmethod
-    def _make_backward_compatible(mapping: Dict) -> Dict:
-        """Makes the mapping section of a data source yml file backward compatible.
-        For a 1.0 version, this method can be removed.
-
-        Parameters
-        ----------
-        mapping
-            The mapping dict of the data source yml
-        """
-        if "target" in mapping and "label" not in mapping:
-            warnings.warn(
-                "The 'target' key is deprecated! Please use the mapping format in the future.",
-                DeprecationWarning,
-            )
-            mapping["label"] = mapping.pop("target")
-
-        if "label" in mapping and isinstance(mapping["label"], dict):
-            warnings.warn(
-                "Please use the mapping format for the 'label' key in the future.",
-                DeprecationWarning,
-            )
-            label_dict = mapping["label"]
-            label_key = (
-                label_dict.get("name")
-                or label_dict.get("label")
-                or label_dict.get("gold_label")
-                or label_dict.get("field")
-            )
-            if label_key:
-                mapping["label"] = label_key
-            else:
-                raise RuntimeError("Cannot find the 'label' value in the given format!")
-            if "metadata_file" in label_dict:
-                raise DeprecationWarning(
-                    "The 'metadata_file' functionality is deprecated, please modify your source file directly!"
-                )
-        return mapping
+        if "mapping" not in cfg_dict:
+            cfg_dict["mapping"] = default_mapping or {}
+        cfg_dict.update(cfg_dict.pop("attributes", {}))
+        return cls(**cfg_dict)
 
     def to_yaml(self, path: str, make_source_path_absolute: bool = False) -> str:
         """Create a yaml config file for this data source.
