@@ -173,7 +173,7 @@ class DocumentClassification(ClassificationHead):
             embedded_text = self.feedforward(embedded_text)
 
         logits = self._classification_layer(embedded_text)
-        return self.calculate_output(logits=logits, label=None).probs
+        return logits
 
 
 class DocumentClassificationSpec(ComponentSpec[DocumentClassification]):

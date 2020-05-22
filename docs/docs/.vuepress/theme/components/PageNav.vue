@@ -18,7 +18,9 @@
           <span class="page-nav__button__icon">
             <vp-icon color="#4A4A4A" name="chev-left" size="18px"/>
           </span>
-          {{ prev.title || prev.path }}
+          <span class="page-nav__button__text">
+            {{ prev.title || prev.path }}
+          </span>
 
           <OutboundLink />
         </a>
@@ -31,7 +33,9 @@
           <span class="page-nav__button__icon">
             <vp-icon color="#4A4A4A" name="chev-left" size="18px"/>
           </span>
-          {{ prev.title || prev.path }}
+          <span class="page-nav__button__text">
+            {{ prev.title || prev.path }}
+          </span>
         </RouterLink>
       </span>
 
@@ -45,7 +49,9 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          {{ next.title || next.path }}
+          <span class="page-nav__button__text">
+            {{ next.title || next.path }}
+          </span>
           <span class="page-nav__button__icon">
             <vp-icon color="#4A4A4A" name="chev-right" size="18px"/>
           </span>
@@ -56,7 +62,9 @@
           v-else
           :to="next.path"
         >
-          {{ next.title || next.path }}
+          <span class="page-nav__button__text">
+            {{ next.title || next.path }}
+          </span>
           <span class="page-nav__button__icon">
             <vp-icon color="#4A4A4A" name="chev-right" size="18px"/>
           </span>
@@ -170,15 +178,22 @@ function flatten (items, res) {
     font-family: $secondaryFontFamily
     &:hover
       border-color: $textColor !important
+      a
+        color: $textColor !important
     a
       display: flex
       padding: 0.9em
-      color: $textColor !important
+      color: $textColorLight !important
       font-weight: 600
       font-size: 0.75rem
     &__icon
       display: flex
       align-items: center
+    &__text
+      max-width 260px
+      overflow hidden
+      text-overflow ellipsis
+      display inline-block
     @media (max-width: $MQMobileNarrow)
       border: none
       a

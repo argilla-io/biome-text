@@ -92,7 +92,7 @@ class CharFeatures:
         }
 
         for k, v in self.extra_params.items():
-            config[k] = {**self.extra_params[k], **config.get(k)}
+            config[k] = {**v, **config.get(k)}
 
         return config
 
@@ -153,15 +153,17 @@ class InputFeaturizer:
             {spec.namespace: spec.config for spec in [word, char] if spec}
         )
 
+        copy_config = copy.deepcopy(self._config)
+
         self.indexer = {
             feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
-            for feature, config in self._config.items()
+            for feature, config in copy_config.items()
         }
         self.embedder = TextFieldEmbedder.from_params(
             Params(
                 {
                     feature: config[self.__EMBEDDER_KEYNAME]
-                    for feature, config in self._config.items()
+                    for feature, config in copy_config.items()
                 }
             ),
             vocab=vocab,

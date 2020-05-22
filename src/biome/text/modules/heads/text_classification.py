@@ -123,9 +123,8 @@ class TextClassification(ClassificationHead):
         if self.feedforward:
             embedded_text = self.feedforward.forward(embedded_text)
         logits = self._classification_layer(embedded_text)
-        output = self.calculate_output(logits=logits, label=None)
         # TODO: review what kind of information we need to pass
-        return output.probs
+        return logits
 
 
 class TextClassificationSpec(ComponentSpec[TextClassification]):
