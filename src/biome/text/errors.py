@@ -24,6 +24,11 @@ class MissingArgumentError(ValidationError):
         return f"Missing argument '{self.arg_name}'"
 
 
+class EmptyVocabError(ValidationError):
+    """Error related with using empty vocabs for a training"""
+    pass
+
+
 class WrongValueError(ValidationError):
     """Wrong value error"""
 

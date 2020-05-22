@@ -127,18 +127,31 @@ def set_labels(vocab: Vocabulary, new_labels: List[str]):
     extend_labels(vocab, new_labels)
 
 
-class _EmptyVocab(Vocabulary):
+def empty_vocabulary(namespaces):
     """
-    Represents an empty vocabulary. Used for early pipeline initialization
+    Creates an empty vocabulary. Used for early pipeline initialization
 
     Arguments
     ----------
     namespaces: `List[str]`
         The vocab namespaces to create
     """
+    vocab = Vocabulary()
+    for namespace in namespaces:
+        vocab.add_token_to_namespace(DEFAULT_OOV_TOKEN, namespace=namespace)
+    return vocab
 
-    def __init__(self, namespaces: List[str]):
-        super(_EmptyVocab, self).__init__()
 
-        for namespace in namespaces:
-            self.add_token_to_namespace(DEFAULT_OOV_TOKEN, namespace=namespace)
+def is_empty(vocab: Vocabulary, namespaces: List[str]) -> bool:
+    """
+    Checks if a vocab is empty respect to given namespaces
+
+    Returns True vocab size is 0 for all given namespaces
+    """
+    for namespaces in namespaces:
+        # We must drop the padding and out of vocab tokens = 2 tokens
+        if vocab.get_vocab_size(namespaces) > 2:
+            return False
+    return True
+
+

@@ -13,11 +13,13 @@ from allennlp.common import Params
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from biome.text import vocabulary
 from biome.text.configuration import (
     PipelineConfiguration,
     TrainerConfiguration,
     VocabularyConfiguration,
 )
+from biome.text.errors import EmptyVocabError
 from biome.text.helpers import update_method_signature
 from dask import dataframe as dd
 
@@ -192,7 +194,14 @@ class Pipeline:
                 vocab = self.extend_vocabulary(model.vocab, vocab_config=extend_vocab)
             if vocab:
                 model.set_vocab(vocab)
-            # TODO: empty vocab check
+
+            if vocabulary.is_empty(model.vocab, self.config.features.keys):
+                raise EmptyVocabError(
+                    "Found an empty vocabulary. "
+                    "Please load a vocabulary using vocab_path parameter when loading pipeline  "
+                    " or define the vocab extension with the extend_vocab parameter using a VocabularyConfiguration."
+                )
+
             config = TrainConfiguration(
                 test_cfg=test,
                 output=output,
