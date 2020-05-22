@@ -40,9 +40,6 @@ class FeaturesConfiguration(FromParams):
 
     __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
 
-    WORDS = WordFeatures.namespace
-    CHARS = CharFeatures.namespace
-
     def __init__(
         self,
         word: Optional[WordFeatures] = None,
