@@ -185,7 +185,7 @@ class FeaturesConfiguration(FromParams):
             vocab=vocab,
         )
 
-    def compile_featurizer(self) -> InputFeaturizer:
+    def compile_featurizer(self, tokenizer: Tokenizer) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
         
         :::tip
@@ -194,6 +194,11 @@ class FeaturesConfiguration(FromParams):
         a valid configuration.
         
         :::
+
+        Parameters
+        ----------
+        tokenizer: `Tokenizer`
+            tokenizer used for this featurizer
         
         Returns
         -------
@@ -205,7 +210,7 @@ class FeaturesConfiguration(FromParams):
             feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
             for feature, config in configuration.items()
         }
-        return InputFeaturizer(indexer)
+        return InputFeaturizer(tokenizer, indexer=indexer)
 
     def _make_allennlp_config(self) -> Dict[str, Any]:
         """Creates compatible allennlp configuration"""
