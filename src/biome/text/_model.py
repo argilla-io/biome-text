@@ -28,7 +28,7 @@ from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
 from .helpers import split_signature_params_by_predicate
-from .modules.heads import TaskHead
+from .modules.heads import TaskHead, TaskOutput
 
 
 class _HashDict(dict):
