@@ -2,12 +2,107 @@ import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
-from allennlp.data import Vocabulary
+from allennlp.data import TokenIndexer, Vocabulary
+from allennlp.modules import TextFieldEmbedder
+from biome.text.modules.specs import Seq2VecEncoderSpec
 
-from .featurizer import CharFeatures, InputFeaturizer, WordFeatures
+from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
 from .modules.heads import TaskHeadSpec
 from .tokenizer import Tokenizer
+
+
+class WordFeatures:
+    """Feature configuration at word level"""
+
+    namespace = "word"
+
+    def __init__(
+        self,
+        embedding_dim: int,
+        lowercase_tokens: bool = False,
+        trainable: bool = True,
+        weights_file: Optional[str] = None,
+        **extra_params
+    ):
+        self.embedding_dim = embedding_dim
+        self.lowercase_tokens = lowercase_tokens
+        self.trainable = trainable
+        self.weights_file = weights_file
+        self.extra_params = extra_params
+
+    @property
+    def config(self):
+        config = {
+            "indexer": {
+                "type": "single_id",
+                "lowercase_tokens": self.lowercase_tokens,
+                "namespace": self.namespace,
+            },
+            "embedder": {
+                "embedding_dim": self.embedding_dim,
+                "vocab_namespace": self.namespace,
+                "trainable": self.trainable,
+                **({"pretrained_file": self.weights_file} if self.weights_file else {}),
+            },
+        }
+
+        for k in self.extra_params:
+            config[k] = {**self.extra_params[k], **config.get(k)}
+
+        return config
+
+    def to_json(self):
+        data = vars(self)
+        data.update(data.pop("extra_params"))
+
+        return data
+
+
+class CharFeatures:
+    """Feature configuration at character level"""
+
+    namespace = "char"
+
+    def __init__(
+        self,
+        embedding_dim: int,
+        encoder: Dict[str, Any],
+        dropout: int = 0.0,
+        **extra_params
+    ):
+        self.embedding_dim = embedding_dim
+        self.encoder = encoder
+        self.dropout = dropout
+        self.extra_params = extra_params
+
+    @property
+    def config(self):
+        config = {
+            "indexer": {"type": "characters", "namespace": self.namespace},
+            "embedder": {
+                "type": "character_encoding",
+                "embedding": {
+                    "embedding_dim": self.embedding_dim,
+                    "vocab_namespace": self.namespace,
+                },
+                "encoder": Seq2VecEncoderSpec(**self.encoder)
+                .input_dim(self.embedding_dim)
+                .config,
+                "dropout": self.dropout,
+            },
+        }
+
+        for k, v in self.extra_params.items():
+            config[k] = {**self.extra_params[k], **config.get(k)}
+
+        return config
+
+    def to_json(self):
+        data = vars(self)
+        data.update(data.pop("extra_params"))
+
+        return data
 
 
 class FeaturesConfiguration(FromParams):
@@ -36,6 +131,13 @@ class FeaturesConfiguration(FromParams):
     extra_params
     """
 
+    __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
+    __INDEXER_KEYNAME = "indexer"
+    __EMBEDDER_KEYNAME = "embedder"
+
+    WORDS = WordFeatures.namespace
+    CHARS = CharFeatures.namespace
+
     def __init__(
         self,
         word: Optional[WordFeatures] = None,
@@ -47,6 +149,9 @@ class FeaturesConfiguration(FromParams):
 
         for k, v in extra_params.items():
             self.__setattr__(k, v)
+
+        if not (word or char or extra_params):
+            self.word = self.__DEFAULT_CONFIG
 
     @classmethod
     def from_params(
@@ -66,7 +171,21 @@ class FeaturesConfiguration(FromParams):
         """Gets the key features"""
         return [key for key in vars(self)]
 
-    def compile(self, vocab: Vocabulary) -> InputFeaturizer:
+    def compile_embedder(self, vocab: Vocabulary) -> TextFieldEmbedder:
+        """Creates the embedder from configured features for a given vocabulary"""
+        configuration = self._make_allennlp_config()
+
+        return TextFieldEmbedder.from_params(
+            Params(
+                {
+                    feature: config[self.__EMBEDDER_KEYNAME]
+                    for feature, config in configuration.items()
+                }
+            ),
+            vocab=vocab,
+        )
+
+    def compile_featurizer(self) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
         
         :::tip
@@ -80,7 +199,21 @@ class FeaturesConfiguration(FromParams):
         -------
         The configured `InputFeaturizer`
         """
-        return InputFeaturizer(vocab=vocab, **vars(self))
+        configuration = self._make_allennlp_config()
+
+        indexer = {
+            feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
+            for feature, config in configuration.items()
+        }
+        return InputFeaturizer(indexer)
+
+    def _make_allennlp_config(self) -> Dict[str, Any]:
+        """Creates compatible allennlp configuration"""
+        configuration = {k: v for k, v in vars(self).items() if isinstance(v, dict)}
+        configuration.update(
+            {spec.namespace: spec.config for spec in [self.word, self.char] if spec}
+        )
+        return copy.deepcopy(configuration)
 
 
 class TokenizerConfiguration(FromParams):
@@ -122,11 +255,11 @@ class PipelineConfiguration(FromParams):
 
     Parameters
     ----------
-    name : ``str``
+    name : `str`
         The `name` for our pipeline
     features : `FeaturesConfiguration`
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
-    head : ``TaskHeadSpec``
+    head : `TaskHeadSpec`
         The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
     tokenizer : `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.

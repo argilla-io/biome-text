@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import torch
-from allennlp.data import Instance, Token
+from allennlp.data import Instance, Token, Vocabulary
 from allennlp.data.fields import ListField, TextField
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
@@ -9,7 +9,6 @@ from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
 from .tokenizer import Tokenizer
-from .vocabulary import Vocabulary
 
 
 class ModelBackbone(torch.nn.Module):
@@ -25,7 +24,9 @@ class ModelBackbone(torch.nn.Module):
     tokenizer : `Tokenizer`
         Tokenizes the input depending on its type (str, List[str], Dict[str, Any])
     featurizer : `InputFeaturizer`
-        Defines the input features of the tokens, indexes and embeds them.
+        Defines the input features of the tokens and indexes
+    embedder: `TextFieldEmbedder`
+        The backbone embedder layer
     encoder : Encoder
         Outputs an encoded sequence of the tokens
     """
@@ -34,7 +35,9 @@ class ModelBackbone(torch.nn.Module):
         self,
         vocab: Vocabulary,
         tokenizer: Tokenizer,
+        # TODO: Featurizer = tokenizer + (allennlp) indexers
         featurizer: InputFeaturizer,
+        embedder: TextFieldEmbedder,
         encoder: Optional[Encoder] = None,
     ):
         super(ModelBackbone, self).__init__()
@@ -43,7 +46,7 @@ class ModelBackbone(torch.nn.Module):
         self.tokenizer = tokenizer
         # TODO: review featurizer here!
         self.featurizer = featurizer
-        self.embedder = featurizer.embedder
+        self.embedder = embedder
         self.encoder = (
             encoder.input_dim(self.embedder.get_output_dim()).compile()
             if encoder
@@ -69,6 +72,9 @@ class ModelBackbone(torch.nn.Module):
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
 
+    # TODO: Moving this method to the InputFeaturizer class and
+    #  keeping embedder dependency out of featurizer, we could create vocabs without
+    #  pipeline initialization. Even more, we could see how our features configuration words isolated.
     def featurize(
         self,
         record: Union[str, List[str], Dict[str, Any]],
