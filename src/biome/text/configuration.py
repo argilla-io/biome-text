@@ -220,7 +220,7 @@ class TrainerConfiguration:
         # Data Iteration
         self.batch_size = batch_size or 32
         self.data_bucketing = data_bucketing
-        self.cache_instances = cache_instances or True
+        self.cache_instances = cache_instances
         self.in_memory_batches = in_memory_batches
 
 
