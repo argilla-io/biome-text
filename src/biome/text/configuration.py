@@ -101,7 +101,7 @@ class FeaturesConfiguration(FromParams):
         ----------
         tokenizer: `Tokenizer`
             tokenizer used for this featurizer
-        
+
         Returns
         -------
         The configured `InputFeaturizer`
@@ -202,6 +202,18 @@ class PipelineConfiguration(FromParams):
             config["encoder"] = self.encoder.config
 
         return config
+
+    def build_tokenizer(self) -> Tokenizer:
+        """Build the pipeline tokenizer"""
+        return self.tokenizer.compile()
+
+    def build_featurizer(self) -> InputFeaturizer:
+        """Creates the pipeline featurizer"""
+        return self.features.compile_featurizer(self.tokenizer.compile())
+
+    def build_embedder(self, vocab: Vocabulary):
+        """Build the pipeline embedder for aiven dictionary"""
+        return self.features.compile_embedder(vocab)
 
 
 class TrainerConfiguration:
