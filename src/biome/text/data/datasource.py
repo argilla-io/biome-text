@@ -1,10 +1,10 @@
 import logging
 import os.path
-import warnings
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import dask.dataframe as dd
 import yaml
+from biome.text.errors import MissingArgumentError
 
 from .helpers import (
     is_relative_file_system_path,
@@ -13,9 +13,6 @@ from .helpers import (
 )
 from .readers import (
     ElasticsearchDataFrameReader,
-    ID,
-    PATH_COLUMN_NAME,
-    RESOURCE,
     from_csv,
     from_excel,
     from_json,
@@ -70,23 +67,20 @@ class DataSource:
         format: Optional[str] = None,
         **kwargs,
     ):
+        if not source:
+            raise MissingArgumentError("source")
 
         self.source = source
         self.attributes = kwargs or {}
         self.mapping = mapping or {}
 
-        if not format and source:
+        if not format:
             format = self.__format_from_source(source)
 
         source_reader, defaults = self._find_reader(format)
         reader_arguments = {**defaults, **self.attributes}
 
-        data_frame = (
-            source_reader(source, **reader_arguments)
-            if source
-            else source_reader(**reader_arguments)
-        )
-
+        data_frame = source_reader(source, **reader_arguments)
         data_frame = self.__sanitize_dataframe(data_frame)
         # TODO allow disable index reindex
         if "id" in data_frame.columns:
@@ -202,7 +196,7 @@ class DataSource:
         path_keys = ["path", "source"]
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
 
-        if "mapping" not in cfg_dict:
+        if not cfg_dict.get("mapping"):
             cfg_dict["mapping"] = default_mapping or {}
         cfg_dict.update(cfg_dict.pop("attributes", {}))
         return cls(**cfg_dict)
