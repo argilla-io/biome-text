@@ -5,6 +5,7 @@ import logging
 import os
 import uuid
 from inspect import Parameter
+from tempfile import mktemp
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import numpy
@@ -19,7 +20,7 @@ from biome.text.configuration import (
     TrainerConfiguration,
     VocabularyConfiguration,
 )
-from biome.text.errors import EmptyVocabError
+from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.helpers import update_method_signature
 from dask import dataframe as dd
 
@@ -39,8 +40,8 @@ try:
 except ModuleNotFoundError:
     import json
 
-logging.getLogger("allennlp").setLevel(logging.WARNING)
-logging.getLogger("elasticsearch").setLevel(logging.WARNING)
+logging.getLogger("allennlp").setLevel(logging.ERROR)
+logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
 
 class Pipeline:
@@ -97,7 +98,9 @@ class Pipeline:
 
         if isinstance(config, str):
             config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
-        return _BlankPipeline(config=config, vocab=cls._vocab_from_path(vocab_path))
+        return _BlankPipeline(
+            config=config, vocab=vocabulary.load_vocabulary(vocab_path)
+        )
 
     @classmethod
     def from_pretrained(cls, path: str, **kwargs) -> "Pipeline":
@@ -189,9 +192,9 @@ class Pipeline:
 
             vocab = None
             if restore:
-                vocab = self.load_vocabulary(os.path.join(output, "vocabulary"))
+                vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
             if extend_vocab and not vocab:
-                vocab = self.extend_vocabulary(model.vocab, vocab_config=extend_vocab)
+                vocab = self._extend_vocabulary(model.vocab, vocab_config=extend_vocab)
             if vocab:
                 model.set_vocab(vocab)
 
@@ -215,7 +218,7 @@ class Pipeline:
                 serialization_dir=output,
             )
         finally:
-            allennlp_logger.setLevel(logging.WARNING)
+            allennlp_logger.setLevel(logging.ERROR)
 
     def __prepare_experiment_folder(self, output: str, restore: bool) -> None:
         """Prepare experiment folder depending of if required experiment restore or not
@@ -275,6 +278,14 @@ class Pipeline:
     def save_vocabulary(self, path: str) -> None:
         """Save the pipeline vocabulary into a path"""
         self._model.vocab.save_to_files(path)
+
+    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
+        """Creates a vocabulary an set it to pipeline"""
+        raise NotImplementedError
+
+    def load_vocabulary(self, vocab_path: str) -> None:
+        """Loads a vocabulary an set it to pipeline"""
+        raise NotImplementedError
 
     def explore(
         self,
@@ -416,32 +427,6 @@ class Pipeline:
         """Returns the name of pipeline trainable parameters"""
         return [name for name, p in self._model.named_parameters() if p.requires_grad]
 
-    @classmethod
-    def _vocab_from_path(cls, from_path: str) -> Optional[Vocabulary]:
-        try:
-            if not from_path:
-                return None
-            return Vocabulary.from_files(from_path)
-        except TypeError:
-            return None
-        except FileNotFoundError:
-            cls.__LOGGER.warning("%s folder not found", from_path)
-            return None
-
-    def _extend_vocab_from_sources(
-        self, vocab: Vocabulary, sources: List[str], **extra_args
-    ) -> Vocabulary:
-        """Extends an already created vocabulary from a list of source dictionary"""
-        vocab.extend_from_instances(
-            params=Params(extra_args),
-            instances=[
-                instance
-                for data_source in sources
-                for instance in self._model.read(data_source)
-            ],
-        )
-        return vocab
-
     def _update_prediction_signatures(self):
         """For interactive work-flows, fixes the predict signature to the model inputs"""
         new_signature = inspect.Signature(
@@ -456,25 +441,7 @@ class Pipeline:
                 method.__name__, update_method_signature(new_signature, method)
             )
 
-    @staticmethod
-    def load_vocabulary(vocab_path: str) -> Optional[Vocabulary]:
-        """
-        Loads a vocabulary from a path
-        Parameters
-        ----------
-        vocab_path: str
-            The vocab folder path
-
-        Returns
-        -------
-        An operative `allennlp.data.Vocabulary`
-        """
-        try:
-            return Vocabulary.from_files(vocab_path)
-        except FileNotFoundError:
-            return None
-
-    def extend_vocabulary(
+    def _extend_vocabulary(
         self, vocab: Vocabulary, vocab_config: VocabularyConfiguration
     ) -> Vocabulary:
         """
@@ -494,16 +461,29 @@ class Pipeline:
 
         """
 
-        return self._extend_vocab_from_sources(
-            vocab=vocab,
-            sources=vocab_config.sources,
-            max_vocab_size=vocab_config.max_vocab_size,
-            min_count=vocab_config.min_count,
-            pretrained_files=vocab_config.pretrained_files,
-            only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-            min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-            tokens_to_add=vocab_config.tokens_to_add,
+        source_paths = [
+            source.to_yaml(mktemp(suffix=".yaml"), make_source_path_absolute=True)
+            for source in vocab_config.sources
+        ]
+
+        vocab.extend_from_instances(
+            params=Params(
+                dict(
+                    max_vocab_size=vocab_config.max_vocab_size,
+                    min_count=vocab_config.min_count,
+                    pretrained_files=vocab_config.pretrained_files,
+                    only_include_pretrained_words=vocab_config.only_include_pretrained_words,
+                    min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
+                    tokens_to_add=vocab_config.tokens_to_add,
+                )
+            ),
+            instances=[
+                instance
+                for data_source in source_paths
+                for instance in self._model.read(data_source)
+            ],
         )
+        return vocab
 
 
 class _BlankPipeline(Pipeline):
@@ -529,14 +509,43 @@ class _BlankPipeline(Pipeline):
         """Creates a internal base model from pipeline configuration"""
         return _ModelImpl.from_params(Params({"config": config}), **extra_params)
 
+    def train(
+        self,
+        output: str,
+        trainer: TrainerConfiguration,
+        training: str,
+        validation: Optional[str] = None,
+        test: Optional[str] = None,
+        extend_vocab: Optional[VocabularyConfiguration] = None,
+        restore: bool = False,
+    ) -> None:
+        if extend_vocab:
+            raise ActionNotSupportedError(
+                "If you want to customize pipeline vocab, please use create_vocab method instead"
+            )
+        super(_BlankPipeline, self).train(
+            output, trainer, training, validation=validation, test=test, restore=restore
+        )
+
+    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
+        vocab = self._extend_vocabulary(Vocabulary(), config)
+        # TODO: on Allennlp 1.0 we can use model.set_vocab.
+        #  For now, we must reload the model passing vocab to allow restore vocab in train
+        # self._model.set_vocab(vocab)
+        self._model = self.__model_from_config(self.config, vocab=vocab)
+
+    def load_vocabulary(self, vocab_path: str) -> None:
+        vocab = vocabulary.load_vocabulary(vocab_path)
+        self._model = self.__model_from_config(self.config, vocab=vocab)
+
 
 class _PreTrainedPipeline(Pipeline):
     """
-    Parameters
-    ----------
 
-        pretrained_path: `Optional[str]`
-            The path to the model.tar.gz of a pre-trained `Pipeline`
+    Arguments
+    ---------
+    pretrained_path: `Optional[str]`
+        The path to the model.tar.gz of a pre-trained `Pipeline`
 
     """
 
@@ -549,6 +558,16 @@ class _PreTrainedPipeline(Pipeline):
         if not isinstance(self._model, _ModelImpl):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
         self._update_prediction_signatures()
+
+    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
+        raise ActionNotSupportedError(
+            "Cannot create a vocabulary for an already pretrained model!!!"
+        )
+
+    def load_vocabulary(self, vocab_path: str) -> None:
+        raise ActionNotSupportedError(
+            "Cannot load a vocabulary for an already pretrained model!!!"
+        )
 
     @staticmethod
     def __model_from_archive(archive: Archive) -> _ModelImpl:

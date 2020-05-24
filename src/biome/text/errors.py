@@ -24,6 +24,10 @@ class MissingArgumentError(ValidationError):
         return f"Missing argument '{self.arg_name}'"
 
 
+class ActionNotSupportedError(ValidationError):
+    """Raised when an action is not supported for a given component state"""
+
+
 class EmptyVocabError(ValidationError):
     """Error related with using empty vocabs for a training"""
 
