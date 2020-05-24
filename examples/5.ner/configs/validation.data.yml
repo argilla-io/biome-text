@@ -1,4 +1,4 @@
-path: ../data/ner.drugs.train.jsonl
+source: ../data/ner.drugs.train.jsonl
 format: json
 mapping:
   labels: labels

@@ -1,4 +1,4 @@
-path: ../data/validation.csv
+source: ../data/validation.csv
 format: csv
 mapping:
   label: target

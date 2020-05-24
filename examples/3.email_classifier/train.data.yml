@@ -1,4 +1,4 @@
-path: ../data/train.csv
+source: ../data/train.csv
 format: csv
 mapping:
   label: target
