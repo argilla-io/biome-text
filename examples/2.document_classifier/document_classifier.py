@@ -12,7 +12,12 @@ if __name__ == "__main__":
         )
     )
     # See how is running record tokenization
-    pl.explain(document=dict(record1="this is the field", record2="The next segment. This is another sentence again"))
+    pl.explain(
+        document=dict(
+            record1="this is the field",
+            record2="The next segment. This is another sentence again",
+        )
+    )
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
     pl.train(

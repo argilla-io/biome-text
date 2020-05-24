@@ -26,6 +26,7 @@ class MissingArgumentError(ValidationError):
 
 class EmptyVocabError(ValidationError):
     """Error related with using empty vocabs for a training"""
+
     pass
 
 

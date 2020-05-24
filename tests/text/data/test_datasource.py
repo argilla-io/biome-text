@@ -3,6 +3,8 @@ import os
 import pytest
 
 from biome.text.data import DataSource
+from biome.text.errors import MissingArgumentError
+
 from tests import DaskSupportTest, RESOURCES_PATH
 
 FILES_PATH = os.path.join(RESOURCES_PATH, "data")
@@ -10,7 +12,7 @@ FILES_PATH = os.path.join(RESOURCES_PATH, "data")
 
 class DataSourceTest(DaskSupportTest):
     def test_wrong_format(self):
-        with pytest.raises(TypeError):
+        with pytest.raises(MissingArgumentError):
             DataSource(format="not-found")
         # New format
         with pytest.raises(TypeError):
@@ -26,9 +28,10 @@ class DataSourceTest(DaskSupportTest):
             )
 
         DataSource.add_supported_format("new-format", ds_parser)
-
-        for ds in [DataSource(format="new-format"), DataSource(source="new-format")]:
-            self.assertFalse(ds.to_dataframe().columns is None)
+        self.assertFalse(
+            DataSource(source="source", format="new-format").to_dataframe().columns
+            is None
+        )
 
     def test_to_mapped(self):
         the_mapping = {"label": "overall", "tokens": "summary"}
@@ -37,7 +40,7 @@ class DataSourceTest(DaskSupportTest):
             DataSource(
                 format="json",
                 mapping=the_mapping,
-                path=os.path.join(FILES_PATH, "dataset_source.jsonl"),
+                source=os.path.join(FILES_PATH, "dataset_source.jsonl"),
             ),
             DataSource(
                 source=os.path.join(FILES_PATH, "dataset_source.jsonl"),
@@ -52,7 +55,7 @@ class DataSourceTest(DaskSupportTest):
     def test_no_mapping(self):
 
         ds = DataSource(
-            format="json", path=os.path.join(FILES_PATH, "dataset_source.jsonl")
+            format="json", source=os.path.join(FILES_PATH, "dataset_source.jsonl")
         )
         with pytest.raises(ValueError):
             ds.to_mapped_dataframe()

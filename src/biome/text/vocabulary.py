@@ -153,5 +153,3 @@ def is_empty(vocab: Vocabulary, namespaces: List[str]) -> bool:
         if vocab.get_vocab_size(namespaces) > 2:
             return False
     return True
-
-
