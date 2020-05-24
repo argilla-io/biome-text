@@ -2,9 +2,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from allennlp.common import FromParams
 from allennlp.data import Token
-from allennlp.data.tokenizers import SentenceSplitter, WordTokenizer
+from allennlp.data.tokenizers import SentenceSplitter, SpacyTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
-from allennlp.data.tokenizers.word_splitter import SpacyWordSplitter
 
 from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
 
@@ -48,17 +47,6 @@ class Tokenizer(FromParams):
         end_tokens: Optional[List[str]] = None,
     ):
 
-        # Allennlp get_spacy_model method works only for fully named models (en_core_web_sm) but no
-        # for already linked named (en, es)
-        # This is a workaround for mitigate those kind of errors. Just loading one more time, it's ok.
-        # See https://github.com/allenai/allennlp/issues/4201
-        import spacy
-
-        try:
-            spacy.load(lang, disable=["vectors", "textcat", "tagger" "parser" "ner"])
-        except OSError:
-            spacy.cli.download(lang)
-
         if segment_sentences is True:
             # TODO: check rule-based feat.
             segment_sentences = SpacySentenceSplitter(language=lang, rule_based=True)
@@ -70,10 +58,8 @@ class Tokenizer(FromParams):
         self.max_sequence_length = max_sequence_length
         self.text_cleaning = text_cleaning or DefaultTextCleaning()
 
-        self._base_tokenizer = WordTokenizer(
-            word_splitter=SpacyWordSplitter(language=self.lang),
-            start_tokens=start_tokens,
-            end_tokens=end_tokens,
+        self._base_tokenizer = SpacyTokenizer(
+            language=self.lang, start_tokens=start_tokens, end_tokens=end_tokens,
         )
 
     def tokenize_text(self, text: str) -> List[List[Token]]:

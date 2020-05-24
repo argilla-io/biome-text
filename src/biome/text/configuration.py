@@ -244,7 +244,6 @@ class TrainerConfiguration:
         optimizer: Dict[str, Any],
         validation_metric: str = "-loss",
         patience: Optional[int] = None,
-        shuffle: bool = True,
         num_epochs: int = 20,
         cuda_device: int = -1,
         grad_norm: Optional[float] = None,
@@ -260,7 +259,6 @@ class TrainerConfiguration:
         self.optimizer = optimizer
         self.validation_metric = validation_metric
         self.patience = patience
-        self.shuffle = shuffle
         self.num_epochs = num_epochs
         self.cuda_device = cuda_device
         self.grad_norm = grad_norm

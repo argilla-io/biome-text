@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 import numpy
 import torch
 from allennlp.data import Instance
-from allennlp.data.dataset import Batch
+from allennlp.data import Batch
 from allennlp.data.fields import ListField, TextField
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
@@ -163,11 +163,9 @@ class DocumentClassification(ClassificationHead):
         embedded_text = self.backbone.encoder.forward(embeddings, mask)
         embedded_text = self.tokens_pooler(embedded_text, mask=mask)
 
-        mask = get_text_field_mask(
-            {self.forward_arg_name: embedded_text}
-        )  # Add an extra dimension to tensor mask
-        embedded_text = self.encoder(embedded_text, mask=mask)
-        embedded_text = self.pooler(embedded_text, mask=mask)
+        sentences_mask = torch.sum(mask, -1) > 0
+        embedded_text = self.encoder(embedded_text, mask=sentences_mask)
+        embedded_text = self.pooler(embedded_text, mask=sentences_mask)
 
         if self.feedforward is not None:
             embedded_text = self.feedforward(embedded_text)
