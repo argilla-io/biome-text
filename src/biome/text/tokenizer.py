@@ -136,11 +136,12 @@ class Tokenizer(FromParams):
                 for sentences in self.segment_sentences.batch_split_sentences(document)
                 for sentence in sentences
             ]
-        return [self._tokenize(sentence) for sentence in sentences[: self.max_nr_of_sentences]]
+        return [
+            self._tokenize(sentence)
+            for sentence in sentences[: self.max_nr_of_sentences]
+        ]
 
-    def tokenize_record(
-        self, record: Dict[str, Any]
-    ) -> List[List[Token]]:
+    def tokenize_record(self, record: Dict[str, Any]) -> List[List[Token]]:
         """ Tokenizes a record-like structure containing text inputs
         
         Use this to keep information about the record-like data structure as input features to the model.
