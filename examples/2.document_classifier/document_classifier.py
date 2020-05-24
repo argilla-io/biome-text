@@ -1,8 +1,8 @@
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text.data import DataSource
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
-
     pl = Pipeline.from_yaml("document_classifier.yaml", vocab_path="not_found_folder")
     print(f"Pipeline parameters: {pl.trainable_parameter_names}")
     print(f"Trainable parameters: {pl.trainable_parameters}")
@@ -20,14 +20,16 @@ if __name__ == "__main__":
     )
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
+    pl.create_vocabulary(
+        VocabularyConfiguration(
+            sources=[DataSource.from_yaml("train.data.yml")], min_count={"words": 10}
+        )
+    )
     pl.train(
         output="experiment",
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
-        extend_vocab=VocabularyConfiguration(
-            sources=["train.data.yml"], min_count={"words": 10}
-        ),
     )
 
     pl = Pipeline.from_pretrained("experiment/model.tar.gz")

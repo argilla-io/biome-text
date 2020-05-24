@@ -4,10 +4,8 @@ if __name__ == "__main__":
     trained_pl = Pipeline.from_pretrained("experiment/model.tar.gz")
 
     document = [
-        "Prrrt",
-        "The simple file enormeous sentence length",
-        "Another sentence",
+        "this is my email subject",
+        "A very long body. I have many sentences. I am writing very boring, long emails.",
     ]
-    another_document = ["Uno", "Uno dos", "uno dos tres"]
-    print(trained_pl.explain(document=another_document))
+    print(trained_pl.explain(document=document))
     trained_pl.serve()

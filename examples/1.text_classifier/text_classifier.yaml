@@ -16,7 +16,12 @@ features:
             num_filters: 50
             ngram_filter_sizes: [ 4 ]
         dropout: 0.2
-
+        embedder:
+            embedding:
+                padding_index: 0
+        indexer:
+            character_tokenizer:
+                lowercase_characters: true
 
 encoder:
     hidden_size: 10
