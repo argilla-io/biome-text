@@ -73,7 +73,7 @@ class LanguageModelling(TaskHead):
             embedding_dim=self.backbone.encoder.get_output_dim(),
         )
 
-    def _on_vocab_update(self):
+    def on_vocab_update(self):
         self._loss = SoftmaxLoss(
             num_words=vocabulary.words_vocab_size(self.backbone.vocab),
             embedding_dim=self.backbone.encoder.get_output_dim(),

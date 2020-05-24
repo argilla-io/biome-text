@@ -60,10 +60,8 @@ class ModelBackbone(torch.nn.Module):
         embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
 
-    def _update_vocab(self, vocab: Vocabulary, **kwargs):
+    def on_vocab_update(self):
         """This method is called when a base model updates the vocabulary"""
-        self.vocab = vocab
-
         # This loop applies only for embedding layer.
         for model_path, module in self.named_modules():
             if hasattr(module, "extend_vocab"):

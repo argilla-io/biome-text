@@ -57,11 +57,7 @@ class TaskHead(torch.nn.Module, Registrable):
         super(TaskHead, self).__init__()
         self.backbone = backbone
 
-    def _update_vocab(self, vocab: Vocabulary, **kwargs):
-        """This method is automatically called when a vocab is updated"""
-        self._on_vocab_update()
-
-    def _on_vocab_update(self):
+    def on_vocab_update(self):
         """
         Actions when vocab is updated. Rebuild here modules that initialization depends on some vocab metric
 
