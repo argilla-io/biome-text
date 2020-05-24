@@ -423,7 +423,7 @@ class PipelineModelTrainer:
         vocab.save_to_files(os.path.join(self._serialization_dir, "vocabulary"))
 
         for dataset in self._all_datasets.values():
-            if hasattr(dataset, "index_with"):
+            if dataset and hasattr(dataset, "index_with"):
                 dataset.index_with(vocab)
 
         trainer_params = self._params.pop("trainer")
@@ -437,9 +437,8 @@ class PipelineModelTrainer:
         train_data_loader = DataLoader(
             self._all_datasets["train"], batch_size=self._batch_size
         )
-        validation_data_loader = DataLoader(
-            self._all_datasets.get("validation"), batch_size=self._batch_size
-        )
+        validation_ds = self._all_datasets.get("validation")
+        validation_data_loader = DataLoader(validation_ds, batch_size=self._batch_size) if validation_ds else None
 
         # TODO: Customize trainer for better biome integration
         self._trainer = Trainer.from_params(
