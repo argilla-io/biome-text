@@ -46,7 +46,7 @@ class TextCleaningRule:
 
 
 @TextCleaning.register(TextCleaning.default_implementation)
-class DefaultTextCleaning(Registrable):
+class DefaultTextCleaning(TextCleaning):
     """Defines rules that can be applied to the text before it gets tokenized.
 
     Each rule is a simple python function that receives and returns a `str`.
