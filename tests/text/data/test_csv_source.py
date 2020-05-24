@@ -10,7 +10,7 @@ class CsvDatasourceTest(DaskSupportTest):
     def test_read_csv(self):
         file_path = os.path.join(FILES_PATH, "dataset_source.csv")
 
-        datasource = DataSource(format="csv", path=file_path)
+        datasource = DataSource(format="csv", source=file_path)
         data_frame = datasource.to_dataframe().compute()
 
         assert len(data_frame) > 0

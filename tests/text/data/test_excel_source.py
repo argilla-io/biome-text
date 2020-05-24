@@ -10,7 +10,7 @@ class ExcelDataSourceTest(DaskSupportTest):
     def test_read_excel(self):
         file_path = os.path.join(FILES_PATH, "test.xlsx")
 
-        datasource = DataSource(format="xlsx", path=file_path)
+        datasource = DataSource(format="xlsx", source=file_path)
         data_frame = datasource.to_dataframe().compute()
 
         assert len(data_frame) > 0
