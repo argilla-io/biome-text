@@ -8,6 +8,7 @@ from allennlp.training.metrics import CategoricalAccuracy, F1Measure, FBetaMeasu
 from biome.text.backbone import ModelBackbone
 from biome.text import vocabulary
 from ..defs import TaskHead, TaskName, TaskOutput
+from biome.text import helpers
 
 
 class ClassificationHead(TaskHead):
@@ -152,15 +153,22 @@ class ClassificationHead(TaskHead):
         """
         metrics = {}
         for name, metric in self.metrics.items():
-            if name == 'accuracy':
-                metrics['accuracy'] = metric.get_metric(reset)
-            elif name in ['macro', 'micro']:
-                metrics.update({'{}/{}'.format(name, k): v for k, v in metric.get_metric(reset).items()})
-            elif name == 'per_label':
+            if name == "accuracy":
+                metrics["accuracy"] = metric.get_metric(reset)
+            elif name in ["macro", "micro"]:
+                metrics.update(
+                    {
+                        "{}/{}".format(name, k): v
+                        for k, v in metric.get_metric(reset).items()
+                    }
+                )
+            elif name == "per_label":
                 for k, values in metric.get_metric(reset).items():
                     for i, v in enumerate(values):
                         label = vocabulary.label_for_index(self.backbone.vocab, i)
-                        metrics.update({'{}/{}'.format(k, label): v})
+                        # sanitize label using same patters as tensorboardX to avoid warnings
+                        label = helpers.clean_metric_name(label)
+                        metrics.update({"{}/{}".format(k, label): v})
         return metrics
 
     def single_label_output(
