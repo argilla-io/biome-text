@@ -194,8 +194,10 @@ function flatten (items, res) {
       overflow hidden
       text-overflow ellipsis
       display inline-block
+      white-space nowrap
     @media (max-width: $MQMobileNarrow)
       border: none
+      padding: 1em 0
       a
         padding: 0
   .inner
