@@ -1,5 +1,6 @@
 import inspect
 import os
+import re
 from inspect import Parameter
 from typing import Any, Callable, Dict, List, Tuple, Type
 
@@ -7,6 +8,8 @@ import yaml
 from elasticsearch import Elasticsearch
 
 from . import environment
+
+_INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
 
 def yaml_to_dict(filepath: str) -> Dict[str, Any]:
@@ -88,3 +91,11 @@ def split_signature_params_by_predicate(
     non_matches_group = list(filter(lambda p: not predicate(p), parameters))
 
     return matches_group, non_matches_group
+
+
+def clean_metric_name(name):
+    if not name:
+        return name
+    new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
+    new_name = new_name.lstrip("/")
+    return new_name

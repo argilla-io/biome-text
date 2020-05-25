@@ -3,11 +3,12 @@ from typing import Any, Dict, List, Optional, Union
 import torch
 from allennlp.data import Instance
 from allennlp.data.fields import LabelField, MultiLabelField
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure, FBetaMeasure
 
 from biome.text.backbone import ModelBackbone
 from biome.text import vocabulary
 from ..defs import TaskHead, TaskName, TaskOutput
+from biome.text import helpers
 
 
 class ClassificationHead(TaskHead):
@@ -31,9 +32,14 @@ class ClassificationHead(TaskHead):
             # TODO: for multi-label we want to calculate F1 per label and/or ROC-AUC
             self._loss = torch.nn.BCEWithLogitsLoss()
         else:
-            # metrics, some AllenNLP models use the names _accuracy or _metrics, so we have to be more specific.
             self.metrics.update(
-                {label: F1Measure(index) for index, label in enumerate(self.labels)}
+                {
+                    "micro": FBetaMeasure(average="micro"),
+                    "macro": FBetaMeasure(average="macro"),
+                    "per_label": FBetaMeasure(
+                        labels=[i for i in range(0, len(labels) - 1)]
+                    ),
+                }
             )
             self._loss = torch.nn.CrossEntropyLoss()
 
@@ -145,34 +151,20 @@ class ClassificationHead(TaskHead):
         -------
         A dictionary with all metric names and values.
         """
+        metrics = {"accuracy": self.metrics["accuracy"].get_metric(reset)}
 
-        # TODO: Refactor and simplify
-        all_metrics = {}
-
-        total_f1 = 0.0
-        total_precision = 0.0
-        total_recall = 0.0
-        for metric_name, metric in self.metrics.items():
-            if metric_name == "accuracy":
-                all_metrics["accuracy"] = metric.get_metric(reset)
-            else:
-                # pylint: disable=invalid-name
-                precision, recall, f_1 = metric.get_metric(
-                    reset
-                )  # pylint: disable=invalid-name
-                total_f1 += f_1
-                total_precision += precision
-                total_recall += recall
-                all_metrics[metric_name + "/f1"] = f_1
-                all_metrics[metric_name + "/precision"] = precision
-                all_metrics[metric_name + "/recall"] = recall
-
-        num_classes = self.num_labels
-        all_metrics["average/f1"] = total_f1 / num_classes
-        all_metrics["average/precision"] = total_precision / num_classes
-        all_metrics["average/recall"] = total_recall / num_classes
-
-        return all_metrics
+        for metric_name in ["micro", "macro"]:
+            for k, v in self.metrics[metric_name].get_metric(reset).items():
+                metrics.update({'{}/{}'.format(metric_name, k): v})
+                
+        for k, values in self.metrics["per_label"].get_metric(reset).items():
+            for i, v in enumerate(values):
+                label = vocabulary.label_for_index(self.backbone.vocab, i)
+                # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
+                label = helpers.clean_metric_name(label)
+                metrics.update({"_{}/{}".format(k, label): v})
+ 
+        return metrics
 
     def single_label_output(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None,
