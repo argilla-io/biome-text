@@ -2,6 +2,7 @@ import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
+from biome.text.data import DataSource
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
@@ -284,8 +285,8 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    sources : `List[str]`
-        Datasource paths to be used for data creation
+    sources : `List[DataSource]`
+        Datasource to be used for data creation
     min_count : `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary
     max_vocab_size :  `Union[int, Dict[str, int]]`, optional (default=`None`)
@@ -302,7 +303,7 @@ class VocabularyConfiguration:
 
     def __init__(
         self,
-        sources: List[str],
+        sources: List[DataSource],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,

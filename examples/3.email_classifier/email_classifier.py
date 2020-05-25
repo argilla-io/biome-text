@@ -1,4 +1,5 @@
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text.data import DataSource
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
@@ -11,14 +12,17 @@ if __name__ == "__main__":
             body="The next phrase is here",
         )
     )
+    pl.create_vocabulary(
+        VocabularyConfiguration(sources=[DataSource.from_yaml("validation.data.yml")])
+    )
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
+
     pl.train(
         output="experiment",
         trainer=trainer,
         training="train.data.yml",
         validation="validation.data.yml",
-        extend_vocab=VocabularyConfiguration(sources=["validation.data.yml"]),
     )
 
     trained = Pipeline.from_pretrained("experiment/model.tar.gz")
