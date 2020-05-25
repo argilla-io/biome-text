@@ -3,8 +3,8 @@ from typing import Dict, Optional
 import numpy as np
 import torch
 from allennlp.common.checks import ConfigurationError
-from allennlp.data import Instance
-from allennlp.nn.util import get_text_field_mask
+from allennlp.data import Instance, TextFieldTensors
+from allennlp.nn.util import get_text_field_mask, get_token_ids_from_text_field_tensors
 from allennlp.training.metrics import Perplexity
 from biome.text.features import WordFeatures
 
@@ -80,16 +80,18 @@ class LanguageModelling(TaskHead):
         )
 
     def featurize(self, text: str) -> Optional[Instance]:
-        return self.backbone.featurize(text, to_field="text", aggregate=True)
+        return self.backbone.featurizer(text, to_field="text", aggregate=True)
 
     def forward(  # type: ignore
-        self, text: Dict[str, torch.Tensor]
+        self, text: TextFieldTensors
     ) -> TaskOutput:
 
         mask = get_text_field_mask(text)
         contextual_embeddings = self.backbone.forward(text, mask)
-
-        token_ids = text.get(WordFeatures.namespace)
+        # NOTE: @dvsrepo, Allennlp 1.0 includes a second features level that I'm not sure of understand.
+        # Anyway, they proved a function to realize the target here (the function docstring clarifies the
+        # real spaghetti inside indexer code references, :-)
+        token_ids = get_token_ids_from_text_field_tensors(text)
         assert isinstance(contextual_embeddings, torch.Tensor)
 
         # Use token_ids to compute targets
