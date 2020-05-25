@@ -4,7 +4,16 @@ We are open and very happy to receive contributions to make biome.text more usef
 
 If you want to start contributing to `biome.text` there are three things you need to do.
 
-## 1. Installing from source
+To contribute via pull request, follow these steps:
+
+1. Create an issue describing the feature you want to work on
+2. Install from source, write your code, tests and documentation, and format them with `black.
+3. Create a pull request describing your changes
+
+## 1. Creating an issue
+You can create a feature request or describe a bug on [Github](https://github.com/recognai/biome-text/issues/new/choose)
+
+## 2. Installing from source, developing and testing
 To install biome.text from source, clone the repository from github:
 
 ````shell
@@ -19,25 +28,25 @@ If the `make` command is enabled in your system, you can use already defined mak
 make install
 ````  
 
-or 
+or for a developer installation:
 ````shell
 make dev
 ````
-for a developer installation
 
-You can see defined directives as follow:
+You can see defined make directives as follows:
 ````shell script
 make help
 ````
 
-## 2. Running tests
-Test biome-text with pytest
+## Testing your changes
+After you make changes you can run the tests as follows:
 
 ````shell script
 cd biome-text
 pytest
 ````
 
-## 3. Filing issues and pull requests
+## 3. Submitting a pull request
+
 
 
