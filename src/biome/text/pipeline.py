@@ -279,10 +279,6 @@ class Pipeline:
         """Creates a vocabulary an set it to pipeline"""
         raise NotImplementedError
 
-    def load_vocabulary(self, vocab_path: str) -> None:
-        """Loads a vocabulary an set it to pipeline"""
-        raise NotImplementedError
-
     def explore(
         self,
         ds_path: str,
@@ -529,10 +525,6 @@ class _BlankPipeline(Pipeline):
         # self._model.set_vocab(vocab)
         self._model = self.__model_from_config(self.config, vocab=vocab)
 
-    def load_vocabulary(self, vocab_path: str) -> None:
-        vocab = vocabulary.load_vocabulary(vocab_path)
-        self._model = self.__model_from_config(self.config, vocab=vocab)
-
 
 class _PreTrainedPipeline(Pipeline):
     """
@@ -557,11 +549,6 @@ class _PreTrainedPipeline(Pipeline):
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         raise ActionNotSupportedError(
             "Cannot create a vocabulary for an already pretrained model!!!"
-        )
-
-    def load_vocabulary(self, vocab_path: str) -> None:
-        raise ActionNotSupportedError(
-            "Cannot load a vocabulary for an already pretrained model!!!"
         )
 
     @staticmethod
