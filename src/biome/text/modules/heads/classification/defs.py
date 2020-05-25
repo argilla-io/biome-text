@@ -151,24 +151,19 @@ class ClassificationHead(TaskHead):
         -------
         A dictionary with all metric names and values.
         """
-        metrics = {}
-        for name, metric in self.metrics.items():
-            if name == "accuracy":
-                metrics["accuracy"] = metric.get_metric(reset)
-            elif name in ["macro", "micro"]:
-                metrics.update(
-                    {
-                        "{}/{}".format(name, k): v
-                        for k, v in metric.get_metric(reset).items()
-                    }
-                )
-            elif name == "per_label":
-                for k, values in metric.get_metric(reset).items():
-                    for i, v in enumerate(values):
-                        label = vocabulary.label_for_index(self.backbone.vocab, i)
-                        # sanitize label using same patters as tensorboardX to avoid warnings
-                        label = helpers.clean_metric_name(label)
-                        metrics.update({"{}/{}".format(k, label): v})
+        metrics = {"accuracy": self.metrics["accuracy"].get_metric(reset)}
+
+        for metric_name in ["micro", "macro"]:
+            for k, v in self.metrics[metric_name].get_metric(reset).items():
+                metrics.update({'{}/{}'.format(metric_name, k): v})
+                
+        for k, values in self.metrics["per_label"].get_metric(reset).items():
+            for i, v in enumerate(values):
+                label = vocabulary.label_for_index(self.backbone.vocab, i)
+                # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
+                label = helpers.clean_metric_name(label)
+                metrics.update({"_{}/{}".format(k, label): v})
+ 
         return metrics
 
     def single_label_output(

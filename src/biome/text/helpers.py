@@ -94,9 +94,8 @@ def split_signature_params_by_predicate(
 
 
 def clean_metric_name(name):
-    if name is not None:
-        new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
-        new_name = new_name.lstrip("/")
-        if new_name != name:
-            name = new_name
-    return name
+    if not name:
+        return name
+    new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
+    new_name = new_name.lstrip("/")
+    return new_name
