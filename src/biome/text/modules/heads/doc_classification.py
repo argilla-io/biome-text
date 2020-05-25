@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import numpy
 import torch
-from allennlp.data import Instance
+from allennlp.data import Instance, TextFieldTensors
 from allennlp.data import Batch
 from allennlp.data.fields import ListField, TextField
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
@@ -82,7 +82,7 @@ class DocumentClassification(ClassificationHead):
         return self.add_label(instance, label, to_field=self.label_name)
 
     def forward(
-        self, document: Dict[str, torch.Tensor], label: torch.IntTensor = None
+        self, document: TextFieldTensors, label: torch.IntTensor = None
     ) -> TaskOutput:
         mask = get_text_field_mask(
             document, num_wrapping_dims=1

@@ -2,7 +2,7 @@ import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import torch
-from allennlp.data import Instance, Vocabulary
+from allennlp.data import Instance, TextFieldTensors, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
@@ -47,10 +47,7 @@ class ModelBackbone(torch.nn.Module):
         )
 
     def forward(
-        self,
-        text: Dict[str, torch.Tensor],
-        mask: torch.Tensor,
-        num_wrapping_dims: int = 0,
+        self, text: TextFieldTensors, mask: torch.Tensor, num_wrapping_dims: int = 0,
     ) -> torch.Tensor:
         """Applies embedding + encoder layers"""
         embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
