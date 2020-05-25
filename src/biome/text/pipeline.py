@@ -250,29 +250,25 @@ class Pipeline:
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Predicts over some input data with current state of the model
 
-        # Parameters
-            args: `*args`
-            kwargs: `**kwargs`
+        The accepted input is dynamically calculated from head.input
 
-        # Returns
-            predictions: `Dict[str, numpy.ndarray]`
-                A dictionary containing the predictions and additional information
+        Returns
+        -------
+        predictions: `Dict[str, numpy.ndarray]`
+            A dictionary containing the predictions and additional information
         """
-        # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         return self._model.predict(*args, **kwargs)
 
     def explain(self, *args, **kwargs) -> Dict[str, Any]:
         """Predicts over some input data with current state of the model and provides explanations of token importance.
 
-        # Parameters
-            args: `*args`
-            kwargs: `**kwargs`
+        The accepted input is dynamically calculated from head.input
 
-        # Returns
-            predictions: `Dict[str, numpy.ndarray]`
-                A dictionary containing the predictions with token importance calculated using IntegratedGradients
+        Returns
+        -------
+        predictions: `Dict[str, numpy.ndarray]`
+            A dictionary containing the predictions with token importance calculated using IntegratedGradients
         """
-        # TODO: Paco, what is the best way to document this, given that the signature is dynamic?
         return self._model.explain(*args, **kwargs)
 
     def save_vocabulary(self, path: str) -> None:
@@ -294,7 +290,6 @@ class Pipeline:
         es_host: Optional[str] = None,
         batch_size: int = 500,
         prediction_cache_size: int = 0,
-        # TODO: do we need caching for Explore runs as well or only on serving time?
         explain: bool = False,
         force_delete: bool = True,
         **metadata,

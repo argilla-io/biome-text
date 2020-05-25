@@ -2,10 +2,12 @@ import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
-from allennlp.data import Vocabulary
 from biome.text.data import DataSource
+from allennlp.data import TokenIndexer, Vocabulary
+from allennlp.modules import TextFieldEmbedder
 
-from .featurizer import CharFeatures, InputFeaturizer, WordFeatures
+from .features import CharFeatures, WordFeatures
+from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
 from .modules.heads import TaskHeadSpec
 from .tokenizer import Tokenizer
@@ -32,10 +34,12 @@ class FeaturesConfiguration(FromParams):
     
     Parameters
     ----------
-    word : `WordFeatures`
-    char: `CharFeatures`
+    word : `biome.text.features.WordFeatures`
+    char: `biome.text.features.CharFeatures`
     extra_params
     """
+
+    __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
 
     def __init__(
         self,
@@ -48,6 +52,9 @@ class FeaturesConfiguration(FromParams):
 
         for k, v in extra_params.items():
             self.__setattr__(k, v)
+
+        if not (word or char or extra_params):
+            self.word = self.__DEFAULT_CONFIG
 
     @classmethod
     def from_params(
@@ -67,7 +74,21 @@ class FeaturesConfiguration(FromParams):
         """Gets the key features"""
         return [key for key in vars(self)]
 
-    def compile(self, vocab: Vocabulary) -> InputFeaturizer:
+    def compile_embedder(self, vocab: Vocabulary) -> TextFieldEmbedder:
+        """Creates the embedder from configured features for a given vocabulary"""
+        configuration = self._make_allennlp_config()
+
+        return TextFieldEmbedder.from_params(
+            Params(
+                {
+                    feature: config["embedder"]
+                    for feature, config in configuration.items()
+                }
+            ),
+            vocab=vocab,
+        )
+
+    def compile_featurizer(self, tokenizer: Tokenizer) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
         
         :::tip
@@ -76,12 +97,31 @@ class FeaturesConfiguration(FromParams):
         a valid configuration.
         
         :::
-        
+
+        Parameters
+        ----------
+        tokenizer: `Tokenizer`
+            tokenizer used for this featurizer
+
         Returns
         -------
         The configured `InputFeaturizer`
         """
-        return InputFeaturizer(vocab=vocab, **vars(self))
+        configuration = self._make_allennlp_config()
+
+        indexer = {
+            feature: TokenIndexer.from_params(Params(config["indexer"]))
+            for feature, config in configuration.items()
+        }
+        return InputFeaturizer(tokenizer, indexer=indexer)
+
+    def _make_allennlp_config(self) -> Dict[str, Any]:
+        """Creates compatible allennlp configuration"""
+        configuration = {k: v for k, v in vars(self).items() if isinstance(v, dict)}
+        configuration.update(
+            {spec.namespace: spec.config for spec in [self.word, self.char] if spec}
+        )
+        return copy.deepcopy(configuration)
 
 
 class TokenizerConfiguration(FromParams):
@@ -123,11 +163,11 @@ class PipelineConfiguration(FromParams):
 
     Parameters
     ----------
-    name : ``str``
+    name : `str`
         The `name` for our pipeline
     features : `FeaturesConfiguration`
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
-    head : ``TaskHeadSpec``
+    head : `TaskHeadSpec`
         The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
     tokenizer : `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.
@@ -163,6 +203,18 @@ class PipelineConfiguration(FromParams):
             config["encoder"] = self.encoder.config
 
         return config
+
+    def build_tokenizer(self) -> Tokenizer:
+        """Build the pipeline tokenizer"""
+        return self.tokenizer.compile()
+
+    def build_featurizer(self) -> InputFeaturizer:
+        """Creates the pipeline featurizer"""
+        return self.features.compile_featurizer(self.tokenizer.compile())
+
+    def build_embedder(self, vocab: Vocabulary):
+        """Build the pipeline embedder for aiven dictionary"""
+        return self.features.compile_embedder(vocab)
 
 
 class TrainerConfiguration:
@@ -205,7 +257,6 @@ class TrainerConfiguration:
         in_memory_batches: int = 2,
         data_bucketing: bool = True,
     ):
-
         self.optimizer = optimizer
         self.validation_metric = validation_metric
         self.patience = patience

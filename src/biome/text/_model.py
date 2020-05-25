@@ -102,8 +102,10 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             head=config.head.compile(
                 backbone=ModelBackbone(
                     vocab,
-                    tokenizer=config.tokenizer.compile(),
-                    featurizer=config.features.compile(vocab),
+                    featurizer=config.features.compile_featurizer(
+                        tokenizer=config.tokenizer.compile()
+                    ),
+                    embedder=config.features.compile_embedder(vocab),
                     encoder=config.encoder,
                 )
             ),

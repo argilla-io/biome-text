@@ -6,8 +6,8 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.data import Instance
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import Perplexity
+from biome.text.features import WordFeatures
 
-from biome.text.featurizer import InputFeaturizer
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
 from biome.text import vocabulary
@@ -53,7 +53,7 @@ class LanguageModelling(TaskHead):
     def __init__(self, backbone: ModelBackbone, dropout: float = None) -> None:
         super(LanguageModelling, self).__init__(backbone)
 
-        if not backbone.featurizer.word:
+        if not backbone.featurizer.has_word_features:
             raise ConfigurationError(
                 "`LanguageModelling` defines a word-level next token language model. "
                 "Please check your `features` configuration to enable at least `words` features."
@@ -89,7 +89,7 @@ class LanguageModelling(TaskHead):
         mask = get_text_field_mask(text)
         contextual_embeddings = self.backbone.forward(text, mask)
 
-        token_ids = text.get(InputFeaturizer.WORDS)
+        token_ids = text.get(WordFeatures.namespace)
         assert isinstance(contextual_embeddings, torch.Tensor)
 
         # Use token_ids to compute targets

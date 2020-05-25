@@ -10,7 +10,6 @@ from typing import Dict, List, Optional
 
 from allennlp.data import Vocabulary
 from allennlp.data.vocabulary import DEFAULT_OOV_TOKEN
-from biome.text.featurizer import WordFeatures
 
 LABELS_NAMESPACE = "gold_labels"
 
@@ -93,6 +92,8 @@ def words_vocab_size(vocab: Vocabulary) -> int:
     size: `int`
         The vocabulary size for the words namespace
     """
+    from biome.text.features import WordFeatures
+
     return vocab.get_vocab_size(WordFeatures.namespace)
 
 

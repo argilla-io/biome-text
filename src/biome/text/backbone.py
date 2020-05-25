@@ -1,31 +1,29 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+import warnings
+from typing import Any, Dict, List, Optional, Union
 
 import torch
-from allennlp.data import Instance, Token
-from allennlp.data.fields import ListField, TextField
+from allennlp.data import Instance, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
-from .tokenizer import Tokenizer
-from .vocabulary import Vocabulary
 
 
 class ModelBackbone(torch.nn.Module):
     """The backbone of the model.
 
-     It is composed of a tokenizer, featurizer and an encoder.
-     This component of the model can be pretrained and used with different task heads.
+    It is composed of a tokenizer, featurizer and an encoder.
+    This component of the model can be pretrained and used with different task heads.
 
-     Parameters
-     ----------
-     vocab : `Vocabulary`
+    Attributes
+    ----------
+    vocab : `Vocabulary`
         The vocabulary of the pipeline
-    tokenizer : `Tokenizer`
-        Tokenizes the input depending on its type (str, List[str], Dict[str, Any])
     featurizer : `InputFeaturizer`
-        Defines the input features of the tokens, indexes and embeds them.
+        Defines the input features of the tokens and indexes
+    embedder: `TextFieldEmbedder`
+        The backbone embedder layer
     encoder : Encoder
         Outputs an encoded sequence of the tokens
     """
@@ -33,17 +31,15 @@ class ModelBackbone(torch.nn.Module):
     def __init__(
         self,
         vocab: Vocabulary,
-        tokenizer: Tokenizer,
         featurizer: InputFeaturizer,
+        embedder: TextFieldEmbedder,
         encoder: Optional[Encoder] = None,
     ):
         super(ModelBackbone, self).__init__()
 
         self.vocab = vocab
-        self.tokenizer = tokenizer
-        # TODO: review featurizer here!
         self.featurizer = featurizer
-        self.embedder = featurizer.embedder
+        self.embedder = embedder
         self.encoder = (
             encoder.input_dim(self.embedder.get_output_dim()).compile()
             if encoder
@@ -96,38 +92,11 @@ class ModelBackbone(torch.nn.Module):
 
         instance: `Instance`
 
-        """
-        # TODO: Allow exclude record keys in data tokenization phase
-        data = record
+        Deprecated: use self.featurizer instead
 
-        record_tokens = (
-            self._data_tokens(data) if tokenize else [[Token(t) for t in data]]
+        """
+        warnings.warn(
+            "backbone.featurize is deprecated. Use instead backbone.featurizer",
+            DeprecationWarning,
         )
-        return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
-
-    def _data_tokens(self, data: Any) -> List[List[Token]]:
-        """Convert data into a list of list of token depending on data type"""
-        if isinstance(data, dict):
-            return self.tokenizer.tokenize_record(data)
-        if isinstance(data, str):
-            return self.tokenizer.tokenize_text(data)
-        return self.tokenizer.tokenize_document(data)
-
-    def _tokens_to_field(
-        self, tokens: List[List[Token]], aggregate: bool
-    ) -> Union[ListField, TextField]:
-        """
-        If aggregate, generates a TextField including flatten token list. Otherwise,
-        a ListField of TextField is returned.
-        """
-        if aggregate:
-            return TextField(
-                [token for entry_tokens in tokens for token in entry_tokens],
-                self.featurizer.indexer,
-            )
-        return ListField(
-            [
-                TextField(entry_tokens, self.featurizer.indexer)
-                for entry_tokens in tokens
-            ]
-        )
+        return self.featurizer(record, to_field, aggregate, tokenize)
