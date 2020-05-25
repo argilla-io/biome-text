@@ -81,8 +81,10 @@ class FeaturesConfiguration(FromParams):
         return TextFieldEmbedder.from_params(
             Params(
                 {
-                    feature: config["embedder"]
-                    for feature, config in configuration.items()
+                    "token_embedders": {
+                        feature: config["embedder"]
+                        for feature, config in configuration.items()
+                    }
                 }
             ),
             vocab=vocab,
