@@ -23,7 +23,7 @@ from biome.text.modules.specs import (
 )
 from captum.attr import IntegratedGradients
 
-from biome.text.featurizer import WordFeatures, CharFeatures
+from biome.text.configuration import WordFeatures, CharFeatures
 
 
 class RecordPairClassification(ClassificationHead):
@@ -144,10 +144,10 @@ class RecordPairClassification(ClassificationHead):
         instance
             AllenNLP instance containing the two records plus optionally a label
         """
-        record1_instance = self.backbone.featurize(
+        record1_instance = self.backbone.featurizer(
             record1, to_field="record", aggregate=False
         )
-        record2_instance = self.backbone.featurize(
+        record2_instance = self.backbone.featurizer(
             record2, to_field="record", aggregate=False
         )
         instance = Instance(
@@ -396,7 +396,8 @@ class RecordPairClassification(ClassificationHead):
 
         ig = IntegratedGradients(self._bimpm_forward)
 
-        # prediction_target = np.argmax(prediction["probs"])
+        prediction_target = int(np.argmax(prediction["probs"]))
+        # The code below was an attempt to make attributions for the "duplicate case" more meaningful ... did not work
         # # duplicate case:
         # # Here we integrate each record along the path from the null vector -> record1/2
         # # assuming that the null vector provides the highest "not duplicate" score.
@@ -433,9 +434,7 @@ class RecordPairClassification(ClassificationHead):
             inputs=(field_encoded_record1, field_encoded_record2),
             baselines=(field_encoded_record2, field_encoded_record2),
             additional_forward_args=(record_mask_record1, record_mask_record2),
-            # we fix the target since we want negative integrals always to be associated
-            # to the "not_duplicate" case and positive ones to the "duplicate" case
-            target=0,
+            target=prediction_target,
             return_convergence_delta=True,
         )
 
@@ -443,9 +442,7 @@ class RecordPairClassification(ClassificationHead):
             inputs=(field_encoded_record1, field_encoded_record2),
             baselines=(field_encoded_record1, field_encoded_record1),
             additional_forward_args=(record_mask_record1, record_mask_record2),
-            # we fix the target since we want negative integrals always to be associated
-            # to the "not_duplicate" case and positive ones to the "duplicate" case
-            target=0,
+            target=prediction_target,
             return_convergence_delta=True,
         )
 
@@ -460,7 +457,6 @@ class RecordPairClassification(ClassificationHead):
         field_tokens_record1 = self._get_field_tokens(tokens_ids.get("record1"))
         field_tokens_record2 = self._get_field_tokens(tokens_ids.get("record2"))
 
-        # TODO: the exact format is still to be discussed
         return {
             **prediction,
             "explain": {
@@ -476,8 +472,6 @@ class RecordPairClassification(ClassificationHead):
                         field_tokens_record2, attributions_record2
                     )
                 ],
-                "delta_record1": delta_record1,
-                "delta_record2": delta_record2,
             },
         }
 
