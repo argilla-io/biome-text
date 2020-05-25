@@ -27,6 +27,7 @@ from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError
+from .features import WordFeatures
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead, TaskOutput
 
@@ -96,16 +97,27 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             config = PipelineConfiguration.from_params(config)
 
         vocab = vocab or vocabulary.empty_vocabulary(namespaces=config.features.keys)
+        tokenizer = config.tokenizer.compile()
+        features = deepcopy(config.features)
+        features.word = WordFeatures(embedding_dim=10)
+        featurizer = (
+            features.compile_featurizer(tokenizer)
+            if vocabulary.is_empty(vocab, config.features.keys)
+            else config.features.compile_featurizer(tokenizer)
+        )
+        embeder = (
+            features.compile_embedder(vocab)
+            if vocabulary.is_empty(vocab, config.features.keys)
+            else config.build_embedder(vocab)
+        )
 
         return cls(
             name=config.name,
             head=config.head.compile(
                 backbone=ModelBackbone(
                     vocab,
-                    featurizer=config.features.compile_featurizer(
-                        tokenizer=config.tokenizer.compile()
-                    ),
-                    embedder=config.features.compile_embedder(vocab),
+                    featurizer=featurizer,
+                    embedder=embeder,
                     encoder=config.encoder,
                 )
             ),
@@ -362,6 +374,7 @@ class PipelineModelTrainer:
         embedding_sources_mapping: Dict[str, str] = None,
     ):
         self._model = model
+        # TODO use biome classes instead of common parameters
         self._params = params
         self._serialization_dir = serialization_dir
         self._batch_weight_key = batch_weight_key
@@ -388,6 +401,8 @@ class PipelineModelTrainer:
 
         os.makedirs(self._serialization_dir, exist_ok=True)
 
+        # We don't need to load pretrained weights from saved models
+        self._params["model"]["config"]["features"].get("word", WordFeatures).weights_file = None
         serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
         with open(
             os.path.join(self._serialization_dir, CONFIG_NAME), "w"
