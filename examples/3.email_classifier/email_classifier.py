@@ -30,4 +30,4 @@ if __name__ == "__main__":
         subject="Header main. This is a test body!!!", body="The next phrase is here"
     )
     trained.head.extend_labels(["other"])
-    trained.explore(ds_path="validation.data.yml")
+    trained.explore(data_source="validation.data.yml")

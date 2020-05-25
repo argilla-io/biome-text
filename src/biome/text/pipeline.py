@@ -5,7 +5,6 @@ import logging
 import os
 import uuid
 from inspect import Parameter
-from tempfile import mktemp
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import numpy
@@ -20,8 +19,12 @@ from biome.text.configuration import (
     TrainerConfiguration,
     VocabularyConfiguration,
 )
+from biome.text.data import DataSource
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
-from biome.text.helpers import update_method_signature
+from biome.text.helpers import (
+    update_method_signature,
+    serialize_datasource_to_temp_yaml,
+)
 from dask import dataframe as dd
 
 from . import constants
@@ -150,26 +153,26 @@ class Pipeline:
         self,
         output: str,
         trainer: TrainerConfiguration,
-        training: str,
-        validation: Optional[str] = None,
-        test: Optional[str] = None,
+        training: Union[DataSource, str],
+        validation: Optional[Union[DataSource, str]] = None,
+        test: Optional[Union[DataSource, str]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> None:
-        """Launches a training run with the specified configurations and datasources
+        """Launches a training run with the specified configurations and data sources
 
         Parameters
         ----------
         output: `str`
             The experiment output path
-        trainer: `str`
+        trainer: `TrainerConfiguration`
             The trainer file path
-        training: `str`
-            The train datasource file path
-        validation: `Optional[str]`
-            The validation datasource file path
-        test: `Optional[str]`
-            The test datasource file path
+        training: `Union[DataSource, str]`
+            The training data source or its yaml file path
+        validation: `Optional[Union[DataSource, str]]`
+            The validation data source or its yaml file path
+        test: `Optional[Union[DataSource, str]]`
+            The test data source or its yaml file path
         extend_vocab: `Optional[VocabularyConfiguration]`
             Extends vocab tokens with provided configuration
         restore: `bool`
@@ -204,12 +207,18 @@ class Pipeline:
                     " or define the vocab extension with the extend_vocab parameter using a VocabularyConfiguration."
                 )
 
+            training, validation, test = (
+                serialize_datasource_to_temp_yaml(training),
+                serialize_datasource_to_temp_yaml(validation),
+                serialize_datasource_to_temp_yaml(test),
+            )
+
             config = TrainConfiguration(
-                test_cfg=test,
                 output=output,
                 trainer=trainer,
-                train_cfg=training,
-                validation_cfg=validation,
+                training=training,
+                validation=validation,
+                test=test,
             )
 
             model.launch_experiment(
@@ -280,7 +289,7 @@ class Pipeline:
 
     def explore(
         self,
-        ds_path: str,
+        data_source: Union[DataSource, str],
         explore_id: Optional[str] = None,
         es_host: Optional[str] = None,
         batch_size: int = 500,
@@ -289,7 +298,7 @@ class Pipeline:
         force_delete: bool = True,
         **metadata,
     ) -> dd.DataFrame:
-        """Launches Explore UI for a given datasource with current model
+        """Launches Explore UI for a given data source with current model
 
         Running this method inside a an `IPython` notebook will try to render the UI directly in the notebook.
 
@@ -297,8 +306,8 @@ class Pipeline:
 
         Parameters
         ----------
-            ds_path: `str`
-                The path to the configuration of a datasource
+            data_source: `Union[DataSource, str]`
+                The data source or its yaml file path
             explore_id: `Optional[str]`
                 A name or id for this explore run, useful for running and keep track of several explorations
             es_host: `Optional[str]`
@@ -335,7 +344,10 @@ class Pipeline:
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
-        explore_df = _explore(self, ds_path, config, es_config)
+        if isinstance(data_source, str):
+            data_source = DataSource.from_yaml(data_source)
+
+        explore_df = _explore(self, data_source, config, es_config)
         _show_explore(es_config)
 
         return explore_df
@@ -451,8 +463,7 @@ class Pipeline:
 
         """
         source_paths = [
-            source.to_yaml(mktemp(suffix=".yaml"), make_source_path_absolute=True)
-            for source in vocab_config.sources
+            serialize_datasource_to_temp_yaml(source) for source in vocab_config.sources
         ]
         instances_vocab = Vocabulary.from_instances(
             instances=[

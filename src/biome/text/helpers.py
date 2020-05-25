@@ -1,10 +1,12 @@
 import inspect
 import os
 import re
+import tempfile
 from inspect import Parameter
 from typing import Any, Callable, Dict, List, Tuple, Type
 
 import yaml
+from biome.text.data import DataSource
 from elasticsearch import Elasticsearch
 
 from . import environment
@@ -99,3 +101,22 @@ def clean_metric_name(name):
     new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
     new_name = new_name.lstrip("/")
     return new_name
+
+
+def serialize_datasource_to_temp_yaml(data_source):
+    """Serializes data sources to a temporary yaml file
+
+    Parameters
+    ----------
+    data_source : `DataSource`
+        DataSource to be serialized
+
+    Returns
+    -------
+    temporary_yaml_path
+        If `data_source` is not a `DataSource` instance, just returns `data_source`
+    """
+    if isinstance(data_source, DataSource):
+        yaml_path = tempfile.NamedTemporaryFile(suffix=".yml", delete=False).name
+        return data_source.to_yaml(yaml_path, make_source_path_absolute=True)
+    return data_source

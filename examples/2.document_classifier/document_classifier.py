@@ -36,7 +36,7 @@ if __name__ == "__main__":
     pl.predict(
         document=["Header main. This is a test body!!!", "The next phrase is here"]
     )
-    pl.explore(ds_path="validation.data.yml")
+    pl.explore(data_source="validation.data.yml")
 
     trained_pl = Pipeline.from_pretrained("experiment/model.tar.gz")
-    trained_pl.explore(ds_path="validation.data.yml")
+    trained_pl.explore(data_source="validation.data.yml")

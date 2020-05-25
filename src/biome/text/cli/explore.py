@@ -25,5 +25,5 @@ def _sanizite_index(index_name: str) -> str:
 @click.option("-es", "--es-host", "es_host", envvar=ES_HOST, default=DEFAULT_ES_HOST)
 def explore(data_source: str, pipeline_path: str, explain: bool, es_host: str) -> None:
     Pipeline.from_pretrained(pipeline_path).explore(
-        ds_path=data_source, es_host=es_host, explain=explain
+        data_source=data_source, es_host=es_host, explain=explain
     )
