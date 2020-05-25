@@ -12,6 +12,7 @@ if __name__ == "__main__":
     training_folder = "experiment"
 
     pl = Pipeline.from_yaml("text_classifier.yaml")
+
     print(pl.predict(text="Header main. This is a test body!!!"))
 
     pl.create_vocabulary(

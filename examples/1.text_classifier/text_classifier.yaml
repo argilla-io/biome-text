@@ -9,7 +9,7 @@ features:
     words:
         embedding_dim: 300
         lowercase_tokens: true
-        weights_file: https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.es.300.vec.gz
+        # weights_file: https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.es.300.vec.gz
     chars:
         embedding_dim: 8
         encoder:
