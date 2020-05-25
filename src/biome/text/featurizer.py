@@ -1,107 +1,9 @@
-import copy
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Union
 
-from allennlp.common import Params
-from allennlp.data import TokenIndexer, Vocabulary
-from allennlp.modules import TextFieldEmbedder
-
-from .modules.specs import Seq2VecEncoderSpec
-
-Embedder = TextFieldEmbedder
-
-
-class WordFeatures:
-    """Feature configuration at word level"""
-
-    namespace = "word"
-
-    def __init__(
-        self,
-        embedding_dim: int,
-        lowercase_tokens: bool = False,
-        trainable: bool = True,
-        weights_file: Optional[str] = None,
-        **extra_params
-    ):
-        self.embedding_dim = embedding_dim
-        self.lowercase_tokens = lowercase_tokens
-        self.trainable = trainable
-        self.weights_file = weights_file
-        self.extra_params = extra_params
-
-    @property
-    def config(self):
-        config = {
-            "indexer": {
-                "type": "single_id",
-                "lowercase_tokens": self.lowercase_tokens,
-                "namespace": self.namespace,
-            },
-            "embedder": {
-                "embedding_dim": self.embedding_dim,
-                "vocab_namespace": self.namespace,
-                "trainable": self.trainable,
-                **({"pretrained_file": self.weights_file} if self.weights_file else {}),
-            },
-        }
-
-        for k in self.extra_params:
-            config[k] = {**self.extra_params[k], **config.get(k)}
-
-        return config
-
-    def to_json(self):
-        data = vars(self)
-        data.update(data.pop("extra_params"))
-
-        return data
-
-
-class CharFeatures:
-    """Feature configuration at character level"""
-
-    namespace = "char"
-
-    def __init__(
-        self,
-        embedding_dim: int,
-        encoder: Dict[str, Any],
-        dropout: int = 0.0,
-        **extra_params
-    ):
-        self.embedding_dim = embedding_dim
-        self.encoder = encoder
-        self.dropout = dropout
-        self.extra_params = extra_params
-
-    @property
-    def config(self):
-        config = {
-            "indexer": {"type": "characters", "namespace": self.namespace},
-            "embedder": {
-                "type": "character_encoding",
-                "embedding": {
-                    "embedding_dim": self.embedding_dim,
-                    "vocab_namespace": self.namespace,
-                },
-                "encoder": Seq2VecEncoderSpec(**self.encoder)
-                .input_dim(self.embedding_dim)
-                .config,
-                "dropout": self.dropout,
-            },
-        }
-
-        for k, v in self.extra_params.items():
-            config[k] = {**v, **config.get(k)}
-
-        return config
-
-    def to_json(self):
-        data = vars(self)
-        data.update(data.pop("extra_params"))
-
-        return data
-
+from allennlp.data import Instance, Token, TokenIndexer
+from allennlp.data.fields import ListField, TextField
+from biome.text.tokenizer import Tokenizer
+from biome.text.features import WordFeatures
 
 class InputFeaturizer:
     """Transforms input text (words and/or characters) into indexes and embedding vectors.
@@ -111,64 +13,93 @@ class InputFeaturizer:
     You can provide additional features by manually specify `indexer` and `embedder` configurations within each
     input feature.
 
-    Parameters
+    Attributes
     ----------
-    word : `WordFeatures`
-        Dictionary defining how to index and embed words
-    char : `CharFeatures`
-        Dictionary defining how to encode and embed characters
-    kwargs :
-        Additional params for setting up the features
+    tokenizer : `Tokenizer`
+        Tokenizes the input depending on its type (str, List[str], Dict[str, Any])
+    indexer : `Dict[str, TokenIdexer]`
+        Features dictionary for token indexing. Built from `FeaturesConfiguration`
     """
 
-    __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
-    __INDEXER_KEYNAME = "indexer"
-    __EMBEDDER_KEYNAME = "embedder"
-
-    WORDS = WordFeatures.namespace
-    CHARS = CharFeatures.namespace
-
     def __init__(
-        self,
-        vocab: Vocabulary,
-        word: Optional[WordFeatures] = None,
-        char: Optional[CharFeatures] = None,
-        **kwargs: Dict[str, Dict[str, Any]]
+        self, tokenizer: Tokenizer, indexer: Dict[str, TokenIndexer],
     ):
-
-        configuration = kwargs or {}
-        if not (word or char or configuration):
-            word = self.__DEFAULT_CONFIG
-
-        if word:
-            self.word = word
-        if char:
-            self.char = char
-
-        for k, v in configuration.items():
-            self.__setattr__(k, v)
-
-        self._config = kwargs or {}
-        self._config.update(
-            {spec.namespace: spec.config for spec in [word, char] if spec}
-        )
-
-        copy_config = copy.deepcopy(self._config)
-
-        self.indexer = {
-            feature: TokenIndexer.from_params(Params(config[self.__INDEXER_KEYNAME]))
-            for feature, config in copy_config.items()
-        }
-        self.embedder = TextFieldEmbedder.from_params(
-            Params(
-                {
-                    feature: config[self.__EMBEDDER_KEYNAME]
-                    for feature, config in copy_config.items()
-                }
-            ),
-            vocab=vocab,
-        )
+        self.tokenizer = tokenizer
+        self.indexer = indexer
 
     @property
-    def config(self) -> Dict[str, Any]:
-        return copy.deepcopy(self._config)
+    def has_word_features(self) -> bool:
+        """Checks if word features is already configured as part of featurization"""
+        return WordFeatures.namespace in self.indexer
+
+    def featurize(
+        self,
+        record: Union[str, List[str], Dict[str, Any]],
+        to_field: str = "record",
+        aggregate: bool = False,
+        tokenize: bool = True,
+    ) -> Instance:
+        return self(record, to_field, aggregate, tokenize,)
+
+    def __call__(
+        self,
+        record: Union[str, List[str], Dict[str, Any]],
+        to_field: str = "record",
+        aggregate: bool = False,
+        tokenize: bool = True,
+    ):
+
+        """
+        Generate a allennlp Instance from a record input.
+
+        If aggregate flag is enabled, the resultant instance will contains a single TextField's
+        with all record fields; otherwhise, a ListField of TextFields.
+
+        Parameters
+        ----------
+        record: `Union[str, List[str], Dict[str, Any]]`
+            input data
+        to_field: `str`
+            field name in returned instance
+        aggregate: `bool`
+            set data aggregation flag
+        tokenize: `bool`
+            If disabled, skip tokenization phase, and pass record data as tokenized token list.
+
+        Returns
+        -------
+
+        instance: `Instance`
+
+        """
+        # TODO: Allow exclude record keys in data tokenization phase
+        data = record
+
+        record_tokens = (
+            self._data_tokens(data) if tokenize else [[Token(t) for t in data]]
+        )
+        return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
+
+    def _data_tokens(self, data: Any) -> List[List[Token]]:
+        """Convert data into a list of list of token depending on data type"""
+        if isinstance(data, dict):
+            return self.tokenizer.tokenize_record(data)
+        if isinstance(data, str):
+            return self.tokenizer.tokenize_text(data)
+        return self.tokenizer.tokenize_document(data)
+
+    def _tokens_to_field(
+        self, tokens: List[List[Token]], aggregate: bool
+    ) -> Union[ListField, TextField]:
+        """
+        If aggregate, generates a TextField including flatten token list. Otherwise,
+        a ListField of TextField is returned.
+        """
+        if aggregate:
+            return TextField(
+                [token for entry_tokens in tokens for token in entry_tokens],
+                self.indexer,
+            )
+        return ListField(
+            [TextField(entry_tokens, self.indexer) for entry_tokens in tokens]
+        )
