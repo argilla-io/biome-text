@@ -451,29 +451,24 @@ class Pipeline:
             An extended `Vocabulary` using the provided configuration
 
         """
-
         source_paths = [
             source.to_yaml(mktemp(suffix=".yaml"), make_source_path_absolute=True)
             for source in vocab_config.sources
         ]
-
-        vocab.extend_from_instances(
-            params=Params(
-                dict(
-                    max_vocab_size=vocab_config.max_vocab_size,
-                    min_count=vocab_config.min_count,
-                    pretrained_files=vocab_config.pretrained_files,
-                    only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-                    min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-                    tokens_to_add=vocab_config.tokens_to_add,
-                )
-            ),
+        instances_vocab = Vocabulary.from_instances(
             instances=[
                 instance
                 for data_source in source_paths
                 for instance in self._model.read(data_source)
             ],
+            max_vocab_size=vocab_config.max_vocab_size,
+            min_count=vocab_config.min_count,
+            pretrained_files=vocab_config.pretrained_files,
+            only_include_pretrained_words=vocab_config.only_include_pretrained_words,
+            min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
+            tokens_to_add=vocab_config.tokens_to_add,
         )
+        vocab.extend_from_vocab(instances_vocab)
         return vocab
 
 
