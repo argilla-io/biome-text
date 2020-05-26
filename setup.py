@@ -72,7 +72,7 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         install_requires=[
             "allennlp~=1.0.0rc",
-            "gevent~=20.5.0",
+            "gevent~=1.4.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
             "click~=7.0.0",
