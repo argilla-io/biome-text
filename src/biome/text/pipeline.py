@@ -76,8 +76,8 @@ class Pipeline:
         pipeline: `Pipeline`
             A configured pipeline
         """
-        with open(path) as yamL_file:
-            return cls.from_config(yamL_file.read(), vocab_path=vocab_path)
+        with open(path) as yaml_file:
+            return cls.from_config(yaml_file.read(), vocab_path=vocab_path)
 
     @classmethod
     def from_config(
@@ -153,9 +153,9 @@ class Pipeline:
         self,
         output: str,
         trainer: TrainerConfiguration,
-        training: Union[DataSource, str],
-        validation: Optional[Union[DataSource, str]] = None,
-        test: Optional[Union[DataSource, str]] = None,
+        training: DataSource,
+        validation: Optional[DataSource] = None,
+        test: Optional[DataSource] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> None:
@@ -167,18 +167,17 @@ class Pipeline:
             The experiment output path
         trainer: `TrainerConfiguration`
             The trainer file path
-        training: `Union[DataSource, str]`
-            The training data source or its yaml file path
-        validation: `Optional[Union[DataSource, str]]`
-            The validation data source or its yaml file path
-        test: `Optional[Union[DataSource, str]]`
-            The test data source or its yaml file path
+        training: `DataSource`
+            The training data source
+        validation: `Optional[DataSource]`
+            The validation data source
+        test: `Optional[DataSource]`
+            The test data source
         extend_vocab: `Optional[VocabularyConfiguration]`
             Extends vocab tokens with provided configuration
         restore: `bool`
             If enabled, tries to read previous training status from output folder and
             continues training process from it
-
         """
         from ._helpers import _allennlp_configuration
 
@@ -207,11 +206,12 @@ class Pipeline:
                     " or define the vocab extension with the extend_vocab parameter using a VocabularyConfiguration."
                 )
 
-            training, validation, test = (
-                serialize_datasource_to_temp_yaml(training),
-                serialize_datasource_to_temp_yaml(validation),
-                serialize_datasource_to_temp_yaml(test),
-            )
+            # `_allennlp_configuration` needs strings
+            training = serialize_datasource_to_temp_yaml(training)
+            if validation is not None:
+                validation = serialize_datasource_to_temp_yaml(validation)
+            if test is not None:
+                test = serialize_datasource_to_temp_yaml(test)
 
             config = TrainConfiguration(
                 output=output,
@@ -289,7 +289,7 @@ class Pipeline:
 
     def explore(
         self,
-        data_source: Union[DataSource, str],
+        data_source: DataSource,
         explore_id: Optional[str] = None,
         es_host: Optional[str] = None,
         batch_size: int = 500,
@@ -306,7 +306,7 @@ class Pipeline:
 
         Parameters
         ----------
-            data_source: `Union[DataSource, str]`
+            data_source: `DataSource`
                 The data source or its yaml file path
             explore_id: `Optional[str]`
                 A name or id for this explore run, useful for running and keep track of several explorations
@@ -343,9 +343,6 @@ class Pipeline:
             es_index=explore_id or str(uuid.uuid1()),
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
-
-        if isinstance(data_source, str):
-            data_source = DataSource.from_yaml(data_source)
 
         explore_df = _explore(self, data_source, config, es_config)
         _show_explore(es_config)

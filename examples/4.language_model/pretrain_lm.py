@@ -3,13 +3,13 @@ from biome.text.data import DataSource
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
-    train = "configs/train.data.yml"
-    validation = "configs/val.data.yml"
+    training_ds = DataSource.from_yaml("configs/train.data.yml")
+    validation_ds = DataSource.from_yaml("configs/val.data.yml")
 
     pl = Pipeline.from_yaml("configs/language_model.yml")
     pl.create_vocabulary(
         VocabularyConfiguration(
-            sources=[DataSource.from_yaml(path) for path in [train, validation]],
+            sources=[training_ds, validation_ds],
             min_count={"words": 12},
         )
     )
@@ -17,6 +17,6 @@ if __name__ == "__main__":
     pl.train(
         output="configs/experiment_lm",
         trainer=trainer,
-        training=train,
-        validation=validation,
+        training=training_ds,
+        validation=validation_ds,
     )

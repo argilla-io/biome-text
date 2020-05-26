@@ -220,7 +220,6 @@ class DataSource:
         }
         save_dict_as_yaml(yaml_dict, path)
 
-
         return path
 
     def head(self, n: int = 10) -> "pandas.DataFrame":  # pylint: disable=invalid-name

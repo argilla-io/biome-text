@@ -4,10 +4,13 @@ from biome.text.data import DataSource
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
+    training_ds = DataSource.from_yaml("configs/train.data.yml")
+    validation_ds = DataSource.from_yaml("configs/val.data.yml")
+
     pl = Pipeline.from_yaml("configs/char_gru_token_classifier.yml")
     pl.create_vocabulary(
         VocabularyConfiguration(
-            sources=[DataSource.from_yaml("configs/train.data.yml")]
+            sources=[training_ds]
         )
     )
     trainer = TrainerConfiguration(**yaml_to_dict("configs/trainer.yml"))
@@ -15,6 +18,6 @@ if __name__ == "__main__":
     pl.train(
         output="experiment",
         trainer=trainer,
-        training="configs/train.data.yml",
-        validation="configs/validation.data.yml",
+        training=training_ds,
+        validation=validation_ds,
     )

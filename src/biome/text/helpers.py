@@ -103,8 +103,8 @@ def clean_metric_name(name):
     return new_name
 
 
-def serialize_datasource_to_temp_yaml(data_source):
-    """Serializes data sources to a temporary yaml file
+def serialize_datasource_to_temp_yaml(data_source: DataSource) -> str:
+    """Serializes the data source to a temporary yaml file
 
     Parameters
     ----------
@@ -113,10 +113,9 @@ def serialize_datasource_to_temp_yaml(data_source):
 
     Returns
     -------
-    temporary_yaml_path
-        If `data_source` is not a `DataSource` instance, just returns `data_source`
+    temporary_yaml_path : str
     """
-    if isinstance(data_source, DataSource):
-        yaml_path = tempfile.NamedTemporaryFile(suffix=".yml", delete=False).name
-        return data_source.to_yaml(yaml_path, make_source_path_absolute=True)
-    return data_source
+    yaml_path = tempfile.NamedTemporaryFile(suffix=".yml", delete=False).name
+    data_source.to_yaml(yaml_path, make_source_path_absolute=True)
+
+    return yaml_path

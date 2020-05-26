@@ -2,6 +2,7 @@ from biome.text import Pipeline
 from biome.text import TrainerConfiguration
 from biome.text.helpers import yaml_to_dict
 from biome.text.modules.heads import TextClassification
+from biome.text.data import DataSource
 
 if __name__ == "__main__":
     # load an existing pre-trained model
@@ -37,6 +38,6 @@ if __name__ == "__main__":
     pipe.train(
         output="text_classifier_fine_tuned",
         trainer=trainer,
-        training="configs/train.data.yml",
-        validation="configs/val.data.yml",
+        training=DataSource.from_yaml("configs/train.data.yml"),
+        validation=DataSource.from_yaml("configs/val.data.yml"),
     )
