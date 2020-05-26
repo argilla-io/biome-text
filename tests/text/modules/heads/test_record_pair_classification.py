@@ -9,7 +9,7 @@ from biome.text.data import DataSource
 
 
 @pytest.fixture
-def path_to_training_data_yaml(tmp_path) -> str:
+def training_data_source(tmp_path) -> DataSource:
     data_file = tmp_path / "record_pairs.json"
     df = pd.DataFrame(
         {
@@ -28,20 +28,9 @@ def path_to_training_data_yaml(tmp_path) -> str:
     )
     df.to_json(data_file, lines=True, orient="records")
 
-    yaml_file = tmp_path / "training.yml"
-    yaml_dict = {
-        "source": str(data_file),
-        "attributes": {"flatten": False}
-        # "mapping": {
-        #     "record1": "record1",
-        #     "record2": "record2",
-        #     "label": "label",
-        # },
-    }
-    with yaml_file.open("w") as f:
-        yaml.safe_dump(yaml_dict, f)
-
-    return str(yaml_file)
+    return DataSource(
+        source=str(data_file), flatten=False, lines=True, orient="records"
+    )
 
 
 @pytest.fixture
@@ -140,8 +129,8 @@ def path_to_pipeline_yaml(tmp_path) -> str:
             },
             "initializer": {
                 "regexes": [
-                    ["output_layer.weight", {"type": "xavier_normal"}],
-                    ["output_layer.bias", {"type": "constant", "val": 0}],
+                    ["_output_layer.weight", {"type": "xavier_normal"}],
+                    ["_output_layer.bias", {"type": "constant", "val": 0}],
                     [".*linear_layers.*weight", {"type": "xavier_normal"}],
                     [".*linear_layers.*bias", {"type": "constant", "val": 0}],
                     [".*weight_ih.*", {"type": "xavier_normal"}],
@@ -170,19 +159,15 @@ def trainer_dict() -> Dict:
 
 
 def test_record_bimpm_train(
-    path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml, tmp_path
+    path_to_pipeline_yaml, training_data_source, trainer_dict, tmp_path
 ):
     pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
-    pipeline.create_vocabulary(
-        VocabularyConfiguration(
-            sources=[DataSource.from_yaml(path_to_training_data_yaml)]
-        )
-    )
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
 
     pipeline.train(
         output=str(tmp_path / "record_bimpm_experiment"),
         trainer=TrainerConfiguration(**trainer_dict),
-        training=path_to_training_data_yaml,
-        validation=path_to_training_data_yaml,
+        training=training_data_source,
+        validation=training_data_source,
     )
