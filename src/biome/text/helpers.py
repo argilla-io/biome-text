@@ -101,21 +101,3 @@ def clean_metric_name(name):
     new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
     new_name = new_name.lstrip("/")
     return new_name
-
-
-def serialize_datasource_to_temp_yaml(data_source: DataSource) -> str:
-    """Serializes the data source to a temporary yaml file
-
-    Parameters
-    ----------
-    data_source : `DataSource`
-        DataSource to be serialized
-
-    Returns
-    -------
-    temporary_yaml_path : str
-    """
-    yaml_path = tempfile.NamedTemporaryFile(suffix=".yml", delete=False).name
-    data_source.to_yaml(yaml_path, make_source_path_absolute=True)
-
-    return yaml_path

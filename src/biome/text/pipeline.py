@@ -3,6 +3,7 @@ import glob
 import inspect
 import logging
 import os
+import tempfile
 import uuid
 from inspect import Parameter
 from typing import Any, Dict, List, Optional, Type, Union, cast
@@ -21,10 +22,7 @@ from biome.text.configuration import (
 )
 from biome.text.data import DataSource
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
-from biome.text.helpers import (
-    update_method_signature,
-    serialize_datasource_to_temp_yaml,
-)
+from biome.text.helpers import update_method_signature
 from dask import dataframe as dd
 
 from . import constants
@@ -189,6 +187,7 @@ class Pipeline:
             self.__prepare_experiment_folder(output, restore)
             # The original pipeline keeps unchanged
             model = copy.deepcopy(self._model)
+            # creates the output folder if it does not exist
             model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
 
             vocab = None
@@ -202,16 +201,32 @@ class Pipeline:
             if vocabulary.is_empty(model.vocab, self.config.features.keys):
                 raise EmptyVocabError(
                     "Found an empty vocabulary. "
-                    "Please load a vocabulary using vocab_path parameter when loading pipeline  "
-                    " or define the vocab extension with the extend_vocab parameter using a VocabularyConfiguration."
+                    "You probably forgot to create a vocabulary with '.create_vocabulary()'."
                 )
 
             # `_allennlp_configuration` needs strings
-            training = serialize_datasource_to_temp_yaml(training)
+            datasources_dir = os.path.join(output, "datasources")
+            training = training.to_yaml(
+                os.path.join(
+                    datasources_dir, f"training_{os.path.basename(training.source)}.yml"
+                ),
+                make_source_path_absolute=True,
+            )
             if validation is not None:
-                validation = serialize_datasource_to_temp_yaml(validation)
+                validation = validation.to_yaml(
+                    os.path.join(
+                        datasources_dir,
+                        f"validation_{os.path.basename(validation.source)}.yml",
+                    ),
+                    make_source_path_absolute=True,
+                )
             if test is not None:
-                test = serialize_datasource_to_temp_yaml(test)
+                test = test.to_yaml(
+                    os.path.join(
+                        datasources_dir, f"test_{os.path.basename(test.source)}.yml"
+                    ),
+                    make_source_path_absolute=True,
+                )
 
             config = TrainConfiguration(
                 output=output,
@@ -460,7 +475,11 @@ class Pipeline:
 
         """
         source_paths = [
-            serialize_datasource_to_temp_yaml(source) for source in vocab_config.sources
+            source.to_yaml(
+                tempfile.NamedTemporaryFile(delete=False).name,
+                make_source_path_absolute=True,
+            )
+            for source in vocab_config.sources
         ]
         instances_vocab = Vocabulary.from_instances(
             instances=[
