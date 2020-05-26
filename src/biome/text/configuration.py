@@ -227,7 +227,6 @@ class TrainerConfiguration:
     optimizer
     validation_metric
     patience
-    shuffle
     num_epochs
     cuda_device
     grad_norm
