@@ -30,7 +30,6 @@ if __name__ == "__main__":
         trainer=trainer_configuration,
         training=train,
         validation=validation,
-        restore=True,
     )
 
     trained_pl = Pipeline.from_pretrained(os.path.join(training_folder, "model.tar.gz"))

@@ -52,7 +52,7 @@ class RecordClassification(DocumentClassification):
         self, label: Optional[Union[List[str], List[int], str, int]] = None, **inputs
     ) -> Optional[Instance]:
 
-        instance = self.backbone.featurize(
+        instance = self.backbone.featurizer(
             {input_key: inputs[input_key] for input_key in self._inputs},
             to_field="document",
         )

@@ -72,7 +72,10 @@ def _allennlp_configuration(
             k: v for k, v in vars(trainer).items() if k not in __excluded_keys
         }
         trainer_config.update(
-            {"num_serialized_models_to_keep": 1, "should_log_learning_rate": True}
+            {
+                "checkpointer": {"num_serialized_models_to_keep": 1},
+                "tensorboard_writer": {"should_log_learning_rate": True},
+            }
         )
         return trainer_config
 

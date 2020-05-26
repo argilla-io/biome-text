@@ -2,8 +2,8 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import numpy
 import torch
-from allennlp.data import Instance
-from allennlp.data.dataset import Batch
+from allennlp.data import Instance, TextFieldTensors
+from allennlp.data import Batch
 from allennlp.data.fields import TextField
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
@@ -51,13 +51,13 @@ class TextClassification(ClassificationHead):
     def featurize(
         self, text: Any, label: Optional[Union[int, str, List[Union[int, str]]]] = None
     ) -> Optional[Instance]:
-        instance = self.backbone.featurize(
+        instance = self.backbone.featurizer(
             text, to_field=self.forward_arg_name, aggregate=True
         )
         return self.add_label(instance, label, to_field=self.label_name)
 
     def forward(  # type: ignore
-        self, text: Dict[str, torch.Tensor], label: torch.IntTensor = None,
+        self, text: TextFieldTensors, label: torch.IntTensor = None,
     ) -> TaskOutput:
 
         mask = get_text_field_mask(text)

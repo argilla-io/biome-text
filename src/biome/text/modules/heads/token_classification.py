@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Union, cast
 
 import torch
-from allennlp.data import Instance, Token
+from allennlp.data import Instance, TextFieldTensors, Token
 from allennlp.data.fields import SequenceLabelField, TextField
 from allennlp.modules import ConditionalRandomField, FeedForward, TimeDistributed
 from allennlp.modules.conditional_random_field import allowed_transitions
@@ -70,7 +70,7 @@ class TokenClassification(TaskHead):
         self, text: List[str], labels: Optional[Union[List[str], List[int]]] = None
     ) -> Optional[Instance]:
 
-        instance = self.backbone.featurize(
+        instance = self.backbone.featurizer(
             text, to_field="text", tokenize=False, aggregate=True
         )
 
@@ -90,7 +90,7 @@ class TokenClassification(TaskHead):
         return TaskName.token_classification
 
     def forward(  # type: ignore
-        self, text: Dict[str, torch.Tensor], labels: torch.IntTensor = None
+        self, text: TextFieldTensors, labels: torch.IntTensor = None
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
         embedded_text = self.backbone.forward(text, mask)

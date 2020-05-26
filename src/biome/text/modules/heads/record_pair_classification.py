@@ -3,7 +3,7 @@ import numpy as np
 
 import torch
 from allennlp.data import Instance
-from allennlp.data.dataset import Batch
+from allennlp.data import Batch
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,

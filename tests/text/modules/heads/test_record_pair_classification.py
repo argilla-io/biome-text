@@ -138,16 +138,18 @@ def path_to_pipeline_yaml(tmp_path) -> str:
                 "activations": ["relu"],
                 "dropout": [0.1],
             },
-            "initializer": [
-                ["_output_layer.weight", {"type": "xavier_normal"}],
-                ["_output_layer.bias", {"type": "constant", "val": 0}],
-                [".*linear_layers.*weight", {"type": "xavier_normal"}],
-                [".*linear_layers.*bias", {"type": "constant", "val": 0}],
-                [".*weight_ih.*", {"type": "xavier_normal"}],
-                [".*weight_hh.*", {"type": "orthogonal"}],
-                [".*bias.*", {"type": "constant", "val": 0}],
-                [".*matcher.*match_weights.*", {"type": "kaiming_normal"}],
-            ],
+            "initializer": {
+                "regexes": [
+                    ["output_layer.weight", {"type": "xavier_normal"}],
+                    ["output_layer.bias", {"type": "constant", "val": 0}],
+                    [".*linear_layers.*weight", {"type": "xavier_normal"}],
+                    [".*linear_layers.*bias", {"type": "constant", "val": 0}],
+                    [".*weight_ih.*", {"type": "xavier_normal"}],
+                    [".*weight_hh.*", {"type": "orthogonal"}],
+                    [".*bias.*", {"type": "constant", "val": 0}],
+                    [".*matcher.*match_weights.*", {"type": "kaiming_normal"}],
+                ]
+            },
         },
     }
     pipeline_yaml = tmp_path / "pipeline.yml"

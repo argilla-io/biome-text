@@ -1,44 +1,16 @@
 from typing import Dict, Optional
 
-import numpy as np
 import torch
 from allennlp.common.checks import ConfigurationError
-from allennlp.data import Instance
-from allennlp.nn.util import get_text_field_mask
+from allennlp.data import Instance, TextFieldTensors
+from allennlp.modules import SoftmaxLoss
+from allennlp.nn.util import get_text_field_mask, get_token_ids_from_text_field_tensors
 from allennlp.training.metrics import Perplexity
-from biome.text.features import WordFeatures
 
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
 from biome.text import vocabulary
 from .defs import TaskHead, TaskName, TaskOutput
-
-
-class SoftmaxLoss(torch.nn.Module):
-    """
-    Given some embeddings and some targets, applies a linear layer
-    to create logits over possible words and then returns the
-    negative log likelihood.
-    TODO: copied from allennlp master branch, remove when 1.0 is released
-    """
-
-    def __init__(self, num_words: int, embedding_dim: int) -> None:
-        super(SoftmaxLoss, self).__init__()
-
-        self.softmax_w = torch.nn.Parameter(
-            torch.randn(embedding_dim, num_words) / np.sqrt(embedding_dim)
-        )
-        self.softmax_b = torch.nn.Parameter(torch.zeros(num_words))
-
-    def forward(self, embeddings: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        # embeddings is size (n, embedding_dim)
-        # targets is (batch_size, ) with the correct class id
-        # Does not do any count normalization / divide by batch size
-        probs = torch.nn.functional.log_softmax(
-            torch.matmul(embeddings, self.softmax_w) + self.softmax_b, dim=-1
-        )
-
-        return torch.nn.functional.nll_loss(probs, targets.long(), reduction="sum")
 
 
 class LanguageModelling(TaskHead):
@@ -80,16 +52,18 @@ class LanguageModelling(TaskHead):
         )
 
     def featurize(self, text: str) -> Optional[Instance]:
-        return self.backbone.featurize(text, to_field="text", aggregate=True)
+        return self.backbone.featurizer(text, to_field="text", aggregate=True)
 
     def forward(  # type: ignore
-        self, text: Dict[str, torch.Tensor]
+        self, text: TextFieldTensors
     ) -> TaskOutput:
 
         mask = get_text_field_mask(text)
         contextual_embeddings = self.backbone.forward(text, mask)
-
-        token_ids = text.get(WordFeatures.namespace)
+        # NOTE: @dvsrepo, Allennlp 1.0 includes a second features level that I'm not sure of understand.
+        # Anyway, they proved a function to realize the target here (the function docstring clarifies the
+        # real spaghetti inside indexer code references, :-)
+        token_ids = get_token_ids_from_text_field_tensors(text)
         assert isinstance(contextual_embeddings, torch.Tensor)
 
         # Use token_ids to compute targets

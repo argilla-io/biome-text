@@ -2,6 +2,7 @@ import inspect
 import json
 import logging
 import os
+import pathlib
 import pickle
 import re
 import warnings
@@ -16,13 +17,14 @@ import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
-from allennlp.data import DatasetReader, Instance, Vocabulary
+from allennlp.data import DataLoader, Instance, Vocabulary
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
-from biome.text import vocabulary
 from dask.dataframe import Series as DaskSeries
+from torch.utils.data.dataset import Dataset
 
+from biome.text import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .data import DataSource
@@ -133,13 +135,20 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         self._head = head
         self._update_head_related_attributes()
 
+    def cache_data(self, cache_directory: str) -> None:
+        """Sets the cache data directory"""
+        self._cache_directory = pathlib.Path(cache_directory)
+        os.makedirs(self._cache_directory, exist_ok=True)
+
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""
         head_output: TaskOutput = self._head.forward(*args, **kwargs)
         # we don't want to break AllenNLP API: TaskOutput -> as_dict()
         return head_output.as_dict()
 
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def make_output_human_readable(
+        self, output_dict: Dict[str, torch.Tensor]
+    ) -> Dict[str, torch.Tensor]:
         """Completes the output for the prediction
 
         Parameters
@@ -379,8 +388,8 @@ class PipelineModelTrainer:
         self._serialization_dir = serialization_dir
         self._batch_weight_key = batch_weight_key
         self._embedding_sources_mapping = embedding_sources_mapping
+        self._batch_size = self._params.pop("iterator")["batch_size"]
 
-        self._iterator = None
         self._trainer = None
         self._all_datasets = self.datasets_from_params()
 
@@ -388,7 +397,6 @@ class PipelineModelTrainer:
 
     def _setup(self):
         """Setup the trainer components and local resources"""
-        from allennlp.data import DataIterator
 
         prepare_environment(self._params)
         if os.path.exists(self._serialization_dir) and os.listdir(
@@ -414,8 +422,9 @@ class PipelineModelTrainer:
         vocab = self._model.vocab
         vocab.save_to_files(os.path.join(self._serialization_dir, "vocabulary"))
 
-        self._iterator = DataIterator.from_params(self._params.pop("iterator"))
-        self._iterator.index_with(vocab)
+        for dataset in self._all_datasets.values():
+            if dataset and hasattr(dataset, "index_with"):
+                dataset.index_with(vocab)
 
         trainer_params = self._params.pop("trainer")
         no_grad_regexes = trainer_params.pop(
@@ -425,17 +434,22 @@ class PipelineModelTrainer:
             if any(re.search(regex, name) for regex in no_grad_regexes):
                 parameter.requires_grad_(False)
 
+        train_data_loader = DataLoader(
+            self._all_datasets["train"], batch_size=self._batch_size
+        )
+        validation_ds = self._all_datasets.get("validation")
+        validation_data_loader = DataLoader(validation_ds, batch_size=self._batch_size) if validation_ds else None
+
         # TODO: Customize trainer for better biome integration
         self._trainer = Trainer.from_params(
             model=self._model,
             serialization_dir=self._serialization_dir,
-            iterator=self._iterator,
-            train_data=self._all_datasets["train"],
-            validation_data=self._all_datasets.get("validation"),
+            data_loader=train_data_loader,
+            validation_data_loader=validation_data_loader,
             params=trainer_params,
         )
 
-    def datasets_from_params(self) -> Dict[str, Iterable[Instance]]:
+    def datasets_from_params(self) -> Dict[str, Dataset]:
         """
         Load all the datasets specified by the config.
 
@@ -446,9 +460,7 @@ class PipelineModelTrainer:
         train_data_path = self._params.pop("train_data_path")
 
         self.__LOGGER.info("Reading training data from %s", train_data_path)
-        datasets: Dict[str, Iterable[Instance]] = {
-            "train": self._model.read(train_data_path)
-        }
+        datasets: Dict[str, Dataset] = {"train": self._model.read(train_data_path)}
 
         validation_data_path = self._params.pop("validation_data_path", None)
         if validation_data_path is not None:
@@ -478,8 +490,7 @@ class PipelineModelTrainer:
         self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
         return evaluate(
             self._model,
-            test_data,
-            data_iterator=self._iterator,
+            data_loader=DataLoader(test_data, batch_size=self._batch_size),
             cuda_device=self._trainer._cuda_devices[
                 0
             ],  # pylint: disable=protected-access
@@ -524,6 +535,4 @@ class PipelineModelTrainer:
 
     def save_best_model(self):
         """Packages the best model as tar.gz archive"""
-        archive_model(
-            self._serialization_dir, files_to_archive=self._params.files_to_archive
-        )
+        archive_model(self._serialization_dir)
