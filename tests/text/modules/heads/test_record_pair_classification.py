@@ -1,10 +1,11 @@
-from typing import Dict
+from typing import Dict, cast
 
 import pandas as pd
 import pytest
 import yaml
-from biome.text import TrainerConfiguration, VocabularyConfiguration
-from biome.text import Pipeline
+from allennlp.data.fields import ListField, TextField
+
+from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
 from biome.text.data import DataSource
 
 
@@ -168,6 +169,26 @@ def trainer_dict() -> Dict:
 
     return trainer_dict
 
+def test_non_equivalent_records_featurization(
+        path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml, tmp_path
+):
+    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml)
+    instance = pipeline.head.featurize(
+        record1={"first_name": "Hans", "last_name": "Solo"},
+        record2={"first_name": "Hansel"}
+    )
+
+    record1_feat = instance.get("record1")
+    record2_feat = instance.get("record2")
+
+    assert len(record2_feat) == len(record1_feat)
+
+    for field_i in range(0, len(record1_feat)):
+        key_1 = record1_feat[field_i].tokens[0]
+        key_2 = record2_feat[field_i].tokens[0]
+        assert key_1 == key_2
+        if key_2.text == "last_name":
+            assert record2_feat[field_i].tokens[1].text == "None"
 
 def test_explain(
     path_to_pipeline_yaml
@@ -181,9 +202,9 @@ def test_explain(
 
 
 def test_record_bimpm_train(
-    path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml, tmp_path
+        path_to_pipeline_yaml, trainer_dict, path_to_training_data_yaml, tmp_path
 ):
-    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
+    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml, )
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
     pipeline.create_vocabulary(
         VocabularyConfiguration(
@@ -191,8 +212,9 @@ def test_record_bimpm_train(
         )
     )
 
+    output_path = str(tmp_path / "record_bimpm_experiment")
     pipeline.train(
-        output=str(tmp_path / "record_bimpm_experiment"),
+        output=output_path,
         trainer=TrainerConfiguration(**trainer_dict),
         training=path_to_training_data_yaml,
         validation=path_to_training_data_yaml,

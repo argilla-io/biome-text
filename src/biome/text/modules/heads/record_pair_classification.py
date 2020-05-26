@@ -147,6 +147,9 @@ class RecordPairClassification(ClassificationHead):
         instance
             AllenNLP instance containing the two records plus optionally a label
         """
+
+        record1, record2 = self._even_records(record1, record2)
+
         record1_instance = self.backbone.featurizer(
             record1, to_field="record", aggregate=False
         )
@@ -162,6 +165,25 @@ class RecordPairClassification(ClassificationHead):
         instance = self.add_label(instance, label)
 
         return instance
+
+    def _even_records(
+            self,
+            record1: Dict[str, Any],
+            record2: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        """
+        Given two record dictionaries, generate two new record dictionaries,
+        with the same key structure. Values not found will be added as None
+
+        """
+        record_keys = set([key for record in [record1, record2] for key in record])
+
+        new_record_1 = {}
+        new_record_2 = {}
+        for key in record_keys:
+            new_record_1[key] = record1.get(key)
+            new_record_2[key] = record2.get(key)
+
+        return new_record_1, new_record_2
 
     def forward(
         self,  # type: ignore
