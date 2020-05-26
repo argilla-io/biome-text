@@ -1,9 +1,8 @@
-from typing import Dict, List, Any, Optional, Tuple
-import numpy as np
+from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
-from allennlp.data import Instance
-from allennlp.data import Batch
+from allennlp.data import Batch, Instance
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
@@ -11,19 +10,19 @@ from allennlp.modules import (
 )
 from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator, util
-from biome.text.backbone import ModelBackbone
-from biome.text.modules.encoders import TimeDistributedEncoder
-from biome.text.modules.heads import TaskOutput
-from biome.text.modules.heads.classification.defs import ClassificationHead
-from biome.text.modules.specs import (
-    Seq2VecEncoderSpec,
-    Seq2SeqEncoderSpec,
-    BiMpmMatchingSpec,
-    FeedForwardSpec,
-)
 from captum.attr import IntegratedGradients
 
-from biome.text.configuration import WordFeatures, CharFeatures
+from biome.text.backbone import ModelBackbone
+from biome.text.configuration import CharFeatures, WordFeatures
+from biome.text.modules.encoders import TimeDistributedEncoder
+from biome.text.modules.heads import TaskOutput
+from biome.text.modules.specs import (
+    BiMpmMatchingSpec,
+    FeedForwardSpec,
+    Seq2SeqEncoderSpec,
+    Seq2VecEncoderSpec,
+)
+from .classification import ClassificationHead
 
 
 class RecordPairClassification(ClassificationHead):

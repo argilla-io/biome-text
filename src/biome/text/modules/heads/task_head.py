@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Optional
 import numpy
 import torch
 from allennlp.common import Registrable
-from allennlp.data import Instance, Vocabulary
+from allennlp.data import Instance
 
+from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
-from biome.text import vocabulary
 
 
 class TaskOutput:
