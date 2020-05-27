@@ -2,10 +2,11 @@ import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
 from allennlp.common import FromParams, Params
-from biome.text.data import DataSource
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
+from biome.text.data import DataSource
+from . import vocabulary
 from .features import CharFeatures, WordFeatures
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
@@ -77,7 +78,12 @@ class FeaturesConfiguration(FromParams):
     def compile_embedder(self, vocab: Vocabulary) -> TextFieldEmbedder:
         """Creates the embedder from configured features for a given vocabulary"""
         configuration = self._make_allennlp_config()
-
+        if vocabulary.is_empty(vocab, namespaces=self.keys):
+            # We simplify embedder configuration for better load an blank pipeline which create the vocab
+            embedder_cfg = configuration["word"]["embedder"]
+            embedder_cfg["embedding_dim"] = 1
+            if "pretrained_file" in embedder_cfg:
+                embedder_cfg["pretrained_file"] = None
         return TextFieldEmbedder.from_params(
             Params(
                 {
