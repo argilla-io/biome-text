@@ -32,8 +32,7 @@ from ._configuration import (
     _ModelImpl,
 )
 from .backbone import ModelBackbone
-from .modules.heads import TaskHead
-from .modules.heads.defs import TaskHeadSpec
+from .modules.heads import TaskHead, TaskHeadSpec
 
 try:
     import ujson as json

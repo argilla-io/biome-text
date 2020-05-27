@@ -7,10 +7,10 @@ from allennlp.modules import SoftmaxLoss
 from allennlp.nn.util import get_text_field_mask, get_token_ids_from_text_field_tensors
 from allennlp.training.metrics import Perplexity
 
+from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.specs import ComponentSpec
-from biome.text import vocabulary
-from .defs import TaskHead, TaskName, TaskOutput
+from .task_head import TaskHead, TaskName, TaskOutput
 
 
 class LanguageModelling(TaskHead):

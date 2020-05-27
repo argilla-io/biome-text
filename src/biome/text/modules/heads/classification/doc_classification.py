@@ -2,25 +2,24 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 import numpy
 import torch
-from allennlp.data import Instance, TextFieldTensors
-from allennlp.data import Batch
+from allennlp.data import Batch, Instance, TextFieldTensors
 from allennlp.data.fields import ListField, TextField
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
+from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.encoders import TimeDistributedEncoder
+from biome.text.modules.heads import TaskOutput
 from biome.text.modules.specs import (
     ComponentSpec,
     FeedForwardSpec,
     Seq2SeqEncoderSpec,
     Seq2VecEncoderSpec,
 )
-from biome.text import vocabulary
-from .classification.defs import ClassificationHead
-from .defs import TaskOutput
+from .classification import ClassificationHead
 
 
 class DocumentClassification(ClassificationHead):

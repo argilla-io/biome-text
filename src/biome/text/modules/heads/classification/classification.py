@@ -3,12 +3,11 @@ from typing import Any, Dict, List, Optional, Union
 import torch
 from allennlp.data import Instance
 from allennlp.data.fields import LabelField, MultiLabelField
-from allennlp.training.metrics import CategoricalAccuracy, F1Measure, FBetaMeasure
+from allennlp.training.metrics import CategoricalAccuracy, FBetaMeasure
 
+from biome.text import helpers, vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text import vocabulary
-from ..defs import TaskHead, TaskName, TaskOutput
-from biome.text import helpers
+from ..task_head import TaskHead, TaskName, TaskOutput
 
 
 class ClassificationHead(TaskHead):
@@ -155,15 +154,15 @@ class ClassificationHead(TaskHead):
 
         for metric_name in ["micro", "macro"]:
             for k, v in self.metrics[metric_name].get_metric(reset).items():
-                metrics.update({'{}/{}'.format(metric_name, k): v})
-                
+                metrics.update({"{}/{}".format(metric_name, k): v})
+
         for k, values in self.metrics["per_label"].get_metric(reset).items():
             for i, v in enumerate(values):
                 label = vocabulary.label_for_index(self.backbone.vocab, i)
                 # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
                 label = helpers.clean_metric_name(label)
                 metrics.update({"_{}/{}".format(k, label): v})
- 
+
         return metrics
 
     def single_label_output(
