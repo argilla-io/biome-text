@@ -39,5 +39,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@recognai/re-commons/src/assets/scss/components/dropdown.scss";
+@import "@/assets/scss/components/dropdown.scss";
 </style>

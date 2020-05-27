@@ -144,8 +144,8 @@ export default {
 @import "@/assets/scss/apps/classifier/filters.scss";
 @import "@/assets/scss/apps/classifier/grid.scss";
 @import "@/assets/scss/components/breadcrumbs.scss";
-@import "@/assets/scss/apps/jupyter/theme-jupyter.scss";
 </style>
+
 <style lang="scss">
 body {
   &:after {
