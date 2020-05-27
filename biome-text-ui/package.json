@@ -6,9 +6,7 @@
     "generate-icons": "vsvg -s ./static/icons -t ./src/assets/iconsfont",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "dist": "cd dist && tar -zcvf ../app.tar.gz .",
-    "docker": "docker-compose build"
+    "lint": "vue-cli-service lint"
   },
   "dependencies": {
     "axios": "^0.19.0",
