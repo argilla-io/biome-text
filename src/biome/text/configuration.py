@@ -10,7 +10,7 @@ from . import vocabulary
 from .features import CharFeatures, WordFeatures
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
-from .modules.heads import TaskHeadSpec
+from .modules.heads.task_head import TaskHeadSpec
 from .tokenizer import Tokenizer
 
 

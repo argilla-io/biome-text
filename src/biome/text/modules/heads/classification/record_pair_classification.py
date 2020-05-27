@@ -15,7 +15,6 @@ from captum.attr import IntegratedGradients
 from biome.text.backbone import ModelBackbone
 from biome.text.configuration import CharFeatures, WordFeatures
 from biome.text.modules.encoders import TimeDistributedEncoder
-from biome.text.modules.heads import TaskOutput
 from biome.text.modules.specs import (
     BiMpmMatchingSpec,
     FeedForwardSpec,
@@ -23,6 +22,7 @@ from biome.text.modules.specs import (
     Seq2VecEncoderSpec,
 )
 from .classification import ClassificationHead
+from ..task_head import TaskOutput
 
 
 class RecordPairClassification(ClassificationHead):

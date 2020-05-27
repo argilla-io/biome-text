@@ -9,13 +9,13 @@ from captum.attr import IntegratedGradients
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.heads import TaskOutput
 from biome.text.modules.specs import (
     ComponentSpec,
     FeedForwardSpec,
     Seq2VecEncoderSpec,
 )
 from .classification import ClassificationHead
+from ..task_head import TaskOutput
 
 
 class TextClassification(ClassificationHead):

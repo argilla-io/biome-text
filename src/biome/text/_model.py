@@ -288,7 +288,9 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         tokenization = self._get_instance_tokenization(instance)
 
         prediction = self.forward_on_instance(instance)
-        explain = self._head.prediction_explain(prediction=prediction, instance=instance)
+        explain = self._head.prediction_explain(
+            prediction=prediction, instance=instance
+        )
         # TODO: change explain data model include both, tokenization and attributions information
         #  We must apply this change in sync with frontend team.
         #  The data model proposal could be as follow:
@@ -301,15 +303,20 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
 
         return explain
 
-    def _get_instance_tokenization(self, instance: Instance)->Dict[str, Any]:
+    def _get_instance_tokenization(self, instance: Instance) -> Dict[str, Any]:
         """Gets the tokenization information to current instance"""
+
         def extract_field_tokens(field: Field) -> Union[List[str], List[List[str]]]:
             """Tries to extract tokens from field"""
             if isinstance(field, TextField):
                 return [token.text for token in cast(TextField, field).tokens]
             if isinstance(field, ListField):
-                return [extract_field_tokens(inner_field) for inner_field in cast(ListField, field)]
+                return [
+                    extract_field_tokens(inner_field)
+                    for inner_field in cast(ListField, field)
+                ]
             raise WrongValueError(f"Cannot extract fields from [{type(field)}]")
+
         return {name: extract_field_tokens(field) for name, field in instance.items()}
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
@@ -424,7 +431,9 @@ class PipelineModelTrainer:
         os.makedirs(self._serialization_dir, exist_ok=True)
 
         # We don't need to load pretrained weights from saved models
-        self._params["model"]["config"]["features"].get("word", WordFeatures).weights_file = None
+        self._params["model"]["config"]["features"].get(
+            "word", WordFeatures
+        ).weights_file = None
         serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
         with open(
             os.path.join(self._serialization_dir, CONFIG_NAME), "w"
@@ -452,7 +461,11 @@ class PipelineModelTrainer:
             self._all_datasets["train"], batch_size=self._batch_size
         )
         validation_ds = self._all_datasets.get("validation")
-        validation_data_loader = DataLoader(validation_ds, batch_size=self._batch_size) if validation_ds else None
+        validation_data_loader = (
+            DataLoader(validation_ds, batch_size=self._batch_size)
+            if validation_ds
+            else None
+        )
 
         # TODO: Customize trainer for better biome integration
         self._trainer = Trainer.from_params(
