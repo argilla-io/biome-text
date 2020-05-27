@@ -1,0 +1,25 @@
+.menu {
+  display: none;
+  @include media('<desktop') {
+    z-index: 2;
+    position: absolute;
+    display: inline-block;
+    border: 0;
+    outline: none;
+    background: none;
+    margin-top: 1.4em;
+    left: 2em;
+    padding: 0;
+    cursor: pointer;
+    span,
+    &:before,
+    &:after {
+      content: '';
+      width: 30px;
+      height: 3px;
+      background-color: palette(white);
+      margin: 6px 0;
+      display: block;
+    }
+  }
+}

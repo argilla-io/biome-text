@@ -1,0 +1,96 @@
+$stateSize: 15px;
+$stateOk: palette(green, highlight);
+$stateKo: palette(red);
+%state {
+    width: $stateSize;
+    height: $stateSize;
+    position: relative;
+    transition: $swift-ease-out;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 0.6em;
+    vertical-align: middle;
+}
+
+%state-icon {
+    &:before {
+        transition: $swift-ease-in;
+        line-height: $stateSize;
+        font-weight: 600;
+    }
+}
+
+.state-container {
+    display: flex;
+    text-transform: capitalize;
+}
+
+.state {
+    display: inline-block;
+    margin-right: 0;
+    vertical-align: middle;
+    box-sizing: content-box;
+    &.loading,
+    &.indexing,
+    &.running,
+    &.preparing,
+    &.processing {
+        @extend %state-icon;
+    }
+    &.created,
+    &.ready,
+    &.loaded,
+    &.succeeded {
+        @extend %state;
+        @extend %state-icon;
+        border: 1px solid $stateOk;
+        &:before {
+            width: $stateSize;
+            height: $stateSize;
+            border-radius: 50%;
+            content: ' ';
+        }
+        &:after {
+            width: 4px;
+            height: 7px;
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            border: 2px solid $stateOk;
+            border-top: 0;
+            border-left: 0;
+            transform: rotate(45deg);
+            border-radius: 1px;
+            content: ' ';
+        }
+    }
+    &.unknown,
+    &.cancelling {
+        @extend %state;
+        @extend %state-icon;
+        border: 1px solid $stateKo;
+        &:before {
+            content: '!';
+            color: $stateKo;
+            @include font-size(14px);
+        }
+    }
+    &.canceled,
+    &.cancelled,
+    &.stopped,
+    &.failed {
+        @extend %state;
+        @extend %state-icon;
+        border: 1px solid $stateKo;
+        &:before {
+            content: '×';
+            color: $stateKo;
+            @include font-size(17px);
+        }
+    }
+    .spinner {
+        margin-right: 0.6em;
+        width: $stateSize + 2 !important;
+        height: $stateSize + 2 !important;
+    }
+}

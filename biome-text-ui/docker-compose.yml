@@ -1,0 +1,34 @@
+version: "3.2"
+
+services:
+
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:6.6.0
+  #   container_name: biome_es
+  #   environment:
+  #   - 'http.host=0.0.0.0'
+  #   - 'transport.host=127.0.0.1'
+  #   - 'http.cors.enabled=true'
+  #   - 'http.cors.allow-origin=*'
+  #   ports: 
+  #     - 9200:9200
+  #   volumes:
+  #   - esData:/usr/share/elasticsearch/data
+  #   restart: always  
+  
+  ui:
+    #image: registry.gitlab.com/recognai-team/biome/web-app:classifier-ui
+    build: 
+      context: ../
+      args:
+        build_app: biome-classifier-ui
+    container_name: biome-classifier-ui
+    environment:
+    - "ELASTIC=http://34.241.133.228:31998"
+    ports:
+    - 9443:433
+    - 9090:80
+    restart: always 
+
+volumes:
+  esData: {}

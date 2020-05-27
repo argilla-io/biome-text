@@ -1,0 +1,69 @@
+.user-info {
+    $this: &;
+    background: palette(purple);
+    padding: 12px 15px;
+    min-height: 75px;
+    border-right: 1px solid palette(white);
+    border-bottom: 1px solid palette(white);
+    &__button {
+        display: block;
+        width: 100%;
+        color: palette(white);
+        margin-bottom: 0;
+        padding: 1em 2em;
+        text-decoration: none;
+        text-align: left;
+        font-weight: 600;
+        &:hover, &:focus {
+            font-weight: bolder;
+            text-decoration: none;
+        }
+        & + .user-info__button {
+            margin-left: 0;
+        }
+    }
+    ::v-deep .dropdown__header {
+        padding-left: 10px;
+        padding-right: 10px;
+        position: relative;
+        text-overflow: ellipsis;
+        display: flex;
+        color: palette(white);
+        @include font-size(14px);
+        cursor: pointer;
+        line-height: 50px;
+        i.fa {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: opacity .3s;
+            &.fa-angle-up {
+                opacity: 0;
+            }
+        }
+    }
+    ::v-deep .dropdown__content {
+        z-index: 1;
+        background: palette(purple);
+        @include font-size(14px);
+        margin-top: 12px;
+    }
+    ::v-deep &__name {
+        min-width: 160px;
+        margin-top: 0;
+        margin-bottom: 0;
+        font-weight: 600;
+        text-transform: capitalize;
+        @include font-size(16px);
+    }
+    .resize--collapsed & {
+        width: auto;
+        #{$this}__button {
+            padding: 1em 1.5em;
+        }
+        ::v-deep #{$this}__name {
+            min-width: auto;
+        }
+    }
+}

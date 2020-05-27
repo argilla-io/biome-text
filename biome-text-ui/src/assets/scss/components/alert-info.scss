@@ -1,0 +1,37 @@
+.alert-info {
+  text-align: right;
+  margin-top: 0;
+  margin-bottom: 2em;
+  padding-left: 3em;
+  position: relative;
+  display: block;
+  text-align: left;
+  &--floated {
+    @extend .alert-info;
+    opacity: 0;
+    height: 0;
+    top: 2.5em;
+    left: 0;
+    position: absolute;
+    padding: 1em;
+    background: palette(white);
+    box-shadow: $shadow;
+    max-width: 250px;
+  }
+  .svg-icon {
+    position: absolute;
+    left: 0;
+    cursor: pointer;
+    &:hover+.alert-info--floated {
+        opacity: 1;
+        height: auto;
+        transition: opacity 0.2s ease-in;
+    }
+  }
+  .re-button {
+    padding: 0;
+    margin: 0;
+    min-height: 0;
+    line-height: initial;
+  }
+}

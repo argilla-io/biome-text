@@ -1,0 +1,64 @@
+
+.theme-jupyter {
+  // border: 3px solid palette(orange);
+  background: palette(grey, verylight);
+  // height: 100vh;
+  // overflow: auto;
+  ::v-deep .filters {
+    &__searchbar {
+      // .searchbar {
+      //   padding-left: 0;
+      //   min-width: 250px;
+      //   padding-right: 0;
+      // }
+      .searchbar .re-input {
+        @include font-size(12px);
+        color: palette(grey, dark);
+        @include input-placeholder {
+          color: palette(grey, dark);
+        }
+      }
+    }
+  }
+  // ::v-deep .filter  {
+  //   @include media('<desktop') {
+  //     min-width: auto;
+  //     max-width: none;
+  //   }
+  //   max-width: 135px;
+  // }
+  ::v-deep .filters__tags  {
+    border-bottom: 0
+  }
+  ::v-deep {
+    .filter__sort, .filter__show-more {
+      min-width: 100px;
+    }
+  }
+  ::v-deep .show-more-data {
+    background: none
+  }
+  .biome-logo {
+    display: flex;
+    margin-left: auto;
+  }
+  &.iframe {
+    .main, .container {
+      max-width: none
+    }
+  }
+  ::v-deep .page__number__scroll-button {
+    border-right: 0;
+    position: fixed;
+    right: 2em;
+    bottom: 2em;
+    z-index: 9;
+    &:after {
+      height: 16px;
+      width: 16px;
+    }
+  }
+  ::v-deep .sidebar__wrapper {
+    top: 0
+  }
+}

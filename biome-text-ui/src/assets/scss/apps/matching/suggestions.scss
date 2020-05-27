@@ -1,0 +1,54 @@
+.suggestion {
+  &__sidebar {
+    z-index: 1;
+    width: 50%;
+    display: block;
+    position: absolute;
+    background: palette(white);
+    padding: 1em;
+    right: -54%;
+    top: 0;
+    border-radius: 2px;
+    &__actions {
+      position: absolute;
+      right: 1em;
+      display: flex;
+      align-items: center;
+      .button-clear {
+        margin-bottom: 0;
+      }
+    }
+    &.--opacity {
+      opacity: 0.6;
+      z-index: -1;
+    }
+  }
+  &__similarPercent {
+    margin-top: 0;
+  }
+  &__number {
+    margin: 0 1em 0 0;
+  }
+  &__docName {
+    color: palette(black);
+    @include font-size(13px);
+  }
+  &__text {
+    @include font-size(15px);
+    max-height: 400px;
+    overflow-y: auto;
+  }
+}
+.button__next {
+  float: right;
+}
+.button-copy {
+  margin-bottom: 0;
+  background: palette(grey, light);
+  min-height: 24px;
+  padding: 0 0.5em;
+  &:hover,
+  &:focus {
+    background: darken(palette(grey, light), 10%);
+  }
+}

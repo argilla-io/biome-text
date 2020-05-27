@@ -1,0 +1,9 @@
+{
+  "version": "v1",
+  "packages": {
+    "@recognai/re-commons": {
+      "signature": "fc7b9b0003653ccd1d3f5fc9fc4725df",
+      "file": true
+    }
+  }
+}

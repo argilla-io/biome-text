@@ -1,0 +1,102 @@
+.table {
+  $this: &;
+  padding: 0;
+  list-style: none;
+  &__header {
+    position: relative;
+    padding-bottom: 0.3em;
+    margin-top: 1em;
+    background: transparent;
+    #{$this}__item {
+      min-height: auto;
+      background: none;
+      &:hover {
+        background:transparent ;
+      }
+    }
+    button {
+      cursor: pointer;
+      border: 0;
+      outline: none;
+      background: transparent;
+      padding-left: 0;
+      padding-right: 0;
+      &.active.desc {
+          &:after {
+              transform: rotate(180deg);
+              transform-origin: 50% 100%;
+          }
+      }
+      &:after {
+          content: '▾';
+          display: inline-block;
+          height: 10px;
+          width: 16px;
+          box-sizing: inherit;
+          text-align: center;
+      }
+    }
+  }
+  &__item {
+    position: relative;
+    list-style: none;
+    padding: 0.4em 2em 0.4em 2em;
+    background-color: palette(white);
+    display: flex;
+    width: 100%;
+    margin-bottom: 1px;
+    align-items: center;
+    text-decoration: none;
+    outline: none;
+    min-height: 5.4em;
+  }
+  &__item:not(.disabled) {
+    &:hover,
+    &:focus {
+      background: palette(grey, verylight);
+      .table__header & {
+        background: transparent;
+      }
+      span:not(:first-child) {
+        display: none;
+      }
+      .table__actions {
+        opacity: 1;
+        top: 50%;
+        visibility: visible;
+        transition: opacity 0.2s ease-in 0.1s;
+      }
+    }
+  }
+  &__actions {
+    position: absolute;
+    text-align: center;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(-50%);
+    visibility: hidden;
+    &__button {
+      opacity: 1;
+      margin-bottom: 0;
+      & + .list__actions__button {
+        margin-left: 3em;
+      }
+    }
+  }
+  &__top-button {
+    position: absolute;
+    right: 0.5em;
+    top: 0.5em;
+    &:after {
+      content: none !important;
+    }
+  }
+}
+.state {
+  transition: none !important;
+}
+.disable-view {
+  .button-primary--small {
+    display: none;
+  }
+}

@@ -1,0 +1,64 @@
+.dialog__container {
+  .actions & {
+    background: transparent;
+  }
+}
+
+.topbar.re-dialog-topbar {
+  border-bottom: 1px solid palette(purple);
+}
+
+.dialog__content {
+  position: relative;
+  display: block;
+  margin: auto;
+  height: 100%;
+  min-height: calc(100vh - 80px);
+  @extend %container;
+}
+
+.dialog__actions {
+  display: block;
+  margin-left: auto;
+  text-align: right;
+  .re-button + .re-button {
+    margin-left: 1em;
+    vertical-align: bottom;
+  }
+}
+
+.item__name {
+  @include font-size(13px);
+  color: palette(grey, dark);
+  .svg-icon {
+    margin-right: 1em;
+  }
+}
+
+.split {
+  margin-bottom: 4em;
+  &__name {
+    @include font-size(12px);
+    color: palette(grey);
+    p {
+      margin: 0;
+      min-width: 100px;
+      display: inline-block;
+    }
+  }
+  &__percent {
+    min-width: 70px;
+    display: inline-block;
+  }
+  &--train {
+    p {
+      color: #b0a564;
+    }
+  }
+  &--test {
+    p {
+      color: #3b3269;
+    }
+  }
+}
+

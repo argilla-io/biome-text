@@ -1,0 +1,47 @@
+.panel {
+  position: relative;
+  max-width: 700px;
+  border: 1px solid palette(grey, smooth);
+  color: palette(grey, medium);
+  border-radius: 3px;
+  padding: 1.2em 5em 1.2em 1.2em;
+  @include font-size(14px);
+  line-height: 1.5em;
+  margin-bottom: 2em;
+  text-align: left;
+  overflow: hidden;
+  &__text {
+    margin: 0;
+  }
+  &.hidden {
+    margin: 0;
+    padding: 0;
+    min-height: 0;
+    opacity: 0;
+    transition: opacity 0.1s ease-in-out, height 0.3s ease-in-out,
+      margin 0.3s ease-in-out, padding 0.3s ease-in-out;
+  }
+  &--inline,
+  &--inline p {
+    display: inline-block;
+  }
+  &--inline {
+    margin-bottom: 1em;
+    padding: 1em;
+  }
+  &--block {
+    margin-bottom: 1em;
+    padding: 1em;
+  }
+}
+
+.panel-close {
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: palette(grey);
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  cursor: pointer;
+}

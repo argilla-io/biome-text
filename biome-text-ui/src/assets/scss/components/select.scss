@@ -1,0 +1,10 @@
+.select {
+  position: relative;
+  &__options {
+    position: absolute;
+    top: 2em;
+    background: palette(white);
+    padding: 1em;
+    min-width: 100px;
+  }
+}

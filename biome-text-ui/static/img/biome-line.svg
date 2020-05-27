@@ -1,0 +1,16 @@
+
+<svg width="27px" height="14px" viewBox="0 0 27 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 48.1 (47250) - http://www.bohemiancoding.com/sketch -->
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="91.5675931%" y1="50%" x2="15.6129439%" y2="78.1885803%" id="linearGradient-1">
+            <stop stop-color="#95E1D0" offset="0%"></stop>
+            <stop stop-color="#E6AEEB" stop-opacity="0.5" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="ECOSYSTEM-REVIEW" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="ECOSYSTEM-TABS" transform="translate(-69.000000, -587.000000)" fill="url(#linearGradient-1)" fill-rule="nonzero">
+            <path d="M70.722295,594.5586 C70.3403431,594.957513 69.7073274,594.971262 69.3084149,594.58931 C68.9095024,594.207358 68.8957531,593.574343 69.277705,593.17543 C77.2370222,584.862678 82.8711457,584.862678 84.8385172,593.648501 C86.3599155,600.442711 88.8557368,600.308562 93.9777569,592.719359 C94.2867166,592.261579 94.9082818,592.140937 95.3660616,592.449896 C95.8238414,592.758856 95.944484,593.380421 95.6355243,593.838201 C89.6690027,602.678686 84.8688526,602.936693 82.8868497,594.085529 C81.3508199,587.225978 77.7431545,587.225978 70.722295,594.5586 Z" id="Path-2"></path>
+        </g>
+    </g>
+</svg>

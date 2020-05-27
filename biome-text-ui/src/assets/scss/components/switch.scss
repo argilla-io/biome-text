@@ -1,0 +1,86 @@
+$switch-width: 30px;
+$switch-height: 13px;
+$switch-thumb-size: 16px;
+$switch-ripple-size: 48px;
+.re-switch {
+    width: auto;
+    margin: 0;
+    display: inline-flex;
+    position: relative;
+    &.disabled {
+      .re-switch-container {
+        background-color: palette(grey, medium);
+      }
+      .re-switch-thumb {
+        background-color: palette(white) !important;
+      }
+    }
+    &.disable-action {
+      opacity: 0.5;
+      .re-switch-container {
+        background-color: palette(grey, medium);
+      }
+      .re-switch-thumb {
+        background-color: palette(white) !important;
+        transform: translate3d(-1px, -50%, 0px) !important;
+      }
+      &:active {
+        .re-switch-thumb {
+          transform: translate3d(90%, -50%, 0px) !important;
+        }
+      }
+    }
+    .re-switch-container {
+        width: $switch-width;
+        height: $switch-height;
+        position: relative;
+        border-radius: $switch-height;
+        transition: $swift-ease-out;
+        background-color: palette(orange, light);
+        .re-switch-thumb {
+            box-shadow: $shadow;
+            width: $switch-thumb-size;
+            height: $switch-thumb-size;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            background-color: palette(orange);
+            border-radius: 50%;
+            transition: $swift-linear;
+        }
+        input {
+            position: absolute;
+            left: -999em;
+        }
+        .re-switch-holder {
+            @include absoluteCenter;
+            width: 40px;
+            height: 40px;
+            margin: 0;
+            padding: 0;
+            z-index: 2;
+            background: none;
+            border: none;
+            &:focus {
+                outline: none;
+            }
+        }
+    }
+    .re-switch-label {
+        height: $switch-height;
+        line-height: $switch-height;
+        margin-left: 1em;
+    }
+}
+
+.re-switch.re-dragging {
+    .re-switch-thumb {
+        cursor: grabbing;
+    }
+}
+
+.re-switch.re-disabled {
+    .re-switch-thumb {
+        cursor: default;
+    }
+}

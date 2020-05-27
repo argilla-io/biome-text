@@ -1,0 +1,29 @@
+.pdf-viewer {
+  float: right;
+  width: 60%;
+  margin-top: 2em;
+}
+.pdf-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+.pdf-thumbnails {
+  padding: 1em;
+  background: palette(white);
+  float: left;
+  max-width: 250px;
+  text-align: center;
+  height: calc(100vh - 72px);
+  overflow-y: scroll
+}
+::v-deep .pdf-thumbnail {
+  margin-bottom: 1em;
+  img {
+      border: 1px solid palette(grey, light)
+  }
+  &.active img {
+      border: 2px solid palette(purple)
+  }
+}

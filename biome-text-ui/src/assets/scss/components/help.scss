@@ -1,0 +1,44 @@
+.help {
+  clear: both;
+  margin-bottom: 1em;
+  &__panel {
+    border: 1px solid #f48e5f57;
+    padding: 1em;
+    background: #ffffff87;
+    color: palette(grey, medium);
+    border-radius: 1px;
+    @include font-size(14px);
+    .atom {
+      @include font-size(16px);
+      display: inline-block;
+    }
+    &__title {
+      @include font-size(16px);
+      color: palette(grey, medium);
+      font-weight: 600;
+      margin-top: 0;
+    }
+    &__button {
+      color: palette(orange);
+      position: absolute;
+      right: 1em;
+      top: 1em;
+      cursor: pointer;
+      &:after {
+        content: '\2715';
+        font-weight: bold;
+        color: palette(orange);
+        font-size: 14px;
+      }
+    }
+  }
+  &__button {
+    text-align: right;
+    color: palette(orange);
+    font-weight: 600;
+    cursor: pointer;
+    .svg-icon {
+      margin-right: 0.3em;
+    }
+  }
+}

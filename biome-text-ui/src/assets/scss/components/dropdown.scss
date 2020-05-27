@@ -1,0 +1,212 @@
+.dropdown {
+  position: relative;
+  &__header {
+    display: flex;
+    width: 180px;
+    background: palette(white);
+    box-shadow: none;
+    border-radius: 5px;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 1em;
+    @include font-size(12px);
+    background: palette(white);
+    cursor: pointer;
+    .svg-icon {
+        display: none;
+    }
+  }
+  &__text {
+    width: 100%;
+  }
+  &__content {
+    position: absolute;
+    top: 4em;
+    left: 0;
+    margin-top: 0;
+    background: palette(white);
+    border: 2px solid palette(purple);
+    padding: 0 1em 0 1em;
+    z-index: 3;
+    .filter-options {
+        border: none;
+        outline: none;
+        height: 40px;
+    }
+    ul {
+        max-height: 300px;
+        overflow-y: auto;
+        margin: 0 -1em 0 -1em;
+        padding: 0 1em;
+    }
+    li {
+        padding: 0.4em 0;
+        list-style: none;
+    }
+  }
+  &__check {
+      // display: none !important;
+      &:before {
+          content: '';
+          border-color: palette(grey, medium);
+          border-style: solid;
+          border-width: 1px 1px 0 0;
+          display: inline-block;
+          height: 8px;
+          width: 8px;
+          transform: rotate(133deg);
+          box-sizing: inherit;
+          margin-bottom: 2px;
+          .checked & {
+            border-color: palette(white);
+          }
+      }
+      &--open {
+          &:before {
+              transform: rotate(315deg);
+              transform-origin: 100% 50%;
+              border-color: palette(white);
+          }
+      }
+  }
+  &--open {
+    pointer-events: all;
+    .dropdown__content {
+      min-width: 200px;
+      // min-width: 100%;
+      min-width: 188px;
+    }
+  }
+}
+.dropdown--filter {
+  .dropdown {
+      &__header {
+          height: 100%;
+          width: auto;
+          height: 45px;
+          border: 2px solid palette(grey, smooth);
+          display: flex;
+          align-items: center;
+          padding: 0 1em;
+          transition: all 0.2s ease;
+          border-radius: 0;
+          &:after {
+              content: '';
+              border-color: palette(grey, dark);
+              border-style: solid;
+              border-width: 1px 1px 0 0;
+              display: inline-block;
+              height: 8px;
+              width: 8px;
+              -webkit-transform: rotate(133deg);
+              transform: rotate(133deg);
+              -webkit-transition: all 1.5s ease;
+              transition: all 1.5s ease;
+              margin-bottom: 2px;
+              margin-left: auto;
+              margin-right: 0;
+          }
+          &:hover,
+          &:focus {
+              border: 2px solid palette(purple);
+              background: palette(white);
+              transition: all 0.3s ease;
+              &:after {
+                  border-color: palette(purple);
+              }
+          }
+          // dropdown selected text
+          >span {
+              display: inline-block;
+              max-width: 90%;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+          }
+      }
+      &__check {
+        display: none !important;
+      }
+      &__content {
+        transform: translate(0);
+        right: auto;
+      }
+  }
+  &.highlighted {
+      z-index: 3;
+  }
+  &.dropdown--open {
+      .placeholder {
+          display: block;
+      }
+      .dropdown__header {
+          border: 2px solid palette(purple);
+          background: palette(white);
+          &:after {
+            visibility: hidden;
+          }
+          .tag-icon {
+              display: none;
+          }
+      }
+  }
+  .re-checkbox {
+      margin: 0;
+      width: 100% !important;
+      cursor: default;
+  }
+}
+.dropdown--sortable {
+  &.dropdown--open {
+    .dropdown {
+      &__header {
+        &:hover,
+        &:focus {
+          border: 2px solid palette(purple);
+          background: palette(white);
+        } 
+      }
+    }
+  }
+  .dropdown {
+    &__header {
+      background: none;
+      border: 2px solid transparent; 
+      &:hover,
+      &:focus {
+        background: none;
+        border: 2px solid transparent; 
+      } 
+    }
+    &__selectables {
+      display: inline-block !important;
+    }
+  }
+}
+input {
+  left: 0;
+  height: 40px;
+  width: 100%;
+  outline: none;
+  z-index: 1;
+  border: 0;
+}
+.clean-search {
+  z-index: 1;
+  display: block;
+  position: absolute;
+  right: 1em;
+  top: 1em;
+  cursor: pointer;
+}
+.overlay {
+  background: rgba(0, 0, 0, 0.19);
+  height: 100vh;
+  position: fixed;
+  width: 100vw;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
