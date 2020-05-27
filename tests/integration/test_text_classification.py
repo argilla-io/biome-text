@@ -9,6 +9,8 @@ import torch
 import yaml
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
 from biome.text.data import DataSource
+from biome.text.configuration import WordFeatures
+from biome.text.configuration import CharFeatures
 
 
 @pytest.fixture
@@ -94,6 +96,7 @@ def trainer_dict() -> dict:
 def test_text_classification(
     tmp_path, pipeline_dict, trainer_dict, train_valid_data_source
 ):
+    """Apart from a well specified training, this also tests the vocab creation!"""
     random.seed(42)
     np.random.seed(422)
     torch.manual_seed(4222)
@@ -107,6 +110,9 @@ def test_text_classification(
     )
 
     pl.create_vocabulary(vocab)
+
+    assert pl._model.vocab.get_vocab_size(WordFeatures.namespace) == 52
+    assert pl._model.vocab.get_vocab_size(CharFeatures.namespace) == 83
 
     output = tmp_path / "output"
 
@@ -127,4 +133,10 @@ def test_text_classification(
         metrics = json.load(file)
 
     assert metrics["training_loss"] == pytest.approx(0.7671357440948486)
+
+    # test vocab from a pretrained file
+    pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
+
+    assert pl._model.vocab.get_vocab_size(WordFeatures.namespace) == 52
+    assert pl._model.vocab.get_vocab_size(CharFeatures.namespace) == 83
 
