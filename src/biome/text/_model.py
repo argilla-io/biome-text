@@ -100,18 +100,8 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
 
         vocab = vocab or vocabulary.empty_vocabulary(namespaces=config.features.keys)
         tokenizer = config.tokenizer.compile()
-        features = deepcopy(config.features)
-        features.word = WordFeatures(embedding_dim=10)
-        featurizer = (
-            features.compile_featurizer(tokenizer)
-            if vocabulary.is_empty(vocab, config.features.keys)
-            else config.features.compile_featurizer(tokenizer)
-        )
-        embeder = (
-            features.compile_embedder(vocab)
-            if vocabulary.is_empty(vocab, config.features.keys)
-            else config.build_embedder(vocab)
-        )
+        featurizer = config.features.compile_featurizer(tokenizer)
+        embedder = config.build_embedder(vocab)
 
         return cls(
             name=config.name,
@@ -119,7 +109,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
                 backbone=ModelBackbone(
                     vocab,
                     featurizer=featurizer,
-                    embedder=embeder,
+                    embedder=embedder,
                     encoder=config.encoder,
                 )
             ),
