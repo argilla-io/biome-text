@@ -176,15 +176,15 @@ body {
     min-width: 100px;
   }
   .show-more-data {
-    background: none
+    background: none !important
   }
   &.iframe {
     .main, .container {
-      max-width: none
+      max-width: none !important
     }
   }
   .sidebar__wrapper {
-    top: 0
+    top: 0 !important
   }
 }
 </style>
