@@ -53,7 +53,7 @@ export default {
     },
     sort(currentSort, currentSortDir) {
       this.visible = false;
-      this.optionSelected = true
+      this.optionSelected = true;
       this.defaultSortedBy = currentSort;
       this.defaultSortedByDir = currentSortDir;
       this.$emit('sort', currentSort, currentSortDir);

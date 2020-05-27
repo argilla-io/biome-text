@@ -52,11 +52,11 @@ export default {
     },
     submitQuery() {
       if (this.query.length) {
-        this.$emit('submit', this.query)
+        this.$emit('submit', this.query);
       } else {
         this.expand = false;
       }
-    }
+    },
   },
   components: {
     reInputContainer,

@@ -112,6 +112,7 @@ export default {
     },
   },
   mounted() {
+    // eslint-disable-next-line
     this.input = this.$el.querySelectorAll('input, textarea, select, .re-file')[0];
 
     if (!this.input) {

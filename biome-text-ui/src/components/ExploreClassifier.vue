@@ -83,8 +83,6 @@
 </template>
 
 <script>
-import reTopbarBrand from '@/components/elements/core/reTopbar/reTopbarBrand';
-import reBreadcrumbsArea from '@/components/elements/core/reBreadcrumbsArea/reBreadcrumbsArea';
 import searchResults from './explore/SearchResults';
 import sidebar from './explore/SideBar';
 import elasticsearch from './common/elasticsearch/queries';
@@ -138,9 +136,6 @@ export default {
   components: {
     sidebar,
     searchResults,
-    reTopbarBrand,
-    reBreadcrumbsArea,
-    // biomeLogo,
   },
 };
 </script>

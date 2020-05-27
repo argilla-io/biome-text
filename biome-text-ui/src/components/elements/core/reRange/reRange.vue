@@ -151,12 +151,12 @@
 </template>
 
 <script>
+/* eslint-disable */
 // Unsharp text [#166](https://github.com/NightCatSama/vue-slider-component/issues/166)
 const roundToDPR = (function () {
   const r = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   return value => Math.round(value * r) / r;
 }());
-
 export default {
   name: 're-range',
   props: {
