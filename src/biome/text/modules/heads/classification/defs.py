@@ -37,7 +37,7 @@ class ClassificationHead(TaskHead):
                     "micro": FBetaMeasure(average="micro"),
                     "macro": FBetaMeasure(average="macro"),
                     "per_label": FBetaMeasure(
-                        labels=[i for i in range(0, len(labels) - 1)]
+                        labels=[i for i in range(0, len(labels))]
                     ),
                 }
             )
