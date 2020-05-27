@@ -5,17 +5,11 @@
       ref="header"
       :class="['header--explore', 'header', !showHeader ? 'header--hidden' : '']"
     >
-      <re-topbar-brand v-if="!jupyterView">
-        <re-breadcrumbs-area  :breadcrumbs="breadcrumbs"></re-breadcrumbs-area>
-      </re-topbar-brand>
       <div class="filters__area">
         <div class="filters__content">
           <div class="container">
             <div class="filters__row">
               <div class="filters__title">
-                <!-- <h1 class="filters__title__action">
-                  {{actionName}}
-                </h1>-->
                 <h2
                   :getDatasourceName="getDatasourceName"
                   v-if="results"
@@ -26,16 +20,10 @@
                     class="filters__title__datasource"
                     :title="datasourceName"
                   >{{datasourceName}}</span>
-                  <!-- <span v-if="model !== 'none'" :title="model">
-                    with
-                    <span class="filters__title__model">{{model}}</span>
-                  </span> -->
                   <span class="filters__title__records">({{results.total}} Records)</span>
                 </h2>
               </div>
               <searchbar class="filters__searchbar" :query="query" @submit="onQuery"></searchbar>
-              <!-- <div class="filters__records-number" v-if="jupyterView">{{results.total}} records</div>
-              <biome-logo class="biome-logo" v-if="jupyterView" :height="20" :width="70"/> -->
             </div>
             <!-- filters list -->
             <filters-list
@@ -97,7 +85,6 @@
 <script>
 import reTopbarBrand from '@/components/elements/core/reTopbar/reTopbarBrand';
 import reBreadcrumbsArea from '@/components/elements/core/reBreadcrumbsArea/reBreadcrumbsArea';
-// import biomeLogo from '@/components/elements/core/logos/biomeLogo';
 import searchResults from './explore/SearchResults';
 import sidebar from './explore/SideBar';
 import elasticsearch from './common/elasticsearch/queries';
@@ -145,10 +132,8 @@ export default {
     },
   },
   mounted() {
-    if (this.jupyterView) {
-      const iframe = window.self !== window.top ? 'iframe' : 'browser';
-      document.querySelector('body').classList.add('theme-jupyter', iframe);
-    }
+    const iframe = window.self !== window.top ? 'iframe' : 'browser';
+    document.querySelector('body').classList.add('theme-jupyter', iframe);
   },
   components: {
     sidebar,
@@ -167,7 +152,7 @@ export default {
 @import "@/assets/scss/apps/jupyter/theme-jupyter.scss";
 </style>
 <style lang="scss">
-body.theme-jupyter {
+body {
   &:after {
     content: '';
     border: 3px solid palette(orange);
@@ -177,6 +162,34 @@ body.theme-jupyter {
     z-index: 9999;
     top: 0;
     pointer-events: none;
+  }
+  .filters {
+    &__searchbar {
+      .searchbar .re-input {
+        @include font-size(12px);
+        color: palette(grey, dark);
+        @include input-placeholder {
+          color: palette(grey, dark);
+        }
+      }
+    }
+  }
+  .filters__tags  {
+    border-bottom: 0 !important
+  }
+  .filter__sort, .filter__show-more {
+    min-width: 100px;
+  }
+  .show-more-data {
+    background: none
+  }
+  &.iframe {
+    .main, .container {
+      max-width: none
+    }
+  }
+  .sidebar__wrapper {
+    top: 0
   }
 }
 </style>

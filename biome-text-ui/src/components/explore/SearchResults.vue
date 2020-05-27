@@ -29,20 +29,7 @@
                 class="list__item"
                 v-waypoint="{ active: true, callback: onWaypoint,  options: checkPageNumber}"
               >
-                <p
-                  v-if="scrolling && scrollerPosition > 100 && !jupyterView"
-                  :style="{marginTop: scrollerPosition + 'px'}"
-                  class="page__number"
-                >
-                  <a
-                    v-if="key >= 18"
-                    class="page__number__scroll-button"
-                    href="#app"
-                    v-smooth-scroll="{ duration: 1000, offset: -50 }"
-                  ></a>
-                  <span class="page__number__text">{{key + 1}} of {{records.length}}</span>
-                </p>
-                <a v-else-if="scrollerPosition > 100 && key >= 18" class="page__number__scroll-button" href="#app" v-smooth-scroll="{ duration: 1000, offset: -50 }"></a>
+                <a v-if="scrollerPosition > 100 && key >= 18" class="page__number__scroll-button" href="#app" v-smooth-scroll="{ duration: 1000, offset: -50 }"></a>
                 <div class="pill__container">
                   <p class="pill--gold" :data-title="item.gold">{{item.gold}}</p>
                   <div class="pill--predicted__container">
