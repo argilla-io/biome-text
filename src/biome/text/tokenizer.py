@@ -69,6 +69,7 @@ class Tokenizer(FromParams):
         # This is a workaround for mitigate those kind of errors. Just loading one more time, it's ok.
         # See https://github.com/allenai/allennlp/issues/4201
         import spacy
+
         try:
             spacy.load(lang, disable=["vectors", "textcat", "tagger" "parser" "ner"])
         except OSError:

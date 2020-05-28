@@ -5,6 +5,7 @@ from allennlp.data.fields import ListField, TextField
 from biome.text.tokenizer import Tokenizer
 from biome.text.features import WordFeatures
 
+
 class InputFeaturizer:
     """Transforms input text (words and/or characters) into indexes and embedding vectors.
 
