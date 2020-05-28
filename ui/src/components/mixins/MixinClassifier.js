@@ -299,8 +299,7 @@ export default {
         .slice();
     },
     getDatasourceName() {
-      return ESClient.fetchPredictions()
-      .then((predictions) => {
+      return ESClient.fetchPredictions().then((predictions) => {
         const currentPrediction = predictions.find(p => p.id === this.filename);
         this.datasourceName = currentPrediction.dataSource;
         this.model = currentPrediction.model;
@@ -309,7 +308,7 @@ export default {
         } else {
           this.actionName = currentPrediction.exploreName;
         }
-      })
+      });
     },
   },
   mounted() {
