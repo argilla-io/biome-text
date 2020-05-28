@@ -77,7 +77,7 @@ class DocumentClassification(ClassificationHead):
         document: Any,
         label: Optional[Union[int, str, List[Union[int, str]]]] = None,
     ) -> Optional[Instance]:
-        instance = self.backbone.featurize(document, to_field=self.forward_arg_name)
+        instance = self.backbone.featurizer(document, to_field=self.forward_arg_name, exclude_record_keys=True)
         return self.add_label(instance, label, to_field=self.label_name)
 
     def forward(
