@@ -140,7 +140,7 @@ class Tokenizer(FromParams):
             for sentence in sentences[: self.max_nr_of_sentences]
         ]
 
-    def tokenize_record(self, record: Dict[str, Any]) -> List[List[Token]]:
+    def tokenize_record(self, record: Dict[str, Any], exclude_record_keys:bool) -> List[List[Token]]:
         """ Tokenizes a record-like structure containing text inputs
         
         Use this to keep information about the record-like data structure as input features to the model.
@@ -149,6 +149,8 @@ class Tokenizer(FromParams):
         ----------
         record: `Dict[str, Any]`
             A `Dict` with arbitrary "fields" containing text.
+        exclude_record_keys: `bool`
+            If enabled, exclude tokens related to record key text
             
         Returns
         -------
@@ -156,6 +158,12 @@ class Tokenizer(FromParams):
             A list of tokenized fields as token list
         """
         data = self._sanitize_dict(record)
+        if exclude_record_keys:
+            return [
+                sentence
+                for key, value in data.items()
+                for sentence in self.tokenize_text(value)
+            ]
 
         return [
             tokenized_key + sentence
