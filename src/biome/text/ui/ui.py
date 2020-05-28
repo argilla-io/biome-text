@@ -1,8 +1,5 @@
 import logging
 import os
-import tarfile
-from tempfile import mkdtemp
-from typing import Optional
 
 from gevent.pywsgi import WSGIServer
 
@@ -14,12 +11,16 @@ logging.basicConfig(level=logging.INFO)
 
 __LOGGER = logging.getLogger(__name__)
 
+STATICS_DIR = os.path.join(os.path.dirname(__file__), "webapp")
+
 
 def launch_ui(es_host: str, port: int = 9000) -> None:
     es_host = es_host if es_host else os.getenv(ES_HOST, "http://localhost:9200")
 
     flask_app = make_app(
-        es_host=es_host, statics_dir=temporal_static_path("classifier")
+        es_host=es_host,
+        statics_dir=STATICS_DIR
+        # statics_dir=temporal_static_path("classifier")
     )
 
     http_server = WSGIServer(("0.0.0.0", port), flask_app)
@@ -29,16 +30,3 @@ def launch_ui(es_host: str, port: int = 9000) -> None:
         es_host,
     )
     http_server.serve_forever()
-
-
-def temporal_static_path(explore_view: str, basedir: Optional[str] = None):
-    statics_tmp = mkdtemp()
-
-    compressed_ui = os.path.join(
-        basedir or os.path.dirname(__file__), "{}.tar.gz".format(explore_view)
-    )
-    tar_file = tarfile.open(compressed_ui, "r:gz")
-    tar_file.extractall(path=statics_tmp)
-    tar_file.close()
-
-    return statics_tmp
