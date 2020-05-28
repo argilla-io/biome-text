@@ -59,7 +59,7 @@ class CharFeatures:
         self,
         embedding_dim: int,
         encoder: Dict[str, Any],
-        dropout: int = 0.0,
+        dropout: float = 0.0,
         **extra_params
     ):
         self.embedding_dim = embedding_dim
