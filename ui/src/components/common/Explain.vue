@@ -73,7 +73,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@recognai/re-commons/src/assets/scss/apps/classifier/explain.scss";
+@import "@/assets/scss/apps/classifier/explain.scss";
 .token {
   &__container {
     display: inline-block;
