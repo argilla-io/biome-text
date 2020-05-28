@@ -5,6 +5,7 @@ import click
 from click import Path
 
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text.data import DataSource
 from biome.text.helpers import yaml_to_dict
 
 
@@ -15,7 +16,6 @@ from biome.text.helpers import yaml_to_dict
 @click.option("--training", "training", type=Path(exists=True), required=True)
 @click.option("--validation", "validation", type=Path(exists=True), required=False)
 @click.option("--test", "test", type=Path(exists=True), required=False)
-@click.option("-vv", "--verbose", "verbose", is_flag=True, default=False)
 def learn(
     pipeline_path: str,
     output: str,
@@ -23,7 +23,6 @@ def learn(
     training: str,
     validation: Optional[str] = None,
     test: Optional[str] = None,
-    verbose: bool = False,
 ) -> None:
     _, extension = os.path.splitext(pipeline_path)
     extension = extension[1:].lower()
@@ -32,14 +31,17 @@ def learn(
         if extension in ["yaml", "yml"]
         else Pipeline.from_pretrained(pipeline_path)
     )
+
+    pipeline.create_vocabulary(
+        VocabularyConfiguration(
+            sources=[DataSource.from_yaml(ds) for ds in [training, validation, test] if ds]
+        ),
+    )
+
     pipeline.train(
         output=output,
         trainer=TrainerConfiguration(**yaml_to_dict(trainer)),
         training=training,
         validation=validation,
         test=test,
-        extend_vocab=VocabularyConfiguration(
-            sources=[ds for ds in [training, validation, test] if ds]
-        ),
-        verbose=verbose,
     )

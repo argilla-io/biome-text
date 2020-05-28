@@ -111,8 +111,7 @@ if __name__ == "__main__":
         package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
         entry_points={
             "console_scripts": [
-                "biome=biome.text.__main__:main",
-                "biome-new=biome.text.api_new.cli:main",
+                "biome=biome.text.cli:main",
             ]
         },
         python_requires=">=3.6.1",  # taken from AllenNLP
