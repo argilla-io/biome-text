@@ -29,17 +29,15 @@ class DataSource:
     ----------
     source
         The data source. Could be a list of filesystem path, or a key name indicating the source backend (elasticsearch)
-    attributes
-        Attributes needed for extract data from source
     format
         The data format. Optional. If found, overwrite the format extracted from source.
         Supported formats are listed as keys in the `SUPPORTED_FORMATS` dict of this class.
     mapping
         Used to map the features (columns) of the data source
         to the parameters of the DataSourceReader's `text_to_instance` method.
-    kwargs
-        Additional kwargs are passed on to the *source readers* that depend on the format.
-        @Deprecated. Use `attributes` instead
+    **reader_options
+        Additional kwargs are passed on to the *source readers* that depend on the format
+        (see the `biome.text.data.readers` module).
     """
 
     _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -65,22 +63,19 @@ class DataSource:
         source: Optional[Union[str, List[str]]] = None,
         mapping: Optional[Dict[str, Union[List[str], str]]] = None,
         format: Optional[str] = None,
-        **kwargs,
+        **reader_options,
     ):
         if not source:
             raise MissingArgumentError("source")
 
         self.source = source
-        self.attributes = kwargs or {}
+        self.format = format or self.__format_from_source(source)
         self.mapping = mapping or {}
+        self.reader_options = reader_options or {}
 
-        if not format:
-            format = self.__format_from_source(source)
+        source_reader, defaults = self._find_reader(self.format)
 
-        source_reader, defaults = self._find_reader(format)
-        reader_arguments = {**defaults, **self.attributes}
-
-        data_frame = source_reader(source, **reader_arguments)
+        data_frame = source_reader(source, **defaults, **self.reader_options)
         data_frame = self.__sanitize_dataframe(data_frame)
         # TODO allow disable index reindex
         if "id" in data_frame.columns:
@@ -171,17 +166,15 @@ class DataSource:
         return value.iloc[0]
 
     @classmethod
-    def from_yaml(
-        cls: Type["DataSource"], file_path: str, default_mapping: Dict[str, str] = None
-    ) -> "DataSource":
+    def from_yaml(cls: Type["DataSource"], file_path: str) -> "DataSource":
         """Create a data source from a yaml file.
+
+        For the specific format, see the `self.to_yaml()` method.
 
         Parameters
         ----------
         file_path
             The path to the yaml file.
-        default_mapping
-            A mapping configuration when no defined in yaml file
 
         Returns
         -------
@@ -191,14 +184,11 @@ class DataSource:
             cfg_dict = yaml.safe_load(yaml_file)
 
         # File system paths are usually specified relative to the yaml config file -> they have to be modified
-        # path_keys is not necessary, but specifying the dict keys
+        # 'path_keys' is not necessary, but specifying the dict keys
         # (for which we check for relative paths) is a safer choice
-        path_keys = ["path", "source"]
-        make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=path_keys)
+        make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=["source"])
 
-        if not cfg_dict.get("mapping"):
-            cfg_dict["mapping"] = default_mapping or {}
-        cfg_dict.update(cfg_dict.pop("attributes", {}))
+        cfg_dict.update(cfg_dict.pop("reader_options", {}))
         return cls(**cfg_dict)
 
     def to_yaml(self, path: str, make_source_path_absolute: bool = False) -> str:
@@ -221,11 +211,13 @@ class DataSource:
 
         yaml_dict = {
             "source": source,
-            "attributes": self.attributes,
+            "format": self.format,
             "mapping": self.mapping,
+            "reader_options": self.reader_options,
         }
+        save_dict_as_yaml(yaml_dict, path)
 
-        return save_dict_as_yaml(yaml_dict, path)
+        return path
 
     def head(self, n: int = 10) -> "pandas.DataFrame":  # pylint: disable=invalid-name
         """Allows for a peek into the data source showing the first n rows.

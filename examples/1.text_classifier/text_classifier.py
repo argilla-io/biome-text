@@ -7,8 +7,8 @@ from biome.text.featurizer import WordFeatures
 from biome.text.helpers import yaml_to_dict
 
 if __name__ == "__main__":
-    train = "train.data.yml"
-    validation = "validation.data.yml"
+    train = DataSource.from_yaml("train.data.yml")
+    validation = DataSource.from_yaml("validation.data.yml")
     training_folder = "experiment"
 
     pl = Pipeline.from_yaml("text_classifier.yaml")
@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     pl.create_vocabulary(
         VocabularyConfiguration(
-            sources=[DataSource.from_yaml(path) for path in [train, validation]],
+            sources=[train, validation],
             min_count={WordFeatures.namespace: 5},
         )
     )
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     trained_pl.predict(text="Header main; This is a test body!!!")
     trained_pl.head.extend_labels(["other"])
     trained_pl.explore(
-        explore_id="test-trained", ds_path="validation.data.yml", explain=True
+        explore_id="test-trained", data_source=validation, explain=True
     )
 
     trainer_configuration.batch_size = 8
@@ -52,4 +52,4 @@ if __name__ == "__main__":
     trained_pl.predict(text="Header main. This is a test body!!!")
 
     pl.head.extend_labels(["yes", "no"])
-    pl.explore(ds_path="validation.data.yml")
+    pl.explore(data_source=validation)

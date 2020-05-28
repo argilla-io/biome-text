@@ -12,8 +12,10 @@ if __name__ == "__main__":
             body="The next phrase is here",
         )
     )
+    training_ds = DataSource.from_yaml("train.data.yml")
+    validation_ds = DataSource.from_yaml("validation.data.yml")
     pl.create_vocabulary(
-        VocabularyConfiguration(sources=[DataSource.from_yaml("validation.data.yml")])
+        VocabularyConfiguration(sources=[training_ds, validation_ds])
     )
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
@@ -21,8 +23,8 @@ if __name__ == "__main__":
     pl.train(
         output="experiment",
         trainer=trainer,
-        training="train.data.yml",
-        validation="validation.data.yml",
+        training=training_ds,
+        validation=validation_ds,
     )
 
     trained = Pipeline.from_pretrained("experiment/model.tar.gz")
@@ -30,4 +32,4 @@ if __name__ == "__main__":
         subject="Header main. This is a test body!!!", body="The next phrase is here"
     )
     trained.head.extend_labels(["other"])
-    trained.explore(ds_path="validation.data.yml")
+    trained.explore(data_source=validation_ds)

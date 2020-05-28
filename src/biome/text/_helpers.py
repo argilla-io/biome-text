@@ -14,7 +14,6 @@ from biome.text._configuration import (
     TrainConfiguration,
     _ModelImpl,
 )
-
 from biome.text.data import DataSource
 from biome.text.errors import http_error_handling
 from biome.text.modules.encoders import TimeDistributedEncoder
@@ -140,7 +139,7 @@ def _allennlp_configuration(
 
 def _explore(
     pipeline: Pipeline,
-    ds_path: str,
+    data_source: DataSource,
     config: ExploreConfiguration,
     elasticsearch: ElasticsearchExplore,
 ) -> dd.DataFrame:
@@ -150,7 +149,7 @@ def _explore(
     Parameters
     ----------
     pipeline
-    ds_path
+    data_source
     config
     elasticsearch
 
@@ -162,7 +161,6 @@ def _explore(
         # TODO: do it
         pipeline.init_predictions_cache(config.prediction_cache)
 
-    data_source = DataSource.from_yaml(ds_path)
     ddf_mapped = data_source.to_mapped_dataframe()
     # this only makes really sense when we have a predict_batch_json method implemented ...
     n_partitions = max(1, round(len(ddf_mapped) / config.batch_size))
@@ -196,7 +194,7 @@ def _explore(
     elasticsearch.create_explore_data_record(
         {
             **(config.metadata or {}),
-            "datasource": ds_path,
+            "datasource": data_source.source,
             # TODO this should change when ui is normalized (action detail and action link naming)F
             "explore_name": elasticsearch.es_index,
             "model": pipeline.name,

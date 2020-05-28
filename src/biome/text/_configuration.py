@@ -128,11 +128,11 @@ class TrainConfiguration:
              The experiment output path
         trainer: `TrainerConfiguration`
              The trainer file path
-        train_cfg: `str`
-            The train datasource file path
-        validation_cfg: `Optional[str]`
+        training: `str`
+            The training datasource file path
+        validation: `Optional[str]`
             The validation datasource file path
-        test_cfg: `Optional[str]`
+        test: `Optional[str]`
             The test datasource file path
     """
 
@@ -140,12 +140,12 @@ class TrainConfiguration:
         self,
         output: str,
         trainer: TrainerConfiguration,
-        train_cfg: str = "",
-        validation_cfg: Optional[str] = None,
-        test_cfg: Optional[str] = None,
+        training: str = "",
+        validation: Optional[str] = None,
+        test: Optional[str] = None,
     ):
         self.output = output
         self.trainer = trainer
-        self.training = train_cfg
-        self.validation = validation_cfg
-        self.test = test_cfg
+        self.training = training
+        self.validation = validation
+        self.test = test

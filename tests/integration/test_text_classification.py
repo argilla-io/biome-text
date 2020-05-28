@@ -119,12 +119,8 @@ def test_text_classification(
     pl.train(
         output=str(output),
         trainer=trainer,
-        training=train_valid_data_source[0].to_yaml(
-            str(tmp_path / "train.yml"), make_source_path_absolute=True
-        ),
-        validation=train_valid_data_source[1].to_yaml(
-            str(tmp_path / "valid.yml"), make_source_path_absolute=True
-        ),
+        training=train_valid_data_source[0],
+        validation=train_valid_data_source[1],
     )
 
     assert pl.trainable_parameters == 22070
