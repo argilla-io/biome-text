@@ -8,7 +8,7 @@ check: ## applies a code pylint with autopep8 reformating
 test: check ## launch package tests
 	@pytest
 
-dist: test ## run tests and build a package distribution
+dist: test ui ## run tests and build a package distribution
 	@python setup.py sdist bdist_wheel
 
 install: ## install package
@@ -20,7 +20,7 @@ pip-install-dev:
 dev: pip-install-dev ui ## install package in development mode
 
 ui: ## build the ui pages
-	@cd biome-text-ui && npm install && npm run build
+	@cd ui && npm install && npm run build
 
 docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
