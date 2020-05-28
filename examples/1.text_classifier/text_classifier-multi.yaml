@@ -1,15 +1,9 @@
-name: text-classifier
-
-tokenizer:
-    text_cleaning:
-        rules:
-            - strip_spaces
+name: text-classifier-multilabel
 
 features:
     words:
-        embedding_dim: 300
+        embedding_dim: 50
         lowercase_tokens: true
-        #weights_file: https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.es.300.vec.gz
     chars:
         embedding_dim: 8
         encoder:
@@ -32,8 +26,7 @@ encoder:
 
 head:
     type: TextClassification
-    labels:
-        - duplicate
-        - not_duplicate
+    labels: ['toxic','severe_toxic','obscene','threat','insult','identity_hate']
+    multilabel: true
     pooler:
         type: boe

@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
+import numpy
 import torch
 from allennlp.data import Instance
 from allennlp.data.fields import LabelField, MultiLabelField
@@ -7,6 +8,7 @@ from allennlp.training.metrics import CategoricalAccuracy, FBetaMeasure
 
 from biome.text import helpers, vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.metrics import MultiLabelF1Measure
 from ..task_head import TaskHead, TaskName, TaskOutput
 
 
@@ -26,11 +28,11 @@ class ClassificationHead(TaskHead):
         )
 
         # metrics and loss
-        self.metrics = {"accuracy": CategoricalAccuracy()}
         if self._multilabel:
-            # TODO: for multi-label we want to calculate F1 per label and/or ROC-AUC
+            self.metrics = {"multilabel_f1": MultiLabelF1Measure()}
             self._loss = torch.nn.BCEWithLogitsLoss()
         else:
+            self.metrics = {"accuracy": CategoricalAccuracy()}
             self.metrics.update(
                 {
                     "micro": FBetaMeasure(average="micro"),
@@ -55,12 +57,14 @@ class ClassificationHead(TaskHead):
         to_field: str = "label",
     ) -> Optional[Instance]:
         """Includes the label field for classification into the instance data"""
-
-        if not label:
+        # "if not label:" fails for ndarrays this is why we explicitly check None
+        if label is None:
             return instance
 
         field = None
-        if isinstance(label, list) and self._multilabel:
+        if (
+            isinstance(label, numpy.ndarray) or isinstance(label, list)
+        ) and self._multilabel:
             field = MultiLabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
         if isinstance(label, (str, int)) and not self._multilabel:
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
@@ -150,20 +154,29 @@ class ClassificationHead(TaskHead):
         -------
         A dictionary with all metric names and values.
         """
-        metrics = {"accuracy": self.metrics["accuracy"].get_metric(reset)}
+        final_metrics = {}
+        if "accuracy" in self.metrics.keys():
+            final_metrics.update(
+                {"accuracy": self.metrics["accuracy"].get_metric(reset)}
+            )
+
+        if "multilabel_f1" in self.metrics.keys():
+            final_metrics.update(self.metrics["multilabel_f1"].get_metric(reset))
 
         for metric_name in ["micro", "macro"]:
-            for k, v in self.metrics[metric_name].get_metric(reset).items():
-                metrics.update({"{}/{}".format(metric_name, k): v})
+            if metric_name in self.metrics.keys():
+                for k, v in self.metrics[metric_name].get_metric(reset).items():
+                    final_metrics.update({"{}/{}".format(metric_name, k): v})
 
-        for k, values in self.metrics["per_label"].get_metric(reset).items():
-            for i, v in enumerate(values):
-                label = vocabulary.label_for_index(self.backbone.vocab, i)
-                # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
-                label = helpers.clean_metric_name(label)
-                metrics.update({"_{}/{}".format(k, label): v})
+        if "per_label" in self.metrics.keys():
+            for k, values in self.metrics["per_label"].get_metric(reset).items():
+                for i, v in enumerate(values):
+                    label = vocabulary.label_for_index(self.backbone.vocab, i)
+                    # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
+                    label = helpers.clean_metric_name(label)
+                    final_metrics.update({"_{}/{}".format(k, label): v})
 
-        return metrics
+        return final_metrics
 
     def single_label_output(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None,

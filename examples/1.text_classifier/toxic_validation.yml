@@ -1,0 +1,8 @@
+source: toxic_comments_validation.parquet
+format: parquet
+mapping:
+  label: label
+  text:
+    - comment_text
+
+
