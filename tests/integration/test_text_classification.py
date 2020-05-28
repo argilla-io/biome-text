@@ -132,11 +132,10 @@ def test_text_classification(
     with (output / "metrics.json").open() as file:
         metrics = json.load(file)
 
-    assert metrics["training_loss"] == pytest.approx(0.7671357440948486)
+    assert metrics["training_loss"] == pytest.approx(0.767, abs=0.003)
 
     # test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
 
     assert pl._model.vocab.get_vocab_size(WordFeatures.namespace) == 52
     assert pl._model.vocab.get_vocab_size(CharFeatures.namespace) == 83
-
