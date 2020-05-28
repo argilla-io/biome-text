@@ -3,7 +3,7 @@ const publicPath = process.env.BASE_URL || '/';
 
 module.exports = {
   publicPath,
-  outputDir: `dist${publicPath}`,
+  outputDir: `../src/biome/text/ui/webapp${publicPath}`,
   runtimeCompiler: true,
   css: {
     modules: true,
