@@ -1,0 +1,120 @@
+.modal-mask {
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: table;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  cursor: default;
+  background: rgba(0, 0, 0, 0.19);
+}
+
+.modal-wrapper {
+  display: table-cell;
+  vertical-align: middle;
+  &.modal-bottom {
+    vertical-align: bottom;
+    padding-bottom: 3em;
+    padding-left: 30%;
+  }
+  &.modal-center {
+    vertical-align: middle;
+  }
+}
+
+.modal-container {
+  max-width: 460px;
+  margin: 0px auto;
+  padding: 1.5em;
+  background-color: palette(white);
+  border-radius: 4px;
+  box-shadow: 0px 2px 4px 3px rgba(0, 0, 0, 0.27);
+  transition: all 0.3s ease;
+  position: relative;
+  text-align: left;
+  pointer-events: all;
+}
+
+.modal-classifier {
+  border: 2px solid palette(purple);
+  border-radius: 0;
+  box-shadow: none;
+  max-width: 420px;
+}
+
+// .modal-list {
+//   padding: 0;
+//   list-style: none;
+//   margin-top: 1.4em;
+//   margin-bottom: 0;
+//   &.succeedded {
+//     color: palette(green);
+//   }
+//   &.failed {
+//     color: palette(red);
+//   }
+//   &__item p:last-child {
+//     margin-bottom: 0;
+//   }
+// }
+.modal__title {
+  color: palette(red);
+  font-weight: 600;
+  margin-top: 0;
+}
+
+.modal__message {
+  margin-bottom: 1em;
+  display: block;
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+  .modal-text {
+    margin-top: 0;
+    margin-bottom: 0.3em;
+    font-weight: 600;
+    &--info {
+      margin-top: 0;
+      margin-bottom: 0.3em;
+      display: block;
+      font-weight: lighter;
+    }
+  }
+  .failed {
+    color: palette(red);
+    font-weight: lighter;
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+}
+
+.modal-enter {
+  opacity: 0;
+}
+
+.modal-leave-active {
+  opacity: 0;
+}
+
+.modal-buttons {
+  text-align: right;
+}
+
+.modal-close {
+  border: 0;
+  background: palette(white);
+  color: palette(grey);
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  outline: none;
+  cursor: pointer;
+}
+
+.modal-enter .modal-container,
+.modal-leave-active .modal-container {
+  transform: scale(0.9);
+}

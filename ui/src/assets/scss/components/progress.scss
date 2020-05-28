@@ -1,0 +1,97 @@
+.re-progress {
+    height: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: $swift-ease-out;
+    background: #D5CEE3;
+    border-radius: 2px;
+    margin: 0 0 1.5em 0;
+    &.re-indeterminate .re-progress-track {
+        right: 0;
+        &:before,
+        &:after {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            will-change: left, right;
+            content: '';
+        }
+        &:before {
+            animation: progress-indeterminate 2.3s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+        }
+        &:after {
+            animation: progress-indeterminate-short 2.3s cubic-bezier(0.165, 0.84, 0.44, 1) infinite;
+            animation-delay: 1.15s;
+        }
+    }
+    &.re-progress-enter,
+    &.re-progress-leave-active {
+        opacity: 0;
+        transform: scaleY(0) translateZ(0);
+    }
+    &.re-progress-enter-active {
+        transform: scaleY(1) translateZ(0);
+    }
+    &--minimal {
+      @extend .re-progress;
+      height: 2px;
+      .re-progress-track {
+        background: palette(grey, medium);
+      }
+    }
+    &--multiple {
+      @extend .re-progress;  
+      height: 20px;    
+    }
+}
+
+.re-progress-track {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transition: $swift-ease-out;
+    border-bottom-right-radius: 2px;
+    border-top-right-radius: 2px;
+    background: palette(green, highlight);
+    &--secondary {
+        @extend .re-progress-track;
+        left: auto;
+        right: 0;
+        background: palette(red);
+    }
+    .explore & {
+        background: palette(purple);
+    }
+}
+
+@keyframes progress-indeterminate {
+    0% {
+        right: 100%;
+        left: -35%;
+    }
+    60% {
+        right: -100%;
+        left: 100%;
+    }
+    100% {
+        right: -100%;
+        left: 100%;
+    }
+}
+
+@keyframes progress-indeterminate-short {
+    0% {
+        right: 100%;
+        left: -200%;
+    }
+    60% {
+        right: -8%;
+        left: 107%;
+    }
+    100% {
+        right: -8%;
+        left: 107%;
+    }
+}

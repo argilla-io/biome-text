@@ -1,0 +1,42 @@
+.empty {
+    margin-top: 1em;
+    display: inline-block;
+    text-align: center;
+    width: 100%;
+    $this: &;
+    ul {
+        list-style: none;
+    }
+    &__illustration {
+        display: flex;
+        text-align: center;
+        height: 120px;
+        width: 120px;
+        background:palette(white);
+        border-radius: 50%;
+        margin: auto;
+        .svg-icon {
+            margin: auto
+        }
+    }
+    &__title {
+        font-family: $sff;
+        @include font-size(30px);
+        font-weight: 400;
+    }
+    &__subtitle {
+        font-family: $sff;
+        @include font-size(15px);
+        font-weight: lighter;
+        margin-bottom: 2em;    
+    }
+    &.centered {
+        display: flex;
+        margin-top: 0;
+        height: calc(100vh - 160px);
+        #{$this}__content {
+            align-items: center;
+            margin: auto;
+        }
+    }
+}

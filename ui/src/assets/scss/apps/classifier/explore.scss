@@ -1,0 +1,113 @@
+%pill {
+  display: inline-block;
+  width: auto;
+  background: transparent;
+  color: palette(white);
+  border-radius: 3px;
+  padding: 0.2em 1em;
+  @include font-size(15px);
+  margin-top: 0;
+  margin-bottom: 0;
+  border: 1px solid transparent;
+}
+.pill {
+  &__container {
+    display: flex;
+  }
+  &--gold {
+    @extend %pill;
+    margin-bottom: 0.5em;
+    border: 1px solid palette(grey, medium);
+    color: palette(grey, medium)
+  }
+  &--predicted {
+    @extend %pill;
+    max-width: none;
+    text-align: right;
+    background: palette(green, highlight);
+    margin-left: 1em;
+    &__container {
+      margin-right: 0;
+      margin-left: auto;
+    }
+    &.ko {
+      background: palette(red);
+    }
+    &.neutral {
+      background: palette(purple);
+    }
+    > span {
+      margin-left: 0.5em;
+      font-weight: bold;
+      ::v-deep span {
+        font-weight: normal;
+      }
+    }
+  }
+}
+.page__number {
+  position: fixed;
+  right: 2em;
+  top: 0;
+  display: none;
+  background: palette(white);
+  border-radius: 10px;
+  box-shadow: $shadow;
+  min-height: 30px;
+  line-height: 30px;
+  padding: 0 0.5em;
+  z-index: 1;
+  max-width: 150px !important;
+  &__scroll-button {
+    line-height: 30px;
+    padding: 0.5em 0.7em 0.5em 0.5em;
+    border-right: 0;
+    position: fixed;
+    right: 2em;
+    bottom: 2em;
+    z-index: 9;
+    &:after {
+      content: '';
+      border-color: palette(orange);
+      border-style: solid;
+      border-width: 2px 2px 0 0;
+      display: inline-block;
+      height: 16px;
+      width: 16px;
+      transform: rotate(-45deg);
+      transition: all 1.5s ease;
+      margin-bottom: -2px;
+      margin-left: auto;
+      margin-right: 0;
+    }
+    &:hover {
+      &:after {
+        border-color: darken(palette(orange), 20%);
+      }
+    }
+  }
+  &__text {
+    padding: 0 0.5em;
+  }
+  .--visible & {
+    display: block;
+  }
+}
+.list__item {
+  padding: 1.5em 2em;
+  &:hover {
+    .metadata__button {
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
+    }
+  }
+}
+.metadata__button {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  width: auto;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  cursor: pointer;
+}

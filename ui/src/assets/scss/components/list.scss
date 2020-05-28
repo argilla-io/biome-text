@@ -1,0 +1,49 @@
+.list {
+  $this: &;
+  padding: 0;
+  width: 100%;
+  position: relative;
+  margin-bottom: 0;
+  list-style: none;
+  &__toggledetail {
+      background: palette(white);
+      position: static;
+      flex-grow: initial !important;
+      max-width: none !important;
+      pointer-events: all;
+  }
+  &__header {
+      position: relative;
+      padding-bottom: 0.3em;
+      #{$this}__item {
+          min-height: auto;
+          background: none;
+      }
+  }
+  &__li {
+    position: relative;
+  }
+  &__item {
+    background: palette(white);
+    box-shadow: 0 1px 5px 0 rgba(101,101,101,0.42);
+    border-radius: 1px;
+    border: 1px solid palette(grey, light);
+    margin-bottom: 1.2em;
+    border-radius: 1px;
+  }
+  &__extra-actions {
+    text-align: right;
+    > * + *:before {
+      content: '';
+      margin: auto 1em;
+      height: 1em;
+      width: 1px;
+      background: palette(grey, smooth);
+      vertical-align: middle;
+      display: inline-block;
+    }
+    & > * {
+      cursor: pointer
+    }
+  }
+}

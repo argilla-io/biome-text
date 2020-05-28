@@ -15,8 +15,9 @@ recursive-include tests *
 prune build
 prune docs/_build
 prune docs/_static
+prune docs/node_modules
 prune docs/api
 prune dist
-prune tests/htmlcov
+prune tests/**/htmlcov
 
 global-exclude *.pyc *.o

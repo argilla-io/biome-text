@@ -1,6 +1,7 @@
 .esrunner
 
 docs/docs/api/biome/text/
+docs/site
 **/node_modules
 **/yarn.lock
 **/package-lock.json
@@ -11,6 +12,8 @@ docs/docs/api/biome/text/
 **/config.json
 **/events.out*
 **/vocabulary/*.txt
+
+**/webapp
 
 examples/**/experiment*/
 

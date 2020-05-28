@@ -1,0 +1,105 @@
+%grad {
+  .atom__tooltip {
+    &:after {
+      margin: auto;
+      transform: translateY(10px);
+      position: absolute;
+      bottom: 5px;
+      right: 0;
+      left: 0;
+    }
+  }
+}
+@for $i from 0 through 100 {
+  .grad-#{$i} {
+    $bg: hsla(40, 100%, 100 - $i * 0.5, 1);
+    @extend %grad;
+    background: $bg;
+    .atom__tooltip {
+      background: $bg;
+      &:after {
+        @include triangle(bottom, 6px, 6px, $bg);
+      }
+    }
+  }
+  .grad-neg-#{$i} {
+    $bg: hsla(200, 60%, 100 - $i * 0.5, 1);
+    @extend %grad;
+    background: $bg;
+    .atom__tooltip {
+      background: $bg;
+      &:after {
+        @include triangle(bottom, 6px, 6px, $bg);
+      }
+    }
+  }
+  .grad-plus-#{$i} {
+    $bg: hsla(100, 60%, 100 - $i * 0.5, 1);
+    @extend %grad;
+    background: $bg;
+    .atom__tooltip {
+      background: $bg;
+      &:after {
+        @include triangle(bottom, 6px, 6px, $bg);
+      }
+    }
+  }
+  .grad-rest-#{$i} {
+    $bg: hsla(0, 80%, 100 - $i * 0.5, 1);
+    @extend %grad;
+    background: $bg;
+    .atom__tooltip {
+      background: $bg;
+      &:after {
+        @include triangle(bottom, 6px, 6px, $bg);
+      }
+    }
+  }
+}
+
+.atom {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  line-height: 1.2em;
+  border-radius: 2px;
+  &:first-of-type {
+    margin-left: 0;
+  }
+  &:hover {
+    .atom__tooltip {
+      z-index: 1;
+      opacity: 1;
+      height: auto;
+      width: auto;
+      visibility: visible;
+      transition: opacity 0.2s ease 0.2s;
+      overflow: visible;
+    }
+  }
+  &__tooltip {
+    position: absolute;
+    padding: 0.5em;
+    bottom: calc(100% + 8px);
+    right: 50%;
+    transform: translateX(50%);
+    opacity: 0;
+    height: 0;
+    width: 0;
+    visibility: hidden;
+    overflow: hidden;
+    pointer-events: none;
+    @include font-size(13px);
+    font-weight: lighter;
+    border-radius: 3px;
+  }
+  ::v-deep .highlight-text {
+    line-height: 16px;
+  }
+}
+.white-space {
+  padding: 0.5em 0.13em;
+}
+.word {
+  margin: 0 0.13em 0 0.12em;
+}

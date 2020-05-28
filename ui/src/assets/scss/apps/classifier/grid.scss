@@ -1,0 +1,183 @@
+.container {
+  @extend %container;
+  padding-top: 0;
+  padding-bottom: 0;
+  &--intro {
+    padding-top: 2em;
+    margin-bottom: 1.5em;
+    &:after {
+      border-bottom: 1px solid palette(grey, light);
+      content: "";
+      margin-bottom: 1.5em;
+      position: absolute;
+      left: 0;
+      right: 0;
+    }
+  }
+}
+
+.container-spaced {
+  @extend %container;
+  padding: 3em;
+}
+
+.grid {
+  @include grid($flex-wrap: nowrap, $gutter: 2em);
+  // transition: all 0.3s ease;
+  margin-top: 2em;
+  // &--fixed-mode ::v-deep .global-actions {
+  //   position: fixed;
+  //   top: 0em;
+  //   transition: all 0.3s ease;
+  //   z-index: 1;
+  //   left: 0;
+  //   right: 0;
+  //   background: palette(white);
+  // }
+  // &--hidden-header-mode {
+  //   ::v-deep .global-actions {
+  //     position: fixed;
+  //     top: 0;
+  //     transition: padding-top 0.4s ease 0.2s;
+  //     z-index: 1;
+  //     left: 0;
+  //     right: 0;
+  //     background: palette(white);
+  //     margin-left: auto;
+  //     margin-right: auto;
+  //     box-shadow: 0px 3px 3px palette(grey, smooth);
+  //   }
+  //   ::v-deep .results {
+  //     margin-top: 75px !important;
+  //   }
+  // }
+  .results {
+      // @include grid-col($col: 9, $gutter: 2em);
+      flex-grow: 2;
+      margin: 0 1em 2em;
+      // margin-bottom: 2em;
+      // min-width: 73%;
+  }
+  .empty {
+      margin-right: 0;
+      margin-top: 5em;
+      width: 100%;
+  }
+}
+
+.main {
+  position: relative;
+  @extend %container;
+  padding: 0 2em !important;
+}
+.header {
+  opacity: 1;
+  transform: translateY(0);
+  z-index: 1;
+  position: relative;
+  // transition: transform 0.3s ease-in-out;
+  top: 0;
+  right: 0;
+  left: 0;
+  .page__number {
+    display: none;
+  }
+}
+// .header--hidden {
+//   transform: translateY(-235px) !important;
+// }
+// .header--hidden .filters__searchbar {
+//   margin-top: 133px;
+// }
+.header--hidden {
+  transform: translateY(-224px) !important;
+  // transition: transform 0.3s ease-in-out;
+  position: fixed;
+  // cursor: pointer;
+  // pointer-events: none;
+  background: palette(white);
+  z-index: 2;
+  ::v-deep .global-actions {
+    margin-top: 0;
+    box-shadow: 0px 3px 3px palette(grey, smooth);
+  }
+  ::v-deep .filters__searchbar {
+    // transition: position 0.5s ease 2s;
+    margin-top: 145px;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    &:after {
+      content: '';
+      border-bottom: 1px solid palette(grey, light);
+      width: 100vw;
+      display: block;
+    }
+    .searchbar {
+      max-width: 60px;
+      min-width: auto;
+      border: 0;
+      transition: max-width 0.3s ease;
+      background: palette(grey, verylight);
+      &__button {
+        display: none;
+      }
+      input {
+        max-width: 0;
+        overflow: hidden;
+      }
+    }
+    .expanded {
+      .searchbar {
+        background: palette(white);
+        max-width: 250px;
+        transition: max-width 0.3s ease;
+        box-shadow: 0px -3px 3px 2px palette(grey, smooth);
+        &__button {
+          display: block;
+        }
+        input {
+          max-width: none;
+          overflow: hidden;
+          color: palette(orange);
+          @include input-placeholder {
+            color: palette(orange);
+          }
+        }
+      }     
+    }
+  }
+  ::v-deep .filters__container {
+    background: palette(white);
+    .container {
+      position: relative;
+    }
+  }
+  ::v-deep .filters__switch {
+    display: none;
+  }
+  &.header--explore {
+    ::v-deep .filters__area {
+      box-shadow: 0px 3px 3px palette(grey, smooth);
+    }
+  }
+  ::v-deep .filters__tags {
+    min-height: 42px;
+    width: calc(100% - 50px);
+    z-index: 1;
+    background: palette(grey, verylight);
+    border-bottom: 0;
+  }
+  ::v-deep .filter {
+    min-width: 1em;
+    max-width: 1em;
+  }
+  .page__number {
+    display: block;
+  }
+}
+.header--fixed {
+  // transform: translateY(-92px);
+  // transition: transform 0.5s ease-in-out 0.2s, opacity 0.1s ease-in-out 0.5s;
+}

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import glob
 import os
 import sys
 from typing import Tuple
@@ -108,7 +109,12 @@ if __name__ == "__main__":
                 "pdoc3~=0.8.1",
             ]
         },
-        package_data={"biome": ["text/commands/ui/classifier.tar.gz"]},
+        package_data={
+            "biome": [
+                file.replace("src/biome/", "")
+                for file in glob.glob("src/biome/text/ui/webapp/**/*.*", recursive=True)
+            ]
+        },
         entry_points={
             "console_scripts": [
                 "biome=biome.text.cli:main",

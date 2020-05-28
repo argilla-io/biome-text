@@ -1,0 +1,273 @@
+input:-webkit-autofill {
+    box-shadow: 0 0 0px 1000px palette(blue, light) inset;
+}
+
+.re-input-container {
+    width: 100%;
+    max-width: 350px;
+    min-height: 48px;
+    margin: 4px 0 40px;
+    display: flex;
+    position: relative;
+    background: palette(blue, light);
+    font-family: 'Open Sans';
+    &:before {
+        height: 1px;
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(#000, .12);
+        transition: $swift-ease-out;
+        content: " ";
+    }
+    &:after {
+        height: 1px;
+        position: absolute;
+        bottom: 0;
+        background-color: palette(purple);
+        transition: $swift-ease-out;
+        content: " ";
+        right: 0;
+        left: 0;
+        width: 0;
+        margin: auto;
+        opacity: 0.5;
+    }
+    label {
+        position: absolute;
+        top: 23px;
+        left: 15px;
+        pointer-events: none;
+        transition: $swift-ease-out;
+        transition-duration: .3s;
+        color: rgba(#000, .54);
+        font-size: 16px;
+        line-height: 20px;
+    }
+    input,
+    textarea {
+        width: 100%;
+        height: $input-size;
+        padding: 0 15px;
+        display: block;
+        flex: 1;
+        border: none !important;
+        background: none;
+        transition: $swift-ease-out;
+        transition-property: font-size;
+        color: rgba(#000, .54);
+        font-family: inherit;
+        font-size: 1px;
+        line-height: normal;
+        &:focus {
+            outline: none;
+        }
+        ~.re-icon:not(.re-icon-delete) {
+            margin-left: 12px;
+            &:after {
+                right: 0;
+                left: auto;
+            }
+        }
+    }
+    textarea {
+        max-height: 230px;
+        resize: none;
+        padding-top: 25px;
+    }
+    .re-error,
+    .re-count {
+        height: 20px;
+        position: absolute;
+        bottom: -22px;
+        font-size: 12px;
+    }
+    .re-error {
+        display: block !important;
+        left: 0;
+        opacity: 0;
+        transform: translate3d(0, -8px, 0);
+        transition: $swift-ease-in;
+        color: palette(red)
+    }
+    .re-count {
+        right: 0;
+    }
+    .re-icon:not(.re-icon-delete) {
+        margin: 4px auto;
+        color: rgba(#000, .54);
+        transition: $swift-ease-out;
+        &:after {
+            width: 36px;
+            height: 2px;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            z-index: 2;
+            content: "";
+        }
+        ~ {
+            label {
+                left: 36px;
+            }
+            .re-input,
+            .re-textarea,
+            .re-file {
+                margin-left: 12px;
+            }
+        }
+    }
+    .re-input {
+        &--code {
+            border: 1px solid palette(grey);
+            height: 50px;
+        }
+        &+.re-input {
+            margin-left: 20px;
+        }
+    }
+    &--code {
+        margin-bottom: 10px;
+        background: none;
+        &:after,
+        &:before {
+            content: none;
+        }
+        &.re-has-value .re-input--code {
+            padding-top: 0;
+            border-color: palette(purple)
+        }
+        &.re-input-invalid .re-input--code {
+            border-color: palette(red)
+        }
+    }
+}
+
+.re-input-container {
+    .re-autocomplete,
+    .re-autocomplete .re-menu,
+    .re-autocomplete .re-menu .re-input {
+        width: 100%;
+    }
+}
+
+.re-theme-default.re-input-container .re-autocomplete .re-icon:not(.re-icon-search):after {
+    height: 0;
+}
+
+.re-input-container {
+    &.re-input-placeholder {
+        label {
+            pointer-events: auto;
+            top: 10px;
+            opacity: 0;
+            font-size: 12px;
+        }
+        input,
+        textarea {
+            font-size: 16px;
+        }
+    }
+    &.re-input-focused,
+    &.re-has-value {
+        &::after {
+            transition: $swift-ease-out;
+            width: 100%;
+            opacity: 1;
+        }
+        input,
+        textarea {
+            font-size: 16px;
+        }
+    }
+    &.re-has-value {
+        input,
+        textarea {
+            color: rgba(#000, .87);
+        }
+        label {
+            pointer-events: auto;
+            top: 10px;
+            opacity: 1;
+            font-size: 12px;
+            color: palette(purple);
+        }
+        textarea {
+            line-height: 2em;
+        }
+        input,
+        textarea {
+            padding-top: 25px;
+        }
+    }
+    &.re-input-inline {
+        label {
+            pointer-events: none;
+        }
+    }
+    &.re-input-disabled {
+        &:after {
+            background: bottom left repeat-x;
+            background-image: linear-gradient(220deg, rgba(#000, .38) 0%, rgba(#000, .38) 33%, transparent 0%);
+            background-size: 4px 1px;
+        }
+        label,
+        input,
+        textarea {
+            color: rgba(#000, .38);
+        }
+    }
+    &.re-has-password {
+        .button-icon {
+            display: none;
+        }
+        &.re-has-value .button-icon {
+            display: inline-block;
+        }
+    }
+    &.re-clearable {
+        &.re-input-focused .re-clear-input {
+            color: rgba(#000, .54);
+        }
+        .re-clear-input {
+            margin: 0;
+            position: absolute;
+            right: 0;
+            bottom: -2px;
+            color: rgba(#000, .38);
+            .re-ink-ripple {
+                color: rgba(#000, .87);
+            }
+        }
+    }
+    &.re-input-invalid {
+        .re-error {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+            text-align: left;
+        }
+        &:after {
+            background-color: palette(red);
+            transition: $swift-ease-out;
+            width: 100%;
+            opacity: 1;
+        }
+    }
+    &.re-input-required {
+        label:after {
+            top: 2px;
+            right: 0;
+            transform: translateX(calc(100% + 2px));
+            content: "";
+            font-size: 12px;
+            line-height: 1em;
+            vertical-align: top;
+        }
+    }
+    &.re-has-select:hover {
+        .re-select:not(.re-disabled):after {
+            color: rgba(#000, .87);
+        }
+    }
+}
