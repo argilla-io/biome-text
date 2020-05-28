@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from allennlp.data import Batch, Instance
+from allennlp.data import Batch, Instance, TextFieldTensors
 from allennlp.modules import (
     FeedForward,
     Seq2SeqEncoder,
@@ -14,6 +14,10 @@ from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
 from biome.text.configuration import CharFeatures, WordFeatures
+from biome.text.helpers import (
+    get_char_tokens_ids_from_text_field_tensors,
+    get_word_tokens_ids_from_text_field_tensors,
+)
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.specs import (
     BiMpmMatchingSpec,
@@ -161,8 +165,8 @@ class RecordPairClassification(ClassificationHead):
 
     def forward(
         self,  # type: ignore
-        record1: Dict[str, torch.LongTensor],
-        record2: Dict[str, torch.LongTensor],
+        record1: TextFieldTensors,
+        record2: TextFieldTensors,
         label: torch.LongTensor = None,
     ) -> TaskOutput:
         # pylint: disable=arguments-differ
@@ -210,7 +214,7 @@ class RecordPairClassification(ClassificationHead):
         return output
 
     def _field_encoding(
-        self, record: Dict[str, torch.Tensor],
+        self, record: TextFieldTensors,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Embeds and encodes the records in a field context.
 
@@ -474,7 +478,7 @@ class RecordPairClassification(ClassificationHead):
             },
         }
 
-    def _get_field_tokens(self, record_token_ids: torch.Tensor) -> List[str]:
+    def _get_field_tokens(self, record_token_ids: TextFieldTensors) -> List[str]:
         """
         TODO: This can very likely be optimised!
         Parameters
@@ -489,7 +493,9 @@ class RecordPairClassification(ClassificationHead):
 
         if WordFeatures.namespace in record_token_ids:
             # batch size is 1 -> [0]
-            for field in record_token_ids[WordFeatures.namespace][0]:
+            for field in get_word_tokens_ids_from_text_field_tensors(record_token_ids)[
+                0
+            ]:
                 tokens = []
                 for word_idx in field:
                     # skipp padding
@@ -503,7 +509,9 @@ class RecordPairClassification(ClassificationHead):
 
         elif CharFeatures.namespace in record_token_ids:
             # batch size is 1 -> [0]
-            for field in record_token_ids[CharFeatures.namespace][0]:
+            for field in get_char_tokens_ids_from_text_field_tensors(record_token_ids)[
+                0
+            ]:
                 tokens = []
                 for word in field:
                     token = []

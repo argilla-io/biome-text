@@ -288,7 +288,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         tokenization = self._get_instance_tokenization(instance)
 
         prediction = self.forward_on_instance(instance)
-        explain = self._head.prediction_explain(
+        explain = self._head.explain_prediction(
             prediction=prediction, instance=instance
         )
         # TODO: change explain data model include both, tokenization and attributions information

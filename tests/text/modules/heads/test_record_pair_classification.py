@@ -158,6 +158,17 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
+def test_explain(
+    path_to_pipeline_yaml
+):
+    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml)
+    explain = pipeline.explain(
+        record1={"first_name": "Hans"},
+        record2={"first_name": "Hansel"},
+    )
+    assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
+
+
 def test_record_bimpm_train(
     path_to_pipeline_yaml, training_data_source, trainer_dict, tmp_path
 ):
