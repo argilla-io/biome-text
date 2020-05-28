@@ -1,16 +1,17 @@
 <template>
   <span class="token__container">
-    <span
+    <div
       :class="tokenItemType !== 'list' ? 'token__group--list' : ''"
       class="token__group"
       v-for="token in tokens()"
       :key="token.index"
     >
-      <div v-for="tokenItem in token" :key="tokenItem.index" :class="['atom', Math.sign(tokenItem.grad) !== 1 ? `grad-neg-${tokenItem.percent}` : `grad-${tokenItem.percent}`, {'token--margin' : tokenItem.token.length > 1}]">
+      <div v-for="tokenItem in token" :key="tokenItem.index" :class="['atom', Math.sign(tokenItem.grad) !== 1 ? `grad-neg-${tokenItem.percent}` : [!predictedOk ? `grad-rest-${tokenItem.percent}` : `grad-plus-${tokenItem.percent}`], {'token--margin' : tokenItem.token.length > 1}]">
         <span v-if="tokenItem.grad" class="atom__tooltip">{{tokenItem.grad}}</span>
         <span v-html="tokenItem.token">{{tokenItem.token === ' ' ? '&nbsp;' : tokenItem.token}}</span>
       </div>
-    </span>
+
+    </div>
   </span>
 </template>
 
@@ -72,7 +73,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "@/assets/scss/apps/classifier/explain.scss";
+@import "@recognai/re-commons/src/assets/scss/apps/classifier/explain.scss";
 .token {
   &__container {
     display: inline-block;
