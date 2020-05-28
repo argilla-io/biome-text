@@ -2,12 +2,15 @@ import inspect
 import os
 import re
 from inspect import Parameter
-from typing import Any, Callable, Dict, List, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
+import torch
 import yaml
+from allennlp.data import TextFieldTensors
 from elasticsearch import Elasticsearch
 
 from . import environment
+from .features import CharFeatures, WordFeatures
 
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
@@ -99,3 +102,53 @@ def clean_metric_name(name):
     new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
     new_name = new_name.lstrip("/")
     return new_name
+
+
+def get_word_tokens_ids_from_text_field_tensors(
+    text_field_tensors: TextFieldTensors,
+) -> Optional[torch.Tensor]:
+    """
+    Given a text field tensor structure, tries to extract word features related tensors
+
+    Parameters
+    ----------
+    text_field_tensors: The incoming record text field tensors dictionary
+
+    Returns
+    -------
+
+    `WordFeatures` related tensors if enable
+    """
+    word_features_tensors = text_field_tensors.get(WordFeatures.namespace)
+    if not word_features_tensors:
+        return None
+
+    for argument_name, tensor in word_features_tensors.items():
+        if argument_name in ["tokens", "token_ids", "input_ids"]:
+            return tensor
+
+
+def get_char_tokens_ids_from_text_field_tensors(
+    text_field_tensors: TextFieldTensors,
+) -> Optional[torch.Tensor]:
+    """
+    Given a text field tensor structure, tries to extract character features related tensors
+
+    See `TokenCharactersIndexer.tokens_to_indices` for more info
+
+    Parameters
+    ----------
+    text_field_tensors: The incoming record text field tensors dictionary
+
+    Returns
+    -------
+
+    `CharFeatures` related tensors if enable
+    """
+    char_features_tensors = text_field_tensors.get(CharFeatures.namespace)
+    if not char_features_tensors:
+        return None
+
+    for argument_name, tensor in char_features_tensors.items():
+        if argument_name in ["token_characters"]:
+            return tensor
