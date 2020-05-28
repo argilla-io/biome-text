@@ -65,6 +65,7 @@ class ClassificationHead(TaskHead):
         if (
             isinstance(label, numpy.ndarray) or isinstance(label, list)
         ) and self._multilabel:
+            label = label.tolist() if isinstance(label, numpy.ndarray) else label
             field = MultiLabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
         if isinstance(label, (str, int)) and not self._multilabel:
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
