@@ -29,7 +29,7 @@ class ClassificationHead(TaskHead):
 
         # metrics and loss
         if self._multilabel:
-            self.metrics = {"multilabel_f1": MultiLabelF1Measure()}
+            self.metrics = {"macro": MultiLabelF1Measure()}
             self._loss = torch.nn.BCEWithLogitsLoss()
         else:
             self.metrics = {"accuracy": CategoricalAccuracy()}
@@ -159,9 +159,6 @@ class ClassificationHead(TaskHead):
             final_metrics.update(
                 {"accuracy": self.metrics["accuracy"].get_metric(reset)}
             )
-
-        if "multilabel_f1" in self.metrics.keys():
-            final_metrics.update(self.metrics["multilabel_f1"].get_metric(reset))
 
         for metric_name in ["micro", "macro"]:
             if metric_name in self.metrics.keys():
