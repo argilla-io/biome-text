@@ -179,7 +179,7 @@ def _explore(
         data_source.to_dataframe().repartition(npartitions=n_partitions).persist()
     )
     ddf_mapped["metadata"] = ddf_source.map_partitions(
-        lambda df: df.to_dict(orient="records")
+        lambda df: sanitize(df.to_dict(orient="records"))
     )
 
     # TODO @dcfidalgo we could calculate base metrics here (F1, recall & precision) using dataframe.
