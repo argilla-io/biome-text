@@ -1,4 +1,4 @@
-.PHONY: default test dist install dev docs
+.PHONY: default test dist install dev pip-install-dev docs ui
 default: help
 
 check: ## applies a code pylint with autopep8 reformating
@@ -14,8 +14,13 @@ dist: test ## run tests and build a package distribution
 install: ## install package
 	@pip install .
 
-dev: ## install package in development mode
+pip-install-dev:
 	@pip install --upgrade -e .[testing]
+
+dev: pip-install-dev ui ## install package in development mode
+
+ui: ## build the ui pages
+	@cd biome-text-ui && npm install && npm run build
 
 docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
