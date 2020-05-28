@@ -361,9 +361,10 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         instance
             An `Instance` that is fed to the model
         """
-        data_source = DataSource.from_yaml(
-            file_path, default_mapping=self._default_ds_mapping
-        )
+        data_source = DataSource.from_yaml(file_path)
+        if not data_source.mapping:
+            data_source.mapping = self._default_ds_mapping
+
         dataframe = data_source.to_mapped_dataframe()
         instances: DaskSeries = dataframe.apply(
             lambda x: self.text_to_instance(**x.to_dict()),

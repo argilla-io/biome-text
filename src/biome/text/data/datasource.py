@@ -35,8 +35,9 @@ class DataSource:
     mapping
         Used to map the features (columns) of the data source
         to the parameters of the DataSourceReader's `text_to_instance` method.
-    kwargs
-        Additional kwargs are passed on to the *source readers* that depend on the format.
+    **reader_options
+        Additional kwargs are passed on to the *source readers* that depend on the format
+        (see the `biome.text.data.readers` module).
     """
 
     _logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -62,7 +63,7 @@ class DataSource:
         source: Optional[Union[str, List[str]]] = None,
         mapping: Optional[Dict[str, Union[List[str], str]]] = None,
         format: Optional[str] = None,
-        **kwargs,
+        **reader_options,
     ):
         if not source:
             raise MissingArgumentError("source")
@@ -70,12 +71,11 @@ class DataSource:
         self.source = source
         self.format = format or self.__format_from_source(source)
         self.mapping = mapping or {}
-        self.kwargs = kwargs or {}
+        self.reader_options = reader_options or {}
 
         source_reader, defaults = self._find_reader(self.format)
-        reader_arguments = {**defaults, **self.kwargs}
 
-        data_frame = source_reader(source, **reader_arguments)
+        data_frame = source_reader(source, **defaults, **self.reader_options)
         data_frame = self.__sanitize_dataframe(data_frame)
         # TODO allow disable index reindex
         if "id" in data_frame.columns:
@@ -166,17 +166,15 @@ class DataSource:
         return value.iloc[0]
 
     @classmethod
-    def from_yaml(
-        cls: Type["DataSource"], file_path: str, default_mapping: Dict[str, str] = None
-    ) -> "DataSource":
+    def from_yaml(cls: Type["DataSource"], file_path: str) -> "DataSource":
         """Create a data source from a yaml file.
+
+        For the specific format, see the `self.to_yaml()` method.
 
         Parameters
         ----------
         file_path
             The path to the yaml file.
-        default_mapping
-            A mapping configuration when no defined in yaml file
 
         Returns
         -------
@@ -190,8 +188,7 @@ class DataSource:
         # (for which we check for relative paths) is a safer choice
         make_paths_relative(os.path.dirname(file_path), cfg_dict, path_keys=["source"])
 
-        if not cfg_dict.get("mapping"):
-            cfg_dict["mapping"] = default_mapping or {}
+        cfg_dict.update(cfg_dict.pop("reader_options", {}))
         return cls(**cfg_dict)
 
     def to_yaml(self, path: str, make_source_path_absolute: bool = False) -> str:
@@ -216,7 +213,7 @@ class DataSource:
             "source": source,
             "format": self.format,
             "mapping": self.mapping,
-            **self.kwargs,
+            "reader_options": self.reader_options,
         }
         save_dict_as_yaml(yaml_dict, path)
 
