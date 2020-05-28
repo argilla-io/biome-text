@@ -51,7 +51,10 @@ class TextClassification(ClassificationHead):
         self, text: Any, label: Optional[Union[int, str, List[Union[int, str]]]] = None
     ) -> Optional[Instance]:
         instance = self.backbone.featurizer(
-            text, to_field=self.forward_arg_name, aggregate=True
+            text,
+            to_field=self.forward_arg_name,
+            aggregate=True,
+            exclude_record_keys=True
         )
         return self.add_label(instance, label, to_field=self.label_name)
 
