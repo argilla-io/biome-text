@@ -113,12 +113,13 @@ if __name__ == "__main__":
             "biome": [
                 file.replace("src/biome/", "")
                 for file in glob.glob("src/biome/text/ui/webapp/**/*.*", recursive=True)
+            ]
+        },
         entry_points={
             "console_scripts": [
                 "biome=biome.text.cli:main",
             ]
         },
-        entry_points={"console_scripts": ["biome=biome.text.cli:main",]},
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,
     )
