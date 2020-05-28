@@ -46,29 +46,6 @@ export default {
         this.showHeader = true;
       }
     },
-    // checkScrollSpeed() {
-    //   let isScrolling;
-    //   let start;
-    //   let end;
-    //   let distance;
-    //   if (!start) {
-    //     start = window.pageYOffset;
-    //   }
-    //   clearTimeout(isScrolling);
-    //   isScrolling = setTimeout(() => {
-    //     end = window.pageYOffset;
-    //     distance = end - start;
-    //     if (distance < -200) {
-    //       this.scrollLarge = true;
-    //     }
-    //     if (distance > 0) {
-    //       this.scrollLarge = false;
-    //     }
-    //     start = null;
-    //     end = null;
-    //     distance = null;
-    //   }, 50);
-    // },
     async onQueryChanged(query) {
       if (query.from === 0) {
         try {
@@ -136,9 +113,6 @@ export default {
   beforeDestroy() {
     window.removeEventListener('scroll', this.onScroll);
   },
-  // created() {
-  //   this.checkScrollSpeed();
-  // },
   components: {
     reLoading,
   },

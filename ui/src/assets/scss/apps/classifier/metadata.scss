@@ -10,6 +10,10 @@
     margin-top: 0;
     margin-right: 2em;
     white-space: pre-line;
+    display: none;
+    &:nth-child(-n+5) {
+      display: block;
+    }
   }
   &__container {
     max-height: 50vh;

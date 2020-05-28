@@ -1,5 +1,5 @@
 <template>
-  <div id="ExploreClassifier" :class="{'theme-jupyter' : jupyterView}">
+  <div id="ExploreClassifier">
     <!-- filters -->
     <section
       ref="header"
@@ -60,7 +60,6 @@
             :showEntityClassifier="showEntityClassifier"
             :loadingQ="loadingQ"
             :records="docRecords"
-            :jupyterView="jupyterView"
             :allowInfiniteScroll="fixedFilters"
             :filtersStatus="filtersStatus"
             :total="getTotalQuery"

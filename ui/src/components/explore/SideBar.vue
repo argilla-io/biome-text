@@ -28,7 +28,6 @@
 <script>
 import reProgress from '@/components/elements/core/reProgress/reProgress';
 import CollapsableProgressBars from '@/components/elements/filters/CollapsableProgressBars';
-import '@/assets/iconsfont/export';
 
 export default {
   name: 'sidebar',

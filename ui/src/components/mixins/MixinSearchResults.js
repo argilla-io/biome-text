@@ -1,7 +1,5 @@
 /* eslint-disable import/no-unresolved */
 
-import '@/assets/iconsfont/check';
-import '@/assets/iconsfont/ignore';
 import Vue from 'vue';
 import VueWaypoint from 'vue-waypoint';
 import reDropdown from '@/components/elements/core/reDropdown/reDropdown';
@@ -35,10 +33,6 @@ export default {
       type: Number,
       default: undefined,
     },
-    allowInfiniteScroll: {
-      type: Boolean,
-      default: false,
-    },
     records: {
       type: Array,
     },
@@ -51,10 +45,6 @@ export default {
       default: false,
     },
     showEntityClassifier: {
-      type: Boolean,
-      default: false,
-    },
-    jupyterView: {
       type: Boolean,
       default: false,
     },
