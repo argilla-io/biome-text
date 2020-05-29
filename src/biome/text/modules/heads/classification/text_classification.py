@@ -4,6 +4,7 @@ import numpy
 import torch
 from allennlp.data import Batch, Instance, TextFieldTensors
 from allennlp.data.fields import TextField
+from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
@@ -29,15 +30,19 @@ class TextClassification(ClassificationHead):
     def __init__(
         self,
         backbone: ModelBackbone,
-        pooler: Seq2VecEncoderSpec,
         labels: List[str],
+        pooler: Optional[Seq2VecEncoderSpec] = None,
         feedforward: Optional[FeedForwardSpec] = None,
         multilabel: bool = False,
     ) -> None:
 
         super(TextClassification, self).__init__(backbone, labels, multilabel)
 
-        self.pooler = pooler.input_dim(self.backbone.encoder.get_output_dim()).compile()
+        self.pooler = (
+            pooler.input_dim(self.backbone.encoder.get_output_dim()).compile()
+            if pooler
+            else BagOfEmbeddingsEncoder(self.backbone.encoder.get_output_dim())
+        )
         self.feedforward = (
             None
             if not feedforward

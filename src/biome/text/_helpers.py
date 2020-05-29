@@ -248,9 +248,7 @@ def _show_explore(elasticsearch: ElasticsearchExplore) -> None:
 
     ui_port = 9999
     waiting_seconds = 1
-    url = (
-        f"http://localhost:{ui_port}/{elasticsearch.es_index}"
-    )
+    url = f"http://localhost:{ui_port}/{elasticsearch.es_index}"
 
     if not is_service_up(url):
         launch_ui_app()

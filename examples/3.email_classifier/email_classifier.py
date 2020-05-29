@@ -14,9 +14,7 @@ if __name__ == "__main__":
     )
     training_ds = DataSource.from_yaml("train.data.yml")
     validation_ds = DataSource.from_yaml("validation.data.yml")
-    pl.create_vocabulary(
-        VocabularyConfiguration(sources=[training_ds, validation_ds])
-    )
+    pl.create_vocabulary(VocabularyConfiguration(sources=[training_ds, validation_ds]))
 
     trainer = TrainerConfiguration(**yaml_to_dict("trainer.yml"))
 

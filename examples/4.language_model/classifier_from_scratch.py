@@ -9,7 +9,9 @@ if __name__ == "__main__":
 
     training_ds = DataSource.from_yaml("configs/train.data.yml")
     validation_ds = DataSource.from_yaml("configs/val.data.yml")
-    pl.create_vocabulary(VocabularyConfiguration(sources=[training_ds], min_count={"words": 12}))
+    pl.create_vocabulary(
+        VocabularyConfiguration(sources=[training_ds], min_count={"words": 12})
+    )
 
     trainer = TrainerConfiguration(**yaml_to_dict("configs/trainer.yml"))
 

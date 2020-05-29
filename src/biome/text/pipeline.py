@@ -150,8 +150,8 @@ class Pipeline:
     def train(
         self,
         output: str,
-        trainer: TrainerConfiguration,
         training: DataSource,
+        trainer: Optional[TrainerConfiguration] = None,
         validation: Optional[DataSource] = None,
         test: Optional[DataSource] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
@@ -163,10 +163,10 @@ class Pipeline:
         ----------
         output: `str`
             The experiment output path
-        trainer: `TrainerConfiguration`
-            The trainer file path
         training: `DataSource`
             The training data source
+        trainer: `TrainerConfiguration`
+            The trainer file path
         validation: `Optional[DataSource]`
             The validation data source
         test: `Optional[DataSource]`
@@ -177,6 +177,8 @@ class Pipeline:
             If enabled, tries to read previous training status from output folder and
             continues training process from it
         """
+        trainer = trainer or TrainerConfiguration()
+
         from ._helpers import _allennlp_configuration
 
         allennlp_logger = logging.getLogger("allennlp")
@@ -524,10 +526,10 @@ class _BlankPipeline(Pipeline):
     def train(
         self,
         output: str,
-        trainer: TrainerConfiguration,
-        training: str,
-        validation: Optional[str] = None,
-        test: Optional[str] = None,
+        training: DataSource,
+        trainer: Optional[TrainerConfiguration] = None,
+        validation: Optional[DataSource] = None,
+        test: Optional[DataSource] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> None:
@@ -536,7 +538,12 @@ class _BlankPipeline(Pipeline):
                 "If you want to customize pipeline vocab, please use create_vocab method instead"
             )
         super(_BlankPipeline, self).train(
-            output, trainer, training, validation=validation, test=test, restore=restore
+            output=output,
+            training=training,
+            trainer=trainer,
+            validation=validation,
+            test=test,
+            restore=restore,
         )
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:

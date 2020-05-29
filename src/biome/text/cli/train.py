@@ -34,7 +34,9 @@ def learn(
 
     pipeline.create_vocabulary(
         VocabularyConfiguration(
-            sources=[DataSource.from_yaml(ds) for ds in [training, validation, test] if ds]
+            sources=[
+                DataSource.from_yaml(ds) for ds in [training, validation, test] if ds
+            ]
         ),
     )
 

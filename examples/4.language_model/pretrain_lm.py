@@ -9,8 +9,7 @@ if __name__ == "__main__":
     pl = Pipeline.from_yaml("configs/language_model.yml")
     pl.create_vocabulary(
         VocabularyConfiguration(
-            sources=[training_ds, validation_ds],
-            min_count={"words": 12},
+            sources=[training_ds, validation_ds], min_count={"words": 12},
         )
     )
     trainer = TrainerConfiguration(**yaml_to_dict("configs/trainer.yml"))
