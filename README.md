@@ -22,6 +22,11 @@
 <p>Natural Language Processing library built with AllenNLP and Huggingface Transformers
 </h3>
 
+## Quick Links
+
+- [Documentation](https://www.recogn.ai/biome-text/documentation/)
+
+
 ## Features
 
 * State-of-the-art and not so state-of-the-art models trained with **your own data** with a simple workflow.
