@@ -7,13 +7,13 @@ If you want to start contributing to `biome.text` there are three things you nee
 To contribute via pull request, follow these steps:
 
 1. Create an issue describing the feature you want to work on
-2. Install from source, write your code, tests and documentation, and format them with `black.
+2. Install from source, write your code, tests and documentation, and format them with ``black``
 3. Create a pull request describing your changes
 
-## 1. Creating an issue
+## Creating an issue
 You can create a feature request or describe a bug on [Github](https://github.com/recognai/biome-text/issues/new/choose)
 
-## 2. Installing from source, developing and testing
+## Installing from source
 To install biome.text from source, clone the repository from github:
 
 ````shell
@@ -38,15 +38,20 @@ You can see defined make directives as follows:
 make help
 ````
 
-## Testing your changes
+## Testing
 After you make changes you can run the tests as follows:
 
 ````shell script
-cd biome-text
-pytest
+make test
 ````
 
-## 3. Submitting a pull request
+## Submitting a pull request
+
+For example, a new issue, #13, describing an error found in documentation, and labelled as documentation, you will created an new related branch called documentation/#13
+
+Work on this branch make necessary changes, testing them and then push the new branch and create an new PR.
+
+This new PR will include the text "Closes #13" at the end of the description
 
 
 
