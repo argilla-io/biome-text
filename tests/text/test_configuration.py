@@ -9,6 +9,7 @@ from biome.text.configuration import (
     CharFeatures,
     TaskHeadSpec,
 )
+from biome.text.modules.heads import TextClassification
 from biome.text.modules.specs.allennlp_specs import Seq2SeqEncoderSpec
 
 
@@ -90,3 +91,6 @@ def test_pipeline_config(pipeline_yaml):
 
     assert pl.trainable_parameter_names == pl_yaml.trainable_parameter_names
     assert pl.trainable_parameters == pl_yaml.trainable_parameters
+
+    sample_text = "My simple text"
+    assert pl.backbone.featurizer(sample_text) == pl_yaml.backbone.featurizer(sample_text)
