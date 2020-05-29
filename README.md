@@ -1,7 +1,26 @@
-[![Build Status](https://travis-ci.org/recognai/biome-text.svg?branch=master)](https://travis-ci.org/recognai/biome-text)
+<p align="center">
+    <br>
+    <img src="https://github.com/recognai/biome-text/raw/master/docs/biome_text_logo_for_readme.png" width="400"/>
+    <br>
+<p>
+<p align="center">
+    <a href="https://travis-ci.org/recognai/biome-text">
+        <img alt="Build" src="https://travis-ci.org/recognai/biome-text.svg?branch=master">
+    </a>
+    <a href="https://github.com/recognai/biome-text/blob/master/LICENSE.txt">
+        <img alt="GitHub" src="https://img.shields.io/github/license/recognai/biome-text.svg?color=blue">
+    </a>
+    <a href="https://www.recogn.ai/biome-text/index.html">
+        <img alt="Documentation" src="https://img.shields.io/website/http/www.recogn.ai/biome-text/index.html.svg?down_color=red&down_message=offline&up_message=online">
+    </a>
+    <a href="https://github.com/recognai/biome-text/releases">
+        <img alt="GitHub release" src="https://img.shields.io/github/release/recognai/biome-text.svg">
+    </a>
+</p>
 
-# biome.text
->  Natural Language Processing library built with AllenNLP and Huggingface Transformers
+<h3 align="center">
+<p>Natural Language Processing library built with AllenNLP and Huggingface Transformers
+</h3>
 
 ## Features
 
