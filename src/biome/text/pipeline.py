@@ -21,6 +21,7 @@ from biome.text.configuration import (
     VocabularyConfiguration,
 )
 from biome.text.data import DataSource
+from biome.text.data.helpers import save_dict_as_yaml
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.helpers import update_method_signature
 from dask import dataframe as dd
@@ -498,6 +499,37 @@ class Pipeline:
         )
         vocab.extend_from_vocab(instances_vocab)
         return vocab
+
+    def to_dict(self) -> dict:
+        """Returns the pipeline configuration as a dictionary
+
+        Returns
+        -------
+        pipeline_configuration : dict
+        """
+        config_dict = self.config.as_dict()
+        config_dict["features"]["word"] = (
+            config_dict["features"]["word"].to_dict()
+            if config_dict["features"]["word"] is not None
+            else None
+        )
+        config_dict["features"]["char"] = (
+            config_dict["features"]["char"].to_dict()
+            if config_dict["features"]["char"] is not None
+            else None
+        )
+
+        return config_dict
+
+    def to_yaml(self, path: str):
+        """Saves the pipeline configuration to a yaml formatted file
+
+        Parameters
+        ----------
+        path : str
+            Path to the output file
+        """
+        save_dict_as_yaml(self.to_dict(), path)
 
 
 class _BlankPipeline(Pipeline):

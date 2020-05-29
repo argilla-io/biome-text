@@ -49,6 +49,15 @@ class WordFeatures:
 
         return data
 
+    def to_dict(self):
+        return {
+            "embedding_dim": self.embedding_dim,
+            "lowercase_tokens": self.lowercase_tokens,
+            "trainable": self.trainable,
+            "weights_file": self.weights_file,
+            **self.extra_params,
+        }
+
 
 class CharFeatures:
     """Feature configuration at character level"""
@@ -94,3 +103,11 @@ class CharFeatures:
         data.update(data.pop("extra_params"))
 
         return data
+
+    def to_dict(self):
+        return {
+            "embedding_dim": self.embedding_dim,
+            "encoder": self.encoder,
+            "dropout": self.dropout,
+            **self.extra_params,
+        }
