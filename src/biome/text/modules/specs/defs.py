@@ -45,8 +45,9 @@ class ComponentSpec(Generic[T], FromParams):
         return layer_class.by_name(type_name) if type_name else layer_class
 
     def __init__(self, **config):
+        self._layer_class = self.__resolve_layer_class(config.get("type"))
+        config["type"] = config.get("type", self._layer_class.__name__)
         self._config = config or {}
-        self._layer_class = self.__resolve_layer_class(self._config.get("type"))
 
     def input_dim(self, input_dim: int) -> "ComponentSpec":
         """Sets the input dimension attribute for this layer configuration"""
