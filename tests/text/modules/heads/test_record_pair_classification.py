@@ -158,13 +158,10 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-def test_explain(
-    path_to_pipeline_yaml
-):
+def test_explain(path_to_pipeline_yaml):
     pipeline = Pipeline.from_yaml(path_to_pipeline_yaml)
     explain = pipeline.explain(
-        record1={"first_name": "Hans"},
-        record2={"first_name": "Hansel"},
+        record1={"first_name": "Hans"}, record2={"first_name": "Hansel"},
     )
     assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
 

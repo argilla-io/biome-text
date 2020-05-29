@@ -26,5 +26,5 @@ head:
     record_keys:
         - subject
         - body
-    pooler:
+    tokens_pooler:
         type: boe

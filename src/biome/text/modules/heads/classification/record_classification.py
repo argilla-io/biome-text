@@ -23,21 +23,21 @@ class RecordClassification(DocumentClassification):
     def __init__(
         self,
         backbone: ModelBackbone,
-        pooler: Seq2VecEncoderSpec,
         labels: List[str],
         record_keys: List[str],
         tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
-        encoder: Optional[Seq2SeqEncoderSpec] = None,
-        feedforward: Optional[FeedForwardSpec] = None,
-        multilabel: bool = False,
+        fields_encoder: Optional[Seq2VecEncoderSpec] = None,
+        fields_pooler: Optional[Seq2VecEncoderSpec] = None,
+        feedforward: Optional[Seq2SeqEncoderSpec] = None,
+        multilabel: Optional[bool] = False,
     ) -> None:
 
         super(RecordClassification, self).__init__(
             backbone,
-            pooler,
             labels=labels,
             tokens_pooler=tokens_pooler,
-            encoder=encoder,
+            sentences_encoder=fields_encoder,
+            sentences_pooler=fields_pooler,
             feedforward=feedforward,
             multilabel=multilabel,
         )

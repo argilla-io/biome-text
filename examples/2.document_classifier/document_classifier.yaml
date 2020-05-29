@@ -26,5 +26,5 @@ head:
     labels:
         - duplicate
         - not_duplicate
-    pooler:
+    tokens_pooler:
         type: boe

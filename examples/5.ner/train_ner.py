@@ -8,11 +8,7 @@ if __name__ == "__main__":
     validation_ds = DataSource.from_yaml("configs/val.data.yml")
 
     pl = Pipeline.from_yaml("configs/char_gru_token_classifier.yml")
-    pl.create_vocabulary(
-        VocabularyConfiguration(
-            sources=[training_ds]
-        )
-    )
+    pl.create_vocabulary(VocabularyConfiguration(sources=[training_ds]))
     trainer = TrainerConfiguration(**yaml_to_dict("configs/trainer.yml"))
 
     pl.train(

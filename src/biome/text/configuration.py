@@ -248,9 +248,9 @@ class TrainerConfiguration:
 
     def __init__(
         self,
-        optimizer: Dict[str, Any],
+        optimizer: Dict[str, Any] = None,
         validation_metric: str = "-loss",
-        patience: Optional[int] = None,
+        patience: Optional[int] = 2,
         num_epochs: int = 20,
         cuda_device: int = -1,
         grad_norm: Optional[float] = None,
@@ -258,12 +258,12 @@ class TrainerConfiguration:
         learning_rate_scheduler: Optional[Dict[str, Any]] = None,
         momentum_scheduler: Optional[Dict[str, Any]] = None,
         moving_average: Optional[Dict[str, Any]] = None,
-        batch_size: Optional[int] = None,
+        batch_size: Optional[int] = 16,
         cache_instances: bool = True,
         in_memory_batches: int = 2,
         data_bucketing: bool = True,
     ):
-        self.optimizer = optimizer
+        self.optimizer = optimizer or {"type": "adam"}
         self.validation_metric = validation_metric
         self.patience = patience
         self.num_epochs = num_epochs
@@ -275,7 +275,7 @@ class TrainerConfiguration:
         self.moving_average = moving_average
 
         # Data Iteration
-        self.batch_size = batch_size or 32
+        self.batch_size = batch_size
         self.data_bucketing = data_bucketing
         self.cache_instances = cache_instances
         self.in_memory_batches = in_memory_batches

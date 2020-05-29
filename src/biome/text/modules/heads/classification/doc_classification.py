@@ -34,10 +34,10 @@ class DocumentClassification(ClassificationHead):
     def __init__(
         self,
         backbone: ModelBackbone,
-        pooler: Seq2VecEncoderSpec,
         labels: List[str],
         tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
-        encoder: Optional[Seq2SeqEncoderSpec] = None,
+        sentences_encoder: Optional[Seq2SeqEncoderSpec] = None,
+        sentences_pooler: Seq2VecEncoderSpec = None,
         feedforward: Optional[FeedForwardSpec] = None,
         multilabel: bool = False,
     ) -> None:
@@ -56,20 +56,29 @@ class DocumentClassification(ClassificationHead):
                 self.backbone.encoder.get_output_dim()
             ).compile()
         )
-        self.encoder = (
+        self.sentences_encoder = (
             PassThroughEncoder(self.tokens_pooler.get_output_dim())
-            if not encoder
-            else encoder.input_dim(self.tokens_pooler.get_output_dim()).compile()
+            if not sentences_encoder
+            else sentences_encoder.input_dim(
+                self.tokens_pooler.get_output_dim()
+            ).compile()
         )
-        self.pooler = pooler.input_dim(self.encoder.get_output_dim()).compile()
+        self.sentences_pooler = (
+            BagOfEmbeddingsEncoder(self.sentences_encoder.get_output_dim())
+            if not sentences_pooler
+            else sentences_pooler.input_dim(
+                self.sentences_encoder.get_output_dim()
+            ).compile()
+        )
         self.feedforward = (
             None
             if not feedforward
-            else feedforward.input_dim(self.pooler.get_output_dim()).compile()
+            else feedforward.input_dim(self.sentences_pooler.get_output_dim()).compile()
         )
 
         self._classification_layer = torch.nn.Linear(
-            (self.feedforward or self.pooler).get_output_dim(), self.num_labels
+            (self.feedforward or self.sentences_pooler).get_output_dim(),
+            self.num_labels,
         )
 
     def featurize(
@@ -92,8 +101,8 @@ class DocumentClassification(ClassificationHead):
         # Here we need to mask the TextFields that only contain the padding token -> last dimension only contains False
         # Those fields were added to possibly equalize the batch.
         mask = torch.sum(mask, -1) > 0
-        embedded_text = self.encoder(embedded_text, mask=mask)
-        embedded_text = self.pooler(embedded_text, mask=mask)
+        embedded_text = self.sentences_encoder(embedded_text, mask=mask)
+        embedded_text = self.sentences_pooler(embedded_text, mask=mask)
 
         if self.feedforward is not None:
             embedded_text = self.feedforward(embedded_text)
@@ -163,8 +172,8 @@ class DocumentClassification(ClassificationHead):
         embedded_text = self.tokens_pooler(embedded_text, mask=mask)
 
         sentences_mask = torch.sum(mask, -1) > 0
-        embedded_text = self.encoder(embedded_text, mask=sentences_mask)
-        embedded_text = self.pooler(embedded_text, mask=sentences_mask)
+        embedded_text = self.sentences_encoder(embedded_text, mask=sentences_mask)
+        embedded_text = self.sentences_pooler(embedded_text, mask=sentences_mask)
 
         if self.feedforward is not None:
             embedded_text = self.feedforward(embedded_text)

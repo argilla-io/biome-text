@@ -113,11 +113,11 @@ class ClassificationHead(TaskHead):
                 max_classes_prob.append(prob)
 
         output.classes = output_map_probs
-        
+
         if not self._multilabel:
             output.max_class = max_classes  # deprecated
             output.max_class_prob = max_classes_prob  # deprecated
-    
+
             output.label = max_classes
             output.prob = max_classes_prob
 
