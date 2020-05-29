@@ -7,7 +7,7 @@
 
 * State-of-the-art and not so state-of-the-art models trained with **your own data** with a simple workflow.
 
-* Exploration UI for error analysis with interpretations using captum.ai.
+* **Exploration UI** for error analysis with interpretations.
 
 * **Efficient data reading** for (large) datasets in multiple formats and sources (CSV, Parquet, JSON, Elasticsearch, etc.).
 
