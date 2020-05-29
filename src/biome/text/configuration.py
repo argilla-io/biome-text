@@ -78,7 +78,9 @@ class FeaturesConfiguration(FromParams):
     def compile_embedder(self, vocab: Vocabulary) -> TextFieldEmbedder:
         """Creates the embedder from configured features for a given vocabulary"""
         configuration = self._make_allennlp_config()
-        if vocabulary.is_empty(vocab, namespaces=self.keys):
+        if vocabulary.is_empty(vocab, namespaces=self.keys) and configuration.get(
+            "word"
+        ):
             # We simplify embedder configuration for better load an blank pipeline which create the vocab
             embedder_cfg = configuration["word"]["embedder"]
             embedder_cfg["embedding_dim"] = 1
