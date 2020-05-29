@@ -53,7 +53,7 @@ def package_version(version: str):
         return version
     today = datetime.today().strftime("%Y%m%d%H%M%S")
 
-    return repo_tag if repo_tag else f"{version}.{today}+{commit}"
+    return repo_tag if repo_tag else f"{version}.dev{today}+{commit}"
 
 
 try:
