@@ -1,6 +1,6 @@
 <p align="center">
     <br>
-    <img src="https://github.com/recognai/biome-text/raw/master/docs/biome_text_logo_for_readme.png" width="400"/>
+    <img src="https://github.com/recognai/biome-text/raw/master/docs/biome_text_logo_for_readme.png" width="266"/>
     <br>
 <p>
 <p align="center">
