@@ -74,10 +74,12 @@
     <Content class="theme-default-content custom" />
 
     <div
-      v-if="data.footer"
       class="footer"
     >
-      {{ data.footer }}
+      <div>
+        {{ data.footer }}  
+        <img width="70px" :src="$withBase('/assets/img/recognai.png')" />
+      </div>  
     </div>
   </main>
   <!-- <img
@@ -138,6 +140,7 @@ export default {
   z-index 1
   &__bg
     width 500px
+    height 536px
     position absolute 
     right 0
     top 0
@@ -196,7 +199,7 @@ export default {
       display inline-block
       font-size 1.2rem
       color #fff
-      background-color #EF8074
+      background-color #FF8373
       padding 0.6rem 1.6rem
       border-radius 4px
       transition background-color .1s ease
@@ -225,14 +228,24 @@ export default {
     p
       color $textColor
     &__images
-      display flex
+      display block
       img
+        max-width 90px
+        max-height 30px
         margin-right 1em
   .footer
     padding 2.5rem
-    border-top 1px solid $borderColor
+    // border-top 1px solid $borderColor
     text-align center
     color lighten($textColor, 25%)
+    font-size 12px
+    & > div
+      margin: auto
+      display flex
+      align-items center
+      width 126px
+    img 
+     margin-left 1em
 
 @media (max-width: $MQMobile)
   .home
@@ -269,7 +282,7 @@ export default {
   0%
    transform rotateY(0) translateY(0)
   50%
-   transform rotateY(60deg) translateY(-100px);
+   transform rotateY(60deg) translateY(0);
   100%
    transform rotateY(0) translateY(0)
 </style>

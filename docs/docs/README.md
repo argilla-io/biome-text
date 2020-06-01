@@ -13,9 +13,9 @@ features:
 - title: Powerful
   details:  Benefit from the latest research and models in NLP powered by PyTorch, AllenNLP and Huggingface Transformers.
   img1: /assets/img/pytorch.svg
-  img2: /assets/img/allennlp.svg
-  img3: /assets/img/huggingface.svg
+  img2: /assets/img/allennlp.png
+  img3: /assets/img/hugging.png
 - title: Industry-ready
   details: Easily package and serve your models in production.
-// footer: Apache License 2.0 | Copyright © 2020 Recognai
+footer: Built by
 ---

@@ -15,6 +15,14 @@
         Take me home
       </RouterLink>
     </div>
+    <div
+      class="footer"
+    >
+      <div>
+        Built by 
+        <img width="70px" :src="$withBase('/assets/img/recognai.png')" />
+      </div>  
+    </div>
   </div>
 </template>
 
@@ -34,7 +42,7 @@ export default {
   }
 }
 </script>
-<style lang="stylus">
+<style lang="stylus" scoped>
 .theme-default-content
   margin-left auto !important
 .home
@@ -48,6 +56,7 @@ export default {
       max-width 120px
       padding 0.5em
 .error
+  position relative
   min-height 120vh
   background url('./error-bg.svg') center bottom no-repeat 
   background-size 100%;
@@ -71,6 +80,21 @@ export default {
     line-height: 1em
     margin-top 0
     margin-bottom 0.5em
+.footer
+  position absolute 
+  bottom 2em
+  padding 2.5rem 2.5em 0
+  text-align center
+  color lighten($textColor, 25%)
+  font-size 12px
+  width 100%
+  & > div
+    margin: auto
+    display flex
+    align-items center
+    width 126px
+  img 
+    margin-left 1em
 @media (max-width: $MQMobile)
   .error
     &__title
