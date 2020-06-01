@@ -76,18 +76,20 @@ class Pipeline:
             A configured pipeline
         """
         with open(path) as yaml_file:
-            return cls.from_config(yaml_file.read(), vocab_path=vocab_path)
+            config_dict = yaml.safe_load(yaml_file)
+
+        return cls.from_config(config_dict, vocab_path=vocab_path)
 
     @classmethod
     def from_config(
-        cls, config: Union[str, PipelineConfiguration], vocab_path: Optional[str] = None
+        cls, config: Union[PipelineConfiguration, dict], vocab_path: Optional[str] = None
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
         Parameters
         ----------
-        config: `Union[str, PipelineConfiguration]`
-            A `PipelineConfiguration` object or a YAML `str` for the pipeline configuration
+        config: `Union[PipelineConfiguration, dict]`
+            A `PipelineConfiguration` object or a configuration dict
         vocab_path: `Optional[str]`
             If provided, the pipeline vocab will be loaded from this path
 
@@ -97,8 +99,8 @@ class Pipeline:
             A configured pipeline
         """
 
-        if isinstance(config, str):
-            config = PipelineConfiguration.from_params(Params(yaml.safe_load(config)))
+        if isinstance(config, dict):
+            config = PipelineConfiguration.from_params(Params(config))
         return _BlankPipeline(
             config=config, vocab=vocabulary.load_vocabulary(vocab_path)
         )

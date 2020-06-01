@@ -103,7 +103,7 @@ def test_text_classification(
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(4222)
 
-    pl = Pipeline.from_config(yaml.safe_dump(pipeline_dict))
+    pl = Pipeline.from_config(pipeline_dict)
     trainer = TrainerConfiguration(**trainer_dict)
     vocab = VocabularyConfiguration(
         sources=[train_valid_data_source[0]], max_vocab_size={"word": 50}
