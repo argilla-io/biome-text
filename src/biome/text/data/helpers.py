@@ -368,12 +368,14 @@ def save_dict_as_yaml(dictionary: dict, path: str, create_dirs: bool = True) -> 
         Location of the yaml file
     """
     dir_name = os.path.dirname(path)
-    if not os.path.isdir(dir_name):
+    if dir_name and not os.path.isdir(dir_name):
         if not create_dirs:
             raise NotADirectoryError(f"Path '{dir_name}' does not exist.")
         os.makedirs(dir_name)
 
     with open(path, "w") as yml_file:
-        yaml.dump(dictionary, yml_file, default_flow_style=False)
+        yaml.safe_dump(
+            dictionary, yml_file, default_flow_style=False, allow_unicode=True
+        )
 
     return path
