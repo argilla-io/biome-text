@@ -2,8 +2,8 @@
 
 # docs
 docs/docs/api/biome/text/
-docs/docs/documentation/tutorials/*.md
-docs/docs/documentation/tutorials/output
+docs/docs/documentation/tutorials/*
+! docs/docs/documentation/tutorials/*.ipynb
 docs/site
 **/node_modules
 **/yarn.lock

@@ -93,6 +93,7 @@ if __name__ == "__main__":
             "flatdict~=4.0.0",
             "s3fs~=0.4.0",
             "captum~=0.2.0",
+            "ipywidgets~=7.5.1"
         ],
         extras_require={
             "testing": [
