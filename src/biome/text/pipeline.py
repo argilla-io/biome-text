@@ -21,9 +21,8 @@ from biome.text.configuration import (
     VocabularyConfiguration,
 )
 from biome.text.data import DataSource
-from biome.text.data.helpers import save_dict_as_yaml
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
-from biome.text.helpers import update_method_signature
+from biome.text.helpers import update_method_signature, save_dict_as_yaml
 from dask import dataframe as dd
 
 from . import constants

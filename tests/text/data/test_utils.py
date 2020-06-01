@@ -5,7 +5,6 @@ from distributed import LocalCluster
 from biome.text.data.helpers import (
     configure_dask_cluster,
     close_dask_client,
-    get_nested_property_from_data,
 )
 
 
@@ -42,10 +41,3 @@ class UtilTests(unittest.TestCase):
 
         cluster.close(timeout=10)
         self.assertEqual("closed", cluster.status)
-
-    def test_nested_data(self):
-        data = {"the": {"nested": {"property": "the values"}}}
-
-        self.assertEqual(
-            "the values", get_nested_property_from_data(data, "the.nested.property")
-        )

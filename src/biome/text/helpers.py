@@ -1,5 +1,6 @@
 import inspect
 import os
+import os.path
 import re
 import tempfile
 from inspect import Parameter
@@ -153,3 +154,33 @@ def get_char_tokens_ids_from_text_field_tensors(
     for argument_name, tensor in char_features_tensors.items():
         if argument_name in ["token_characters"]:
             return tensor
+
+
+def save_dict_as_yaml(dictionary: dict, path: str, create_dirs: bool = True) -> str:
+    """Save a cfg dict to path as yaml
+
+    Parameters
+    ----------
+    dictionary
+        Dictionary to be saved
+    path
+        Filesystem location where the yaml file will be saved
+    create_dirs
+        If true, create directories in path.
+        If false, throw exception if directories in path do not exist.
+
+    Returns
+    -------
+    path
+        Location of the yaml file
+    """
+    dir_name = os.path.dirname(path)
+    if not os.path.isdir(dir_name):
+        if not create_dirs:
+            raise NotADirectoryError(f"Path '{dir_name}' does not exist.")
+        os.makedirs(dir_name)
+
+    with open(path, "w") as yml_file:
+        yaml.dump(dictionary, yml_file, default_flow_style=False)
+
+    return path
