@@ -432,9 +432,12 @@ class PipelineModelTrainer:
         os.makedirs(self._serialization_dir, exist_ok=True)
 
         # We don't need to load pretrained weights from saved models
-        self._params["model"]["config"]["features"].get(
-            "word", WordFeatures
-        ).weights_file = None
+        try:
+            self._params["model"]["config"]["features"]["word"].weights_file = None
+        # there is no word feature
+        except AttributeError:
+            pass
+
         serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
         with open(
             os.path.join(self._serialization_dir, CONFIG_NAME), "w"
