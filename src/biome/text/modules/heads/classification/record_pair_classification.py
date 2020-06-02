@@ -373,6 +373,9 @@ class RecordPairClassification(ClassificationHead):
     ) -> Dict[str, Any]:
         """Calculates attributions for each data field in the record by integrating the gradients.
 
+        IMPORTANT: The calculated attributions only make sense for a duplicate/not_duplicate binary classification task
+        of the two records.
+
         TODO: optimize: for the prediction we already embedded and field encoded the records.
             Also, the forward passes here are always done on cpu!
 
@@ -396,10 +399,27 @@ class RecordPairClassification(ClassificationHead):
         field_encoded_record2, record_mask_record2 = self._field_encoding(
             tokens_ids.get("record2")
         )
+        if not field_encoded_record2.size() == field_encoded_record2.size():
+            raise RuntimeError("Both records must have the same number of data fields!")
 
         ig = IntegratedGradients(self._bimpm_forward)
 
         prediction_target = int(np.argmax(prediction["probs"]))
+        ig_attribute_record1 = ig.attribute(
+            inputs=(field_encoded_record1, field_encoded_record2),
+            baselines=(field_encoded_record2, field_encoded_record2),
+            additional_forward_args=(record_mask_record1, record_mask_record2),
+            target=prediction_target,
+            return_convergence_delta=True,
+        )
+
+        ig_attribute_record2 = ig.attribute(
+            inputs=(field_encoded_record1, field_encoded_record2),
+            baselines=(field_encoded_record1, field_encoded_record1),
+            additional_forward_args=(record_mask_record1, record_mask_record2),
+            target=prediction_target,
+            return_convergence_delta=True,
+        )
         # The code below was an attempt to make attributions for the "duplicate case" more meaningful ... did not work
         # # duplicate case:
         # # Here we integrate each record along the path from the null vector -> record1/2
@@ -433,21 +453,6 @@ class RecordPairClassification(ClassificationHead):
         # else:
         #     raise RuntimeError("The `explain` method is only implemented for a binary classification task: "
         #                        "[duplicate, not_duplicate]")
-        ig_attribute_record1 = ig.attribute(
-            inputs=(field_encoded_record1, field_encoded_record2),
-            baselines=(field_encoded_record2, field_encoded_record2),
-            additional_forward_args=(record_mask_record1, record_mask_record2),
-            target=prediction_target,
-            return_convergence_delta=True,
-        )
-
-        ig_attribute_record2 = ig.attribute(
-            inputs=(field_encoded_record1, field_encoded_record2),
-            baselines=(field_encoded_record1, field_encoded_record1),
-            additional_forward_args=(record_mask_record1, record_mask_record2),
-            target=prediction_target,
-            return_convergence_delta=True,
-        )
 
         attributions_record1, delta_record1 = self._get_attributions_and_delta(
             ig_attribute_record1, 0
