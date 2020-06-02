@@ -506,7 +506,7 @@ class Pipeline:
         -------
         pipeline_configuration : dict
         """
-        config_dict = self.config.as_dict()
+        config_dict = copy.deepcopy(self.config.as_dict())
         config_dict["features"]["word"] = (
             config_dict["features"]["word"].to_dict()
             if config_dict["features"]["word"] is not None

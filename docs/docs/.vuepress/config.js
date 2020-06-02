@@ -15,7 +15,7 @@ function getSidebarChildren(location, replacement) {
 
 module.exports = {
   dest: 'site',
-  // title: 'biome-text',
+  title: 'biome-text',
   description: 'biome-text documentation',
   base: `/${baseContext}`,
   plugins: [

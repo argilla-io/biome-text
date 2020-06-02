@@ -26,7 +26,7 @@ class RecordClassification(DocumentClassification):
         labels: List[str],
         record_keys: List[str],
         tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
-        fields_encoder: Optional[Seq2VecEncoderSpec] = None,
+        fields_encoder: Optional[Seq2SeqEncoderSpec] = None,
         fields_pooler: Optional[Seq2VecEncoderSpec] = None,
         feedforward: Optional[Seq2SeqEncoderSpec] = None,
         multilabel: Optional[bool] = False,
