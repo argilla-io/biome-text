@@ -1,6 +1,6 @@
 import copy
 import inspect
-from typing import Any, Dict, Generic, Optional, Type, TypeVar
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
 
 from allennlp.common import FromParams, Params
 from allennlp.modules.bimpm_matching import BiMpmMatching
@@ -40,7 +40,12 @@ class ComponentSpec(Generic[T], FromParams):
     def from_params(cls: Type[T], params: Params, **extras) -> T:
         return cls(**params.as_dict())
 
-    def __resolve_layer_class(self, type_name: Optional[str] = None) -> Type[T]:
+    def __resolve_layer_class(
+        self, type_name: Optional[Union[Type, str]] = None
+    ) -> Type[T]:
+        if isinstance(type_name, Type):
+            return type_name
+
         layer_class = getattr(self.__class__, "__orig_bases__")[0].__args__[0]
         return layer_class.by_name(type_name) if type_name else layer_class
 

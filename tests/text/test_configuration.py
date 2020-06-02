@@ -1,13 +1,14 @@
 import pytest
 import yaml
+
 from biome.text import Pipeline
 from biome.text.configuration import (
-    PipelineConfiguration,
-    TokenizerConfiguration,
-    FeaturesConfiguration,
-    WordFeatures,
     CharFeatures,
+    FeaturesConfiguration,
+    PipelineConfiguration,
     TaskHeadSpec,
+    TokenizerConfiguration,
+    WordFeatures,
 )
 from biome.text.modules.heads import TextClassification
 from biome.text.modules.specs.allennlp_specs import Seq2SeqEncoderSpec
@@ -108,7 +109,7 @@ def test_pipeline_config(pipeline_yaml):
     )
 
     head_spec = TaskHeadSpec(
-        type="TextClassification",
+        type=TextClassification,
         labels=["duplicate", "not_duplicate"],
         pooler={"type": "boe"},
     )
