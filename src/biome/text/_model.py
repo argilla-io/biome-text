@@ -522,9 +522,7 @@ class PipelineModelTrainer:
         return evaluate(
             self._model,
             data_loader=DataLoader(test_data, batch_size=self._batch_size),
-            cuda_device=self._trainer._cuda_devices[
-                0
-            ],  # pylint: disable=protected-access
+            cuda_device=self._trainer.cuda_device,
             batch_weight_key=self._batch_weight_key,
         )
 
