@@ -17,6 +17,9 @@ module.exports = {
   dest: 'site',
   title: 'biome-text',
   description: 'biome-text documentation',
+  head: [
+    ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
+  ],
   base: `/${baseContext}`,
   plugins: [
     '@goy/svg-icons',

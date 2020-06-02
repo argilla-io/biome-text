@@ -17,5 +17,5 @@ features:
   img3: /assets/img/hugging.png
 - title: Industry-ready
   details: Easily package and serve your models in production.
-footer: Built by
+footer: Maintained by
 ---

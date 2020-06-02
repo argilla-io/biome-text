@@ -1,11 +1,13 @@
 <template>
 <div>
   <div class="home__nav">
-    <img
-      class="home__nav__logo"
-      v-if="data.navImage"
-      :src="$withBase(data.navImage)"
-    >
+    <RouterLink to="/">
+      <img
+        class="home__nav__logo"
+        v-if="data.navImage"
+        :src="$withBase(data.navImage)"
+      >
+    </RouterLink>
   </div>
   <main
     class="home"
@@ -78,19 +80,12 @@
     >
       <div>
         {{ data.footer }}  
-        <img width="70px" :src="$withBase('/assets/img/recognai.png')" />
+        <a href="https://recogn.ai" target="_blank"><img width="70px" :src="$withBase('/assets/img/recognai.png')" /></a>
       </div>  
     </div>
   </main>
-  <!-- <img
-    class="home__bg"
-    :src="$withBase('/assets/img/bg.svg')"
-  > -->
 
 <svg class="home__bg" width="494px" height="487px" viewBox="0 0 494 487" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 48.1 (47250) - http://www.bohemiancoding.com/sketch -->
-    <desc>Created with Sketch.</desc>
-    <defs></defs>
     <g id="*-Documentation" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
         <g id="bg" transform="translate(-967.000000, 0.000000)" stroke="#4C1DBF">
             <g id="Page-1" transform="translate(1283.285018, 114.169241) scale(1, -1) rotate(-222.000000) translate(-1283.285018, -114.169241) translate(905.285018, -340.330759)">
@@ -125,11 +120,17 @@ export default {
         text: this.data.actionText
       }
     }
+  },
+
+  mounted () {
+    document.querySelector('.global-ui').classList.add('hidden')
   }
 }
 </script>
 
 <style lang="stylus">
+.hidden
+  display none
 .home
   padding $navbarHeight 2rem 0
   padding-top 0
@@ -149,15 +150,15 @@ export default {
       transform-origin center
       animation animate 10s infinite
       &:nth-child(1)
-        animation-delay 0.5s
+        animation-delay 1s
       &:nth-child(2)
         animation-delay 3s
       &:nth-child(3)
-        animation-delay 2s
-      &:nth-child(4)
         animation-delay 4s
+      &:nth-child(4)
+        animation-delay 2s
       &:nth-child(5)
-        animation-delay 1s
+        animation-delay 0
 
 
     // for num in (1..5)
@@ -199,14 +200,14 @@ export default {
       display inline-block
       font-size 1.2rem
       color #fff
-      background-color #FF8373
+      background-color $accentColor
       padding 0.6rem 1.6rem
       border-radius 4px
       transition background-color .1s ease
       box-sizing border-box
       min-width 200px
       &:hover
-        background-color lighten(#EF8074, 10%)
+        background-color darken($accentColor, 10%)
   .features
     padding 1.2rem 0
     margin-top 2.5rem
@@ -233,6 +234,7 @@ export default {
         max-width 90px
         max-height 30px
         margin-right 1em
+        vertical-align middle
   .footer
     padding 2.5rem
     // border-top 1px solid $borderColor
@@ -243,7 +245,7 @@ export default {
       margin: auto
       display flex
       align-items center
-      width 126px
+      width 160px
     img 
      margin-left 1em
 
