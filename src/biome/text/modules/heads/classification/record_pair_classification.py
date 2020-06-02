@@ -369,7 +369,7 @@ class RecordPairClassification(ClassificationHead):
         return matching_vector_record1_cat, matching_vector_record2_cat
 
     def explain_prediction(
-        self, prediction: Dict[str, np.array], instance: Instance
+        self, prediction: Dict[str, np.array], instance: Instance, n_steps: int
     ) -> Dict[str, Any]:
         """Calculates attributions for each data field in the record by integrating the gradients.
 
@@ -380,6 +380,7 @@ class RecordPairClassification(ClassificationHead):
         ----------
         prediction
         instance
+        n_steps
 
         Returns
         -------
@@ -439,6 +440,7 @@ class RecordPairClassification(ClassificationHead):
             additional_forward_args=(record_mask_record1, record_mask_record2),
             target=prediction_target,
             return_convergence_delta=True,
+            n_steps=n_steps,
         )
 
         ig_attribute_record2 = ig.attribute(
@@ -447,6 +449,7 @@ class RecordPairClassification(ClassificationHead):
             additional_forward_args=(record_mask_record1, record_mask_record2),
             target=prediction_target,
             return_convergence_delta=True,
+            n_steps=n_steps,
         )
 
         attributions_record1, delta_record1 = self._get_attributions_and_delta(

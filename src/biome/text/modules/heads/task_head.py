@@ -123,9 +123,24 @@ class TaskHead(torch.nn.Module, Registrable):
         return output
 
     def explain_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance
+        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
     ) -> Dict[str, Any]:
-        """Adds embedding explanations information to prediction output"""
+        """
+        Adds embedding explanations information to prediction output
+
+        Parameters
+        ----------
+        prediction: `Dict[str,, numpy.array]`
+            The result input predictions
+        instance: `Instance`
+            The featurized input instance
+        n_steps: int
+            The number of steps to find token level attributions
+
+        Returns
+        -------
+            Prediction with explanation
+        """
         raise {**prediction, "explain": {}}
 
 
