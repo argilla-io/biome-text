@@ -17,7 +17,7 @@ import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
-from allennlp.data import DataLoader, DatasetReader, Field, Instance, Vocabulary
+from allennlp.data import DataLoader, DatasetReader, Field, Instance, Token, Vocabulary
 from allennlp.data.fields import ListField, TextField
 from allennlp.models.archival import CONFIG_NAME, archive_model
 from allennlp.training import Trainer
@@ -281,35 +281,56 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
 
         return prediction
 
-    def explain(self, *args, **kwargs) -> Dict[str, Any]:
-        """Applies an prediction including token attribution explanation"""
+    def explain(self, *args, n_steps: int, **kwargs) -> Dict[str, Any]:
+        """
+        Applies an prediction including token attribution explanation
+
+        Parameters
+        ----------
+        n_steps: int
+            The number of steps for token attribution calculation (if proceed).
+            If the number of steps is less than 0, the attributions will not be calculated
+        args and kwargs:
+            Dynamic arguments aligned to the current model head input features.
+
+        Returns
+        -------
+            The input prediction data include information about prediction explanation
+        """
         inputs = self._model_inputs_from_args(*args, **kwargs)
         instance = self.text_to_instance(**inputs)
-        tokenization = self._get_instance_tokenization(instance)
-
         prediction = self.forward_on_instance(instance)
-        explain = self._head.explain_prediction(
-            prediction=prediction, instance=instance
+        explained_prediction = (
+            prediction
+            if n_steps <= 0
+            else self._head.explain_prediction(
+                prediction=prediction, instance=instance, n_steps=n_steps
+            )
         )
-        # TODO: change explain data model include both, tokenization and attributions information
-        #  We must apply this change in sync with frontend team.
-        #  The data model proposal could be as follow:
-        #    {
-        #        "tokenization": { "text": ["This", "is", "an", "example"] },
-        #        "attributions": { "text": [{"token": "This", "attribution": 0.39},...]}
-        #    }
-        #   For now, we add tokenization as a new separate field
-        explain.update({"tokenization": tokenization})
-
-        return explain
+        # If no explain was found, we return input tokenization as default
+        # TODO: use explain data structure instead of dict
+        if not explained_prediction.get("explain"):
+            explained_prediction["explain"] = self._get_instance_tokenization(instance)
+        return explained_prediction
 
     def _get_instance_tokenization(self, instance: Instance) -> Dict[str, Any]:
         """Gets the tokenization information to current instance"""
 
-        def extract_field_tokens(field: Field) -> Union[List[str], List[List[str]]]:
+        def extract_field_tokens(
+            field: Field,
+        ) -> Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]:
             """Tries to extract tokens from field"""
+
+            def token_2_attribution(
+                token: Token, attribution: float = 0.0
+            ) -> Dict[str, Any]:
+                return {"token": token.text, "attribution": attribution}
+
             if isinstance(field, TextField):
-                return [token.text for token in cast(TextField, field).tokens]
+                return [
+                    token_2_attribution(token)
+                    for token in cast(TextField, field).tokens
+                ]
             if isinstance(field, ListField):
                 return [
                     extract_field_tokens(inner_field)
