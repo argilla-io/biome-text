@@ -9,8 +9,8 @@ from biome.text.errors import MissingArgumentError
 from .helpers import (
     is_relative_file_system_path,
     make_paths_relative,
-    save_dict_as_yaml,
 )
+from ..helpers import save_dict_as_yaml
 from .readers import (
     ElasticsearchDataFrameReader,
     from_csv,

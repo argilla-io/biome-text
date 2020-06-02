@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import dask
 import dask.dataframe as dd
 import pandas as pd
-import yaml
 from dask.cache import Cache
 from dask.utils import parse_bytes
 from distributed import Client, LocalCluster
@@ -20,44 +19,6 @@ from biome.text.environment import (
 __LOGGER = logging.getLogger(__name__)
 
 __DASK_CLIENT = None
-
-
-def get_nested_property_from_data(data: Dict, property_key: str) -> Optional[Any]:
-    """Search an deep property key in a data dictionary.
-
-    For example, having the data dictionary {"a": {"b": "the value"}}, the call
-
-    >> self.get_nested_property_from_data( {"a": {"b": "the value"}}, "a.b")
-
-    is equivalent to:
-
-    >> data["a"]["b"]
-
-
-    Parameters
-    ----------
-    data
-        The data dictionary
-    property_key
-        The (deep) property key
-
-    Returns
-    -------
-
-        The property value if found, None otherwise
-    """
-    if data is None or not isinstance(data, Dict):
-        return None
-
-    if property_key in data:
-        return data[property_key]
-
-    sep = "."
-    splitted_key = property_key.split(sep)
-
-    return get_nested_property_from_data(
-        data.get(splitted_key[0]), sep.join(splitted_key[1:])
-    )
 
 
 def configure_dask_cluster(
@@ -347,35 +308,3 @@ def flatten_dataframe(data_frame: pd.DataFrame) -> pd.DataFrame:
 
     flatten = flatten_dataframe(pd.concat(dfs, axis=1))
     return pd.concat([data_frame[unmodified_columns], flatten], axis=1)
-
-
-def save_dict_as_yaml(dictionary: dict, path: str, create_dirs: bool = True) -> str:
-    """Save a cfg dict to path as yaml
-
-    Parameters
-    ----------
-    dictionary
-        Dictionary to be saved
-    path
-        Filesystem location where the yaml file will be saved
-    create_dirs
-        If true, create directories in path.
-        If false, throw exception if directories in path do not exist.
-
-    Returns
-    -------
-    path
-        Location of the yaml file
-    """
-    dir_name = os.path.dirname(path)
-    if dir_name and not os.path.isdir(dir_name):
-        if not create_dirs:
-            raise NotADirectoryError(f"Path '{dir_name}' does not exist.")
-        os.makedirs(dir_name)
-
-    with open(path, "w") as yml_file:
-        yaml.safe_dump(
-            dictionary, yml_file, default_flow_style=False, allow_unicode=True
-        )
-
-    return path
