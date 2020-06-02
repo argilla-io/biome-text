@@ -289,7 +289,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         ----------
         n_steps: int
             The number of steps for token attribution calculation (if proceed).
-            If the number of steps is less than 0, the attributions will not be calculated
+            If the number of steps is less than 1, the attributions will not be calculated
         args and kwargs:
             Dynamic arguments aligned to the current model head input features.
 
