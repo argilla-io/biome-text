@@ -69,7 +69,7 @@ class InputFeaturizer:
         tokenize: `bool`
             If disabled, skip tokenization phase, and pass record data as tokenized token list.
         exclude_record_keys: `bool`
-            If enabled, drop from tokenization tokens from record key in dictionaries featurization
+            If enabled, excludes record keys from output tokens in dictionary featurization
 
         Returns
         -------
