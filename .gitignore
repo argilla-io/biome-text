@@ -3,6 +3,7 @@
 # docs
 docs/docs/api/biome/text/
 docs/docs/documentation/tutorials/*.md
+docs/docs/documentation/tutorials/output
 docs/site
 **/node_modules
 **/yarn.lock
