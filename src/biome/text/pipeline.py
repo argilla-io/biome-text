@@ -420,6 +420,9 @@ class Pipeline:
         This number could be change before an after a training process, since trainer could fix some of them.
 
         """
+        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
+            self.__LOGGER.warning("Your vocabulary is still empty!"
+                                  "The number of trainable parameters usually depend on the size of your vocabulary.")
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property
@@ -468,11 +471,11 @@ class Pipeline:
             for source in vocab_config.sources
         ]
         instances_vocab = Vocabulary.from_instances(
-            instances=[
+            instances=(
                 instance
                 for data_source in source_paths
                 for instance in self._model.read(data_source)
-            ],
+            ),
             max_vocab_size=vocab_config.max_vocab_size,
             min_count=vocab_config.min_count,
             pretrained_files=vocab_config.pretrained_files,
