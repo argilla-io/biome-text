@@ -39,6 +39,7 @@ class InputFeaturizer:
         to_field: str = "record",
         aggregate: bool = False,
         tokenize: bool = True,
+        exclude_record_keys: bool = False,
     ) -> Instance:
         return self(record, to_field, aggregate, tokenize,)
 
@@ -48,6 +49,7 @@ class InputFeaturizer:
         to_field: str = "record",
         aggregate: bool = False,
         tokenize: bool = True,
+        exclude_record_keys: bool = False,
     ):
 
         """
@@ -66,6 +68,8 @@ class InputFeaturizer:
             set data aggregation flag
         tokenize: `bool`
             If disabled, skip tokenization phase, and pass record data as tokenized token list.
+        exclude_record_keys: `bool`
+            If enabled, excludes record keys from output tokens in dictionary featurization
 
         Returns
         -------
@@ -77,14 +81,14 @@ class InputFeaturizer:
         data = record
 
         record_tokens = (
-            self._data_tokens(data) if tokenize else [[Token(t) for t in data]]
+            self._data_tokens(data, exclude_record_keys) if tokenize else [[Token(t) for t in data]]
         )
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
 
-    def _data_tokens(self, data: Any) -> List[List[Token]]:
+    def _data_tokens(self, data: Any, exclude_record_keys: bool) -> List[List[Token]]:
         """Convert data into a list of list of token depending on data type"""
         if isinstance(data, dict):
-            return self.tokenizer.tokenize_record(data)
+            return self.tokenizer.tokenize_record(data, exclude_record_keys)
         if isinstance(data, str):
             return self.tokenizer.tokenize_text(data)
         return self.tokenizer.tokenize_document(data)
