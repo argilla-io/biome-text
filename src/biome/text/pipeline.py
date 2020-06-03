@@ -346,6 +346,8 @@ class Pipeline:
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
+        if not data_source.mapping:
+            data_source.mapping = self._model._default_ds_mapping
         explore_df = _explore(self, data_source, config, es_config)
         _show_explore(es_config)
 
