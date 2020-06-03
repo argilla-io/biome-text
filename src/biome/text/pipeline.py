@@ -53,7 +53,8 @@ class Pipeline:
     """
 
     __LOGGER = logging.getLogger(__name__)
-    __TRAINING_CACHE_DATA = "instances_data"
+    __TRAINING_CACHE_DATA = ".instances_data"
+    __DATASOURCE_YAML_FOLDER = ".datasources"
 
     _model: _ModelImpl = None
     _config: PipelineConfiguration = None
@@ -211,7 +212,7 @@ class Pipeline:
                 )
 
             # `_allennlp_configuration` needs strings
-            datasources_dir = os.path.join(output, "datasources")
+            datasources_dir = os.path.join(output, self.__DATASOURCE_YAML_FOLDER)
             training = training.to_yaml(
                 os.path.join(
                     datasources_dir, f"training_{os.path.basename(training.source)}.yml"
@@ -421,7 +422,7 @@ class Pipeline:
 
         """
         if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
-            self.__LOGGER.warning("Your vocabulary is still empty!"
+            self.__LOGGER.warning("Your vocabulary is still empty! "
                                   "The number of trainable parameters usually depend on the size of your vocabulary.")
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
