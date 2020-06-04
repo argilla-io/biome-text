@@ -178,6 +178,6 @@ def save_dict_as_yaml(dictionary: dict, path: str) -> str:
         os.makedirs(dir_name, exist_ok=True)
 
     with open(path, "w") as yml_file:
-        yaml.dump(dictionary, yml_file, default_flow_style=False)
+        yaml.dump(dictionary, yml_file, default_flow_style=False, allow_unicode=True)
 
     return path
