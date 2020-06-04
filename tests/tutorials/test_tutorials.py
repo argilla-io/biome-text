@@ -5,5 +5,4 @@ import os
 
 def test_text_classifier_tutorial():
     fixture = NBRegressionFixture(exec_timeout=100)
-    fixture.diff_ignore = ("/cells/*/execution_count",)
     fixture.check(os.path.join(TUTORIALS_PATH, "Training_a_text_classifier.ipynb"))
