@@ -36,7 +36,7 @@
       vertical-align: middle;
   }
   &--all {
-    color: palette(grey, dark);
+    color: palette(orange);
   }
 }
 
@@ -56,6 +56,6 @@
 .tag-icon:after {
   content: '✕';
   font-weight: bold;
-  color: palette(grey);
+  color: palette(orange);
   font-size: 14px;
 }

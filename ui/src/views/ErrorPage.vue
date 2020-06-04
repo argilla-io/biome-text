@@ -1,29 +1,24 @@
 <template>
-  <div class="theme-container error">
-    <div class="home__nav">
-      <RouterLink to="/">
-        <img
-          class="home__nav__logo"
-          :src="$withBase('/assets/img/biome.svg')"
-        >
-      </RouterLink>
+  <div class="error">
+    <div class="navbar">
+      <biome></biome>
     </div>
-    <div class="theme-default-content">
-      <p class="error__text">Oh no!</br>
-      It looks like we’ve been split up</p>
-      <h1 class="error__title">Error 404</h1>
-      <p class="error__subtitle">{{ getMsg() }}</p>
-      <RouterLink to="/">
-        Take me home
-      </RouterLink>
-    </div>
-    <div
-      class="footer"
-    >
-      <div>
-        Maintained by 
-        <a href="https://recogn.ai" target="_blank"><img width="70px" :src="$withBase('/assets/img/recognai.png')" /></a>
-      </div>  
+    <div class="container">
+      <p class="error__text">Oh no!<br>
+      It looks like we’ve been cut off</p>
+      <p class="error__title">You should be exploring your data but something went wrong.</p>
+      <p class="error__subtitle">Here are some helpful links instead:</p>
+      <ul class="error__links">
+        <li>
+          <a href="https://www.recogn.ai/biome-text/help/">Help <svgicon name="external" color="#4A4A4A"></svgicon></a>
+        </li>
+        <li>
+          <a href="https://www.recogn.ai/biome-text/documentation/">Documentation <svgicon name="external" color="#4A4A4A"></svgicon></a>
+        </li>
+        <li>
+          <a href="https://www.recogn.ai/biome-text/documentation/user-guides/01.training.html">Exploration User guide <svgicon name="external" color="#4A4A4A"></svgicon></a>
+        </li>
+      </ul>
     </div>
     <div
       class="error--bg"
@@ -48,114 +43,121 @@
 </template>
 
 <script>
-const msgs = [
-  `There's nothing here.`,
-  `How did we get here?`,
-  `The page you’re looking for can’t be found.`,
-  `Looks like we've got some broken links.`
-]
+import biome from '@/components/elements/core/logos/biome';
+import '@/assets/iconsfont/external';
 
 export default {
-  methods: {
-    getMsg () {
-      return msgs[Math.floor(Math.random() * msgs.length)]
+  name: 'error-page',
+  data: () => ({
+  }),
+  components: {
+    biome,
+  },
+};
+</script>
+<style lang="scss" scoped>
+@import url('https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&display=swap');
+.container {
+  @extend %container
+}
+.navbar {
+  border-bottom: 1px solid palette(grey, light);
+  display: block;
+  svg {
+    max-width: 120px;
+    height: auto;
+    padding: 1em;
+  }
+}
+.error {
+  position: relative;
+  min-height: 120vh;
+  background-size: 100%;
+  &--bg {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  }
+  &__title {
+    display: block;
+    margin-right: 1em;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    margin-bottom: 1em;
+    @include font-size(22px);
+    line-height: 1.2em;
+  }
+  &__subtitle {
+    display: block;
+    font-weight: lighter;
+    margin-top: 0 !important;
+    margin-bottom: 1em;
+    color: palette(grey, dark);
+    @include font-size(20px);
+    line-height: 1.2em;
+  }
+  &__text {
+    font-family: 'Just Me Again Down Here';
+    color: #4C10BC;
+    font-size: 4.2rem;
+    line-height: 0.8em;
+    margin-top: 0;
+    margin-bottom: 0.5em;
+  }
+  &__links {
+    font-weight: bold;
+    list-style: none;
+    text-decoration: none;
+    padding-left: 0;
+    li {
+      margin-bottom: 1em;
+    }
+    a {
+      text-decoration: none;
+      @include font-size(15px);
+    }
+    .svg-icon {
+      margin-left: 0.5em
     }
   }
 }
-</script>
-<style lang="stylus" scoped>
-.theme-default-content
-  margin-left auto !important
-.home
-  &__nav
-    z-index 1
-    border-bottom 1px solid $borderColor
-    display block
-    background #fff
-    position relative
-    &__logo
-      max-width 120px
-      padding 0.5em
-.error
-  position relative
-  min-height 120vh
-  background-size 100%
-  &--bg
-    position absolute 
-    width 100%
-    bottom 0
-    svg 
-      width 100%
-      height auto
-      display block
-  &__title
-    display: block
-    margin-right 1em
-    margin-top 0 !important
-    padding-top: 0 !important
-    font-size 2em
-  &__subtitle
-    display: block
-    font-size 2em
-    font-weight lighter
-    margin-top 0 !important
-    margin-bottom 1em
-    color $textColorLight
-  &__text
-    font-family $handMadeFontFamily
-    color #4C10BC
-    font-size: 4.2rem
-    line-height: 1em
-    margin-top 0.5em !important
-    margin-bottom 0.5em
-.footer
-  position absolute 
-  bottom 2em
-  padding 2.5rem 2.5em 0
-  text-align center
-  color lighten($textColor, 25%)
-  font-size 12px
-  right 0
-  left 0
-  z-index 1
-  & > div
-    margin: auto
-    display flex
-    align-items center
-    width 160px
-  img 
-    margin-left 1em
-@media (max-width: $MQMobile)
-  .error
-    &__title
-      font-size 1.5em
-    &__subtitle
-      font-size 1.3em
-      display block
-    &__text
-      font-size 3em 
-
-#eye-1
-  animation animateEye-1 3s infinite 3s
-#eye-2
-  animation animateEye-2 3s infinite
-
-@keyframes animateEye-1
-  0%
-    ry 4.5
-  5%
-    ry 0
-  10%
-    ry 4.5
-  100%
-    ry 4.5
-@keyframes animateEye-2
-  0%
-    ry 3.5
-  5%
-    ry 0
-  10%
-    ry 3.5
-  100%
-    ry 3.5
+#eye-1 {
+  animation: animateEye1 3s infinite 3s;
+}
+#eye-2 {
+  animation: animateEye2 3s infinite;
+}
+@keyframes animateEye1 {
+  0% {
+    ry: 4.5
+  }
+  5% {
+    ry: 0
+  }
+  10% {
+    ry: 4.5
+  }
+  100% {
+    ry: 4.5
+  }
+}
+@keyframes animateEye2 {
+  0% {
+    ry: 3.5;
+  }
+  5% {
+    ry: 0;
+  }
+  10% {
+    ry: 3.5;
+  }
+  100% {
+    ry: 3.5;
+  }
+}
 </style>

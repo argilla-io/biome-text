@@ -15,7 +15,7 @@
                   v-if="results"
                   class="filters__title__info"
                 >
-                  <svgicon name="datasource" width="20" height="14"></svgicon>
+                  <biome-isotype></biome-isotype>
                   <span
                     class="filters__title__datasource"
                     :title="datasourceName"
