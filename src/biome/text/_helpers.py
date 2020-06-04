@@ -159,7 +159,7 @@ def _explore(
     """
     if config.prediction_cache > 0:
         # TODO: do it
-        pipeline.init_predictions_cache(config.prediction_cache)
+        pipeline.init_prediction_cache(config.prediction_cache)
 
     ddf_mapped = data_source.to_mapped_dataframe()
     # this only makes really sense when we have a predict_batch_json method implemented ...
