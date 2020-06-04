@@ -3,6 +3,7 @@ import glob
 import inspect
 import logging
 import os
+import shutil
 import tempfile
 import uuid
 from inspect import Parameter
@@ -188,7 +189,9 @@ class Pipeline:
         try:
             allennlp_logger.setLevel(logging.INFO)
 
-            self.__prepare_experiment_folder(output, restore)
+            if not restore and os.path.isdir(output):
+                shutil.rmtree(output)
+
             # The original pipeline keeps unchanged
             model = copy.deepcopy(self._model)
             # creates the output folder if it does not exist
@@ -246,33 +249,6 @@ class Pipeline:
             )
         finally:
             allennlp_logger.setLevel(logging.ERROR)
-
-    def __prepare_experiment_folder(self, output: str, restore: bool) -> None:
-        """Prepare experiment folder depending of if required experiment restore or not
-
-        Parameters
-        ----------
-        output
-            Path to the output folder
-        restore: `bool`
-            If False, drops all previous training states
-
-        """
-        if not os.path.isdir(output):
-            return
-
-        drop_patterns = [
-            os.path.join(output, "*.json"),
-            os.path.join(output, "**/events.out*"),
-        ]
-
-        if not restore:
-            drop_patterns.append(os.path.join(output, "*.th"))
-            drop_patterns.append(os.path.join(output, self.__TRAINING_CACHE_DATA, "*"))
-
-        for pattern in drop_patterns:
-            for file in glob.glob(pattern, recursive=True):
-                os.remove(file)
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Predicts over some input data with current state of the model
