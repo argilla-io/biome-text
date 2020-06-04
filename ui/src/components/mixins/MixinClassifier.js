@@ -2,6 +2,7 @@
 import Vue from 'vue';
 import VueVega from 'vue-vega';
 import reEmptyList from '@/components/elements/core/reList/reEmptyList';
+import biomeIsotype from '@/components/elements/core/logos/biomeIsotype';
 import searchbar from '@/components/elements/filters/SearchBar';
 import filtersTags from '@/components/elements/filters/FiltersTags';
 import filtersList from '@/components/common/FiltersList';
@@ -301,6 +302,9 @@ export default {
     getDatasourceName() {
       return ESClient.fetchPredictions().then((predictions) => {
         const currentPrediction = predictions.find(p => p.id === this.filename);
+        if (!currentPrediction) {
+          return this.$router.push('error-page');
+        }
         this.datasourceName = currentPrediction.dataSource;
         this.model = currentPrediction.model;
         if (currentPrediction.kind === 'explore') {
@@ -329,5 +333,6 @@ export default {
     filtersTags,
     searchbar,
     reEmptyList,
+    biomeIsotype,
   },
 };
