@@ -82,7 +82,9 @@ class Pipeline:
 
     @classmethod
     def from_config(
-        cls, config: Union[PipelineConfiguration, dict], vocab_path: Optional[str] = None
+        cls,
+        config: Union[PipelineConfiguration, dict],
+        vocab_path: Optional[str] = None,
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object
 
@@ -262,17 +264,24 @@ class Pipeline:
         """
         return self._model.predict(*args, **kwargs)
 
-    def explain(self, *args, **kwargs) -> Dict[str, Any]:
+    def explain(self, *args, n_steps: int = 5, **kwargs) -> Dict[str, Any]:
         """Predicts over some input data with current state of the model and provides explanations of token importance.
 
         The accepted input is dynamically calculated from head.input
+
+        Parameters
+        ----------
+
+        n_steps: int
+            The number of steps for token attribution calculation (if proceed).
+            If the number of steps is less than 1, the attributions will not be calculated
 
         Returns
         -------
         predictions: `Dict[str, numpy.ndarray]`
             A dictionary containing the predictions with token importance calculated using IntegratedGradients
         """
-        return self._model.explain(*args, **kwargs)
+        return self._model.explain(*args, n_steps=n_steps, **kwargs)
 
     def save_vocabulary(self, path: str) -> None:
         """Save the pipeline vocabulary into a path"""

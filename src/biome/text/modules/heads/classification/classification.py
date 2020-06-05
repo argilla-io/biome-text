@@ -132,7 +132,9 @@ class ClassificationHead(TaskHead):
         """
         all_classes_probs = torch.zeros(
             self.num_labels,
-            device=probabilities.get_device() if probabilities.get_device() > -1 else None,
+            device=probabilities.get_device()
+            if probabilities.get_device() > -1
+            else None,
         )
         all_classes_probs[: probabilities.size()[0]] = probabilities
         sorted_indexes_by_prob = torch.argsort(

@@ -111,7 +111,7 @@ class DocumentClassification(ClassificationHead):
         return self.calculate_output(logits=logits, label=label)
 
     def explain_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance
+        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
     ) -> Dict[str, Any]:
         """Here, we must apply transformations for manage ListFields tensors shapes"""
 
@@ -141,6 +141,7 @@ class DocumentClassification(ClassificationHead):
             target=label_id,
             additional_forward_args=mask,
             return_convergence_delta=True,
+            n_steps=n_steps,
         )
         # TODO: what the attribution and deltas means
         attributions = attributions.sum(dim=3).squeeze(0)

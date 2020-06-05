@@ -78,7 +78,7 @@ class TextClassification(ClassificationHead):
         return self.calculate_output(logits=logits, label=label)
 
     def explain_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance
+        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
     ) -> Dict[str, Any]:
 
         dataset = Batch([instance])
@@ -102,6 +102,7 @@ class TextClassification(ClassificationHead):
         )
         attributions, delta = ig.attribute(
             text_embeddings,
+            n_steps=n_steps,
             target=label_id,
             additional_forward_args=mask,
             return_convergence_delta=True,
