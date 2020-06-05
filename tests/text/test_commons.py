@@ -1,11 +1,11 @@
 import pytest
 
-from biome.text.commons import InmutableDict
+from biome.text.commons import ImmutableDict
 
 
-class TestInmutableDict:
+class TestImmutableDict:
     def test_cannot_mutate(self):
-        dict = InmutableDict(a=1, b="2", c=1000.00)
+        dict = ImmutableDict(a=1, b="2", c=1000.00)
 
         with pytest.raises(TypeError):
             dict.f = "F"

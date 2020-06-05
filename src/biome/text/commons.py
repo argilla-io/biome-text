@@ -1,5 +1,5 @@
-class InmutableDict(dict):
-    """Inmutable data dictionary version"""
+class ImmutableDict(dict):
+    """Immutable version of python's dict type"""
 
     def __hash__(self):
         return id(self)
