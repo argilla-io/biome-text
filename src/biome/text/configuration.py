@@ -1,6 +1,7 @@
 import copy
 from typing import Any, Dict, List, Optional, Type, Union
 
+import yaml
 from allennlp.common import FromParams, Params
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
@@ -9,6 +10,7 @@ from biome.text.data import DataSource
 from . import vocabulary
 from .features import CharFeatures, WordFeatures
 from .featurizer import InputFeaturizer
+from .helpers import save_dict_as_yaml
 from .modules.encoders import Encoder
 from .modules.heads.task_head import TaskHeadSpec
 from .tokenizer import Tokenizer
@@ -201,6 +203,39 @@ class PipelineConfiguration(FromParams):
         self.encoder = encoder
         self.head = head
 
+    @classmethod
+    def from_yaml(cls, path: str) -> "PipelineConfiguration":
+        """Creates a pipeline configuration from a config yaml file
+
+        Parameters
+        ----------
+        path: `str`
+            The path to a YAML configuration file
+
+        Returns
+        -------
+        pipeline_configuration: `PipelineConfiguration`
+        """
+        with open(path) as yaml_file:
+            config_dict = yaml.safe_load(yaml_file)
+
+        return cls.from_dict(config_dict)
+
+    @classmethod
+    def from_dict(cls, config_dict: dict) -> "PipelineConfiguration":
+        """Creates a pipeline configuration from a config dictionary
+
+        Parameters
+        ----------
+        config_dict: `dict`
+            A configuration dictionary
+
+        Returns
+        -------
+        pipeline_configuration: `PipelineConfiguration`
+        """
+        return PipelineConfiguration.from_params(Params(config_dict))
+
     def as_dict(self) -> Dict[str, Any]:
         config = {
             "name": self.name,
@@ -213,6 +248,28 @@ class PipelineConfiguration(FromParams):
             config["encoder"] = self.encoder.config
 
         return config
+
+    def to_yaml(self, path: str):
+        """Saves the pipeline configuration to a yaml formatted file
+
+        Parameters
+        ----------
+        path : str
+            Path to the output file
+        """
+        config_dict = copy.deepcopy(self.as_dict())
+        config_dict["features"]["word"] = (
+            config_dict["features"]["word"].to_dict()
+            if config_dict["features"]["word"] is not None
+            else None
+        )
+        config_dict["features"]["char"] = (
+            config_dict["features"]["char"].to_dict()
+            if config_dict["features"]["char"] is not None
+            else None
+        )
+
+        save_dict_as_yaml(config_dict, path)
 
     def build_tokenizer(self) -> Tokenizer:
         """Build the pipeline tokenizer"""

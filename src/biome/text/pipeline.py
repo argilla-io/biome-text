@@ -10,11 +10,12 @@ from inspect import Parameter
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 import numpy
-import yaml
 from allennlp.common import Params
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from dask import dataframe as dd
+
 from biome.text import vocabulary
 from biome.text.configuration import (
     PipelineConfiguration,
@@ -23,9 +24,7 @@ from biome.text.configuration import (
 )
 from biome.text.data import DataSource
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
-from biome.text.helpers import update_method_signature, save_dict_as_yaml
-from dask import dataframe as dd
-
+from biome.text.helpers import update_method_signature
 from . import constants
 from ._configuration import (
     ElasticsearchExplore,
@@ -75,10 +74,9 @@ class Pipeline:
         pipeline: `Pipeline`
             A configured pipeline
         """
-        with open(path) as yaml_file:
-            config_dict = yaml.safe_load(yaml_file)
+        pipeline_configuration = PipelineConfiguration.from_yaml(path)
 
-        return cls.from_config(config_dict, vocab_path=vocab_path)
+        return cls.from_config(pipeline_configuration, vocab_path=vocab_path)
 
     @classmethod
     def from_config(
@@ -100,9 +98,8 @@ class Pipeline:
         pipeline: `Pipeline`
             A configured pipeline
         """
-
         if isinstance(config, dict):
-            config = PipelineConfiguration.from_params(Params(config))
+            config = PipelineConfiguration.from_dict(config)
         return _BlankPipeline(
             config=config, vocab=vocabulary.load_vocabulary(vocab_path)
         )
@@ -485,37 +482,6 @@ class Pipeline:
         )
         vocab.extend_from_vocab(instances_vocab)
         return vocab
-
-    def to_dict(self) -> dict:
-        """Returns the pipeline configuration as a dictionary
-
-        Returns
-        -------
-        pipeline_configuration : dict
-        """
-        config_dict = copy.deepcopy(self.config.as_dict())
-        config_dict["features"]["word"] = (
-            config_dict["features"]["word"].to_dict()
-            if config_dict["features"]["word"] is not None
-            else None
-        )
-        config_dict["features"]["char"] = (
-            config_dict["features"]["char"].to_dict()
-            if config_dict["features"]["char"] is not None
-            else None
-        )
-
-        return config_dict
-
-    def to_yaml(self, path: str):
-        """Saves the pipeline configuration to a yaml formatted file
-
-        Parameters
-        ----------
-        path : str
-            Path to the output file
-        """
-        save_dict_as_yaml(self.to_dict(), path)
 
 
 class _BlankPipeline(Pipeline):
