@@ -253,7 +253,8 @@ class Pipeline:
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Returns a prediction given some input data based on the current state of the model
 
-        The accepted input is dynamically calculated from `self.head.input`
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
 
         Returns
         -------
@@ -267,7 +268,8 @@ class Pipeline:
 
         The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
 
-        The accepted input is dynamically calculated from head.input
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
 
         Parameters
         ----------
@@ -360,12 +362,12 @@ class Pipeline:
         return explore_df
 
     def serve(self, port: int = 9998):
-        """Launches a REST prediction service with the current model on a specified port (default is `9998)
+        """Launches a REST prediction service with the current model
 
         Parameters
         ----------
         port: `int`
-            The port on which the prediction service will be running
+            The port on which the prediction service will be running (default: 9998)
         """
         from ._helpers import _serve
 
@@ -428,7 +430,7 @@ class Pipeline:
         """
         Returns the number of trainable parameters.
 
-        Keep in mind that this number also depends on the configuration of your trainer.
+        At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
         if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
             self.__LOGGER.warning("Your vocabulary is still empty! "

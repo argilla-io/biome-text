@@ -20,8 +20,9 @@ class Tokenizer(FromParams):
     
     Parameters
     ----------
-    lang: `str`
-        The [spaCy language model](https://spacy.io/api/tokenizer) to be used by the tokenizer (default is `en`)
+    lang
+        The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
+        For optimal performance, specify the language of your input data (default: "en").
     max_sequence_length: `int`
         Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
     max_nr_of_sentences: `int`

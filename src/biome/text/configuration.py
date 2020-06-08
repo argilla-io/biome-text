@@ -160,7 +160,8 @@ class TokenizerConfiguration(FromParams):
     Parameters
     ----------
     lang
-    skip_empty_tokens
+        The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
+        For optimal performance, specify the language of your input data (default: "en").
     max_sequence_length
     max_nr_of_sentences
     text_cleaning
@@ -170,14 +171,12 @@ class TokenizerConfiguration(FromParams):
     def __init__(
         self,
         lang: str = "en",
-        skip_empty_tokens: bool = False,
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
         segment_sentences: Union[bool, Dict[str, Any]] = False,
     ):
         self.lang = lang
-        self.skip_empty_tokens = skip_empty_tokens
         self.max_sequence_length = max_sequence_length
         self.max_nr_of_sentences = max_nr_of_sentences
         self.text_cleaning = text_cleaning
