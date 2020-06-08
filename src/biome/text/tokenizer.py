@@ -92,7 +92,9 @@ class Tokenizer(FromParams):
         the first level list will contain just one element: the tokenized text.
 
         """
-        return self.tokenize_document([text])
+        return self.tokenize_document(
+            [self.text_cleaning(text)[: self.max_sequence_length]]
+        )
 
     def _tokenize(self, text: str) -> List[Token]:
         """Tokenizes an input text string
@@ -110,9 +112,7 @@ class Tokenizer(FromParams):
         tokens: `List[Token]`
 
         """
-        return self._base_tokenizer.tokenize(
-            self.text_cleaning(text)[: self.max_sequence_length]
-        )
+        return self._base_tokenizer.tokenize(text)
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
         """ Tokenizes a document-like structure containing lists of text inputs
@@ -140,7 +140,9 @@ class Tokenizer(FromParams):
             for sentence in sentences[: self.max_nr_of_sentences]
         ]
 
-    def tokenize_record(self, record: Dict[str, Any], exclude_record_keys:bool) -> List[List[Token]]:
+    def tokenize_record(
+        self, record: Dict[str, Any], exclude_record_keys: bool
+    ) -> List[List[Token]]:
         """ Tokenizes a record-like structure containing text inputs
         
         Use this to keep information about the record-like data structure as input features to the model.
