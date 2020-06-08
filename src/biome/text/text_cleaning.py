@@ -101,4 +101,5 @@ def fix_html(text: str) -> str:
 @TextCleaningRule
 def html_to_text(text: str) -> str:
     """Extracts text from an HTML document"""
+    print(BeautifulSoup(text, "lxml").get_text())
     return BeautifulSoup(text, "lxml").get_text()
