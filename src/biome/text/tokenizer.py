@@ -92,9 +92,7 @@ class Tokenizer(FromParams):
         the first level list will contain just one element: the tokenized text.
 
         """
-        return self.tokenize_document(
-            [self.text_cleaning(text)[: self.max_sequence_length]]
-        )
+        return self.tokenize_document([text])
 
     def _tokenize(self, text: str) -> List[Token]:
         """Tokenizes an input text string
@@ -112,7 +110,7 @@ class Tokenizer(FromParams):
         tokens: `List[Token]`
 
         """
-        return self._base_tokenizer.tokenize(text)
+        return self._base_tokenizer.tokenize(text[: self.max_sequence_length])
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
         """ Tokenizes a document-like structure containing lists of text inputs
@@ -128,11 +126,11 @@ class Tokenizer(FromParams):
         -------
         tokens: `List[List[Token]]`
         """
-        sentences = document
+        sentences = [self.text_cleaning(text) for text in document]
         if self.segment_sentences:
             sentences = [
                 sentence
-                for sentences in self.segment_sentences.batch_split_sentences(document)
+                for sentences in self.segment_sentences.batch_split_sentences(sentences)
                 for sentence in sentences
             ]
         return [
