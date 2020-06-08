@@ -18,23 +18,23 @@ from .tokenizer import Tokenizer
 
 class FeaturesConfiguration(FromParams):
     """Creates a input featurizer configuration
-    
+
     This class will create a configuration for the features of the `Pipeline`.
-    
+
     Use this for defining the main features to be used by the model, namely word and character embeddings.
-    
+
     :::tip
     If you do not pass `words` and `chars` your pipeline will be setup with default word features (embedding_dim=50).
     :::
-    
+
     Example:
-    
+
     ```python
     word = WordFeatures(embedding_dim=100)
     char = CharFeatures(embedding_dim=16, encoder={'type': 'gru'})
     config = FeaturesConfiguration(word, char)
     ```
-    
+
     Parameters
     ----------
     word : `biome.text.features.WordFeatures`
@@ -102,12 +102,12 @@ class FeaturesConfiguration(FromParams):
 
     def compile_featurizer(self, tokenizer: Tokenizer) -> InputFeaturizer:
         """Creates a featurizer from the configuration object
-        
+
         :::tip
-        
+
         If you are creating configurations programmatically use this method to check that your config object contains
         a valid configuration.
-        
+
         :::
 
         Parameters

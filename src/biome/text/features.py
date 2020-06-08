@@ -69,17 +69,26 @@ class CharFeatures:
         embedding_dim: int,
         encoder: Dict[str, Any],
         dropout: float = 0.0,
+        lowercase_characters: bool = False,
         **extra_params
     ):
         self.embedding_dim = embedding_dim
         self.encoder = encoder
         self.dropout = dropout
+        self.lowercase_characters = lowercase_characters
         self.extra_params = extra_params
 
     @property
     def config(self):
         config = {
-            "indexer": {"type": "characters", "namespace": self.namespace},
+            "indexer": {
+                "type": "characters",
+                "namespace": self.namespace,
+                "character_tokenizer": {
+                    "lowercase_characters": self.lowercase_characters
+                },
+            },
+            #         "character_tokenizer": {"lowercase_characters": True},
             "embedder": {
                 "type": "character_encoding",
                 "embedding": {

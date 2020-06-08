@@ -1,6 +1,9 @@
 .esrunner
 
+# docs
 docs/docs/api/biome/text/
+docs/docs/documentation/tutorials/*
+! docs/docs/documentation/tutorials/*.ipynb
 docs/site
 **/node_modules
 **/yarn.lock

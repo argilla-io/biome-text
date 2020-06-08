@@ -53,7 +53,8 @@ class Pipeline:
     """
 
     __LOGGER = logging.getLogger(__name__)
-    __TRAINING_CACHE_DATA = "instances_data"
+    __TRAINING_CACHE_DATA = ".instances_data"
+    __DATASOURCE_YAML_FOLDER = ".datasources"
 
     _model: _ModelImpl = None
     _config: PipelineConfiguration = None
@@ -211,7 +212,7 @@ class Pipeline:
                 )
 
             # `_allennlp_configuration` needs strings
-            datasources_dir = os.path.join(output, "datasources")
+            datasources_dir = os.path.join(output, self.__DATASOURCE_YAML_FOLDER)
             training = training.to_yaml(
                 os.path.join(
                     datasources_dir, f"training_{os.path.basename(training.source)}.yml"
@@ -345,6 +346,8 @@ class Pipeline:
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
+        if not data_source.mapping:
+            data_source.mapping = self._model._default_ds_mapping
         explore_df = _explore(self, data_source, config, es_config)
         _show_explore(es_config)
 
@@ -420,6 +423,9 @@ class Pipeline:
         This number could be change before an after a training process, since trainer could fix some of them.
 
         """
+        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
+            self.__LOGGER.warning("Your vocabulary is still empty! "
+                                  "The number of trainable parameters usually depend on the size of your vocabulary.")
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property
@@ -468,11 +474,11 @@ class Pipeline:
             for source in vocab_config.sources
         ]
         instances_vocab = Vocabulary.from_instances(
-            instances=[
+            instances=(
                 instance
                 for data_source in source_paths
                 for instance in self._model.read(data_source)
-            ],
+            ),
             max_vocab_size=vocab_config.max_vocab_size,
             min_count=vocab_config.min_count,
             pretrained_files=vocab_config.pretrained_files,
