@@ -7,6 +7,8 @@ from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper
 
+from biome.text import helpers
+
 
 def _find_input_attribute(component: Type[Any]) -> str:
     """Find the properly input dimension attribute name for a given component"""
@@ -51,7 +53,7 @@ class ComponentSpec(Generic[T], FromParams):
 
     def __init__(self, **config):
         self._layer_class = self.__resolve_layer_class(config.get("type"))
-        config["type"] = config.get("type", self._layer_class.__name__)
+        config["type"] = helpers.get_full_class_name(self._layer_class)
         self._config = config or {}
 
     def input_dim(self, input_dim: int) -> "ComponentSpec":
