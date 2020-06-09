@@ -13,11 +13,13 @@
         :referer="referer"
         @queryChanged="onQueryChanged"
       ></ExploreClassifier>
+      <re-footer></re-footer>
     </div>
   </div>
 </template>
 
 <script>
+import reFooter from '@/components/elements/core/reFooter/reFooter';
 import ExploreClassifier from '@/components/ExploreClassifier';
 import mixins from './mixins';
 
@@ -28,6 +30,7 @@ export default {
   }),
   components: {
     ExploreClassifier,
+    reFooter,
   },
 };
 </script>

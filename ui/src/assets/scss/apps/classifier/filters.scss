@@ -27,7 +27,7 @@
       @extend %clearfix;
       position: relative;
       text-align: left;
-      border-bottom: 1px solid palette(grey,lines);
+      // border-bottom: 1px solid palette(grey,lines);
       &--empty {
         border-bottom: none;
       }
@@ -38,7 +38,6 @@
   &__content {
     background: palette(white);
     padding: 1em 0 0.5em 0;
-    margin-top: -1px;
     border-bottom: 1px solid palette(grey, lines);
     position: relative;
     z-index: 2;
@@ -69,7 +68,7 @@
     &__datasource {
       @include font-size(13px);
       margin-right: 1em;
-      margin-left: 1.5em;
+      margin-left: 1em;
       font-weight: 600;
       // max-width: 20vw;
       display: inline-block;
@@ -152,7 +151,9 @@
   width: 25%;
   margin-bottom: 1em;
   &:last-child {
-      margin-right: 0;
+    margin-right: 0;
+    margin-left: auto;
+    padding-right: 0;
   }
   &__show-more {
     height: 40px;
