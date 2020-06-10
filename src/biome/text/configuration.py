@@ -90,7 +90,6 @@ class FeaturesConfiguration(FromParams):
         ):
             # We simplify embedder configuration for better load an blank pipeline which create the vocab
             embedder_cfg = configuration["word"]["embedder"]
-            embedder_cfg["embedding_dim"] = 1
             if "pretrained_file" in embedder_cfg:
                 embedder_cfg["pretrained_file"] = None
         return TextFieldEmbedder.from_params(
