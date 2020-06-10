@@ -42,7 +42,6 @@ def test_load_pipeline_with_custom_head():
         source=os.path.join(TEST_RESOURCES, "resources/data/dataset_source.csv"),
         mapping={"label": "job", "text": ["education", "marital"]},
     )
-    trainer = TrainerConfiguration()
     output = mkdtemp()
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[train]))
     pipeline.train(output=output, training=train)
