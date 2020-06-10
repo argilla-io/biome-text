@@ -19,10 +19,10 @@ from .tokenizer import Tokenizer
 class FeaturesConfiguration(FromParams):
     """Configures the input features of the `Pipeline`
 
-    Use this for defining the main features to be used by the model, namely word and character embeddings.
+    Use this for defining the features to be used by the model, namely word and character embeddings.
     
     :::tip
-    If you do not pass in `word`, `char` or `extra_params`,
+    If you do not pass in either of the parameters (`word` or `char`),
     your pipeline will be setup with a default word feature (embedding_dim=50).
     :::
     
