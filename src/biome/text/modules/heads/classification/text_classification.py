@@ -127,7 +127,7 @@ class TextClassification(ClassificationHead):
     ) -> torch.Tensor:
         """Explain embeddings for single text classification task"""
         embedded_text = self.backbone.encoder.forward(embeddings, mask)
-        embedded_text = self.pooler.forward(embedded_text)
+        embedded_text = self.pooler.forward(embedded_text, mask)
         if self.feedforward:
             embedded_text = self.feedforward.forward(embedded_text)
         logits = self._classification_layer(embedded_text)
