@@ -30,8 +30,10 @@ class DataFrameReader:
 
         Parameters
         ----------
-        source: The source information.
-        kwargs: extra arguments passed to read method. Each reader should declare needed arguments
+        source:
+            The source information.
+        **kwargs:
+            extra arguments passed to read method. Each reader should declare needed arguments
 
         Returns
         -------
@@ -44,29 +46,30 @@ class DataFrameReader:
 
 
 def from_csv(path: Union[str, List[str]], **params) -> dd.DataFrame:
-    """Creates a `dask.dataframe.DataFrame` from one or several csv files.
+    """Creates a `dd.DataFrame` from one or several csv files.
+
     Includes a "path column".
 
     Parameters
     ----------
     path
         Path to files
-    params
+    **params
         Extra arguments passed on to `dask.dataframe.read_csv`
 
     Returns
     -------
-    df
-        A `dask.DataFrame`
-
+    dataframe
+        A `dd.DataFrame`
     """
     return dd.read_csv(path, include_path_column=PATH_COLUMN_NAME, **params)
 
 
 def from_json(
-    path: Union[str, List[str]], flatten: bool = True, **params
+    path: Union[str, List[str]], flatten: bool = False, **params
 ) -> dd.DataFrame:
-    """Creates a `dask.dataframe.DataFrame` from one or several json files.
+    """Creates a `dd.DataFrame` from one or several json files.
+
     Includes a "path column".
 
     Parameters
@@ -74,17 +77,17 @@ def from_json(
     path
         Path to files
     flatten
-        If true (default false), flatten json nested data
-    params
+        If true, flatten nested data (default false).
+    **params
         Extra arguments passed on to `pandas.read_json`
 
     Returns
     -------
-    df
-        A `dask.DataFrame`
+    dataframe
+        A `dd.DataFrame`
     """
 
-    def json_engine(*args, flatten: bool = False, **kwargs) -> pd.DataFrame:
+    def json_engine(*args, **kwargs) -> pd.DataFrame:
         data_frame = pd.read_json(*args, **kwargs)
         return flatten_dataframe(data_frame) if flatten else data_frame
 
@@ -92,7 +95,7 @@ def from_json(
 
     dds = []
     for path_name in path_list:
-        ddf = dd.read_json(path_name, flatten=flatten, engine=json_engine, **params)
+        ddf = dd.read_json(path_name, engine=json_engine, **params)
         ddf[PATH_COLUMN_NAME] = path_name
         dds.append(ddf)
 
@@ -100,20 +103,21 @@ def from_json(
 
 
 def from_parquet(path: Union[str, List[str]], **params) -> dd.DataFrame:
-    """Creates a `dask.dataframe.DataFrame` from one or several parquet files.
+    """Creates a `dd.DataFrame` from one or several parquet files.
+
     Includes a "path column".
 
     Parameters
     ----------
     path
         Path to files
-    params
+    **params
         Extra arguments passed on to `pandas.read_parquet`
 
     Returns
     -------
     df
-        A `dask.dataframe.DataFrame`
+        A `dd.DataFrame`
     """
     path_list = _get_file_paths(path)
 
