@@ -3,7 +3,7 @@ import os
 import os.path
 import re
 from inspect import Parameter
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 import torch
 import yaml
@@ -196,3 +196,14 @@ def get_full_class_name(the_class: Type) -> str:
         return the_class.__name__  # Avoid reporting __builtin__
     else:
         return module + "." + the_class.__name__
+
+
+def stringify(value: Any) -> Any:
+    """Creates an equivalent data structure representing data values as string"""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return {key: stringify(value) for key, value in value.items()}
+    if isinstance(value, Iterable):
+        return [stringify(v) for v in value]
+    return str(value)

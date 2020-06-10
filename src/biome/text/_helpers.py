@@ -7,6 +7,10 @@ from urllib.error import URLError
 
 import uvicorn
 from allennlp.common.util import sanitize
+from dask import dataframe as dd
+from dask_elk.client import DaskElasticClient
+from fastapi import FastAPI
+
 from biome.text import Pipeline, TrainerConfiguration, helpers
 from biome.text._configuration import (
     ElasticsearchExplore,
@@ -18,9 +22,6 @@ from biome.text.data import DataSource
 from biome.text.errors import http_error_handling
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.ui import launch_ui
-from dask import dataframe as dd
-from dask_elk.client import DaskElasticClient
-from fastapi import FastAPI
 
 
 def _serve(pipeline: Pipeline, port: int):
@@ -162,6 +163,11 @@ def _explore(
         pipeline.init_prediction_cache(config.prediction_cache)
 
     ddf_mapped = data_source.to_mapped_dataframe()
+    # Stringify input data for better elasticsearch index mapping integration,
+    # avoiding properties with multiple value types (string and long,...)
+    for column in ddf_mapped.columns:
+        ddf_mapped[column] = ddf_mapped[column].apply(helpers.stringify)
+
     # this only makes really sense when we have a predict_batch_json method implemented ...
     n_partitions = max(1, round(len(ddf_mapped) / config.batch_size))
 
@@ -170,7 +176,6 @@ def _explore(
     ddf_mapped = ddf_mapped.repartition(npartitions=n_partitions).persist()
 
     apply_func = pipeline.explain if config.explain else pipeline.predict
-
     ddf_mapped["annotation"] = ddf_mapped[pipeline.inputs].apply(
         lambda x: sanitize(apply_func(**x.to_dict())), axis=1, meta=(None, object)
     )
@@ -178,8 +183,12 @@ def _explore(
     ddf_source = (
         data_source.to_dataframe().repartition(npartitions=n_partitions).persist()
     )
+    # Keep as metadata only non used values/columns
+    ddf_source = ddf_source[
+        [c for c in ddf_source.columns if c not in ddf_mapped.columns]
+    ]
     ddf_mapped["metadata"] = ddf_source.map_partitions(
-        lambda df: sanitize(df.to_dict(orient="records"))
+        lambda df: helpers.stringify(sanitize(df.to_dict(orient="records")))
     )
 
     # TODO @dcfidalgo we could calculate base metrics here (F1, recall & precision) using dataframe.
