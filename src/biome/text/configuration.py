@@ -39,24 +39,17 @@ class FeaturesConfiguration(FromParams):
     ----------
     word : `biome.text.features.WordFeatures`
     char: `biome.text.features.CharFeatures`
-    extra_params
     """
 
     __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
 
     def __init__(
-        self,
-        word: Optional[WordFeatures] = None,
-        char: Optional[CharFeatures] = None,
-        **extra_params
+        self, word: Optional[WordFeatures] = None, char: Optional[CharFeatures] = None,
     ):
         self.word = word or None
         self.char = char or None
 
-        for k, v in extra_params.items():
-            self.__setattr__(k, v)
-
-        if not (word or char or extra_params):
+        if not (word or char):
             self.word = self.__DEFAULT_CONFIG
 
     @classmethod
@@ -70,7 +63,7 @@ class FeaturesConfiguration(FromParams):
         char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
-        return cls(word, char, **params.as_dict(), **extras)
+        return cls(word=word, char=char)
 
     @property
     def keys(self) -> List[str]:
@@ -129,10 +122,9 @@ class FeaturesConfiguration(FromParams):
 
     def _make_allennlp_config(self) -> Dict[str, Any]:
         """Creates compatible allennlp configuration"""
-        configuration = {k: v for k, v in vars(self).items() if isinstance(v, dict)}
-        configuration.update(
-            {spec.namespace: spec.config for spec in [self.word, self.char] if spec}
-        )
+        configuration = {
+            spec.namespace: spec.config for spec in [self.word, self.char] if spec
+        }
         return copy.deepcopy(configuration)
 
 
