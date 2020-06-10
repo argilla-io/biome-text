@@ -63,6 +63,7 @@ class FeaturesConfiguration(FromParams):
         char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
+        params.assert_empty("FeaturesConfiguration")
         return cls(word=word, char=char)
 
     @property
