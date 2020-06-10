@@ -22,16 +22,13 @@ class TokenClassification(TaskHead):
         backbone: ModelBackbone,
         labels: List[str],
         label_encoding: Optional[str] = "BIOUL",
-        dropout: Optional[float] = None,
+        dropout: Optional[float] = 0.0,
         feedforward: Optional[FeedForwardSpec] = None,
     ) -> None:
         super(TokenClassification, self).__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
 
-        if dropout:
-            self.dropout = torch.nn.Dropout(dropout)
-        else:
-            self.dropout = None
+        self.dropout = torch.nn.Dropout(dropout)
 
         self._feedforward: FeedForward = (
             None
@@ -63,8 +60,10 @@ class TokenClassification(TaskHead):
                 label_encoding=label_encoding,
             ),
         }
-        # loss is calculated as -log_likelihood from crf
-        self._loss = lambda logits, label, mask: -(self._crf(logits, label, mask))
+
+    def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
+        """loss is calculated as -log_likelihood from crf"""
+        return -1 * self._crf(logits, labels, mask)
 
     def featurize(
         self, text: List[str], labels: Optional[Union[List[str], List[int]]] = None
@@ -93,10 +92,7 @@ class TokenClassification(TaskHead):
         self, text: TextFieldTensors, labels: torch.IntTensor = None
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
-        embedded_text = self.backbone.forward(text, mask)
-
-        if self.dropout:
-            encoded_text = self.dropout(embedded_text)
+        embedded_text = self.dropout(self.backbone.forward(text, mask))
 
         if self._feedforward is not None:
             embedded_text = self._feedforward(embedded_text)
