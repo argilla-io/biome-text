@@ -45,7 +45,7 @@ def test_load_pipeline_with_custom_head():
     trainer = TrainerConfiguration()
     output = mkdtemp()
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[train]))
-    pipeline.train(output=output, training=train, trainer=trainer)
+    pipeline.train(output=output, training=train)
 
     trained_pl = Pipeline.from_pretrained(os.path.join(output, "model.tar.gz"))
     trained_pl.predict("Oh yeah")
