@@ -30,7 +30,7 @@ class InputFeaturizer:
 
     @property
     def has_word_features(self) -> bool:
-        """Checks if word features is already configured as part of featurization"""
+        """Checks if word features are already configured as part of the featurization"""
         return WordFeatures.namespace in self.indexer
 
     def featurize(
@@ -41,7 +41,27 @@ class InputFeaturizer:
         tokenize: bool = True,
         exclude_record_keys: bool = False,
     ) -> Instance:
-        return self(record, to_field, aggregate, tokenize,)
+        """Generates an allennlp instance from a record input.
+
+        Parameters
+        ----------
+        record: `Union[str, List[str], Dict[str, Any]]`
+            Input data
+        to_field: `str`
+            The field name in the returned instance
+        aggregate: `bool`
+            If true, the returned instance will contain a single `TextField` with all record fields;
+            If false, the instance will contain a `ListField` of `TextField`s.
+        tokenize: `bool`
+            If false, skip tokenization phase and pass record data as tokenized token list.
+        exclude_record_keys: `bool`
+            If true, excludes record keys from the output tokens in the featurization of dictionaries
+
+        Returns
+        -------
+        instance: `Instance`
+        """
+        return self(record, to_field, aggregate, tokenize, exclude_record_keys)
 
     def __call__(
         self,
@@ -51,42 +71,33 @@ class InputFeaturizer:
         tokenize: bool = True,
         exclude_record_keys: bool = False,
     ):
-
-        """
-        Generate a allennlp Instance from a record input.
-
-        If aggregate flag is enabled, the resultant instance will contains a single TextField's
-        with all record fields; otherwhise, a ListField of TextFields.
-
-        Parameters
-        ----------
-        record: `Union[str, List[str], Dict[str, Any]]`
-            input data
-        to_field: `str`
-            field name in returned instance
-        aggregate: `bool`
-            set data aggregation flag
-        tokenize: `bool`
-            If disabled, skip tokenization phase, and pass record data as tokenized token list.
-        exclude_record_keys: `bool`
-            If enabled, excludes record keys from output tokens in dictionary featurization
-
-        Returns
-        -------
-
-        instance: `Instance`
-
-        """
+        """See `self.featurize()`"""
         # TODO: Allow exclude record keys in data tokenization phase
         data = record
 
         record_tokens = (
-            self._data_tokens(data, exclude_record_keys) if tokenize else [[Token(t) for t in data]]
+            self._data_tokens(data, exclude_record_keys)
+            if tokenize
+            else [[Token(t) for t in data]]
         )
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
 
-    def _data_tokens(self, data: Any, exclude_record_keys: bool) -> List[List[Token]]:
-        """Convert data into a list of list of token depending on data type"""
+    def _data_tokens(
+        self, data: Union[str, List[str], Dict[str, Any]], exclude_record_keys: bool
+    ) -> List[List[Token]]:
+        """Converts the input data into a list of list of tokens depending on its type.
+
+        Parameters
+        ----------
+        data: Union[str, List[str], Dict[str, Any]]
+            The input data
+        exclude_record_keys: `bool`
+            If true, excludes record keys from the output tokens in the featurization of dictionaries
+
+        Returns
+        -------
+        list_of_list_of_tokens
+        """
         if isinstance(data, dict):
             return self.tokenizer.tokenize_record(data, exclude_record_keys)
         if isinstance(data, str):
@@ -96,9 +107,20 @@ class InputFeaturizer:
     def _tokens_to_field(
         self, tokens: List[List[Token]], aggregate: bool
     ) -> Union[ListField, TextField]:
-        """
-        If aggregate, generates a TextField including flatten token list. Otherwise,
-        a ListField of TextField is returned.
+        """Wraps the tokens with the indexer in one or several `TextField`s
+
+        Parameters
+        ----------
+        tokens: List[List[Token]]
+            The list of list of input tokens
+        aggregate: `bool`
+            If true, the returned instance will contain a single `TextField` with all record fields;
+            If false, the instance will contain a `ListField` of `TextField`s.
+
+        Returns
+        -------
+        field
+            `TextField` if aggregate is true, `ListField` otherwise
         """
         if aggregate:
             return TextField(

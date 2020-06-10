@@ -61,13 +61,13 @@ class Pipeline:
 
     @classmethod
     def from_yaml(cls, path: str, vocab_path: Optional[str] = None) -> "Pipeline":
-        """Creates a pipeline from a config yaml file path
+        """Creates a pipeline from a config yaml file
 
         Parameters
         ----------
-        path: `str`
+        path : `str`
             The path to a YAML configuration file
-        vocab_path: `Optional[str]`
+        vocab_path : `Optional[str]`
             If provided, the pipeline vocab will be loaded from this path
 
         Returns
@@ -85,14 +85,14 @@ class Pipeline:
         config: Union[PipelineConfiguration, dict],
         vocab_path: Optional[str] = None,
     ) -> "Pipeline":
-        """Creates a pipeline from a `PipelineConfiguration` object
+        """Creates a pipeline from a `PipelineConfiguration` object or a configuration dictionary
 
         Parameters
         ----------
         config: `Union[PipelineConfiguration, dict]`
             A `PipelineConfiguration` object or a configuration dict
         vocab_path: `Optional[str]`
-            If provided, the pipeline vocab will be loaded from this path
+            If provided, the pipeline vocabulary will be loaded from this path
 
         Returns
         -------
@@ -107,22 +107,22 @@ class Pipeline:
 
     @classmethod
     def from_pretrained(cls, path: str, **kwargs) -> "Pipeline":
-        """Loads a pipeline from a pre-trained pipeline from a model.tar.gz file path
+        """Loads a pipeline from a pre-trained pipeline providing a *model.tar.gz* file path
 
         Parameters
         ----------
-            path: `str`
-                The path to the model.tar.gz file of a pre-trained `Pipeline`
+        path: `str`
+            The path to the *model.tar.gz* file of a pre-trained `Pipeline`
 
         Returns
         -------
-            pipeline: `Pipeline`
-                A configured pipeline
+        pipeline: `Pipeline`
+            A configured pipeline
         """
         return _PreTrainedPipeline(pretrained_path=path, **kwargs)
 
     def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
-        """Initialize the prediction logging.
+        """Initializes the prediction logging.
 
         If initialized, all predictions will be logged to a file called *predictions.json* in the `output_dir`.
 
@@ -141,7 +141,7 @@ class Pipeline:
         )
 
     def init_prediction_cache(self, max_size: int) -> None:
-        """Initialize cache for input predictions
+        """Initializes the cache for input predictions
 
         Parameters
         ----------
@@ -177,8 +177,8 @@ class Pipeline:
         extend_vocab: `Optional[VocabularyConfiguration]`
             Extends vocab tokens with provided configuration
         restore: `bool`
-            If enabled, tries to read previous training status from output folder and
-            continues training process from it
+            If enabled, tries to read previous training status from the `output` folder and
+            continues the training process
         """
         trainer = trainer or TrainerConfiguration()
 
@@ -251,9 +251,10 @@ class Pipeline:
             allennlp_logger.setLevel(logging.ERROR)
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
-        """Predicts over some input data with current state of the model
+        """Returns a prediction given some input data based on the current state of the model
 
-        The accepted input is dynamically calculated from head.input
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
 
         Returns
         -------
@@ -263,27 +264,34 @@ class Pipeline:
         return self._model.predict(*args, **kwargs)
 
     def explain(self, *args, n_steps: int = 5, **kwargs) -> Dict[str, Any]:
-        """Predicts over some input data with current state of the model and provides explanations of token importance.
+        """Returns a prediction given some input data including the attribution of each token to the prediction.
 
-        The accepted input is dynamically calculated from head.input
+        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
+
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
 
         Parameters
         ----------
-
         n_steps: int
-            The number of steps for token attribution calculation (if proceed).
-            If the number of steps is less than 1, the attributions will not be calculated
+            The number of steps used when calculating the attribution of each token.
+            If the number of steps is less than 1, the attributions will not be calculated.
 
         Returns
         -------
         predictions: `Dict[str, numpy.ndarray]`
-            A dictionary containing the predictions with token importance calculated using IntegratedGradients
+            A dictionary containing the predictions and attributions
         """
         return self._model.explain(*args, n_steps=n_steps, **kwargs)
 
-    def save_vocabulary(self, path: str) -> None:
-        """Save the pipeline vocabulary into a path"""
-        self._model.vocab.save_to_files(path)
+    def save_vocabulary(self, directory: str) -> None:
+        """Saves the pipeline's vocabulary in a directory
+
+        Parameters
+        ----------
+        directory: str
+        """
+        self._model.vocab.save_to_files(directory)
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         """Creates a vocabulary an set it to pipeline"""
@@ -300,33 +308,33 @@ class Pipeline:
         force_delete: bool = True,
         **metadata,
     ) -> dd.DataFrame:
-        """Launches Explore UI for a given data source with current model
+        """Launches the Explore UI for a given data source
 
-        Running this method inside a an `IPython` notebook will try to render the UI directly in the notebook.
+        Running this method inside an `IPython` notebook will try to render the UI directly in the notebook.
 
         Running this outside a notebook will try to launch the standalone web application.
 
         Parameters
         ----------
-            data_source: `DataSource`
-                The data source or its yaml file path
-            explore_id: `Optional[str]`
-                A name or id for this explore run, useful for running and keep track of several explorations
-            es_host: `Optional[str]`
-                The URL to the Elasticsearch host for indexing predictions (default is `localhost:9200`)
-            batch_size: `int`
-                The batch size for indexing predictions (default is `500)
-            prediction_cache_size: `int`
-                The size of the cache for caching predictions (default is `0)
-            explain: `bool`
-                Whether to extract and return explanations of token importance (default is `False`)
-            force_delete: `bool`
-                Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
+        data_source: `DataSource`
+            The data source or its yaml file path
+        explore_id: `Optional[str]`
+            A name or id for this explore run, useful for running and keep track of several explorations
+        es_host: `Optional[str]`
+            The URL to the Elasticsearch host for indexing predictions (default is `localhost:9200`)
+        batch_size: `int`
+            The batch size for indexing predictions (default is `500)
+        prediction_cache_size: `int`
+            The size of the cache for caching predictions (default is `0)
+        explain: `bool`
+            Whether to extract and return explanations of token importance (default is `False`)
+        force_delete: `bool`
+            Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
 
         Returns
         -------
-            pipeline: `Pipeline`
-                A configured pipeline
+        pipeline: `Pipeline`
+            A configured pipeline
         """
         from ._helpers import (
             _explore,
@@ -354,60 +362,62 @@ class Pipeline:
         return explore_df
 
     def serve(self, port: int = 9998):
-        """Launches a REST prediction service with current model in a specified port (default is `9998)
+        """Launches a REST prediction service with the current model
 
-        # Parameters
-            port: `int`
-                The port to make available the prediction service
+        Parameters
+        ----------
+        port: `int`
+            The port on which the prediction service will be running (default: 9998)
         """
         from ._helpers import _serve
 
         self._model = self._model.eval()
         return _serve(self, port)
 
-    def set_head(self, type: Type[TaskHead], **params):
+    def set_head(self, type: Type[TaskHead], **kwargs):
         """Sets a new task head for the pipeline
 
-        Use this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
+        Call this to reuse the weights and config of a pre-trained model (e.g., language model) for a new task.
 
         Parameters
         ----------
         type: `Type[TaskHead]`
             The `TaskHead` class to be set for the pipeline (e.g., `TextClassification`
-        params: `**kwargs`
-            The `TaskHead` specific parameters (e.g., classification head needs a `pooler` layer)
+        **kwargs:
+            The `TaskHead` specific arguments (e.g., the classification head needs a `pooler` layer)
         """
 
-        self._config.head = TaskHeadSpec(type=type.__name__, **params)
+        self._config.head = TaskHeadSpec(type=type.__name__, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
     @property
-    def name(self):
-        """Gets pipeline  name"""
+    def name(self) -> str:
+        """Gets the pipeline name"""
         return self._model.name
 
     @property
     def inputs(self) -> List[str]:
-        """Gets pipeline input field names"""
+        """Gets the pipeline input field names"""
         return self._model.inputs
 
     @property
     def output(self) -> str:
-        """Gets pipeline output field names"""
+        """Gets the pipeline output field names"""
         return self._model.output
 
     @property
     def backbone(self) -> ModelBackbone:
-        """Gets pipeline backbone encoder"""
+        """Gets the model backbone of the pipeline"""
         return self.head.backbone
 
     @property
     def head(self) -> TaskHead:
-        """Gets pipeline task head"""
+        """Gets the pipeline task head"""
         return self._model.head
 
     @property
     def config(self) -> PipelineConfiguration:
+        """Gets the pipeline configuration"""
         return self._config
 
     @property
@@ -418,10 +428,9 @@ class Pipeline:
     @property
     def trainable_parameters(self) -> int:
         """
-        Return the number of trainable parameters.
+        Returns the number of trainable parameters.
 
-        This number could be change before an after a training process, since trainer could fix some of them.
-
+        At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
         if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
             self.__LOGGER.warning("Your vocabulary is still empty! "
@@ -430,11 +439,11 @@ class Pipeline:
 
     @property
     def trainable_parameter_names(self) -> List[str]:
-        """Returns the name of pipeline trainable parameters"""
+        """Returns the names of the trainable parameters in the pipeline"""
         return [name for name, p in self._model.named_parameters() if p.requires_grad]
 
     def _update_prediction_signatures(self):
-        """For interactive work-flows, fixes the predict signature to the model inputs"""
+        """Fixes the `self.predict` signature to match the model inputs for interactive work-flows"""
         new_signature = inspect.Signature(
             [
                 Parameter(name=_input, kind=Parameter.POSITIONAL_OR_KEYWORD)
@@ -464,7 +473,6 @@ class Pipeline:
         -------
         vocab: `Vocabulary`
             An extended `Vocabulary` using the provided configuration
-
         """
         source_paths = [
             source.to_yaml(
@@ -494,9 +502,8 @@ class _BlankPipeline(Pipeline):
     """
     Parameters
     ----------
-        config: `Optional[PipelineConfiguration]`
-            A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
-
+    config: `Optional[PipelineConfiguration]`
+        A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
     """
 
     def __init__(self, config: PipelineConfiguration, **extra_args):
@@ -510,7 +517,7 @@ class _BlankPipeline(Pipeline):
     def __model_from_config(
         config: PipelineConfiguration, **extra_params
     ) -> _ModelImpl:
-        """Creates a internal base model from pipeline configuration"""
+        """Creates a internal base model from a pipeline configuration"""
         return _ModelImpl.from_params(Params({"config": config}), **extra_params)
 
     def train(
@@ -582,5 +589,5 @@ class _PreTrainedPipeline(Pipeline):
 
     @property
     def trained_path(self) -> str:
-        """Path to binary file when load from binary"""
+        """Gets the path to the pretrained binary file"""
         return self._binary

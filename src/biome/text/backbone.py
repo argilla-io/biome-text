@@ -18,13 +18,13 @@ class ModelBackbone(torch.nn.Module):
 
     Attributes
     ----------
-    vocab : `Vocabulary`
+    vocab: `Vocabulary`
         The vocabulary of the pipeline
-    featurizer : `InputFeaturizer`
+    featurizer: `InputFeaturizer`
         Defines the input features of the tokens and indexes
     embedder: `TextFieldEmbedder`
-        The backbone embedder layer
-    encoder : Encoder
+        The embedding layer
+    encoder: Encoder
         Outputs an encoded sequence of the tokens
     """
 
@@ -49,7 +49,22 @@ class ModelBackbone(torch.nn.Module):
     def forward(
         self, text: TextFieldTensors, mask: torch.Tensor, num_wrapping_dims: int = 0,
     ) -> torch.Tensor:
-        """Applies embedding + encoder layers"""
+        """Applies the embedding and encoding layer
+
+        Parameters
+        ----------
+        text
+            Output of the `batch.as_tensor_dict()` method, basically the indices of the indexed tokens
+        mask
+            A mask indicating which one of the tokens are padding tokens
+        num_wrapping_dims
+            0 if `text` is the output of a `TextField`, 1 if it is the output of a `ListField`
+
+        Returns
+        -------
+        tensor
+            Encoded representation of the input
+        """
         embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
 
@@ -67,30 +82,24 @@ class ModelBackbone(torch.nn.Module):
         aggregate: bool = False,
         tokenize: bool = True,
     ) -> Instance:
-        """
-        Generate a allennlp Instance from a record input.
-
-        If aggregate flag is enabled, the resultant instance will contains a single TextField's
-        with all record fields; otherwhise, a ListField of TextFields.
+        """Generates an allennlp instance from a record input.
+        DEPRECATED: use self.featurizer instead
 
         Parameters
         ----------
         record: `Union[str, List[str], Dict[str, Any]]`
-            input data
+            Input data
         to_field: `str`
-            field name in returned instance
+            The field name in the returned instance
         aggregate: `bool`
-            set data aggregation flag
+            If true, the returned instance will contain a single `TextField` with all record fields;
+            If false, the instance will contain a `ListField` of `TextField`s.
         tokenize: `bool`
-            If disabled, skip tokenization phase, and pass record data as tokenized token list.
+            If false, skip tokenization phase and pass record data as tokenized token list.
 
         Returns
         -------
-
         instance: `Instance`
-
-        Deprecated: use self.featurizer instead
-
         """
         warnings.warn(
             "backbone.featurize is deprecated. Use instead backbone.featurizer",

@@ -166,7 +166,7 @@ def test_explain(path_to_pipeline_yaml):
     assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
 
 
-def test_record_bimpm_train(
+def test_train(
     path_to_pipeline_yaml, training_data_source, trainer_dict, tmp_path
 ):
     pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)

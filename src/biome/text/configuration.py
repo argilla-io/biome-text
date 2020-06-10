@@ -17,28 +17,29 @@ from .tokenizer import Tokenizer
 
 
 class FeaturesConfiguration(FromParams):
-    """Creates a input featurizer configuration
-
-    This class will create a configuration for the features of the `Pipeline`.
+    """Configures the input features of the `Pipeline`
 
     Use this for defining the main features to be used by the model, namely word and character embeddings.
-
+    
     :::tip
-    If you do not pass `words` and `chars` your pipeline will be setup with default word features (embedding_dim=50).
+    If you do not pass in `word`, `char` or `extra_params`,
+    your pipeline will be setup with a default word feature (embedding_dim=50).
     :::
-
+    
     Example:
-
+    
     ```python
     word = WordFeatures(embedding_dim=100)
     char = CharFeatures(embedding_dim=16, encoder={'type': 'gru'})
     config = FeaturesConfiguration(word, char)
     ```
-
+    
     Parameters
     ----------
     word : `biome.text.features.WordFeatures`
+        The word feature configurations, see `WordFeatures`
     char: `biome.text.features.CharFeatures`
+        The character feature configurations, see `CharFeatures`
     """
 
     __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
@@ -68,11 +69,21 @@ class FeaturesConfiguration(FromParams):
 
     @property
     def keys(self) -> List[str]:
-        """Gets the key features"""
+        """Gets the keys of the features"""
         return [key for key in vars(self)]
 
     def compile_embedder(self, vocab: Vocabulary) -> TextFieldEmbedder:
-        """Creates the embedder from configured features for a given vocabulary"""
+        """Creates the embedder based on the configured input features
+
+        Parameters
+        ----------
+        vocab: Vocabulary
+            The vocabulary for which to create the embedder
+
+        Returns
+        -------
+        embedder
+        """
         configuration = self._make_allennlp_config()
         if vocabulary.is_empty(vocab, namespaces=self.keys) and configuration.get(
             "word"
@@ -95,23 +106,22 @@ class FeaturesConfiguration(FromParams):
         )
 
     def compile_featurizer(self, tokenizer: Tokenizer) -> InputFeaturizer:
-        """Creates a featurizer from the configuration object
+        """Creates the featurizer based on the configured input features
 
         :::tip
-
-        If you are creating configurations programmatically use this method to check that your config object contains
-        a valid configuration.
-
+        If you are creating configurations programmatically
+        use this method to check that you provided a valid configuration.
         :::
 
         Parameters
         ----------
         tokenizer: `Tokenizer`
-            tokenizer used for this featurizer
+            Tokenizer used for this featurizer
 
         Returns
         -------
-        The configured `InputFeaturizer`
+        featurizer: `InputFeaturizer`
+            The configured `InputFeaturizer`
         """
         configuration = self._make_allennlp_config()
 
@@ -122,20 +132,29 @@ class FeaturesConfiguration(FromParams):
         return InputFeaturizer(tokenizer, indexer=indexer)
 
     def _make_allennlp_config(self) -> Dict[str, Any]:
-        """Creates compatible allennlp configuration"""
+        """Returns a configuration dict compatible with allennlp
+
+        Returns
+        -------
+        config_dict
+        """
         configuration = {
             spec.namespace: spec.config for spec in [self.word, self.char] if spec
         }
+    
         return copy.deepcopy(configuration)
 
 
 class TokenizerConfiguration(FromParams):
-    """Creates a `Tokenizer` configuration
+    """Configures the `Tokenizer`
+
+    For a description of the parameters see `biome.text.tokenizer.Tokenizer`
 
     Parameters
     ----------
     lang
-    skip_empty_tokens
+        The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
+        For optimal performance, specify the language of your input data (default: "en").
     max_sequence_length
     max_nr_of_sentences
     text_cleaning
@@ -145,14 +164,12 @@ class TokenizerConfiguration(FromParams):
     def __init__(
         self,
         lang: str = "en",
-        skip_empty_tokens: bool = False,
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
         segment_sentences: Union[bool, Dict[str, Any]] = False,
     ):
         self.lang = lang
-        self.skip_empty_tokens = skip_empty_tokens
         self.max_sequence_length = max_sequence_length
         self.max_nr_of_sentences = max_nr_of_sentences
         self.text_cleaning = text_cleaning
@@ -168,15 +185,15 @@ class PipelineConfiguration(FromParams):
 
     Parameters
     ----------
-    name : `str`
+    name: `str`
         The `name` for our pipeline
-    features : `FeaturesConfiguration`
+    features: `FeaturesConfiguration`
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
-    head : `TaskHeadSpec`
+    head: `TaskHeadSpec`
         The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
-    tokenizer : `TokenizerConfiguration`, optional
+    tokenizer: `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.
-    encoder : `Seq2SeqEncoderSpec`
+    encoder: `Seq2SeqEncoderSpec`
         The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderSpec`
     """
 
@@ -334,7 +351,7 @@ class TrainerConfiguration:
 
 
 class VocabularyConfiguration:
-    """Configures a ``Vocabulary`` before it gets created from data
+    """Configures a ``Vocabulary`` before it gets created from the data
 
     Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary``
 
@@ -342,19 +359,20 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    sources : `List[DataSource]`
+    sources: `List[DataSource]`
         Datasource to be used for data creation
-    min_count : `Dict[str, int]`, optional (default=None)
-        Minimum number of appearances of a token to be included in the vocabulary
-    max_vocab_size :  `Union[int, Dict[str, int]]`, optional (default=`None`)
-        Maximum number of tokens of the vocabulary
-    pretrained_files : `Optional[Dict[str, str]]`, optional
+    min_count: `Dict[str, int]`, optional (default=None)
+        Minimum number of appearances of a token to be included in the vocabulary.
+        The key in the dictionary refers to the namespace of the input feature.
+    max_vocab_size:  `Union[int, Dict[str, int]]`, optional (default=`None`)
+        Maximum number of tokens in the vocabulary
+    pretrained_files: `Optional[Dict[str, str]]`, optional
         Pretrained files with word vectors
-    only_include_pretrained_words : `bool`, optional (default=False)
+    only_include_pretrained_words: `bool`, optional (default=False)
         Only include tokens present in pretrained_files
-    tokens_to_add : `Dict[str, int]`, optional
+    tokens_to_add: `Dict[str, int]`, optional
         A list of tokens to add to the vocabulary, even if they are not present in the ``sources``
-    min_pretrained_embeddings : ``Dict[str, int]``, optional
+    min_pretrained_embeddings: ``Dict[str, int]``, optional
         Minimum number of lines to keep from pretrained_files, even for tokens not appearing in the sources.
     """
 

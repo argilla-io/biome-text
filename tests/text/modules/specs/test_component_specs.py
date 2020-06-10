@@ -1,5 +1,6 @@
+from biome.text import helpers
 from biome.text.modules.heads.classification.text_classification import (
-    TextClassificationSpec,
+    TextClassification, TextClassificationSpec,
 )
 
 
@@ -18,4 +19,4 @@ def test_component_spec_config_with_type():
     )
 
     assert "type" in head.config
-    assert head.config["type"] == "TextClassification"
+    assert head.config["type"] == helpers.get_full_class_name(TextClassification)

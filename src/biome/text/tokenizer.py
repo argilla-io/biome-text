@@ -9,18 +9,20 @@ from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
 
 
 class Tokenizer(FromParams):
-    """Pre-processes and tokenizes input text
+    """Pre-processes and tokenizes the input text
     
     Transforms inputs (e.g., a text, a list of texts, etc.) into structures containing `allennlp.data.Token` objects.
     
     Use its arguments to configure the first stage of the pipeline (i.e., pre-processing a given set of text inputs.)
     
-    Use methods for tokenizing depending on the shape of inputs (e.g., records with multiple fields, sentences lists).
+    Use methods for tokenization depending on the shape of the inputs
+    (e.g., records with multiple fields, sentences lists).
     
-    # Parameters
-    lang: `str`
-        The `spaCy` language to be used by the tokenizer (default is `en`)
-    skip_empty_tokens: `bool`
+    Parameters
+    ----------
+    lang
+        The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
+        For optimal performance, specify the language of your input data (default: "en").
     max_sequence_length: `int`
         Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
     max_nr_of_sentences: `int`
@@ -34,11 +36,11 @@ class Tokenizer(FromParams):
     end_tokens: `Optional[List[str]]`
         A list of token strings to the sequence after tokenized input text.
     """
+    # TODO: Check if it is possible to pass in a `TokenizerConfiguration` to avoid duplication of arguments
 
     def __init__(
         self,
         lang: str = "en",
-        skip_empty_tokens: bool = False,  # TODO(David): Check this param for the new API
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[TextCleaning] = None,
@@ -54,7 +56,6 @@ class Tokenizer(FromParams):
 
         self.lang = lang
         self.segment_sentences = segment_sentences
-        self.skip_empty_tokens = skip_empty_tokens
         self.max_nr_of_sentences = max_nr_of_sentences
         self.max_sequence_length = max_sequence_length
         self.text_cleaning = text_cleaning or DefaultTextCleaning()
