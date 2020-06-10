@@ -2,7 +2,6 @@ import inspect
 import os
 import os.path
 import re
-import tempfile
 from inspect import Parameter
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
@@ -181,3 +180,19 @@ def save_dict_as_yaml(dictionary: dict, path: str) -> str:
         yaml.dump(dictionary, yml_file, default_flow_style=False, allow_unicode=True)
 
     return path
+
+
+def get_full_class_name(the_class: Type) -> str:
+    """Given a type class return the full qualified class name """
+    # o.__module__ + "." + o.__class__.__qualname__ is an example in
+    # this context of H.L. Mencken's "neat, plausible, and wrong."
+    # Python makes no guarantees as to whether the __module__ special
+    # attribute is defined, so we take a more circumspect approach.
+    # Alas, the module name is explicitly excluded from __qualname__
+    # in Python 3.
+
+    module = the_class.__module__
+    if module is None or module == str.__class__.__module__:
+        return the_class.__name__  # Avoid reporting __builtin__
+    else:
+        return module + "." + the_class.__name__
