@@ -29,9 +29,10 @@ class TextCleaningRule:
         return text.strip()
     ```
     
-    # Parameters
-        func: `Callable[[str]`
-            The function to register
+    Parameters
+    ----------
+    func: `Callable[[str]`
+        The function to register
     """
 
     __REGISTERED_RULES = {}
@@ -51,9 +52,10 @@ class DefaultTextCleaning(TextCleaning):
 
     Each rule is a simple python function that receives and returns a `str`.
     
-    # Parameters
-        rules: `List[str]`
-            A list of registered rule method names to be applied to text inputs
+    Parameters
+    ----------
+    rules: `List[str]`
+        A list of registered rule method names to be applied to text inputs
     """
 
     def __init__(self, rules: List[str] = None):

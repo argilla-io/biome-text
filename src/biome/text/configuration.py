@@ -19,10 +19,10 @@ from .tokenizer import Tokenizer
 class FeaturesConfiguration(FromParams):
     """Configures the input features of the `Pipeline`
 
-    Use this for defining the main features to be used by the model, namely word and character embeddings.
+    Use this for defining the features to be used by the model, namely word and character embeddings.
     
     :::tip
-    If you do not pass in `word`, `char` or `extra_params`,
+    If you do not pass in either of the parameters (`word` or `char`),
     your pipeline will be setup with a default word feature (embedding_dim=50).
     :::
     
@@ -40,25 +40,17 @@ class FeaturesConfiguration(FromParams):
         The word feature configurations, see `WordFeatures`
     char: `biome.text.features.CharFeatures`
         The character feature configurations, see `CharFeatures`
-    **extra_params
-        Parameters following the AllenNLP schema of its json configurations
     """
 
     __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
 
     def __init__(
-        self,
-        word: Optional[WordFeatures] = None,
-        char: Optional[CharFeatures] = None,
-        **extra_params
+        self, word: Optional[WordFeatures] = None, char: Optional[CharFeatures] = None,
     ):
         self.word = word or None
         self.char = char or None
 
-        for k, v in extra_params.items():
-            self.__setattr__(k, v)
-
-        if not (word or char or extra_params):
+        if not (word or char):
             self.word = self.__DEFAULT_CONFIG
 
     @classmethod
@@ -72,7 +64,8 @@ class FeaturesConfiguration(FromParams):
         char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
-        return cls(word, char, **params.as_dict(), **extras)
+        params.assert_empty("FeaturesConfiguration")
+        return cls(word=word, char=char)
 
     @property
     def keys(self) -> List[str]:
@@ -145,10 +138,10 @@ class FeaturesConfiguration(FromParams):
         -------
         config_dict
         """
-        configuration = {k: v for k, v in vars(self).items() if isinstance(v, dict)}
-        configuration.update(
-            {spec.namespace: spec.config for spec in [self.word, self.char] if spec}
-        )
+        configuration = {
+            spec.namespace: spec.config for spec in [self.word, self.char] if spec
+        }
+    
         return copy.deepcopy(configuration)
 
 
