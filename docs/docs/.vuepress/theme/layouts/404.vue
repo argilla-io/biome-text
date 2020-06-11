@@ -13,7 +13,7 @@
       It looks like we’ve been split up</p>
       <h1 class="error__title">Error 404</h1>
       <p class="error__subtitle">{{ getMsg() }}</p>
-      <RouterLink to="/">
+      <RouterLink to="/documentation">
         Take me home
       </RouterLink>
     </div>
@@ -49,10 +49,7 @@
 
 <script>
 const msgs = [
-  `There's nothing here.`,
-  `How did we get here?`,
   `The page you’re looking for can’t be found.`,
-  `Looks like we've got some broken links.`
 ]
 
 export default {
@@ -84,6 +81,7 @@ export default {
     position absolute 
     width 100%
     bottom 0
+    pointer-events none
     svg 
       width 100%
       height auto
