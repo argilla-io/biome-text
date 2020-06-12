@@ -26,8 +26,8 @@ module.exports = {
     '@vuepress/back-to-top'
   ],
   themeConfig: {
-    sidebarDepth: 4,
-    displayAllHeaders: true,
+    sidebarDepth: 1,
+    displayAllHeaders: false,
     searchPlaceholder: 'Search',
     nav: [
       { text: 'API', link: '/api/'},
