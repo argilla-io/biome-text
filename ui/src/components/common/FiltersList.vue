@@ -4,7 +4,7 @@
       <div class="filter" v-if="isFilterAvailable(goldFilter)" :class="[predictedFilter.values.length ? '' : 'disabled', filtersStatus.gold ? '--selected' : '']">
         <div>
           <select-filter
-            name="Labelled as"
+            name="Annotated as"
             :filter="goldFilter"
             @filter-changed="onFilterChanged"
             @apply="onApplyOn(goldFilter.id)"
@@ -15,7 +15,7 @@
         <div>
           <select-filter
             :class="showLabelledAs ? '' : 'disabled-filter'"
-            name="Labelled as"
+            name="Annotated as"
             :filter="feedbackStatusFilter"
             @filter-changed="onFilterChanged"
             @apply="onApplyOn(feedbackStatusFilter.id)"

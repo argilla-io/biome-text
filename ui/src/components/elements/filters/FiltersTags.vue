@@ -38,7 +38,7 @@ export default {
     },
     tagKey(key) {
       if (key === 'gold' || key === 'feedbackStatus') {
-        return 'Labelled as';
+        return 'Annotated as';
       }
       if (key === 'predicted') {
         return 'Predicted as';
