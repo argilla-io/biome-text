@@ -77,7 +77,7 @@ class FeaturesConfiguration(FromParams):
 
         Parameters
         ----------
-        vocab: Vocabulary
+        vocab: `Vocabulary`
             The vocabulary for which to create the embedder
 
         Returns
