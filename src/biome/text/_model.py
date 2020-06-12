@@ -68,7 +68,8 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
     def __init__(self, name: str, head: TaskHead):
         allennlp.models.Model.__init__(self, head.backbone.vocab)
         allennlp.data.DatasetReader.__init__(self, lazy=True)
-
+        
+        self.PREDICTION_FILE_NAME = 'predictions.json'
         self._head = None
         self.name = name
         self.set_head(head)
