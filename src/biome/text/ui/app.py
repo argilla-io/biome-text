@@ -3,7 +3,7 @@ import os
 from logging import Logger
 
 import requests
-from flask import (Flask, Response, jsonify, request, send_file, send_from_directory)
+from flask import Flask, Response, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -18,8 +18,12 @@ def make_app(es_host: str, statics_dir: str) -> Flask:
 
     logger: Logger = app.logger
 
-    @app.route("/elastic/")  # Fixes the `WARNING:biome.text.ui.app:Path elastic/ not found` message"
-    @app.route("/elastic/<path:path>", methods=["GET", "OPTIONS", "POST", "PUT", "DELETE"])
+    @app.route(
+        "/elastic/"
+    )  # Fixes the `WARNING:biome.text.ui.app:Path elastic/ not found` message"
+    @app.route(
+        "/elastic/<path:path>", methods=["GET", "OPTIONS", "POST", "PUT", "DELETE"]
+    )
     def elasticsearch_proxy_handler(path: str = "") -> Response:
         """Handles elasticsearch requests"""
         es_url = f"{es_host}/{path}"

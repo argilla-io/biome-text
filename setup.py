@@ -93,12 +93,12 @@ if __name__ == "__main__":
             "flatdict~=4.0.0",
             "s3fs~=0.4.0",
             "captum~=0.2.0",
-            "ipywidgets~=7.5.1"
+            "ipywidgets~=7.5.1",
         ],
         extras_require={
             "testing": [
-                "pytest",
-                "pytest-cov",
+                "pytest~=5.4.3",
+                "pytest-cov~=2.10.0",
                 "pytest-pylint~=0.14.0",
                 "black",
                 "GitPython",

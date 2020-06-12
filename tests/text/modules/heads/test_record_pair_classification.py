@@ -166,9 +166,7 @@ def test_explain(path_to_pipeline_yaml):
     assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
 
 
-def test_train(
-    path_to_pipeline_yaml, training_data_source, trainer_dict, tmp_path
-):
+def test_train(path_to_pipeline_yaml, training_data_source, trainer_dict, tmp_path):
     pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))

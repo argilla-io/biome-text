@@ -433,8 +433,10 @@ class Pipeline:
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
         if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
-            self.__LOGGER.warning("Your vocabulary is still empty! "
-                                  "The number of trainable parameters usually depend on the size of your vocabulary.")
+            self.__LOGGER.warning(
+                "Your vocabulary is still empty! "
+                "The number of trainable parameters usually depend on the size of your vocabulary."
+            )
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property

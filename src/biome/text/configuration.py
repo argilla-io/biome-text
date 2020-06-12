@@ -141,7 +141,7 @@ class FeaturesConfiguration(FromParams):
         configuration = {
             spec.namespace: spec.config for spec in [self.word, self.char] if spec
         }
-    
+
         return copy.deepcopy(configuration)
 
 

@@ -14,9 +14,7 @@ def test_text_classifier_tutorial(tmp_path):
     notebook = load_notebook(str(notebook_path))
     for cell in notebook["cells"]:
         if cell["source"].startswith("!pip install"):
-            cell["source"] = re.sub(
-                r"!pip install", r"#!pip install", cell["source"]
-            )
+            cell["source"] = re.sub(r"!pip install", r"#!pip install", cell["source"])
         if cell["source"].startswith("trainer_config ="):
             cell["source"] = re.sub(
                 r"num_epochs=[0-9][0-9]?", r"num_epochs=1", cell["source"]

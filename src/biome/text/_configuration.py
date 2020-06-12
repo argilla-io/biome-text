@@ -76,12 +76,7 @@ class ElasticsearchExplore:
         self.client.indices.create(
             index=constants.BIOME_METADATA_INDEX,
             body={
-                "settings": {
-                    "index": {
-                        "number_of_shards": 1,
-                        "number_of_replicas": 0,
-                    }
-                }
+                "settings": {"index": {"number_of_shards": 1, "number_of_replicas": 0,}}
             },
             params=dict(ignore=400),
         )

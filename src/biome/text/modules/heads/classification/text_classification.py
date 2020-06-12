@@ -59,7 +59,7 @@ class TextClassification(ClassificationHead):
             text,
             to_field=self.forward_arg_name,
             aggregate=True,
-            exclude_record_keys=True
+            exclude_record_keys=True,
         )
         return self.add_label(instance, label, to_field=self.label_name)
 

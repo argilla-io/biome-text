@@ -1,6 +1,7 @@
 from biome.text import helpers
 from biome.text.modules.heads.classification.text_classification import (
-    TextClassification, TextClassificationSpec,
+    TextClassification,
+    TextClassificationSpec,
 )
 
 
