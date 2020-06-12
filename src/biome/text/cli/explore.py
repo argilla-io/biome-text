@@ -5,6 +5,7 @@ from click import Path
 
 from biome.text import Pipeline
 from biome.text.constants import DEFAULT_ES_HOST
+from biome.text.data import DataSource
 from biome.text.environment import ES_HOST
 
 
@@ -23,5 +24,5 @@ def _sanizite_index(index_name: str) -> str:
 @click.option("-es", "--es-host", "es_host", envvar=ES_HOST, default=DEFAULT_ES_HOST)
 def explore(pipeline_path: str, data_source: str, explain: bool, es_host: str) -> None:
     Pipeline.from_pretrained(pipeline_path).explore(
-        data_source=data_source, es_host=es_host, explain=explain
+        data_source=DataSource.from_yaml(data_source), es_host=es_host, explain=explain
     )
