@@ -16,7 +16,7 @@
           type="text"
           v-model="searchText"
           autofocus
-          placeholder="Search label..."
+          placeholder="Search..."
         >
         <ul v-if="!multilevel">
           <li v-for="option in filterOptions(filter.values, searchText)" :key="option.id">
@@ -41,7 +41,7 @@
                 type="text"
                 v-model="searchTextValue"
                 autofocus
-                placeholder="Search label..."
+                placeholder="Search..."
               >
               <ul>
                 <li :class="[filtersStatus[option] ? '--selected' : '']" v-for="secondOption in filterOptions(filter[option].values, searchTextValue)" :key="secondOption.index">

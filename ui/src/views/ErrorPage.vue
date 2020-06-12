@@ -10,13 +10,7 @@
       <p class="error__subtitle">Here are some helpful links instead:</p>
       <ul class="error__links">
         <li>
-          <a href="https://www.recogn.ai/biome-text/help/">Help <svgicon name="external" color="#4A4A4A"></svgicon></a>
-        </li>
-        <li>
           <a href="https://www.recogn.ai/biome-text/documentation/">Documentation <svgicon name="external" color="#4A4A4A"></svgicon></a>
-        </li>
-        <li>
-          <a href="https://www.recogn.ai/biome-text/documentation/user-guides/01.training.html">Exploration User guide <svgicon name="external" color="#4A4A4A"></svgicon></a>
         </li>
       </ul>
     </div>
@@ -39,10 +33,12 @@
           </g>
       </svg>
     </div>
+    <re-footer></re-footer>
   </div>
 </template>
 
 <script>
+import reFooter from '@/components/elements/core/reFooter/reFooter';
 import biome from '@/components/elements/core/logos/biome';
 import '@/assets/iconsfont/external';
 
@@ -52,6 +48,7 @@ export default {
   }),
   components: {
     biome,
+    reFooter,
   },
 };
 </script>
@@ -124,6 +121,12 @@ export default {
     .svg-icon {
       margin-left: 0.5em
     }
+  }
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 }
 #eye-1 {
