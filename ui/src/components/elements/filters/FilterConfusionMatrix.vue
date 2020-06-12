@@ -210,7 +210,6 @@ export default {
       this.maximizeMatrixSize();
     },
     minimizeScreeen() {
-      this.confusionExpanded = false;
       this.minimizeMatrixSize();
       this.autosize.type = 'none';
     },
