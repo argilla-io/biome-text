@@ -1,9 +1,11 @@
 import copy
 import inspect
+import logging
 import time
 from threading import Thread
 from typing import Any, Dict, List
 from urllib.error import URLError
+from urllib.parse import urlparse
 
 import uvicorn
 from allennlp.common.util import sanitize
@@ -18,11 +20,13 @@ from biome.text._configuration import (
     TrainConfiguration,
     _ModelImpl,
 )
+from biome.text.constants import EXPLORE_APP_ENDPOINT
 from biome.text.data import DataSource
 from biome.text.errors import http_error_handling
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.ui import launch_ui
 
+_LOGGER = logging.getLogger(__name__)
 
 def _serve(pipeline: Pipeline, port: int):
     """Serves an pipeline as rest api"""
@@ -233,7 +237,7 @@ def _show_explore(elasticsearch: ElasticsearchExplore) -> None:
         except URLError:
             return False
 
-    def launch_ui_app() -> Thread:
+    def launch_ui_app(ui_port:int) -> Thread:
         process = Thread(
             target=launch_ui,
             name="ui",
@@ -255,13 +259,19 @@ def _show_explore(elasticsearch: ElasticsearchExplore) -> None:
 
         webbrowser.open(url)
 
-    ui_port = 9999
     waiting_seconds = 1
-    url = f"http://localhost:{ui_port}/{elasticsearch.es_index}"
+    url = f"{EXPLORE_APP_ENDPOINT}/{elasticsearch.es_index}"
 
     if not is_service_up(url):
-        launch_ui_app()
-
+        port = urlparse(EXPLORE_APP_ENDPOINT).port
+        if not port:
+            _LOGGER.warning(
+                "Cannot start explore application. "
+                "Please, be sure you can reach %s from your browser "
+                "or configure 'BIOME_EXPLORE_ENDPOINT' environment variable", url
+            )
+            return
+        launch_ui_app(port)
     time.sleep(waiting_seconds)
     show_func = (
         show_notebook_explore
