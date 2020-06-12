@@ -38,9 +38,12 @@
       </template>
       <template #bottom>
         <footer class="footer">
-          <a href="https://www.recogn.ai/" target="_blank">
-            <img class="footer__img" :src="$withBase('/assets/img/recognai.png')"></img>
-          </a>
+          <div>
+            Maintained by
+            <a href="https://www.recogn.ai/" target="_blank">
+              <img width="70px" class="footer__img" :src="$withBase('/assets/img/recognai.png')"></img>
+            </a>
+          </div>
         </footer>
         <slot name="page-bottom" />
       </template>
@@ -154,3 +157,18 @@ export default {
   }
 }
 </script>
+<style lang="stylus" scoped>
+  .footer
+    padding 2.5rem
+    // border-top 1px solid $borderColor
+    text-align center
+    color lighten($textColor, 25%)
+    font-size 12px
+    & > div
+      margin: auto
+      display flex
+      align-items center
+      width 160px
+    img 
+     margin-left 1em
+</style>
