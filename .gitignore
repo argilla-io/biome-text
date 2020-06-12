@@ -3,7 +3,8 @@
 # docs
 docs/docs/api/biome/text/
 docs/docs/documentation/tutorials/*
-! docs/docs/documentation/tutorials/*.ipynb
+!docs/docs/documentation/tutorials/*.ipynb
+!docs/docs/documentation/tutorials/img/
 docs/site
 **/node_modules
 **/yarn.lock
