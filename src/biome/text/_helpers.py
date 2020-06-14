@@ -28,6 +28,7 @@ from biome.text.ui import launch_ui
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def _serve(pipeline: Pipeline, port: int):
     """Serves an pipeline as rest api"""
 
@@ -237,7 +238,7 @@ def _show_explore(elasticsearch: ElasticsearchExplore) -> None:
         except URLError:
             return False
 
-    def launch_ui_app(ui_port:int) -> Thread:
+    def launch_ui_app(ui_port: int) -> Thread:
         process = Thread(
             target=launch_ui,
             name="ui",
@@ -268,11 +269,13 @@ def _show_explore(elasticsearch: ElasticsearchExplore) -> None:
             _LOGGER.warning(
                 "Cannot start explore application. "
                 "Please, be sure you can reach %s from your browser "
-                "or configure 'BIOME_EXPLORE_ENDPOINT' environment variable", url
+                "or configure 'BIOME_EXPLORE_ENDPOINT' environment variable",
+                url,
             )
             return
         launch_ui_app(port)
     time.sleep(waiting_seconds)
+    _LOGGER.info("You can access to your data exploration from this url: %s", url)
     show_func = (
         show_notebook_explore
         if helpers.is_running_on_notebook()
