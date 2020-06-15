@@ -6,10 +6,8 @@ from gevent.pywsgi import WSGIServer
 from biome.text.environment import ES_HOST
 from .app import make_app
 
-# TODO centralize configuration
-logging.basicConfig(level=logging.INFO)
-
 __LOGGER = logging.getLogger(__name__)
+__LOGGER.setLevel(logging.INFO)
 
 STATICS_DIR = os.path.join(os.path.dirname(__file__), "webapp")
 
