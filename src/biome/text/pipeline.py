@@ -302,7 +302,7 @@ class Pipeline:
         data_source: DataSource,
         explore_id: Optional[str] = None,
         es_host: Optional[str] = None,
-        batch_size: int = 500,
+        batch_size: int = 50,
         prediction_cache_size: int = 0,
         explain: bool = False,
         force_delete: bool = True,
