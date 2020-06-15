@@ -36,3 +36,42 @@ def test_text_classifier_tutorial(tmp_path):
     # test adapted notebook
     fixture = NBRegressionFixture(exec_timeout=100)
     fixture.check(str(mod_notebook_path))
+
+
+def test_slot_filling_tutorial(tmp_path):
+    notebook_path = (
+        Path(TUTORIALS_PATH) / "Training_a_sequence_tagger_for_Slot_Filling.ipynb"
+    )
+
+    # adapt notebook to CI (make its execution quicker + comment lines)
+    notebook = load_notebook(str(notebook_path))
+    for cell in notebook["cells"]:
+        if cell["source"].startswith("!pip install"):
+            cell["source"] = re.sub(r"!pip install", r"#!pip install", cell["source"])
+        if cell["source"].startswith("train_ds ="):
+            cell["source"] = re.sub(
+                r"token_classifier/train.json",
+                r"token_classifier/test.json",
+                cell["source"],
+            )
+        if cell["source"].startswith("pipeline_dict ="):
+            cell["source"] = re.sub(
+                r"https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip",
+                r"https://biome-tutorials-data.s3-eu-west-1.amazonaws.com/token_classifier/wiki-news-300d-1M.head.vec",
+                cell["source"],
+            )
+        if cell["source"].startswith("trainer_config ="):
+            cell["source"] = re.sub(
+                r"TrainerConfiguration\(\)",
+                r"TrainerConfiguration(num_epochs=1)",
+                cell["source"],
+            )
+
+    # dump adapted notebook
+    mod_notebook_path = tmp_path / notebook_path.name
+    with mod_notebook_path.open("w") as file:
+        file.write(str(dump_notebook(notebook)))
+
+    # test adapted notebook
+    fixture = NBRegressionFixture(exec_timeout=100)
+    fixture.check(str(mod_notebook_path))
