@@ -48,12 +48,6 @@ def test_slot_filling_tutorial(tmp_path):
     for cell in notebook["cells"]:
         if cell["source"].startswith("!pip install"):
             cell["source"] = re.sub(r"!pip install", r"#!pip install", cell["source"])
-        if cell["source"].startswith("train_ds ="):
-            cell["source"] = re.sub(
-                r"token_classifier/train.json",
-                r"token_classifier/test.json",
-                cell["source"],
-            )
         if cell["source"].startswith("pipeline_dict ="):
             cell["source"] = re.sub(
                 r"https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip",
@@ -64,6 +58,12 @@ def test_slot_filling_tutorial(tmp_path):
             cell["source"] = re.sub(
                 r"TrainerConfiguration\(\)",
                 r"TrainerConfiguration(num_epochs=1)",
+                cell["source"],
+            )
+        if cell["source"].startswith("pl.train("):
+            cell["source"] = re.sub(
+                r"training=train_ds",
+                r"training=valid_ds",
                 cell["source"],
             )
 
