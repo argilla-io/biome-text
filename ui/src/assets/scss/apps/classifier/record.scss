@@ -76,4 +76,16 @@
     font-weight: 600;
     background: palette(purple, verylight);
   }
+  ::v-deep table {
+    width: calc(100% - 3em) !important;
+    max-width: 800px;
+    display: block;
+    overflow: scroll;
+  }
+  ::v-deep div.WordSection1 {
+    word-break: break-all;
+    p {
+      font-family: initial !important
+    }
+  }
 }

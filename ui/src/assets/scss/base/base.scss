@@ -37,6 +37,13 @@ body {
 .biome-app {
   background: palette(grey, light);
   min-height: 100vh;
+  p {
+    font-size: 13px;
+    font-family: $ff;
+  }
+  ul {
+    margin: auto;
+  }
 }
 
 a,
