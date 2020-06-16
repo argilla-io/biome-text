@@ -6,11 +6,11 @@ from typing import Tuple
 import numpy as np
 import pytest
 import torch
-import yaml
+
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
-from biome.text.data import DataSource
-from biome.text.configuration import WordFeatures
 from biome.text.configuration import CharFeatures
+from biome.text.configuration import WordFeatures
+from biome.text.data import DataSource
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def test_text_classification(
     with (output / "metrics.json").open() as file:
         metrics = json.load(file)
 
-    assert metrics["training_loss"] == pytest.approx(0.767, abs=0.003)
+    assert metrics["training_loss"] == pytest.approx(0.642, abs=0.003)
 
     # test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
