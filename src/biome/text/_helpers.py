@@ -195,10 +195,6 @@ def _explore(
         lambda df: helpers.stringify(sanitize(df.to_dict(orient="records")))
     )
 
-    # TODO @dcfidalgo we could calculate base metrics here (F1, recall & precision) using dataframe.
-    #  And include as part of explore metadata
-    #  Does it's simple???
-
     ddf = DaskElasticClient(
         host=elasticsearch.es_host, retry_on_timeout=True, http_compress=True
     ).save(ddf_mapped, index=elasticsearch.es_index, doc_type=elasticsearch.es_doc)
@@ -208,7 +204,7 @@ def _explore(
         {
             **(config.metadata or {}),
             "datasource": data_source.source,
-            # TODO this should change when ui is normalized (action detail and action link naming)
+            # This should change when ui is normalized (action detail and action link naming)
             "explore_name": elasticsearch.es_index,
             "model": pipeline.name,
             "columns": ddf.columns.values.tolist(),
