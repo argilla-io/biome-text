@@ -164,7 +164,6 @@ def _explore(
 
     """
     if config.prediction_cache > 0:
-        # TODO: do it
         pipeline.init_prediction_cache(config.prediction_cache)
 
     ddf_mapped = data_source.to_mapped_dataframe()
@@ -209,7 +208,7 @@ def _explore(
         {
             **(config.metadata or {}),
             "datasource": data_source.source,
-            # TODO this should change when ui is normalized (action detail and action link naming)F
+            # TODO this should change when ui is normalized (action detail and action link naming)
             "explore_name": elasticsearch.es_index,
             "model": pipeline.name,
             "columns": ddf.columns.values.tolist(),

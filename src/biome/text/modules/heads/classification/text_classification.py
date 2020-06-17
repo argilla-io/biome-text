@@ -107,7 +107,6 @@ class TextClassification(ClassificationHead):
             additional_forward_args=mask,
             return_convergence_delta=True,
         )
-        # TODO: what the attribution and deltas means
         attributions = attributions.sum(dim=2).squeeze(0)
         attributions = attributions / torch.norm(attributions)
         attributions = attributions.detach().numpy()
@@ -130,9 +129,7 @@ class TextClassification(ClassificationHead):
         embedded_text = self.pooler.forward(embedded_text, mask)
         if self.feedforward:
             embedded_text = self.feedforward.forward(embedded_text)
-        logits = self._classification_layer(embedded_text)
-        # TODO: review what kind of information we need to pass
-        return logits
+        return self._classification_layer(embedded_text)
 
 
 class TextClassificationConfiguration(ComponentConfiguration[TextClassification]):
