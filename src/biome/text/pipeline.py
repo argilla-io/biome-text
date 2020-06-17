@@ -31,7 +31,7 @@ from ._configuration import (
 )
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .modules.heads import TaskHead, TaskHeadSpec
+from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
 
 try:
