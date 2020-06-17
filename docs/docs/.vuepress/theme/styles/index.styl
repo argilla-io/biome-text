@@ -1,8 +1,13 @@
+@require "./code-colors.styl"
 
 body
   font-family: $primaryFontFamily 
 h1, h2, h3, h4 
   font-family: $secondaryFontFamily 
+h2
+  border-bottom none
+dd, dt
+  line-height 1.7em 
 pre.title
     line-height: 0 !important
     padding: 0 !important
@@ -11,9 +16,47 @@ pre.title
     overflow: visible !important
     h2, h3
       margin-bottom: 0 !important
+.badge.green, .badge.tip
+  background: $accentColor
+.custom-block.danger, .custom-block.tip, .custom-block.warning
+  border-width 1px !important
+  border-style solid !important
+  background #F6F6F6 !important
+  color $textColor !important
+.custom-block.danger
+  border-color $red
+  .custom-block-title
+    color $red
+.custom-block.tip
+  border-color $green
+  .custom-block-title
+    color $green
+.custom-block.warning
+  border-color $yellow
+  .custom-block-title
+    color $yellow
+.table-of-contents
+  ul
+    list-style none
+  li 
+    padding-left 1em
+    position relative
+  li:before
+    content ""
+    height 4px
+    width 4px
+    border-radius 50%
+    position absolute
+    background $accentColor
+    padding 1px
+    margin-right 0.5em
+    left 0
+    top 12px
 .no-sidebar
   .navbar
-    display: none;
+    display: none
+.page p img 
+  border 1px solid $borderColor
 .sidebar
   background: $sidebarBgColor
   &__link
@@ -22,7 +65,7 @@ pre.title
       display: block !important
   &__img
     width auto
-    max-width 230px
+    max-width 180px
     margin: 2em auto
     display: block
   &-heading 
@@ -100,7 +143,7 @@ pre.title
       position: relative !important
       right: auto !important
       max-width: 740px !important;
-      margin: 1.7em auto 0.7em 4.5em;
+      margin: 1.4em auto 0.7em 4.5em;
   .page-nav
     margin-left: 4.5rem !important  
   .sidebar 
