@@ -90,7 +90,6 @@ class FeaturesConfiguration(FromParams):
         ):
             # We simplify embedder configuration for better load an blank pipeline which create the vocab
             embedder_cfg = configuration["word"]["embedder"]
-            embedder_cfg["embedding_dim"] = 1
             if "pretrained_file" in embedder_cfg:
                 embedder_cfg["pretrained_file"] = None
         return TextFieldEmbedder.from_params(
@@ -367,7 +366,12 @@ class VocabularyConfiguration:
     max_vocab_size:  `Union[int, Dict[str, int]]`, optional (default=`None`)
         Maximum number of tokens in the vocabulary
     pretrained_files: `Optional[Dict[str, str]]`, optional
-        Pretrained files with word vectors
+        If provided, this map specifies the path to optional pretrained embedding files for each
+        namespace. This can be used to either restrict the vocabulary to only words which appear
+        in this file, or to ensure that any words in this file are included in the vocabulary
+        regardless of their count, depending on the value of `only_include_pretrained_words`.
+        Words which appear in the pretrained embedding file but not in the data are NOT included
+        in the Vocabulary.
     only_include_pretrained_words: `bool`, optional (default=False)
         Only include tokens present in pretrained_files
     tokens_to_add: `Dict[str, int]`, optional
