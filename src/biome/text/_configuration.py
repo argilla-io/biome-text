@@ -114,7 +114,6 @@ class ElasticsearchExplore:
 
         self.client.indices.create(
             index=self.es_index,
-            # TODO: include index.number_of_shards settings
             body={"mappings": {self.es_doc: {"dynamic_templates": dynamic_templates}}},
             ignore=400,
             params={"include_type_name": "true"},

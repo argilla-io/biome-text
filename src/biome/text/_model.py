@@ -81,7 +81,9 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             self._head.featurize, lambda p: p.default == inspect.Parameter.empty
         )
         self._inputs = self._head.inputs() or [p.name for p in required]
-        self._output = ([p.name for p in optional if p.name not in self._inputs] or [None])[0]
+        self._output = (
+            [p.name for p in optional if p.name not in self._inputs] or [None]
+        )[0]
         self._default_ds_mapping = {k: k for k in self._inputs + [self._output] if k}
 
     @classmethod
@@ -494,7 +496,6 @@ class PipelineModelTrainer:
             else None
         )
 
-        # TODO: Customize trainer for better biome integration
         self._trainer = Trainer.from_params(
             model=self._model,
             serialization_dir=self._serialization_dir,

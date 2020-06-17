@@ -72,7 +72,6 @@ class InputFeaturizer:
         exclude_record_keys: bool = False,
     ):
         """See `self.featurize()`"""
-        # TODO: Allow exclude record keys in data tokenization phase
         data = record
 
         record_tokens = (

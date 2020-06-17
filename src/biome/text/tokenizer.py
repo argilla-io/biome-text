@@ -52,7 +52,6 @@ class Tokenizer(FromParams):
         self._fetch_spacy_model(lang)
 
         if segment_sentences is True:
-            # TODO: check rule-based feat.
             segment_sentences = SpacySentenceSplitter(language=lang, rule_based=True)
 
         self.lang = lang
