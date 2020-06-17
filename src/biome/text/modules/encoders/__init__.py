@@ -1,4 +1,4 @@
 from .time_distributed_encoder import TimeDistributedEncoder
-from ..specs import Seq2SeqEncoderSpec
+from ..configuration import Seq2SeqEncoderConfiguration
 
-Encoder = Seq2SeqEncoderSpec
+Encoder = Seq2SeqEncoderConfiguration

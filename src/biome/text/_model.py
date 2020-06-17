@@ -372,3 +372,4 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         )
 
         return (instance for _, instance in instances.iteritems() if instance)
+

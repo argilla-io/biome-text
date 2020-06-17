@@ -19,11 +19,11 @@ from biome.text.helpers import (
     get_word_tokens_ids_from_text_field_tensors,
 )
 from biome.text.modules.encoders import TimeDistributedEncoder
-from biome.text.modules.specs import (
-    BiMpmMatchingSpec,
-    FeedForwardSpec,
-    Seq2SeqEncoderSpec,
-    Seq2VecEncoderSpec,
+from biome.text.modules.configuration import (
+    BiMpmMatchingConfiguration,
+    FeedForwardConfiguration,
+    Seq2SeqEncoderConfiguration,
+    Seq2VecEncoderConfiguration,
 )
 from .classification import ClassificationHead
 from ..task_head import TaskOutput
@@ -70,12 +70,12 @@ class RecordPairClassification(ClassificationHead):
         self,
         backbone: ModelBackbone,
         labels: List[str],
-        field_encoder: Seq2VecEncoderSpec,
-        record_encoder: Seq2SeqEncoderSpec,
-        matcher_forward: BiMpmMatchingSpec,
-        aggregator: Seq2VecEncoderSpec,
-        classifier_feedforward: FeedForwardSpec,
-        matcher_backward: BiMpmMatchingSpec = None,
+        field_encoder: Seq2VecEncoderConfiguration,
+        record_encoder: Seq2SeqEncoderConfiguration,
+        matcher_forward: BiMpmMatchingConfiguration,
+        aggregator: Seq2VecEncoderConfiguration,
+        classifier_feedforward: FeedForwardConfiguration,
+        matcher_backward: BiMpmMatchingConfiguration = None,
         dropout: float = 0.1,
         initializer: InitializerApplicator = InitializerApplicator(),
     ):

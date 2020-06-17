@@ -392,7 +392,7 @@ class Pipeline:
             The `TaskHead` specific arguments (e.g., the classification head needs a `pooler` layer)
         """
 
-        self._config.head = TaskHeadSpec(type=type.__name__, **kwargs)
+        self._config.head = TaskHeadConfiguration(type=type.__name__, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
     @property

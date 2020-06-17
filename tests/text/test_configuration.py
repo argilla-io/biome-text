@@ -6,12 +6,14 @@ from biome.text.configuration import (
     CharFeatures,
     FeaturesConfiguration,
     PipelineConfiguration,
-    TaskHeadSpec,
+    TaskHeadConfiguration,
     TokenizerConfiguration,
     WordFeatures,
 )
 from biome.text.modules.heads import TextClassification
-from biome.text.modules.specs.allennlp_specs import Seq2SeqEncoderSpec
+from biome.text.modules.configuration.allennlp_configuration import (
+    Seq2SeqEncoderConfiguration,
+)
 
 
 @pytest.fixture
@@ -65,11 +67,11 @@ def test_pipeline_without_word_features():
         dropout=0.1,
     )
     features_config = FeaturesConfiguration(char=char_features)
-    encoder_spec = Seq2SeqEncoderSpec(
+    encoder_spec = Seq2SeqEncoderConfiguration(
         type="gru", hidden_size=2, num_layers=1, bidirectional=True
     )
 
-    head_spec = TaskHeadSpec(
+    head_spec = TaskHeadConfiguration(
         type="TextClassification",
         labels=["duplicate", "not_duplicate"],
         pooler={"type": "boe"},
@@ -104,11 +106,11 @@ def test_pipeline_config(pipeline_yaml):
     )
     features_config = FeaturesConfiguration(word=word_features, char=char_features)
 
-    encoder_spec = Seq2SeqEncoderSpec(
+    encoder_spec = Seq2SeqEncoderConfiguration(
         type="gru", hidden_size=2, num_layers=1, bidirectional=True
     )
 
-    head_spec = TaskHeadSpec(
+    head_spec = TaskHeadConfiguration(
         type=TextClassification,
         labels=["duplicate", "not_duplicate"],
         pooler={"type": "boe"},

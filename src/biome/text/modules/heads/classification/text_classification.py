@@ -10,10 +10,10 @@ from captum.attr import IntegratedGradients
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.specs import (
-    ComponentSpec,
-    FeedForwardSpec,
-    Seq2VecEncoderSpec,
+from biome.text.modules.configuration import (
+    ComponentConfiguration,
+    FeedForwardConfiguration,
+    Seq2VecEncoderConfiguration,
 )
 from .classification import ClassificationHead
 from ..task_head import TaskOutput
@@ -31,8 +31,8 @@ class TextClassification(ClassificationHead):
         self,
         backbone: ModelBackbone,
         labels: List[str],
-        pooler: Optional[Seq2VecEncoderSpec] = None,
-        feedforward: Optional[FeedForwardSpec] = None,
+        pooler: Optional[Seq2VecEncoderConfiguration] = None,
+        feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
     ) -> None:
 
@@ -132,7 +132,7 @@ class TextClassification(ClassificationHead):
         return self._classification_layer(embedded_text)
 
 
-class TextClassificationSpec(ComponentSpec[TextClassification]):
+class TextClassificationConfiguration(ComponentConfiguration[TextClassification]):
     """Spec for classification head components"""
 
     pass
