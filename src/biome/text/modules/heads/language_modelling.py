@@ -9,7 +9,7 @@ from allennlp.training.metrics import Perplexity
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.specs import ComponentSpec
+from biome.text.modules.configuration import ComponentConfiguration
 from .task_head import TaskHead, TaskName, TaskOutput
 
 
@@ -135,7 +135,7 @@ class LanguageModelling(TaskHead):
         return self._loss(non_masked_embeddings, non_masked_targets)
 
 
-class LanguageModellingSpec(ComponentSpec[LanguageModelling]):
+class LanguageModellingConfiguration(ComponentConfiguration[LanguageModelling]):
     """Spec for language model head components"""
 
     pass

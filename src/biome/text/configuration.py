@@ -12,7 +12,7 @@ from .features import CharFeatures, WordFeatures
 from .featurizer import InputFeaturizer
 from .helpers import save_dict_as_yaml
 from .modules.encoders import Encoder
-from .modules.heads.task_head import TaskHeadSpec
+from .modules.heads.task_head import TaskHeadConfiguration
 from .tokenizer import Tokenizer
 
 
@@ -189,7 +189,7 @@ class PipelineConfiguration(FromParams):
         The `name` for our pipeline
     features: `FeaturesConfiguration`
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
-    head: `TaskHeadSpec`
+    head: `TaskHeadConfiguration`
         The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
     tokenizer: `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.
@@ -201,7 +201,7 @@ class PipelineConfiguration(FromParams):
         self,
         name: str,
         features: FeaturesConfiguration,
-        head: TaskHeadSpec,
+        head: TaskHeadConfiguration,
         tokenizer: Optional[TokenizerConfiguration] = None,
         encoder: Optional[Encoder] = None,
     ):

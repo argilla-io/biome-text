@@ -1,4 +1,4 @@
 # fmt: off
-from .allennlp_specs import BiMpmMatchingSpec, FeedForwardSpec, Seq2SeqEncoderSpec, Seq2VecEncoderSpec
-from .defs import ComponentSpec
+from .allennlp_configuration import BiMpmMatchingConfiguration, FeedForwardConfiguration, Seq2SeqEncoderConfiguration, Seq2VecEncoderConfiguration
+from .defs import ComponentConfiguration
 # fmt: on

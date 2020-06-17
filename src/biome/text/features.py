@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional
 
-from biome.text.modules.specs import Seq2VecEncoderSpec
+from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
 
 class WordFeatures:
@@ -95,7 +95,7 @@ class CharFeatures:
                     "embedding_dim": self.embedding_dim,
                     "vocab_namespace": self.namespace,
                 },
-                "encoder": Seq2VecEncoderSpec(**self.encoder)
+                "encoder": Seq2VecEncoderConfiguration(**self.encoder)
                 .input_dim(self.embedding_dim)
                 .config,
                 "dropout": self.dropout,

@@ -12,11 +12,11 @@ from captum.attr import IntegratedGradients
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.encoders import TimeDistributedEncoder
-from biome.text.modules.specs import (
-    ComponentSpec,
-    FeedForwardSpec,
-    Seq2SeqEncoderSpec,
-    Seq2VecEncoderSpec,
+from biome.text.modules.configuration import (
+    ComponentConfiguration,
+    FeedForwardConfiguration,
+    Seq2SeqEncoderConfiguration,
+    Seq2VecEncoderConfiguration,
 )
 from .classification import ClassificationHead
 from ..task_head import TaskOutput
@@ -35,10 +35,10 @@ class DocumentClassification(ClassificationHead):
         self,
         backbone: ModelBackbone,
         labels: List[str],
-        tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
-        sentences_encoder: Optional[Seq2SeqEncoderSpec] = None,
-        sentences_pooler: Seq2VecEncoderSpec = None,
-        feedforward: Optional[FeedForwardSpec] = None,
+        tokens_pooler: Optional[Seq2VecEncoderConfiguration] = None,
+        sentences_encoder: Optional[Seq2SeqEncoderConfiguration] = None,
+        sentences_pooler: Seq2VecEncoderConfiguration = None,
+        feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
     ) -> None:
 
@@ -185,7 +185,9 @@ class DocumentClassification(ClassificationHead):
         return logits
 
 
-class DocumentClassificationSpec(ComponentSpec[DocumentClassification]):
+class DocumentClassificationConfiguration(
+    ComponentConfiguration[DocumentClassification]
+):
     """Lazy initialization for document classification head components"""
 
     pass
