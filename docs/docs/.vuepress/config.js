@@ -15,8 +15,8 @@ function getSidebarChildren(location, replacement) {
 
 module.exports = {
   dest: 'site',
-  title: 'biome-text',
-  description: 'biome-text documentation',
+  title: 'biome.text',
+  description: 'biome.text documentation',
   head: [
     ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
   ],
