@@ -496,7 +496,6 @@ class PipelineModelTrainer:
             else None
         )
 
-        # TODO: Customize trainer for better biome integration
         self._trainer = Trainer.from_params(
             model=self._model,
             serialization_dir=self._serialization_dir,
