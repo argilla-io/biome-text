@@ -1,12 +1,12 @@
 from biome.text import helpers
 from biome.text.modules.heads.classification.text_classification import (
     TextClassification,
-    TextClassificationSpec,
+    TextClassificationConfiguration,
 )
 
 
 def test_component_spec_config_with_type():
-    head = TextClassificationSpec(
+    head = TextClassificationConfiguration(
         pooler="boe",
         labels=[
             "toxic",
