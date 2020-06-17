@@ -10,7 +10,10 @@ from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.specs import ComponentSpec, FeedForwardSpec
+from biome.text.modules.configuration import (
+    ComponentConfiguration,
+    FeedForwardConfiguration,
+)
 from .task_head import TaskHead, TaskName, TaskOutput
 
 
@@ -23,7 +26,7 @@ class TokenClassification(TaskHead):
         labels: List[str],
         label_encoding: Optional[str] = "BIOUL",
         dropout: Optional[float] = 0.0,
-        feedforward: Optional[FeedForwardSpec] = None,
+        feedforward: Optional[FeedForwardConfiguration] = None,
     ) -> None:
         super(TokenClassification, self).__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
@@ -134,7 +137,7 @@ class TokenClassification(TaskHead):
         return metrics
 
 
-class TokenClassificationSpec(ComponentSpec[TokenClassification]):
+class TokenClassificationConfiguration(ComponentConfiguration[TokenClassification]):
     """Spec for classification head components"""
 
     pass
