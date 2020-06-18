@@ -377,7 +377,7 @@ class RecordPairClassification(ClassificationHead):
         IMPORTANT: The calculated attributions only make sense for a duplicate/not_duplicate binary classification task
         of the two records.
 
-        TODO: optimize: for the prediction we already embedded and field encoded the records.
+        TODO(dcfidalgo): optimize: for the prediction we already embedded and field encoded the records.
             Also, the forward passes here are always done on cpu!
 
         Parameters
@@ -489,7 +489,7 @@ class RecordPairClassification(ClassificationHead):
 
     def _get_field_tokens(self, record_token_ids: TextFieldTensors) -> List[str]:
         """
-        TODO: This can very likely be optimised!
+        TODO(dcfidalgo): This can very likely be optimised!
         Parameters
         ----------
         record_token_ids

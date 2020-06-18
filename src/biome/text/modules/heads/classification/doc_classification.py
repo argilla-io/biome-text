@@ -145,7 +145,6 @@ class DocumentClassification(ClassificationHead):
             return_convergence_delta=True,
             n_steps=n_steps,
         )
-        # TODO: what the attribution and deltas means
         attributions = attributions.sum(dim=3).squeeze(0)
         attributions = attributions / torch.norm(attributions)
         attributions = attributions.detach().numpy()

@@ -58,10 +58,10 @@ class FeaturesConfiguration(FromParams):
         cls: Type["FeaturesConfiguration"], params: Params, **extras
     ) -> "FeaturesConfiguration":
 
-        word = params.pop("word", params.pop("words", None))  # TODO: remove backward
+        word = params.pop("word", None)
         word = WordFeatures(**word.as_dict(quiet=True)) if word else None
 
-        char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
+        char = params.pop("char", None)
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
         params.assert_empty("FeaturesConfiguration")
