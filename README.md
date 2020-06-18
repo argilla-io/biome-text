@@ -27,7 +27,7 @@
 
 
 ## Features
-* State-of-the-art and not so state-of-the-art models trained with **your own data** with a simple workflow.
+* State-of-the-art and not so state-of-the-art models trained with **your own data** with simple workflows.
 
 * **Exploration UI** for error analysis with interpretations.
 
