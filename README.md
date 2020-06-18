@@ -75,7 +75,7 @@ If the `make` command is enabled in your system, you can use `make dev` directiv
 make dev
 ````
 
-And `make ui` for build statics web resources:
+And `make ui` for building static web resources needed for the explore UI method to work:
 
 ````shell script
 make ui
