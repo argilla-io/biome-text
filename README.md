@@ -59,7 +59,7 @@ cd biome-text
 python -m pip install .[testing]
 ````
 
-Then you must build statics web resources:
+Then you must build static web resources for the explore UI to work:
 ````shell script
 cd ui 
 npm install 
