@@ -48,7 +48,7 @@ def test_slot_filling_tutorial(tmp_path):
     for cell in notebook["cells"]:
         if cell["source"].startswith("!pip install"):
             cell["source"] = re.sub(r"!pip install", r"#!pip install", cell["source"])
-        if cell["source"].startswith("pipeline_dict ="):
+        if cell["source"].startswith("from biome.text.configuration import FeaturesConfiguration"):
             cell["source"] = re.sub(
                 r"https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip",
                 r"https://biome-tutorials-data.s3-eu-west-1.amazonaws.com/token_classifier/wiki-news-300d-1M.head.vec",
@@ -73,5 +73,5 @@ def test_slot_filling_tutorial(tmp_path):
         file.write(str(dump_notebook(notebook)))
 
     # test adapted notebook
-    fixture = NBRegressionFixture(exec_timeout=100)
+    fixture = NBRegressionFixture(exec_timeout=200)
     fixture.check(str(mod_notebook_path))
