@@ -1,7 +1,7 @@
 @require "./code-colors.styl"
 
 body
-  font-family: $primaryFontFamily 
+  font-family: $primaryFontFamily !important
 h1, h2, h3, h4 
   font-family: $secondaryFontFamily 
 h2
@@ -21,7 +21,7 @@ pre.title
 .custom-block.danger, .custom-block.tip, .custom-block.warning
   border-width 1px !important
   border-style solid !important
-  background #F6F6F6 !important
+  background #FFFFFF !important
   color $textColor !important
 .custom-block.danger
   border-color $red
@@ -57,6 +57,9 @@ pre.title
     display: none
 .page p img 
   border 1px solid $borderColor
+.navbar .site-name span 
+  font-family 'Basis Grotesque Pro Light' !important 
+  font-weight lighter
 .sidebar
   background: $sidebarBgColor
   &__link
@@ -68,6 +71,8 @@ pre.title
     max-width 180px
     margin: 2em auto
     display: block
+    @media screen and (max-width: $MQNarrow)
+      max-width 130px
   &-heading 
     pointer-events: none
     font-family: $secondaryFontFamily 
