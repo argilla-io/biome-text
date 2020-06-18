@@ -23,12 +23,10 @@
 </h3>
 
 ## Quick Links
-
 - [Documentation](https://www.recogn.ai/biome-text/documentation/)
 
 
 ## Features
-
 * State-of-the-art and not so state-of-the-art models trained with **your own data** with a simple workflow.
 
 * **Exploration UI** for error analysis with interpretations.
@@ -42,13 +40,10 @@
 * **Compatible with AllenNLP and Huggingface Transformers**
 
 ## Installation
-
 You can install biome.text with pip or from source.
 
 
 ### Pip
-
-
 The recommended way of installing the library is using pip. You can install everything required for the library:
 
 ```shell
@@ -61,27 +56,37 @@ To install biome-text from source, clone the repository from github:
 ````shell
 git clone https://github.com/recognai/biome-text.git
 cd biome-text
-python -m pip install .
+python -m pip install .[testing]
 ````
 
-If the `make` command is enabled in your system, you can use already defined make directives:
+Then you must build statics web resources:
+````shell script
+cd ui 
+npm install 
+npm run build
+````
 
-````shell
-make install
-````  
+*Note: node>=12 is required in your machine. 
+You can follow installation instructions [here](https://nodejs.org/en/download/)*
 
-or 
+If the `make` command is enabled in your system, you can use `make dev` directive: 
+
 ````shell
 make dev
 ````
-for a developer installation
 
-You can see defined directives as follow:
+And `make ui` for build statics web resources:
+
+````shell script
+make ui
+````
+
+You can see all defined directives as follow:
 ````shell script
 make help
 ````
 
-### Test
+#### Test
 Test biome-text with pytest
 
 ````shell script
