@@ -204,7 +204,7 @@ def _explore(
         {
             **(config.metadata or {}),
             "datasource": data_source.source,
-            # This should change when ui is normalized (action detail and action link naming)
+            # TODO: This should change when ui is normalized (action detail and action link naming)
             "explore_name": elasticsearch.es_index,
             "model": pipeline.name,
             "columns": ddf.columns.values.tolist(),
