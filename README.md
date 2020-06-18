@@ -37,7 +37,7 @@
 
 * Use via **`cli`** or as plain Python (e.g., inside a Jupyter Notebook)
 
-* **Compatible with AllenNLP and Huggingface Transformers**
+* **Compatible with AllenNLP**
 
 ## Installation
 You can install biome.text with pip or from source.
