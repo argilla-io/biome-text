@@ -24,6 +24,7 @@ from biome.text.modules.configuration import (
     FeedForwardConfiguration,
     Seq2SeqEncoderConfiguration,
     Seq2VecEncoderConfiguration,
+    ComponentConfiguration,
 )
 from .classification import ClassificationHead
 from ..task_head import TaskOutput
@@ -560,3 +561,11 @@ class RecordPairClassification(ClassificationHead):
         delta = ig_attribute_output[1]
 
         return attributions, delta
+
+
+class RecordPairClassificationConfiguration(
+    ComponentConfiguration[RecordPairClassification]
+):
+    """Config for record pair classification head component"""
+
+    pass

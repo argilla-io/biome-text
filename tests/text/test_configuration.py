@@ -79,10 +79,10 @@ def test_pipeline_without_word_features():
 
     pipeline_config = PipelineConfiguration(
         name="no_word_features",
-        tokenizer=tokenizer_config,
-        features=features_config,
-        encoder=encoder_spec,
         head=head_spec,
+        features=features_config,
+        tokenizer=tokenizer_config,
+        encoder=encoder_spec,
     )
 
     pl = Pipeline.from_config(pipeline_config)
@@ -118,10 +118,10 @@ def test_pipeline_config(pipeline_yaml):
 
     pipeline_config = PipelineConfiguration(
         name="test_pipeline_config",
-        tokenizer=tokenizer_config,
-        features=features_config,
-        encoder=encoder_spec,
         head=head_spec,
+        features=features_config,
+        tokenizer=tokenizer_config,
+        encoder=encoder_spec,
     )
 
     pl = Pipeline.from_config(pipeline_config)
