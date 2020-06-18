@@ -37,7 +37,7 @@ class Tokenizer(FromParams):
         A list of token strings to the sequence after tokenized input text.
     """
 
-    # TODO: Check if it is possible to pass in a `TokenizerConfiguration` to avoid duplication of arguments
+    # TODO(dcfidalgo): Check if it is possible to pass in a `TokenizerConfiguration` to avoid duplication of arguments
 
     def __init__(
         self,
