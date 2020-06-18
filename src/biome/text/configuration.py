@@ -154,12 +154,20 @@ class TokenizerConfiguration(FromParams):
     lang
         The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
         For optimal performance, specify the language of your input data (default: "en").
-    max_sequence_length
-    max_nr_of_sentences
-    text_cleaning
-    segment_sentences
+    max_sequence_length: `int`
+        Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
+    max_nr_of_sentences: `int`
+        Maximum number of sentences to keep when using `segment_sentences` truncated with `[:max_sequence_length]`.
+    text_cleaning: `Optional[Dict[str, Any]]`
+        A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
+    segment_sentences:  `Union[bool, Dict[str, Any]]`
+        Whether to segment input texts in to sentences using the default `SentenceSplitter` or
+        providing a specific configuration for a `SentenceSplitter`.
+    start_tokens: `Optional[List[str]]`
+        A list of token strings to the sequence before tokenized input text.
+    end_tokens: `Optional[List[str]]`
+        A list of token strings to the sequence after tokenized input text.
     """
-
     def __init__(
         self,
         lang: str = "en",
@@ -167,16 +175,16 @@ class TokenizerConfiguration(FromParams):
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
         segment_sentences: Union[bool, Dict[str, Any]] = False,
+        start_tokens: Optional[List[str]] = None,
+        end_tokens: Optional[List[str]] = None,
     ):
         self.lang = lang
         self.max_sequence_length = max_sequence_length
         self.max_nr_of_sentences = max_nr_of_sentences
         self.text_cleaning = text_cleaning
         self.segment_sentences = segment_sentences
-
-    def compile(self) -> Tokenizer:
-        """Build tokenizer object from its configuration"""
-        return Tokenizer.from_params(Params(copy.deepcopy(vars(self))))
+        self.start_tokens = start_tokens
+        self.end_tokens = end_tokens
 
 
 class PipelineConfiguration(FromParams):
@@ -282,11 +290,11 @@ class PipelineConfiguration(FromParams):
 
     def build_tokenizer(self) -> Tokenizer:
         """Build the pipeline tokenizer"""
-        return self.tokenizer.compile()
+        return Tokenizer(self.tokenizer)
 
     def build_featurizer(self) -> InputFeaturizer:
         """Creates the pipeline featurizer"""
-        return self.features.compile_featurizer(self.tokenizer.compile())
+        return self.features.compile_featurizer(self.build_tokenizer())
 
     def build_embedder(self, vocab: Vocabulary):
         """Build the pipeline embedder for aiven dictionary"""
