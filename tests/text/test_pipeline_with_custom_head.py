@@ -21,7 +21,6 @@ class MyCustomHead(TextClassification):
 def test_load_pipeline_with_custom_head():
     config = PipelineConfiguration(
         "test-pipeline",
-        features=FeaturesConfiguration(),
         head=TaskHeadConfiguration(
             type=MyCustomHead,
             labels=[
@@ -33,6 +32,7 @@ def test_load_pipeline_with_custom_head():
                 "admin.",
             ],
         ),
+        features=FeaturesConfiguration(),
     )
 
     pipeline = Pipeline.from_config(config)

@@ -30,8 +30,8 @@ class TestHeadWithRaise(TestHead):
 def test_explain_tokenized_as_default():
     pipeline_config = PipelineConfiguration(
         name="test-classifier",
-        features=FeaturesConfiguration(),
         head=TaskHeadConfiguration(type=TestHead),
+        features=FeaturesConfiguration(),
     )
     pipeline = Pipeline.from_config(pipeline_config)
     prediction = pipeline.explain("This is a simple test with only tokens in explain")
@@ -47,8 +47,8 @@ def test_explain_tokenized_as_default():
 def test_explain_without_steps():
     pipeline_config = PipelineConfiguration(
         name="test-classifier",
-        features=FeaturesConfiguration(),
         head=TaskHeadConfiguration(type=TestHeadWithRaise),
+        features=FeaturesConfiguration(),
     )
     pipeline = Pipeline.from_config(pipeline_config)
     with pytest.raises(NotImplementedError):
