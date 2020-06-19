@@ -61,7 +61,7 @@ head:
     type: TextClassification
     labels: ["positive", "negative"]
 ```
-In this example, we only define the `name` and the task we want to train our model on, using the ``head`` parameter, the rest is configured from defaults. In biome.text we try to provide we sensible defaults so you don't have to configure everything just to start experimenting, but there are many things you can tune and configure.
+In this example, we only define the `name` and the task we want to train our model on, using the ``head`` parameter, the rest is configured from defaults. In biome.text we try to provide sensible defaults so you don't have to configure everything just to start experimenting, but there are many things you can tune and configure.
 
 In particular, a `Pipeline` has the following configurable components:
 
