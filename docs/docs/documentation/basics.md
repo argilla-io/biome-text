@@ -85,7 +85,7 @@ The ``Encoder`` is a central piece of the backbone. It's basically a sequence to
 For defining encoders, biome.text builds on top of the `Seq2SeqEncoder` abstraction from AllenNLP, which brings many configuration possibilities, that go from RNNs to the official PyTorch Transformer implementation.
 
 ### Head
-The other key component for supporting flexible transfer learning are task heads. A head defines the NLP task (e.g., text classification, token-level classification, language modelling) and specific features related to the task, for example the labels of the a text classifier (``positive`` and ``negative`` in our example).
+Task heads are the other key component to support flexible transfer learning. A head defines the NLP task (e.g., text classification, token-level classification, language modelling) and specific features related to the task, for example the labels of a text classifier (``positive`` and ``negative`` in our example).
 
 You can check available heads in the [API documentation](../api/biome/text/modules/heads/).
 
