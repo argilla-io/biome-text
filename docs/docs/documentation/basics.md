@@ -73,7 +73,7 @@ The tokenizer defines how we want to process the text of our input features. Tok
 3. ``text_cleaning``: simple python functions to pre-process text before tokenization. You can define your own but biome.texts provides pre-defined functions for things like cleaning up html tags or remove extra blank spaces.
 
 ### Features
-Features are a central concept of the library. Building on the flexibility of AllenNLP, biome.text gives you the ability of combining [Word](../api/biome/text/features.md#wordfeatures) and [Character](../api/biome/text/features.md#charfeatures) features easily. There are many things which can be configured here: size of the embeddings, encoder type (e.g., CNNs or RNNs) for character encoding, pre-trained word vectors, and other things.
+Features are a central concept of the library. Building on the flexibility of AllenNLP, biome.text gives you the ability of combining [Word](../api/biome/text/features.md#wordfeatures) and [Character](../api/biome/text/features.md#charfeatures) features easily. There are many things which can be configured here: the size of the embeddings, encoder type (e.g., CNNs or RNNs) for character encoding, pre-trained word vectors, and other things.
 
 To learn more about Features configuration options and usage, see the [FeaturesConfiguration API docs](../api/biome/text/configuration.md#featuresconfiguration).
 
