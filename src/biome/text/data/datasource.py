@@ -4,13 +4,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import dask.dataframe as dd
 import yaml
-from biome.text.errors import MissingArgumentError
 
+from biome.text.errors import MissingArgumentError
 from .helpers import (
     is_relative_file_system_path,
     make_paths_relative,
 )
-from ..helpers import save_dict_as_yaml
 from .readers import (
     ElasticsearchDataFrameReader,
     from_csv,
@@ -18,6 +17,7 @@ from .readers import (
     from_json,
     from_parquet,
 )
+from ..helpers import save_dict_as_yaml
 
 
 class DataSource:
@@ -35,6 +35,8 @@ class DataSource:
     mapping
         Used to map the features (columns) of the data source
         to the parameters of the DataSourceReader's `text_to_instance` method.
+    reindex_with: string
+        If reindex_with is provided, tries to reindex data with given column
     **reader_options
         Additional kwargs are passed on to the *source readers* that depend on the format
         (see the `biome.text.data.readers` module).
@@ -63,6 +65,7 @@ class DataSource:
         source: Optional[Union[str, List[str]]] = None,
         mapping: Optional[Dict[str, Union[List[str], str]]] = None,
         format: Optional[str] = None,
+        reindex_with: Optional[str] = "id",
         **reader_options,
     ):
         if not source:
@@ -77,9 +80,9 @@ class DataSource:
 
         data_frame = source_reader(source, **defaults, **self.reader_options)
         data_frame = self.__sanitize_dataframe(data_frame)
-        # TODO allow disable index reindex
-        if "id" in data_frame.columns:
-            data_frame = data_frame.set_index("id")
+
+        if reindex_with and reindex_with in data_frame.columns:
+            data_frame = data_frame.set_index(reindex_with)
 
         self._df = data_frame
 
