@@ -147,25 +147,23 @@ class FeaturesConfiguration(FromParams):
 class TokenizerConfiguration(FromParams):
     """Configures the `Tokenizer`
 
-    For a description of the parameters see `biome.text.tokenizer.Tokenizer`
-
     Parameters
     ----------
     lang
         The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
         For optimal performance, specify the language of your input data (default: "en").
-    max_sequence_length: `int`
+    max_sequence_length
         Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
-    max_nr_of_sentences: `int`
+    max_nr_of_sentences
         Maximum number of sentences to keep when using `segment_sentences` truncated with `[:max_sequence_length]`.
-    text_cleaning: `Optional[Dict[str, Any]]`
+    text_cleaning
         A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
-    segment_sentences:  `Union[bool, Dict[str, Any]]`
+    segment_sentences
         Whether to segment input texts in to sentences using the default `SentenceSplitter` or
         providing a specific configuration for a `SentenceSplitter`.
-    start_tokens: `Optional[List[str]]`
+    start_tokens
         A list of token strings to the sequence before tokenized input text.
-    end_tokens: `Optional[List[str]]`
+    end_tokens
         A list of token strings to the sequence after tokenized input text.
     """
     # note: It's important that it inherits from FromParas so that `Pipeline.from_pretrained()` works!
@@ -189,19 +187,19 @@ class TokenizerConfiguration(FromParams):
 
 
 class PipelineConfiguration(FromParams):
-    """"Creates a `Pipeline` configuration
+    """Creates a `Pipeline` configuration
 
     Parameters
     ----------
-    name: `str`
+    name
         The `name` for our pipeline
-    features: `FeaturesConfiguration`
+    features
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
-    head: `TaskHeadConfiguration`
+    head
         The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadConfiguration` object.
-    tokenizer: `TokenizerConfiguration`, optional
+    tokenizer
         The `tokenizer` defined with a `TokenizerConfiguration` object.
-    encoder: `Encoder`
+    encoder
         The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderConfiguration`
     """
 
@@ -227,12 +225,12 @@ class PipelineConfiguration(FromParams):
 
         Parameters
         ----------
-        path: `str`
+        path
             The path to a YAML configuration file
 
         Returns
         -------
-        pipeline_configuration: `PipelineConfiguration`
+        pipeline_configuration
         """
         with open(path) as yaml_file:
             config_dict = yaml.safe_load(yaml_file)
@@ -245,16 +243,22 @@ class PipelineConfiguration(FromParams):
 
         Parameters
         ----------
-        config_dict: `dict`
+        config_dict
             A configuration dictionary
 
         Returns
         -------
-        pipeline_configuration: `PipelineConfiguration`
+        pipeline_configuration
         """
         return PipelineConfiguration.from_params(Params(config_dict))
 
     def as_dict(self) -> Dict[str, Any]:
+        """Returns the configuration as dictionary
+
+        Returns
+        -------
+        config
+        """
         config = {
             "name": self.name,
             "tokenizer": vars(self.tokenizer),
@@ -272,7 +276,7 @@ class PipelineConfiguration(FromParams):
 
         Parameters
         ----------
-        path : str
+        path
             Path to the output file
         """
         config_dict = copy.deepcopy(self.as_dict())
@@ -303,21 +307,51 @@ class PipelineConfiguration(FromParams):
 
 
 class TrainerConfiguration:
-    """ Creates a `TrainerConfiguration`
+    """Creates a `TrainerConfiguration`
+
+    Doc strings mainly provided by
+    [AllenNLP](https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects)
 
     Parameters
     ----------
     optimizer
+        [Pytorch optimizers](https://pytorch.org/docs/stable/optim.html)
+        that can be constructed via the AllenNLP configuration framework
     validation_metric
+        Validation metric to measure for whether to stop training using patience
+        and whether to serialize an is_best model each epoch.
+        The metric name must be prepended with either "+" or "-",
+        which specifies whether the metric is an increasing or decreasing function.
     patience
+        Number of epochs to be patient before early stopping:
+        the training is stopped after `patience` epochs with no improvement.
+        If given, it must be > 0. If `None`, early stopping is disabled.
     num_epochs
+        Number of training epochs
     cuda_device
+        An integer specifying the CUDA device to use for this process. If -1, the CPU is used.
     grad_norm
+        If provided, gradient norms will be rescaled to have a maximum of this value.
     grad_clipping
+        If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
+        If you are getting `NaN`s in your gradients during training that are not solved by using grad_norm,
+        you may need this.
     learning_rate_scheduler
+        If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
+        (or batch, if the scheduler implements the step_batch method).
+        If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
+        to determine if learning has plateaued.
     momentum_scheduler
+        If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
     moving_average
+        If provided, we will maintain moving averages for all parameters.
+        During training, we employ a shadow variable for each parameter, which maintains the moving average.
+        During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
+        Be careful that when saving the checkpoint, we will save the moving averages of parameters.
+        This is necessary because we want the saved model to perform as well as the validated model if we load it later.
+        But this may cause problems if you restart the training from checkpoint.
     batch_size
+        Size of the batch
     cache_instances
     in_memory_batches
     data_bucketing

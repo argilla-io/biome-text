@@ -1,3 +1,5 @@
+from typing import Dict
+
 import torch
 from allennlp.training.metrics import Metric
 
@@ -32,11 +34,16 @@ class MultiLabelF1Measure(Metric):
         self._fp += (predictions * (1 - gold_labels)).sum().item()
         self._fn += ((1 - predictions) * gold_labels).sum().item()
 
-    def get_metric(self, reset: bool = False):
+    def get_metric(self, reset: bool = False) -> Dict[str, float]:
         """
+        Parameters
+        ----------
+        reset
+            If True, reset the metrics after getting them
+
         Returns
         -------
-        `Dict[str, float]`
+        metrics_dict
             A Dict with:
             - precision : `float`
             - recall : `float`
@@ -60,6 +67,7 @@ class MultiLabelF1Measure(Metric):
         return {"precision": precision, "recall": recall, "fscore": f1}
 
     def reset(self):
+        """Resets the metrics"""
         self._tp = 0.0
         self._fp = 0.0
         self._fn = 0.0

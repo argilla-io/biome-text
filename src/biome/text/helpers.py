@@ -17,15 +17,25 @@ _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
 
 def yaml_to_dict(filepath: str) -> Dict[str, Any]:
-    """Loads a yaml file into a data dictionary"""
+    """Loads a yaml file into a data dictionary
+
+    Parameters
+    ----------
+    filepath
+        Path to the yaml file
+
+    Returns
+    -------
+    dict
+    """
     with open(filepath) as yaml_content:
         config = yaml.safe_load(yaml_content)
     return config
 
 
 def get_compatible_doc_type(client: Elasticsearch) -> str:
-    """
-    Find a compatible name for doc type by checking the cluster info
+    """Find a compatible name for doc type by checking the cluster info
+
     Parameters
     ----------
     client
@@ -33,9 +43,9 @@ def get_compatible_doc_type(client: Elasticsearch) -> str:
 
     Returns
     -------
+    name
         A compatible name for doc type in function of cluster version
     """
-
     es_version = int(client.info()["version"]["number"].split(".")[0])
     return "_doc" if es_version >= 6 else "doc"
 
@@ -51,12 +61,24 @@ def get_env_cuda_device() -> int:
         The integer number of the CUDA device
     """
     cuda_device = int(os.getenv(environment.CUDA_DEVICE, "-1"))
+
     return cuda_device
 
 
-def update_method_signature(signature: inspect.Signature, to_method):
-    """Updates signature to method"""
+def update_method_signature(signature: inspect.Signature, to_method: Callable) -> Callable:
+    """Updates the signature of a method
 
+    Parameters
+    ----------
+    signature
+        The signature with which to update the method
+    to_method
+        The method whose signature will be updated
+
+    Returns
+    -------
+    updated_method
+    """
     def wrapper(*args, **kwargs):
         return to_method(*args, **kwargs)
 
@@ -97,7 +119,7 @@ def split_signature_params_by_predicate(
     return matches_group, non_matches_group
 
 
-def clean_metric_name(name):
+def clean_metric_name(name: str) -> str:
     if not name:
         return name
     new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
@@ -113,12 +135,13 @@ def get_word_tokens_ids_from_text_field_tensors(
 
     Parameters
     ----------
-    text_field_tensors: The incoming record text field tensors dictionary
+    text_field_tensors
+        The incoming record text field tensors dictionary
 
     Returns
     -------
-
-    `WordFeatures` related tensors if enable
+    tensor
+        `WordFeatures` related tensors if enable
     """
     word_features_tensors = text_field_tensors.get(WordFeatures.namespace)
     if not word_features_tensors:
@@ -139,12 +162,13 @@ def get_char_tokens_ids_from_text_field_tensors(
 
     Parameters
     ----------
-    text_field_tensors: The incoming record text field tensors dictionary
+    text_field_tensors
+        The incoming record text field tensors dictionary
 
     Returns
     -------
-
-    `CharFeatures` related tensors if enable
+    tensor
+        `CharFeatures` related tensors if enable
     """
     char_features_tensors = text_field_tensors.get(CharFeatures.namespace)
     if not char_features_tensors:
