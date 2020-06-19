@@ -259,7 +259,7 @@ This search-based UI can help:
  - to inform users about corner cases and which labels need more examples.
  - to find the values for confidence thresholds to use the model in production.
  - to help domain experts understand the strengths and limitations of the model.
- - in summary, get a sense of the model interacting with data.
+ - in summary, get a sense of how the model interacts with your data.
 
 :::tip
 For the UI to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance. We recommend installing [Elasticsearch with docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode).
