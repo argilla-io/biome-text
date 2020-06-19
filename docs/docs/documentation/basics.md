@@ -184,7 +184,7 @@ Here we create our vocabulary from scratch using the training data source. Allen
 To learn more about how to configure and use the `Vocabulary`, see the [VocabularyConfiguration API docs](../api/biome/text/configuration.md#vocabularyconfiguration)
 
 ## Train
-Once we have everything ready, we can use Pipeline for training our model using the [train](../api/biome/text/pipeline.md#pipeline). Going back to our example:
+Once we have everything ready, we can use the Pipeline to train our model using the [Pipeline.train()](../api/biome/text/pipeline.md#pipeline) method. Going back to our example:
 ``` python{13}
 from biome.text import Pipeline, VocabularyConfiguration
 from biome.text.data import DataSource
