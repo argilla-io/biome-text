@@ -58,10 +58,10 @@ class FeaturesConfiguration(FromParams):
         cls: Type["FeaturesConfiguration"], params: Params, **extras
     ) -> "FeaturesConfiguration":
 
-        word = params.pop("word", None)
+        word = params.pop("word", params.pop("words", None))  # TODO: remove backward
         word = WordFeatures(**word.as_dict(quiet=True)) if word else None
 
-        char = params.pop("char", None)
+        char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
         params.assert_empty("FeaturesConfiguration")
@@ -189,21 +189,15 @@ class PipelineConfiguration(FromParams):
     features: `FeaturesConfiguration`
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
     head: `TaskHeadConfiguration`
-        The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadConfiguration` object.
+        The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
     tokenizer: `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.
-    encoder: `Encoder`
-        The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderConfiguration`
+    encoder: `Seq2SeqEncoderSpec`
+        The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderSpec`
     """
 
-    def __init__(
-        self,
-        name: str,
-        head: TaskHeadConfiguration,
-        features: FeaturesConfiguration = None,
-        tokenizer: Optional[TokenizerConfiguration] = None,
-        encoder: Optional[Encoder] = None,
-    ):
+    def __init__(self, name: str, head: TaskHeadConfiguration, features: FeaturesConfiguration = None,
+                 tokenizer: Optional[TokenizerConfiguration] = None, encoder: Optional[Encoder] = None):
         super(PipelineConfiguration, self).__init__()
 
         self.name = name
@@ -352,7 +346,7 @@ class TrainerConfiguration:
 class VocabularyConfiguration:
     """Configures a ``Vocabulary`` before it gets created from the data
 
-    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary``
+    Use this to configure a Vocabulary using specific arguments from allennlp.data.Vocabulary.
 
     See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
 
@@ -360,23 +354,23 @@ class VocabularyConfiguration:
     ----------
     sources: `List[DataSource]`
         Datasource to be used for data creation
-    min_count: `Dict[str, int]`, optional (default=None)
+    min_count: `Dict[str, int]`
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature.
-    max_vocab_size:  `Union[int, Dict[str, int]]`, optional (default=`None`)
+    max_vocab_size:  `Union[int, Dict[str, int]]`
         Maximum number of tokens in the vocabulary
-    pretrained_files: `Optional[Dict[str, str]]`, optional
+    pretrained_files: `Optional[Dict[str, str]]`
         If provided, this map specifies the path to optional pretrained embedding files for each
         namespace. This can be used to either restrict the vocabulary to only words which appear
         in this file, or to ensure that any words in this file are included in the vocabulary
         regardless of their count, depending on the value of `only_include_pretrained_words`.
         Words which appear in the pretrained embedding file but not in the data are NOT included
         in the Vocabulary.
-    only_include_pretrained_words: `bool`, optional (default=False)
-        Only include tokens present in pretrained_files
-    tokens_to_add: `Dict[str, int]`, optional
+    only_include_pretrained_words: `bool`
+        Only include tokens from pretrained_files
+    tokens_to_add: `Dict[str, int]`
         A list of tokens to add to the vocabulary, even if they are not present in the ``sources``
-    min_pretrained_embeddings: ``Dict[str, int]``, optional
+    min_pretrained_embeddings: ``Dict[str, int]``
         Minimum number of lines to keep from pretrained_files, even for tokens not appearing in the sources.
     """
 
