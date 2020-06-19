@@ -6,7 +6,6 @@ from allennlp.data import Token
 from allennlp.data.tokenizers import SentenceSplitter, SpacyTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 
-from biome.text.configuration import TokenizerConfiguration
 from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
 
 
@@ -27,7 +26,7 @@ class Tokenizer:
     """
 
     def __init__(
-        self, config: TokenizerConfiguration,
+        self, config: "biome.text.configuration.TokenizerConfiguration",
     ):
         self.lang = config.lang
         self._fetch_spacy_model(self.lang)
