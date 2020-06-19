@@ -231,7 +231,7 @@ pipeline.predict(subject='Hi!', body='Hi, hope you are well..')
 ```
 
 ### Explain
-Another thing we can do with a trained pipeline is to use the [explain](../api/biome/text/pipeline.md#explain) method to get the attribution of each token by means of [integrated gradients](https://arxiv.org/abs/1703.01365) for those heads that support it:
+Another thing we can do with a trained pipeline is to use the [Pipeline.explain()](../api/biome/text/pipeline.md#explain) method to get the attribution of each token by means of [integrated gradients](https://arxiv.org/abs/1703.01365) for those heads that support it:
 ```python
 pipeline.explain(text='Good movie indeed!')
 ```
