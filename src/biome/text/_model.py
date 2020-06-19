@@ -98,7 +98,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             config = PipelineConfiguration.from_params(config)
 
         vocab = vocab or vocabulary.empty_vocabulary(namespaces=config.features.keys)
-        tokenizer = config.tokenizer.compile()
+        tokenizer = config.build_tokenizer()
         featurizer = config.features.compile_featurizer(tokenizer)
         embedder = config.build_embedder(vocab)
 

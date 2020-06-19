@@ -168,6 +168,7 @@ class TokenizerConfiguration(FromParams):
     end_tokens: `Optional[List[str]]`
         A list of token strings to the sequence after tokenized input text.
     """
+    # note: It's important that it inherits from FromParas so that `Pipeline.from_pretrained()` works!
     def __init__(
         self,
         lang: str = "en",

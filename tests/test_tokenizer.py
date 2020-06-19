@@ -1,4 +1,5 @@
 from biome.text.text_cleaning import DefaultTextCleaning
+from biome.text.configuration import TokenizerConfiguration
 from biome.text.tokenizer import Tokenizer
 
 html_text = """
@@ -16,8 +17,10 @@ html_text = """
 
 def test_text_cleaning_with_sentence_segmentation():
     tokenizer = Tokenizer(
-        text_cleaning=DefaultTextCleaning(rules=["html_to_text", "strip_spaces"]),
-        segment_sentences=True,
+        TokenizerConfiguration(
+            text_cleaning={"rules": ["html_to_text", "strip_spaces"]},
+            segment_sentences=True,
+        )
     )
 
     tokenized = tokenizer.tokenize_text(html_text)
@@ -30,9 +33,11 @@ def test_text_cleaning_with_sentence_segmentation():
 
 def test_text_cleaning_with_sentence_segmentation_and_max_sequence():
     tokenizer = Tokenizer(
-        max_sequence_length=8,
-        text_cleaning=DefaultTextCleaning(rules=["html_to_text", "strip_spaces"]),
-        segment_sentences=True,
+        TokenizerConfiguration(
+            max_sequence_length=8,
+            text_cleaning={"rules": ["html_to_text", "strip_spaces"]},
+            segment_sentences=True,
+        )
     )
 
     tokenized = tokenizer.tokenize_text(html_text)
@@ -43,8 +48,10 @@ def test_text_cleaning_with_sentence_segmentation_and_max_sequence():
 
 def test_document_cleaning():
     tokenizer = Tokenizer(
-        text_cleaning=DefaultTextCleaning(rules=["html_to_text", "strip_spaces"]),
-        segment_sentences=True,
+        TokenizerConfiguration(
+            text_cleaning={"rules": ["html_to_text", "strip_spaces"]},
+            segment_sentences=True,
+        )
     )
 
     tokenized = tokenizer.tokenize_document([html_text])
