@@ -1,12 +1,21 @@
-from .task_head import TaskHead, TaskHeadSpec, TaskName, TaskOutput
+from .task_head import TaskHead, TaskHeadConfiguration, TaskName, TaskOutput
 
-from .classification.doc_classification import DocumentClassification
-from .classification.record_classification import RecordClassification
+from .classification.doc_classification import (
+    DocumentClassification,
+    DocumentClassificationConfiguration,
+)
+from .classification.record_classification import (
+    RecordClassification,
+    RecordClassificationConfiguration,
+)
 from .classification.record_pair_classification import RecordPairClassification
-from .classification.text_classification import TextClassification
+from .classification.text_classification import (
+    TextClassification,
+    TextClassificationConfiguration,
+)
 
-from .language_modelling import LanguageModelling, LanguageModellingSpec
-from .token_classification import TokenClassification, TokenClassificationSpec
+from .language_modelling import LanguageModelling, LanguageModellingConfiguration
+from .token_classification import TokenClassification, TokenClassificationConfiguration
 
 
 for head in [

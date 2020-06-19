@@ -14,10 +14,8 @@ dist: test ui ## run tests and build a package distribution
 install: ## install package
 	@pip install .
 
-pip-install-dev:
+dev: ## install package in development mode
 	@pip install --upgrade -e .[testing]
-
-dev: pip-install-dev ui ## install package in development mode
 
 ui: ## build the ui pages
 	@cd ui && npm install && npm run build

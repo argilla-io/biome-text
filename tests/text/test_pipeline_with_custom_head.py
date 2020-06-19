@@ -8,7 +8,7 @@ from biome.text.configuration import (
     VocabularyConfiguration,
 )
 from biome.text.data import DataSource
-from biome.text.modules.heads import TaskHeadSpec, TextClassification
+from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
 from tests.test_context import TEST_RESOURCES
 
 
@@ -21,8 +21,7 @@ class MyCustomHead(TextClassification):
 def test_load_pipeline_with_custom_head():
     config = PipelineConfiguration(
         "test-pipeline",
-        features=FeaturesConfiguration(),
-        head=TaskHeadSpec(
+        head=TaskHeadConfiguration(
             type=MyCustomHead,
             labels=[
                 "blue-collar",
@@ -33,6 +32,7 @@ def test_load_pipeline_with_custom_head():
                 "admin.",
             ],
         ),
+        features=FeaturesConfiguration(),
     )
 
     pipeline = Pipeline.from_config(config)

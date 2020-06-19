@@ -32,7 +32,7 @@ from ._configuration import (
     _ModelImpl,
 )
 from .backbone import ModelBackbone
-from .modules.heads import TaskHead, TaskHeadSpec
+from .modules.heads import TaskHead, TaskHeadConfiguration
 
 try:
     import ujson as json
@@ -386,7 +386,7 @@ class Pipeline:
             The `TaskHead` specific arguments (e.g., the classification head needs a `pooler` layer)
         """
 
-        self._config.head = TaskHeadSpec(type=type.__name__, **kwargs)
+        self._config.head = TaskHeadConfiguration(type=type.__name__, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
     @property
@@ -546,9 +546,6 @@ class _BlankPipeline(Pipeline):
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         vocab = self._extend_vocabulary(Vocabulary(), config)
-        # TODO: on Allennlp 1.0 we can use model.set_vocab.
-        #  For now, we must reload the model passing vocab to allow restore vocab in train
-        # self._model.set_vocab(vocab)
         self._model = self.__model_from_config(self.config, vocab=vocab)
 
 

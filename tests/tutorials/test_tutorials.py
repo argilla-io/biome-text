@@ -62,9 +62,7 @@ def test_slot_filling_tutorial(tmp_path):
             )
         if cell["source"].startswith("pl.train("):
             cell["source"] = re.sub(
-                r"training=train_ds",
-                r"training=valid_ds",
-                cell["source"],
+                r"training=train_ds", r"training=valid_ds", cell["source"],
             )
 
     # dump adapted notebook

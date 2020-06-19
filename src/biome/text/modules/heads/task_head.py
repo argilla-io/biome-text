@@ -8,7 +8,7 @@ from allennlp.data import Instance
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.specs import ComponentSpec
+from biome.text.modules.configuration import ComponentConfiguration
 
 
 class TaskOutput:
@@ -144,7 +144,7 @@ class TaskHead(torch.nn.Module, Registrable):
         raise {**prediction, "explain": {}}
 
 
-class TaskHeadSpec(ComponentSpec[TaskHead]):
+class TaskHeadConfiguration(ComponentConfiguration[TaskHead]):
     """Layer spec for TaskHead components"""
 
     pass

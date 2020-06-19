@@ -3,11 +3,11 @@ from typing import List, Optional, Union
 from allennlp.data import Instance
 
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.specs import (
-    ComponentSpec,
-    FeedForwardSpec,
-    Seq2SeqEncoderSpec,
-    Seq2VecEncoderSpec,
+from biome.text.modules.configuration import (
+    ComponentConfiguration,
+    FeedForwardConfiguration,
+    Seq2SeqEncoderConfiguration,
+    Seq2VecEncoderConfiguration,
 )
 from .doc_classification import DocumentClassification
 
@@ -25,10 +25,10 @@ class RecordClassification(DocumentClassification):
         backbone: ModelBackbone,
         labels: List[str],
         record_keys: List[str],
-        tokens_pooler: Optional[Seq2VecEncoderSpec] = None,
-        fields_encoder: Optional[Seq2SeqEncoderSpec] = None,
-        fields_pooler: Optional[Seq2VecEncoderSpec] = None,
-        feedforward: Optional[Seq2SeqEncoderSpec] = None,
+        tokens_pooler: Optional[Seq2VecEncoderConfiguration] = None,
+        fields_encoder: Optional[Seq2SeqEncoderConfiguration] = None,
+        fields_pooler: Optional[Seq2VecEncoderConfiguration] = None,
+        feedforward: Optional[Seq2SeqEncoderConfiguration] = None,
         multilabel: Optional[bool] = False,
     ) -> None:
 
@@ -59,7 +59,7 @@ class RecordClassification(DocumentClassification):
         return self.add_label(instance, label)
 
 
-class RecordClassificationSpec(ComponentSpec[RecordClassification]):
+class RecordClassificationConfiguration(ComponentConfiguration[RecordClassification]):
     """Lazy initialization for document classification head components"""
 
     pass

@@ -29,7 +29,7 @@ def _find_input_attribute(component: Type[Any]) -> str:
 T = TypeVar("T")
 
 
-class ComponentSpec(Generic[T], FromParams):
+class ComponentConfiguration(Generic[T], FromParams):
     """
     The layer spec component allows create Pytorch modules lazily,
     and instantiate them inside a context (Model or other component) dimension layer chain.
@@ -56,7 +56,7 @@ class ComponentSpec(Generic[T], FromParams):
         config["type"] = helpers.get_full_class_name(self._layer_class)
         self._config = config or {}
 
-    def input_dim(self, input_dim: int) -> "ComponentSpec":
+    def input_dim(self, input_dim: int) -> "ComponentConfiguration":
         """Sets the input dimension attribute for this layer configuration"""
         self.__update_config_with_input_dim(input_dim)
         return self

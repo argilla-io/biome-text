@@ -7,7 +7,7 @@ from allennlp.data import Instance
 from biome.text import Pipeline, PipelineConfiguration
 from biome.text.backbone import ModelBackbone
 from biome.text.configuration import FeaturesConfiguration
-from biome.text.modules.heads import TaskHeadSpec, TextClassification
+from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
 
 
 class TestHead(TextClassification):
@@ -30,8 +30,8 @@ class TestHeadWithRaise(TestHead):
 def test_explain_tokenized_as_default():
     pipeline_config = PipelineConfiguration(
         name="test-classifier",
+        head=TaskHeadConfiguration(type=TestHead),
         features=FeaturesConfiguration(),
-        head=TaskHeadSpec(type=TestHead),
     )
     pipeline = Pipeline.from_config(pipeline_config)
     prediction = pipeline.explain("This is a simple test with only tokens in explain")
@@ -47,8 +47,8 @@ def test_explain_tokenized_as_default():
 def test_explain_without_steps():
     pipeline_config = PipelineConfiguration(
         name="test-classifier",
+        head=TaskHeadConfiguration(type=TestHeadWithRaise),
         features=FeaturesConfiguration(),
-        head=TaskHeadSpec(type=TestHeadWithRaise),
     )
     pipeline = Pipeline.from_config(pipeline_config)
     with pytest.raises(NotImplementedError):
