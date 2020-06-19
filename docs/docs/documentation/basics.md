@@ -141,7 +141,7 @@ train_ds = DataSource(
 )
 ```
 
-but we could also combine both *title* and *review* to feed them as input features like so:
+but we could also combine both *title* and *review* to feed them as input features:
 
 ```python{3}
 train_ds = DataSource(
