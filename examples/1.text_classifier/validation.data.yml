@@ -1,7 +1,0 @@
-source: ../data/validation.csv
-format: csv
-mapping:
-  label: target
-  text:
-  - record1_firstname
-

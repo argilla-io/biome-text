@@ -1,9 +1,0 @@
-source: ../data/validation.csv
-format: csv
-mapping:
-  label: target
-  subject:
-    - record1_firstname
-  body:
-    - record1_lastname
-
