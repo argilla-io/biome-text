@@ -75,7 +75,7 @@ The tokenizer defines how we want to process the text of our input features. Tok
 ### Features
 Features are a central concept of the library. Building on the flexibility of AllenNLP, biome.text gives you the ability of combining [Word](../api/biome/text/features.md#wordfeatures) and [Character](../api/biome/text/features.md#charfeatures) features easily. There are many things which can be configured here: the size of the embeddings, encoder type (e.g., CNNs or RNNs) for character encoding, pre-trained word vectors, and other things.
 
-To learn more about Features configuration options and usage, see the [FeaturesConfiguration API docs](../api/biome/text/configuration.md#featuresconfiguration).
+To learn more about how to configure and use Features, see the [FeaturesConfiguration API docs](../api/biome/text/configuration.md#featuresconfiguration).
 
 ### Encoder
 To support transfer learning, models are structured into a model "backbone" for processing and encoding features and a "task" head for a certain NLP task.
