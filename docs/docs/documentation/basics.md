@@ -244,7 +244,7 @@ pipeline.serve(port=9090)
 ```
 
 ### Explore
-In order to support users with fine-grained error analysis and empower them to improve their models with informed decisions, the [explore](../api/biome/text/pipeline.md#explore) method launches a UI (inside your notebook if you are using Jupyter).
+In order to support users with fine-grained error analysis and empower them to improve their models with informed decisions, the [Pipeline.explore()](../api/biome/text/pipeline.md#explore) method launches an UI (inside your notebook if you are using Jupyter).
 
 ```python
 pipeline.explore(
