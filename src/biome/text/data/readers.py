@@ -15,8 +15,6 @@ RESOURCE = "resource"
 PATH_COLUMN_NAME = "path"
 
 __LOGGER = logging.getLogger(__name__)
-# TODO: The idea is to make the readers a class and define a metaclass that they have to follow.
-#       For now, all reader methods have to return a dask.DataFrame. See ElasticsearchDataFrameReader
 
 
 class DataFrameReader:

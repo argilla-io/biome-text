@@ -58,10 +58,10 @@ class FeaturesConfiguration(FromParams):
         cls: Type["FeaturesConfiguration"], params: Params, **extras
     ) -> "FeaturesConfiguration":
 
-        word = params.pop("word", params.pop("words", None))
+        word = params.pop("word", None)
         word = WordFeatures(**word.as_dict(quiet=True)) if word else None
 
-        char = params.pop("char", params.pop("chars", None))
+        char = params.pop("char", None)
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
         params.assert_empty("FeaturesConfiguration")
@@ -199,18 +199,18 @@ class PipelineConfiguration(FromParams):
     def __init__(
         self,
         name: str,
-        features: FeaturesConfiguration,
         head: TaskHeadConfiguration,
+        features: FeaturesConfiguration = None,
         tokenizer: Optional[TokenizerConfiguration] = None,
         encoder: Optional[Encoder] = None,
     ):
         super(PipelineConfiguration, self).__init__()
 
         self.name = name
-        self.tokenizer = tokenizer or TokenizerConfiguration()
-        self.features = features
-        self.encoder = encoder
         self.head = head
+        self.tokenizer = tokenizer or TokenizerConfiguration()
+        self.features = features or FeaturesConfiguration()
+        self.encoder = encoder
 
     @classmethod
     def from_yaml(cls, path: str) -> "PipelineConfiguration":

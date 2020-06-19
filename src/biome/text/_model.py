@@ -306,7 +306,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             )
         )
         # If no explain was found, we return input tokenization as default
-        # TODO: use explain data structure instead of dict
+        # TODO: We should use an explain data structure instead of dict
         if not explained_prediction.get("explain"):
             explained_prediction["explain"] = self._get_instance_tokenization(instance)
         return explained_prediction
@@ -372,4 +372,3 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         )
 
         return (instance for _, instance in instances.iteritems() if instance)
-
