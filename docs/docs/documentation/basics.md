@@ -237,7 +237,7 @@ pipeline.explain(text='Good movie indeed!')
 ```
 
 ### Serve
-Pipeline use the awesome [FastAPI](https://fastapi.tiangolo.com/) library to give you simple REST endpoint with the [serve](../api/biome/text/pipeline.md#serve) method, which provides methods aligned with your input features (e.g., a method accepting `subject` and `body` parameters):
+Pipeline uses the awesome [FastAPI](https://fastapi.tiangolo.com/) library to give you a simple REST endpoint with the [Pipeline.serve()](../api/biome/text/pipeline.md#serve) method, which provides methods aligned with your input features (e.g., a method accepting `subject` and `body` parameters):
 
 ```python
 pipeline.serve(port=9090)
