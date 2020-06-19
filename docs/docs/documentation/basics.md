@@ -124,7 +124,7 @@ Here we instantiate a ``DataSource`` from a csv file that looks like this:
 
 Data sources can also be created from [YAML configuration files](../api/biome/text/data/datasource.md#from-yaml), which might be handy for automating training and evaluation pipelines.
 
-Fields in data sources are intimately related to what the pipeline expects as input and output features. In our example, we are defining a text classification model which expects a ``text`` and a ``label``. In cases where users don't have the option to align the fields of the data with the features of the model, the class ``DataSource`` provides a `mapping`` parameter. Imagine our data set looked like this:
+Columns in data sources are intimately related to what the pipeline expects as input and output features. In our example, we are defining a text classification model which expects a ``text`` and a ``label`` column. In cases where users don't have the option to align the columns of the data with the features of the model, the ``DataSource`` class provides a `mapping` parameter. Imagine our data set looked like this:
 
 | title     | review        | label         |
 |-----------| ------------- |:-------------:|
