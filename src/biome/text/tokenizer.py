@@ -1,6 +1,7 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+import copy
+from typing import Any, Dict, Iterable, List
 
-from allennlp.common import FromParams, Params
+from allennlp.common import Params
 from allennlp.data import Token
 from allennlp.data.tokenizers import SentenceSplitter, SpacyTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
@@ -24,19 +25,23 @@ class Tokenizer:
     config
         A `TokenizerConfiguration` object
     """
+
     def __init__(
-        self,
-        config: TokenizerConfiguration,
+        self, config: TokenizerConfiguration,
     ):
         self.lang = config.lang
-        self._fetch_spacy_model()
+        self._fetch_spacy_model(self.lang)
 
         if config.segment_sentences is True:
-            self.segment_sentences = SpacySentenceSplitter(language=self.lang, rule_based=True)
+            self.segment_sentences = SpacySentenceSplitter(
+                language=self.lang, rule_based=True
+            )
         elif config.segment_sentences is False:
             self.segment_sentences = None
         else:
-            self.segment_sentences = SentenceSplitter.from_params(Params(config.segment_sentences))
+            self.segment_sentences = SentenceSplitter.from_params(
+                Params(copy.deepcopy(config.segment_sentences))
+            )
 
         self.max_nr_of_sentences = config.max_nr_of_sentences
 
@@ -45,13 +50,18 @@ class Tokenizer:
         if config.text_cleaning is None:
             self.text_cleaning = DefaultTextCleaning()
         else:
-            self.text_cleaning = TextCleaning.from_params(Params(config.text_cleaning))
+            self.text_cleaning = TextCleaning.from_params(
+                Params(copy.deepcopy(config.text_cleaning))
+            )
 
         self._base_tokenizer = SpacyTokenizer(
-            language=self.lang, start_tokens=config.start_tokens, end_tokens=config.end_tokens,
+            language=self.lang,
+            start_tokens=config.start_tokens,
+            end_tokens=config.end_tokens,
         )
 
-    def _fetch_spacy_model(self):
+    @staticmethod
+    def _fetch_spacy_model(lang: str):
         # Allennlp get_spacy_model method works only for fully named models (en_core_web_sm) but no
         # for already linked named (en, es)
         # This is a workaround for mitigate those kind of errors. Just loading one more time, it's ok.
@@ -59,9 +69,11 @@ class Tokenizer:
         import spacy
 
         try:
-            spacy.load(self.lang, disable=["vectors", "textcat", "tagger" "parser" "ner"])
+            spacy.load(
+                lang, disable=["vectors", "textcat", "tagger" "parser" "ner"]
+            )
         except OSError:
-            spacy.cli.download(self.lang)
+            spacy.cli.download(lang)
 
     def tokenize_text(self, text: str) -> List[List[Token]]:
         """
