@@ -291,7 +291,7 @@ training_results = pipeline.train(
     training=categories_training_ds
 )
 ```
-Here we just use the [set_head](../api/biome/text/pipeline.md#set-head) method to set a new tasks head which classifies film categories instead of review sentiment.
+Here we just use the [Pipeline.set_head()](../api/biome/text/pipeline.md#set-head) method to set a new task head which classifies film categories instead of review sentiment.
 
 The more common "pre-training a language model + fine-tuning on downstream tasks" is also supported by using a [LanguageModelling](../api/biome/text/modules/heads/language_modelling.md#languagemodelling) head for pre-training.
 
