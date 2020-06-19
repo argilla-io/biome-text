@@ -298,6 +298,6 @@ The more common "pre-training a language model + fine-tuning on downstream tasks
 
 ## Next steps
 
-The best place to start is the tutorials sections.
+The best place to start is the tutorials section.
 
 Also you find detailed [API docs](../api/) and use the search feature to find out more about specific concepts and features.
