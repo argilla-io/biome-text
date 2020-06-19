@@ -225,7 +225,7 @@ pipeline.predict(text='Good movie indeed!')
 
 ### Predict
 
-The [predict](../api/biome/text/pipeline.md#predict) method for our pipeline will be aligned to match our model input features (`text` in this case). Models such as the `RecordClassifier` can be used to define more fine-grained input features, such as for example an email classifier with two fields `subject` and `body`:
+The arguments for the [Pipeline.predict()](../api/biome/text/pipeline.md#predict) method will be aligned to match our model input features (`text` in this case). Models such as the `RecordClassifier` can be used to define more fine-grained input features, such as, for example, an email classifier with two fields `subject` and `body`:
 ```python
 pipeline.predict(subject='Hi!', body='Hi, hope you are well..')
 ```
