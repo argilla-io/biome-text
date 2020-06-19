@@ -1,8 +1,0 @@
-batch_size: 16
-cache_instances: true
-num_epochs: 2
-optimizer:
-  amsgrad: true
-  type: adam
-validation_metric: -loss
-patience: 2
