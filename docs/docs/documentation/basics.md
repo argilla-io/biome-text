@@ -273,7 +273,7 @@ training_results = pipeline.train(
     training=new_training_ds
 )
 ```
-:::tip
+:::tip Tip
 For further training, you can use the [extend_vocab](../api/biome/text/pipeline.md#pipeline) parameter to extend the vocabulary with the new data sets.
 :::
 
