@@ -261,7 +261,7 @@ This search-based UI can help:
  - to help domain experts understand the strengths and limitations of the model.
  - in summary, get a sense of how the model interacts with your data.
 
-:::tip
+:::tip Tip
 For the UI to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance. We recommend installing [Elasticsearch with docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode).
 :::
 
