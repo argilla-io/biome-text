@@ -62,7 +62,15 @@ def test_slot_filling_tutorial(tmp_path):
             )
         if cell["source"].startswith("pl.train("):
             cell["source"] = re.sub(
+                r"pl.train", r"from biome.text.configuration import TrainerConfiguration\npl.train", cell["source"],
+            )
+            cell["source"] = re.sub(
                 r"training=train_ds", r"training=valid_ds", cell["source"],
+            )
+            cell["source"] = re.sub(
+                r"test=test_ds,",
+                r"test=test_ds, trainer=TrainerConfiguration(num_epochs=1)",
+                cell["source"],
             )
 
     # dump adapted notebook
