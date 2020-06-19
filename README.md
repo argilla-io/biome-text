@@ -19,7 +19,7 @@
 </p>
 
 <h3 align="center">
-<p>Natural Language Processing library built with AllenNLP and Huggingface Transformers
+<p>Natural Language Processing library built with AllenNLP
 </h3>
 
 ## Quick Links
