@@ -152,6 +152,7 @@ train_ds = DataSource(
 biome.text was created with semi-structured data problems in mind, so it provides specialized models for learning from structured records such as the [RecordClassification](../api/biome/text/modules/heads/classification/record_classification.md#recordclassification) head, which lets you define mappings to arbitrary input fields and combine their vector representations in a hierarchical way (e.g., combining encoders at field and record level)
 
 You can find more info about data sources and mappings in the [API documents](../api/biome/text/datasource.md#datasource).
+
 ## Vocabulary
 For doing NLP with neural networks, your NLP pipeline needs to turn words, subwords and/or characters into numbers. A typical process consists of tokenizing the text, and mapping word (or sub-word) tokens and maybe characters into integers or indexes. This process is often referred to as "indexing".
 
