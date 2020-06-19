@@ -4,7 +4,6 @@ from tempfile import mkdtemp
 from biome.text import Pipeline, PipelineConfiguration
 from biome.text.configuration import (
     FeaturesConfiguration,
-    TrainerConfiguration,
     VocabularyConfiguration,
 )
 from biome.text.data import DataSource

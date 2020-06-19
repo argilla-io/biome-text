@@ -133,6 +133,6 @@ class TextClassification(ClassificationHead):
 
 
 class TextClassificationConfiguration(ComponentConfiguration[TextClassification]):
-    """Spec for classification head components"""
+    """Configuration for classification head components"""
 
     pass

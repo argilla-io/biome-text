@@ -136,6 +136,6 @@ class LanguageModelling(TaskHead):
 
 
 class LanguageModellingConfiguration(ComponentConfiguration[LanguageModelling]):
-    """Spec for language model head components"""
+    """Configuration for language model head components"""
 
     pass

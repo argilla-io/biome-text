@@ -138,6 +138,6 @@ class TokenClassification(TaskHead):
 
 
 class TokenClassificationConfiguration(ComponentConfiguration[TokenClassification]):
-    """Spec for classification head components"""
+    """Configuration for classification head components"""
 
     pass
