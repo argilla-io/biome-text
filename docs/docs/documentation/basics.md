@@ -267,7 +267,7 @@ For the UI to work you need a running [Elasticsearch](https://www.elastic.co/gui
 
 ### Training and transfer learning
 
-After loading a pipeline, you can keep on training it for the same task with new data:
+After loading a pipeline, you can continue the training for the same task with new data:
 ```python
 training_results = pipeline.train(
     output="path_to_store_further_training",
