@@ -44,7 +44,7 @@ module.exports = {
       '/documentation/': [
       {
           title: 'Get started',
-          children: ['', 'concepts.md'],
+          children: ['', 'basics.md'],
           collapsable: false
       },
       { 
