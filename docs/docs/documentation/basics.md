@@ -156,7 +156,7 @@ You can find more info about data sources and mappings in the [API documents](..
 ## Vocabulary
 For doing NLP with neural networks, your NLP pipeline needs to turn words, subwords and/or characters into numbers. A typical process consists of tokenizing the text, and mapping word (or sub-word) tokens and maybe characters into integers or indexes. This process is often referred to as "indexing".
 
-In order to support this you need a ``Vocabulary``, which holds a mapping from tokens and characters to numerical ids (if you are interested this post provides a good [overview](https://blog.floydhub.com/tokenization-nlp/. This mapping can be learned and built during pre-training phases as is the case for word piece models and generally sub-word models like those provided by [Huggingface tokenizers](https://github.com/huggingface/tokenizers)).
+In order to support this you need a ``Vocabulary``, which holds a mapping from tokens and characters to numerical ids (if you are interested, this post provides a good [overview](https://blog.floydhub.com/tokenization-nlp/)). This mapping can be learned and built during pre-training phases as is the case for word piece models and generally sub-word models like those provided by [Huggingface tokenizers](https://github.com/huggingface/tokenizers)).
 
 A more classical approach is to build or extend an existing vocabulary from training and validation data sets. For certain use cases, in highly specialized domains, this is sometimes the best way to proceed.
 
