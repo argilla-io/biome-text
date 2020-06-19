@@ -204,7 +204,7 @@ training_results = pipeline.train(
 ```
 Here the training output will be saved in a folder. It will contain the trained model weights and the metrics, as well as the vocabulary and a log folder for visualizing the training metrics with [tensorboard](https://www.tensorflow.org/tensorboard/).
 
-The most relevant file in this folder will be the ``model.tar.gz`` file, which bundles everything we need for loading the trained model for exploration, serving or fine-tuning.
+The most relevant file in this folder will be the ``model.tar.gz`` file, which bundles everything we need to explore, serve or fine-tune the trained model.
 
 In the example, we only provide a ``training_ds`` which is of course not recommended for most use cases, where you need at least a validation set and desirably a test set. We also do not set anything related to the training process, such as optimizer, learning rate, epochs and so on. The library provides basic defaults for this just to get started. When further experimenting, you will probably need to use a trainer, configured with a [TrainerConfiguration](../api/biome/text/configuration.md#trainerconfiguration) object.
 
