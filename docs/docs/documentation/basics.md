@@ -181,7 +181,7 @@ training_results = pipeline.train(
 ```
 Here we create our vocabulary from scratch using the training data source. AllenNLP provides neat abstractions for dealing with multi-feature vocabularies (e.g., chars, words, etc.) and biome.text builds on top of those abstractions to make it easy to create, reuse and extend vocabularies.
 
-To learn more about `Vocabulary` configuration options and usage, see the [VocabularyConfiguration API docs](../api/biome/text/configuration.md#vocabularyconfiguration)
+To learn more about how to configure and use the `Vocabulary`, see the [VocabularyConfiguration API docs](../api/biome/text/configuration.md#vocabularyconfiguration)
 
 ## Train
 Once we have everything ready, we can use Pipeline for training our model using the [train](../api/biome/text/pipeline.md#pipeline). Going back to our example:
