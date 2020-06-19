@@ -58,10 +58,10 @@ class FeaturesConfiguration(FromParams):
         cls: Type["FeaturesConfiguration"], params: Params, **extras
     ) -> "FeaturesConfiguration":
 
-        word = params.pop("word", params.pop("words", None))  # TODO: remove backward
+        word = params.pop("word", None)
         word = WordFeatures(**word.as_dict(quiet=True)) if word else None
 
-        char = params.pop("char", params.pop("chars", None))  # TODO: remove backward
+        char = params.pop("char", None)
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
         params.assert_empty("FeaturesConfiguration")
@@ -189,28 +189,28 @@ class PipelineConfiguration(FromParams):
     features: `FeaturesConfiguration`
         The input `features` to be used by the model pipeline. We define this using a `FeaturesConfiguration` object.
     head: `TaskHeadConfiguration`
-        The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadSpec` object.
+        The `head` for the task, e.g., a LanguageModelling task, using a `TaskHeadConfiguration` object.
     tokenizer: `TokenizerConfiguration`, optional
         The `tokenizer` defined with a `TokenizerConfiguration` object.
-    encoder: `Seq2SeqEncoderSpec`
-        The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderSpec`
+    encoder: `Encoder`
+        The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderConfiguration`
     """
 
     def __init__(
         self,
         name: str,
-        features: FeaturesConfiguration,
         head: TaskHeadConfiguration,
+        features: FeaturesConfiguration = None,
         tokenizer: Optional[TokenizerConfiguration] = None,
         encoder: Optional[Encoder] = None,
     ):
         super(PipelineConfiguration, self).__init__()
 
         self.name = name
-        self.tokenizer = tokenizer or TokenizerConfiguration()
-        self.features = features
-        self.encoder = encoder
         self.head = head
+        self.tokenizer = tokenizer or TokenizerConfiguration()
+        self.features = features or FeaturesConfiguration()
+        self.encoder = encoder
 
     @classmethod
     def from_yaml(cls, path: str) -> "PipelineConfiguration":

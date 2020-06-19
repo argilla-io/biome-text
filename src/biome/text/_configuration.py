@@ -7,9 +7,6 @@ from elasticsearch import Elasticsearch
 from biome.text import constants
 from biome.text._model import PipelineModel
 from . import helpers
-from .configuration import TrainerConfiguration
-
-_ModelImpl = PipelineModel
 
 
 def __register(impl_class, overrides: bool = False):
@@ -21,7 +18,7 @@ def __register(impl_class, overrides: bool = False):
     )
 
 
-__register(_ModelImpl, overrides=True)
+__register(PipelineModel, overrides=True)
 
 
 class ExploreConfiguration:
@@ -114,40 +111,7 @@ class ElasticsearchExplore:
 
         self.client.indices.create(
             index=self.es_index,
-            # TODO: include index.number_of_shards settings
             body={"mappings": {self.es_doc: {"dynamic_templates": dynamic_templates}}},
             ignore=400,
             params={"include_type_name": "true"},
         )
-
-
-class TrainConfiguration:
-    """Configures a training run
-
-    Parameters
-    ----------
-        output: `str`
-             The experiment output path
-        trainer: `TrainerConfiguration`
-             The trainer file path
-        training: `str`
-            The training datasource file path
-        validation: `Optional[str]`
-            The validation datasource file path
-        test: `Optional[str]`
-            The test datasource file path
-    """
-
-    def __init__(
-        self,
-        output: str,
-        trainer: TrainerConfiguration,
-        training: str = "",
-        validation: Optional[str] = None,
-        test: Optional[str] = None,
-    ):
-        self.output = output
-        self.trainer = trainer
-        self.training = training
-        self.validation = validation
-        self.test = test

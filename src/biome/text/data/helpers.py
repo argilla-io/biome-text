@@ -2,7 +2,7 @@ import atexit
 import logging
 import os.path
 import tempfile
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import dask
 import dask.dataframe as dd
@@ -78,7 +78,7 @@ def configure_dask_cluster(
             n_workers=workers,
             threads_per_worker=1,
             asynchronous=False,
-            scheduler_port=8786,  # TODO configurable
+            scheduler_port=8786,
             processes=False,
             memory_limit=worker_mem,
             silence_logs=logging.ERROR,

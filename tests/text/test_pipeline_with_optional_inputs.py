@@ -31,7 +31,6 @@ class MyCustomHead(TextClassification):
 def test_check_pipeline_inputs_and_output():
     config = PipelineConfiguration(
         "test-pipeline",
-        features=FeaturesConfiguration(),
         head=TaskHeadConfiguration(
             type=MyCustomHead,
             labels=[
@@ -43,6 +42,7 @@ def test_check_pipeline_inputs_and_output():
                 "admin.",
             ],
         ),
+        features=FeaturesConfiguration(),
     )
 
     pipeline = Pipeline.from_config(config)

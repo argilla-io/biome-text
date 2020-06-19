@@ -4,33 +4,27 @@ import logging
 import os
 import pathlib
 import pickle
-import re
 import warnings
-from copy import deepcopy
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import allennlp
 import numpy
 import torch
 from allennlp.common import Params
-from allennlp.common.util import prepare_environment, sanitize
-from allennlp.data import DataLoader, DatasetReader, Field, Instance, Token, Vocabulary
+from allennlp.common.util import sanitize
+from allennlp.data import DataLoader, Field, Instance, Token, Vocabulary
 from allennlp.data.fields import ListField, TextField
-from allennlp.models.archival import CONFIG_NAME, archive_model
-from allennlp.training import Trainer
-from allennlp.training.util import evaluate
+from allennlp.models.archival import CONFIG_NAME
 from dask.dataframe import Series as DaskSeries
-from torch.utils.data.dataset import Dataset
 
-from biome.text import vocabulary
+from . import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .data import DataSource
 from .errors import MissingArgumentError, WrongValueError
-from .features import WordFeatures
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead, TaskOutput
 
@@ -312,7 +306,7 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
             )
         )
         # If no explain was found, we return input tokenization as default
-        # TODO: use explain data structure instead of dict
+        # TODO: We should use an explain data structure instead of dict
         if not explained_prediction.get("explain"):
             explained_prediction["explain"] = self._get_instance_tokenization(instance)
         return explained_prediction
@@ -351,26 +345,6 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
 
         return inputs
 
-    def launch_experiment(
-        self,
-        params: Params,
-        serialization_dir: str,
-        batch_weight_key: str = "",
-        embedding_sources_mapping: Dict[str, str] = None,
-    ) -> "PipelineModel":
-        """Launch a local experiment for model training"""
-
-        trainer = PipelineModelTrainer(
-            self,
-            params,
-            serialization_dir,
-            batch_weight_key,
-            embedding_sources_mapping,
-        )
-
-        model, _ = trainer.train()
-        return model
-
     def _read(self, file_path: str) -> Iterable[Instance]:
         """A generator that yields `Instance`s that are fed to the model
 
@@ -398,195 +372,3 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         )
 
         return (instance for _, instance in instances.iteritems() if instance)
-
-
-class PipelineModelTrainer:
-    """
-    Default trainer for ``PipelineModel``
-
-    Arguments
-    ----------
-    model : ``PipelineModel``
-        The trainable model
-    params : ``Params``
-        A parameter object specifying an AllenNLP Experiment
-    serialization_dir : ``str``
-        The directory in which to save results and logs.
-    batch_weight_key : ``str``, optional (default="")
-        If non-empty, name of metric used to weight the loss on a per-batch basis.
-    embedding_sources_mapping: ``Dict[str, str]``, optional (default=None)
-        mapping from model paths to the pretrained embedding filepaths
-        used during fine-tuning.
-    """
-
-    __LOGGER = logging.getLogger(__name__)
-
-    def __init__(
-        self,
-        model: PipelineModel,
-        params: Params,
-        serialization_dir: str,
-        batch_weight_key: str = "",
-        embedding_sources_mapping: Dict[str, str] = None,
-    ):
-        self._model = model
-        # TODO use biome classes instead of common parameters
-        self._params = params
-        self._serialization_dir = serialization_dir
-        self._batch_weight_key = batch_weight_key
-        self._embedding_sources_mapping = embedding_sources_mapping
-        self._batch_size = self._params.pop("iterator")["batch_size"]
-
-        self._trainer = None
-        self._all_datasets = self.datasets_from_params()
-
-        self._setup()
-
-    def _setup(self):
-        """Setup the trainer components and local resources"""
-
-        prepare_environment(self._params)
-        if os.path.exists(self._serialization_dir) and os.listdir(
-            self._serialization_dir
-        ):
-            self.__LOGGER.info(
-                f"Serialization directory ({self._serialization_dir}) "
-                f"already exists and is not empty."
-            )
-
-        os.makedirs(self._serialization_dir, exist_ok=True)
-
-        # We don't need to load pretrained weights from saved models
-        try:
-            self._params["model"]["config"]["features"]["word"].weights_file = None
-        # there is no word feature
-        except AttributeError:
-            pass
-
-        serialization_params = sanitize(deepcopy(self._params).as_dict(quiet=True))
-        with open(
-            os.path.join(self._serialization_dir, CONFIG_NAME), "w"
-        ) as param_file:
-            json.dump(serialization_params, param_file, indent=4)
-
-        self._params.pop("model", None)
-
-        vocab = self._model.vocab
-        vocab.save_to_files(os.path.join(self._serialization_dir, "vocabulary"))
-
-        for dataset in self._all_datasets.values():
-            if dataset and hasattr(dataset, "index_with"):
-                dataset.index_with(vocab)
-
-        trainer_params = self._params.pop("trainer")
-        no_grad_regexes = trainer_params.pop(
-            "no_grad", ()
-        )  # This could be nice to have exposed
-        for name, parameter in self._model.named_parameters():
-            if any(re.search(regex, name) for regex in no_grad_regexes):
-                parameter.requires_grad_(False)
-
-        train_data_loader = DataLoader(
-            self._all_datasets["train"], batch_size=self._batch_size
-        )
-        validation_ds = self._all_datasets.get("validation")
-        validation_data_loader = (
-            DataLoader(validation_ds, batch_size=self._batch_size)
-            if validation_ds
-            else None
-        )
-
-        # TODO: Customize trainer for better biome integration
-        self._trainer = Trainer.from_params(
-            model=self._model,
-            serialization_dir=self._serialization_dir,
-            data_loader=train_data_loader,
-            validation_data_loader=validation_data_loader,
-            params=trainer_params,
-        )
-
-    def datasets_from_params(self) -> Dict[str, Dataset]:
-        """
-        Load all the datasets specified by the config.
-
-        """
-
-        self._params.pop("dataset_reader")
-        self._params.pop("validation_dataset_reader", None)
-        train_data_path = self._params.pop("train_data_path")
-
-        self.__LOGGER.info("Reading training data from %s", train_data_path)
-        datasets: Dict[str, Dataset] = {"train": self._model.read(train_data_path)}
-
-        validation_data_path = self._params.pop("validation_data_path", None)
-        if validation_data_path is not None:
-            self.__LOGGER.info("Reading validation data from %s", validation_data_path)
-            datasets["validation"] = self._model.read(validation_data_path)
-
-        test_data_path = self._params.pop("test_data_path", None)
-        if test_data_path is not None:
-            self.__LOGGER.info("Reading test data from %s", test_data_path)
-            datasets["test"] = self._model.read(test_data_path)
-
-        return datasets
-
-    def test_evaluation(self) -> Dict[str, Any]:
-        """
-        Evaluates the model against the test dataset (if defined)
-
-        Returns
-        -------
-        Test metrics information
-
-        """
-        test_data = self._all_datasets.get("test")
-        if not test_data:
-            return {}
-
-        self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
-        return evaluate(
-            self._model,
-            data_loader=DataLoader(test_data, batch_size=self._batch_size),
-            cuda_device=self._trainer.cuda_device,
-            batch_weight_key=self._batch_weight_key,
-        )
-
-    def train(self) -> Tuple[PipelineModel, Dict[str, Any]]:
-        """
-        Train the inner model with given configuration on initialization
-
-        Returns
-        -------
-        A tuple with trained model and related metrics information
-        """
-
-        from allennlp.models.model import _DEFAULT_WEIGHTS
-
-        try:
-            metrics = self._trainer.train()
-        except KeyboardInterrupt:
-            # if we have completed an epoch, try to create a model archive.
-            if os.path.exists(os.path.join(self._serialization_dir, _DEFAULT_WEIGHTS)):
-                logging.info(
-                    "Fine-tuning interrupted by the user. Attempting to create "
-                    "a model archive using the current best epoch weights."
-                )
-                self.save_best_model()
-            raise
-
-        for k, v in self.test_evaluation().items():
-            metrics["test_" + k] = v
-
-        self.save_best_model()
-
-        with open(
-            os.path.join(self._serialization_dir, "metrics.json"), "w"
-        ) as metrics_file:
-            metrics_json = json.dumps(metrics, indent=2)
-            metrics_file.write(metrics_json)
-
-        return self._model, metrics
-
-    def save_best_model(self):
-        """Packages the best model as tar.gz archive"""
-        archive_model(self._serialization_dir)

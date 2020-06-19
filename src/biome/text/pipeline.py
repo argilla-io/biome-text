@@ -28,11 +28,11 @@ from . import constants
 from ._configuration import (
     ElasticsearchExplore,
     ExploreConfiguration,
-    TrainConfiguration,
-    _ModelImpl,
 )
+from ._model import PipelineModel
 from .backbone import ModelBackbone
 from .modules.heads import TaskHead, TaskHeadConfiguration
+from .training_results import TrainingResults
 
 try:
     import ujson as json
@@ -55,7 +55,7 @@ class Pipeline:
     __TRAINING_CACHE_DATA = ".instances_data"
     __DATASOURCE_YAML_FOLDER = ".datasources"
 
-    _model: _ModelImpl = None
+    _model: PipelineModel = None
     _config: PipelineConfiguration = None
 
     @classmethod
@@ -158,7 +158,7 @@ class Pipeline:
         test: Optional[DataSource] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
-    ) -> None:
+    ) -> TrainingResults:
         """Launches a training run with the specified configurations and data sources
 
         Parameters
@@ -178,13 +178,15 @@ class Pipeline:
         restore: `bool`
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
+
+        Returns
+        -------
+
+        Training results information, containing the generated model path and the related metrics
         """
         trainer = trainer or TrainerConfiguration()
 
-        from ._helpers import _allennlp_configuration
-
         allennlp_logger = logging.getLogger("allennlp")
-
         try:
             allennlp_logger.setLevel(logging.INFO)
 
@@ -192,19 +194,24 @@ class Pipeline:
                 shutil.rmtree(output)
 
             # The original pipeline keeps unchanged
-            model = copy.deepcopy(self._model)
+            train_pipeline = copy.deepcopy(self)
             # creates the output folder if it does not exist
-            model.cache_data(os.path.join(output, self.__TRAINING_CACHE_DATA))
-
+            train_pipeline._model.cache_data(
+                os.path.join(output, self.__TRAINING_CACHE_DATA)
+            )
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
             if extend_vocab and not vocab:
-                vocab = self._extend_vocabulary(model.vocab, vocab_config=extend_vocab)
+                vocab = train_pipeline._extend_vocabulary(
+                    train_pipeline._model.vocab, vocab_config=extend_vocab
+                )
             if vocab:
-                model.set_vocab(vocab)
+                train_pipeline._model.set_vocab(vocab)
 
-            if vocabulary.is_empty(model.vocab, self.config.features.keys):
+            if vocabulary.is_empty(
+                train_pipeline._model.vocab, self.config.features.keys
+            ):
                 raise EmptyVocabError(
                     "Found an empty vocabulary. "
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
@@ -234,18 +241,20 @@ class Pipeline:
                     make_source_path_absolute=True,
                 )
 
-            config = TrainConfiguration(
-                output=output,
-                trainer=trainer,
+            from ._helpers import PipelineTrainer
+
+            trainer = PipelineTrainer(
+                train_pipeline,
+                trainer_config=trainer,
+                output_dir=output,
                 training=training,
                 validation=validation,
                 test=test,
             )
 
-            model.launch_experiment(
-                params=Params(_allennlp_configuration(self, config)),
-                serialization_dir=output,
-            )
+            model_path, metrics = trainer.train()
+            return TrainingResults(model_path, metrics)
+
         finally:
             allennlp_logger.setLevel(logging.ERROR)
 
@@ -335,10 +344,7 @@ class Pipeline:
         pipeline: `Pipeline`
             A configured pipeline
         """
-        from ._helpers import (
-            _explore,
-            _show_explore,
-        )
+        from ._helpers import _explore, _show_explore
 
         config = ExploreConfiguration(
             batch_size=batch_size,
@@ -510,16 +516,16 @@ class _BlankPipeline(Pipeline):
     def __init__(self, config: PipelineConfiguration, **extra_args):
         self._config = config
         self._model = self.__model_from_config(self._config, **extra_args)
-        if not isinstance(self._model, _ModelImpl):
+        if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
         self._update_prediction_signatures()
 
     @staticmethod
     def __model_from_config(
         config: PipelineConfiguration, **extra_params
-    ) -> _ModelImpl:
+    ) -> PipelineModel:
         """Creates a internal base model from a pipeline configuration"""
-        return _ModelImpl.from_params(Params({"config": config}), **extra_params)
+        return PipelineModel.from_params(Params({"config": config}), **extra_params)
 
     def train(
         self,
@@ -530,12 +536,12 @@ class _BlankPipeline(Pipeline):
         test: Optional[DataSource] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
-    ) -> None:
+    ) -> TrainingResults:
         if extend_vocab:
             raise ActionNotSupportedError(
                 "If you want to customize pipeline vocab, please use create_vocab method instead"
             )
-        super(_BlankPipeline, self).train(
+        return super(_BlankPipeline, self).train(
             output=output,
             training=training,
             trainer=trainer,
@@ -546,9 +552,6 @@ class _BlankPipeline(Pipeline):
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         vocab = self._extend_vocabulary(Vocabulary(), config)
-        # TODO: on Allennlp 1.0 we can use model.set_vocab.
-        #  For now, we must reload the model passing vocab to allow restore vocab in train
-        # self._model.set_vocab(vocab)
         self._model = self.__model_from_config(self.config, vocab=vocab)
 
 
@@ -568,7 +571,7 @@ class _PreTrainedPipeline(Pipeline):
         self._model = self.__model_from_archive(archive)
         self._config = self.__config_from_archive(archive)
 
-        if not isinstance(self._model, _ModelImpl):
+        if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
         self._update_prediction_signatures()
 
@@ -578,10 +581,10 @@ class _PreTrainedPipeline(Pipeline):
         )
 
     @staticmethod
-    def __model_from_archive(archive: Archive) -> _ModelImpl:
-        if not isinstance(archive.model, _ModelImpl):
+    def __model_from_archive(archive: Archive) -> PipelineModel:
+        if not isinstance(archive.model, PipelineModel):
             raise ValueError(f"Wrong pipeline model: {archive.model}")
-        return cast(_ModelImpl, archive.model)
+        return cast(PipelineModel, archive.model)
 
     @staticmethod
     def __config_from_archive(archive: Archive) -> PipelineConfiguration:
