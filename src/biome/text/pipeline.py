@@ -150,10 +150,10 @@ class Pipeline:
     def train(
         self,
         output: str,
-        training: DataSource,
+        training: Union[DataSource, InstancesDataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[DataSource] = None,
-        test: Optional[DataSource] = None,
+        validation: Optional[Union[DataSource, InstancesDataset]] = None,
+        test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> TrainingResults:
@@ -161,19 +161,19 @@ class Pipeline:
 
         Parameters
         ----------
-        output: `str`
+        output:
             The experiment output path
-        training: `DataSource`
+        training:
             The training data source
-        trainer: `TrainerConfiguration`
+        trainer:
             The trainer file path
-        validation: `Optional[DataSource]`
+        validation:
             The validation data source
-        test: `Optional[DataSource]`
+        test:
             The test data source
-        extend_vocab: `Optional[VocabularyConfiguration]`
+        extend_vocab:
             Extends vocab tokens with provided configuration
-        restore: `bool`
+        restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
 
@@ -193,10 +193,6 @@ class Pipeline:
 
             # The original pipeline keeps unchanged
             train_pipeline = copy.deepcopy(self)
-            # creates the output folder if it does not exist
-            train_pipeline._model.cache_data(
-                os.path.join(output, self.__TRAINING_CACHE_DATA)
-            )
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
@@ -206,7 +202,6 @@ class Pipeline:
                 )
             if vocab:
                 train_pipeline._model.set_vocab(vocab)
-
             if vocabulary.is_empty(
                 train_pipeline._model.vocab, self.config.features.keys
             ):
@@ -215,39 +210,15 @@ class Pipeline:
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
                 )
 
-            # `_allennlp_configuration` needs strings
-            datasources_dir = os.path.join(output, self.__DATASOURCE_YAML_FOLDER)
-            training = training.to_yaml(
-                os.path.join(
-                    datasources_dir, f"training_{os.path.basename(training.source)}.yml"
-                ),
-                make_source_path_absolute=True,
-            )
-            if validation is not None:
-                validation = validation.to_yaml(
-                    os.path.join(
-                        datasources_dir,
-                        f"validation_{os.path.basename(validation.source)}.yml",
-                    ),
-                    make_source_path_absolute=True,
-                )
-            if test is not None:
-                test = test.to_yaml(
-                    os.path.join(
-                        datasources_dir, f"test_{os.path.basename(test.source)}.yml"
-                    ),
-                    make_source_path_absolute=True,
-                )
-
             from ._helpers import PipelineTrainer
 
+            datasets = {"training": training, "validation": validation, "test": test}
+            for name, dataset in datasets.items():
+                if isinstance(dataset, DataSource):
+                    datasets[name] = train_pipeline.create_dataset(dataset)
+
             trainer = PipelineTrainer(
-                train_pipeline,
-                trainer_config=trainer,
-                output_dir=output,
-                training=training,
-                validation=validation,
-                test=test,
+                train_pipeline, trainer_config=trainer, output_dir=output, **datasets
             )
 
             model_path, metrics = trainer.train()
@@ -275,7 +246,10 @@ class Pipeline:
         A torch Dataset containing the instances collection
 
         """
-        datasource.mapping = {**self._model._default_ds_mapping, **datasource.mapping}
+        mapping = {k: k for k in self.inputs + [self.output] if k}
+        mapping.update(datasource.mapping)
+
+        datasource.mapping = mapping
         ddf = datasource.to_mapped_dataframe()
         instances_ddf = ddf.map_partitions(
             lambda df: df.apply(
@@ -568,10 +542,10 @@ class _BlankPipeline(Pipeline):
     def train(
         self,
         output: str,
-        training: DataSource,
+        training: Union[DataSource, InstancesDataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[DataSource] = None,
-        test: Optional[DataSource] = None,
+        validation: Optional[Union[DataSource, InstancesDataset]] = None,
+        test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> TrainingResults:
