@@ -6,14 +6,15 @@ import shutil
 import tempfile
 import uuid
 from inspect import Parameter
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
 from allennlp.common import Params
-from allennlp.data import Vocabulary
+from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
+from dask.dataframe import DataFrame
 
 from biome.text import vocabulary
 from biome.text.configuration import (
@@ -21,14 +22,11 @@ from biome.text.configuration import (
     TrainerConfiguration,
     VocabularyConfiguration,
 )
-from biome.text.data import DataSource
+from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.helpers import update_method_signature
 from . import constants
-from ._configuration import (
-    ElasticsearchExplore,
-    ExploreConfiguration,
-)
+from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
 from .modules.heads import TaskHead, TaskHeadConfiguration
@@ -258,6 +256,51 @@ class Pipeline:
         finally:
             allennlp_logger.setLevel(logging.ERROR)
 
+    def create_dataset(
+        self, datasource: DataSource, lazy: bool = False
+    ) -> InstancesDataset:
+        """
+        Creates an instances torch Dataset from an data source
+
+        Parameters
+        ----------
+        datasource:
+            The source of data
+        lazy:
+            If enabled, the returned dataset is a subclass of `torch.data.utils.IterableDataset`
+
+        Returns
+        -------
+
+        A torch Dataset containing the instances collection
+
+        """
+        datasource.mapping = {**self._model._default_ds_mapping, **datasource.mapping}
+        ddf = datasource.to_mapped_dataframe()
+        instances_ddf = ddf.map_partitions(
+            lambda df: df.apply(
+                lambda row: self.head.featurize(**row.to_dict()), axis=1
+            ),
+            meta=object,
+        ).persist()
+
+        def build_instance_generator(instances: DataFrame):
+            """Configures an instance generator from DataFrame"""
+
+            def instance_generator(path: str) -> Iterable[Instance]:
+                yield from instances
+
+            return instance_generator
+
+        return (
+            AllennlpLazyDataset(
+                instance_generator=build_instance_generator(instances_ddf),
+                file_path="dummy",
+            )
+            if lazy
+            else AllennlpDataset(instances_ddf.compute())
+        )
+
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Returns a prediction given some input data based on the current state of the model
 
@@ -481,19 +524,14 @@ class Pipeline:
         vocab: `Vocabulary`
             An extended `Vocabulary` using the provided configuration
         """
-        source_paths = [
-            source.to_yaml(
-                tempfile.NamedTemporaryFile(delete=False).name,
-                make_source_path_absolute=True,
-            )
+
+        datasets = [
+            self.create_dataset(source) if isinstance(source, DataSource) else source
             for source in vocab_config.sources
         ]
+
         instances_vocab = Vocabulary.from_instances(
-            instances=(
-                instance
-                for data_source in source_paths
-                for instance in self._model.read(data_source)
-            ),
+            instances=(instance for dataset in datasets for instance in dataset),
             max_vocab_size=vocab_config.max_vocab_size,
             min_count=vocab_config.min_count,
             pretrained_files=vocab_config.pretrained_files,
