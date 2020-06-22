@@ -50,7 +50,7 @@ class _HashList(list):
         return pickle.dumps(self).__hash__()
 
 
-class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
+class PipelineModel(allennlp.models.Model):
     """
     This class represents pipeline model implementation for connect biome.text concepts with
     allennlp implementation details
@@ -63,7 +63,6 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
 
     def __init__(self, name: str, head: TaskHead):
         allennlp.models.Model.__init__(self, head.backbone.vocab)
-        allennlp.data.DatasetReader.__init__(self, lazy=True)
 
         self._head = None
         self.name = name
@@ -78,7 +77,6 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         self._output = (
             [p.name for p in optional if p.name not in self._inputs] or [None]
         )[0]
-        self._default_ds_mapping = {k: k for k in self._inputs + [self._output] if k}
 
     @classmethod
     def from_params(
@@ -344,31 +342,3 @@ class PipelineModel(allennlp.models.Model, allennlp.data.DatasetReader):
         inputs.update(kwargs)
 
         return inputs
-
-    def _read(self, file_path: str) -> Iterable[Instance]:
-        """A generator that yields `Instance`s that are fed to the model
-
-        This method is implicitly called when training the model.
-
-        Parameters
-        ----------
-        file_path
-            Path to the configuration file (yml) of the data source.
-
-        Yields
-        ------
-        instance
-            An `Instance` that is fed to the model
-        """
-        data_source = DataSource.from_yaml(file_path)
-        if not data_source.mapping:
-            data_source.mapping = self._default_ds_mapping
-
-        dataframe = data_source.to_mapped_dataframe()
-        instances: DaskSeries = dataframe.apply(
-            lambda x: self.text_to_instance(**x.to_dict()),
-            axis=1,
-            meta=(None, "object"),
-        )
-
-        return (instance for _, instance in instances.iteritems() if instance)
