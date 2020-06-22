@@ -4,7 +4,22 @@ from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
 
 class WordFeatures:
-    """Feature configuration at word level"""
+    """Feature configuration at word level
+
+    Parameters
+    ----------
+    embedding_dim
+        Dimension of the embeddings
+    lowercase_tokens
+        If True, lowercase tokens before the indexing
+    trainable
+        If False, freeze the embeddings
+    weights_file
+        Path to a file with pretrained weights for the embedding
+    **extra_params
+        Extra parameters passed on to the `indexer` and `embedder` of the AllenNLP configuration framework.
+        For example: `WordFeatures(embedding_dim=300, embedder={"padding_index": 0})`
+    """
 
     namespace = "word"
 
@@ -23,7 +38,8 @@ class WordFeatures:
         self.extra_params = extra_params
 
     @property
-    def config(self):
+    def config(self) -> Dict:
+        """Returns the config in AllenNLP format"""
         config = {
             "indexer": {
                 "type": "single_id",
@@ -43,13 +59,15 @@ class WordFeatures:
 
         return config
 
-    def to_json(self):
+    def to_json(self) -> Dict:
+        """Returns the config as dict for the serialized json config file"""
         data = vars(self)
         data.update(data.pop("extra_params"))
 
         return data
 
-    def to_dict(self):
+    def to_dict(self) -> Dict:
+        """Returns the config as dict"""
         return {
             "embedding_dim": self.embedding_dim,
             "lowercase_tokens": self.lowercase_tokens,
@@ -60,7 +78,22 @@ class WordFeatures:
 
 
 class CharFeatures:
-    """Feature configuration at character level"""
+    """Feature configuration at character level
+
+    Parameters
+    ----------
+    embedding_dim
+        Dimension of the character embeddings.
+    encoder
+        A sequence to vector encoder resulting in a word representation based on its characters
+    dropout
+        Dropout applied to the output of the encoder
+    lowercase_characters
+        If True, lowercase characters before the indexing
+    **extra_params
+        Extra parameters passed on to the `indexer` and `embedder` of the AllenNLP configuration framework.
+        For example: `CharFeatures(embedding_dim=32, indexer={"min_padding_length": 5}, ...)`
+    """
 
     namespace = "char"
 
@@ -79,7 +112,8 @@ class CharFeatures:
         self.extra_params = extra_params
 
     @property
-    def config(self):
+    def config(self) -> Dict:
+        """Returns the config in AllenNLP format"""
         config = {
             "indexer": {
                 "type": "characters",
@@ -108,12 +142,14 @@ class CharFeatures:
         return config
 
     def to_json(self):
+        """Returns the config as dict for the serialized json config file"""
         data = vars(self)
         data.update(data.pop("extra_params"))
 
         return data
 
     def to_dict(self):
+        """Returns the config as dict"""
         return {
             "embedding_dim": self.embedding_dim,
             "encoder": self.encoder,

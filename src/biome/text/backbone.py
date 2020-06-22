@@ -18,13 +18,13 @@ class ModelBackbone(torch.nn.Module):
 
     Attributes
     ----------
-    vocab: `Vocabulary`
+    vocab
         The vocabulary of the pipeline
-    featurizer: `InputFeaturizer`
+    featurizer
         Defines the input features of the tokens and indexes
-    embedder: `TextFieldEmbedder`
+    embedder
         The embedding layer
-    encoder: Encoder
+    encoder
         Outputs an encoded sequence of the tokens
     """
 
