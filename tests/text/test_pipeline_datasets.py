@@ -12,13 +12,35 @@ def datasource_test(tmp_path) -> DataSource:
     data_file = tmp_path / "classifier.parquet"
     df = pd.DataFrame(
         {
-            "text": ["A common text", "This is why you get", "Seriosly?, I'm not sure"],
+            "text": [
+                "A common text",
+                "This is why you get",
+                "Seriosly?, I'm not sure",
+            ],
             "label": ["one", "zero", "zero"],
         }
     )
     df.to_parquet(data_file)
 
     return DataSource(source=str(data_file))
+
+
+@pytest.fixture
+def datasource_with_partial_mapping(tmp_path) -> DataSource:
+    data_file = tmp_path / "classifier.parquet"
+    df = pd.DataFrame(
+        {
+            "another_text": [
+                "A common text",
+                "This is why you get",
+                "Seriosly?, I'm not sure",
+            ],
+            "label": ["one", "zero", "zero"],
+        }
+    )
+    df.to_parquet(data_file)
+
+    return DataSource(source=str(data_file), mapping={"text": "another_text"})
 
 
 @pytest.fixture
@@ -30,6 +52,20 @@ def pipeline_test() -> Pipeline:
     return Pipeline.from_config(config)
 
 
+def test_dataset_creation_with_partial_mapping(
+    datasource_with_partial_mapping: DataSource, pipeline_test: Pipeline
+):
+    df = datasource_with_partial_mapping.to_mapped_dataframe()
+    dataset = pipeline_test.create_dataset(datasource_with_partial_mapping)
+    assert isinstance(dataset, AllennlpDataset)
+    assert len(dataset) == len(df.text)
+
+    for instance in dataset:
+        assert isinstance(instance, Instance)
+        assert "text" in instance.fields
+        assert "label" in instance.fields
+
+
 def test_datasets_creation(pipeline_test: Pipeline, datasource_test: DataSource):
 
     df = datasource_test.to_dataframe()
@@ -39,6 +75,8 @@ def test_datasets_creation(pipeline_test: Pipeline, datasource_test: DataSource)
 
     for instance in dataset:
         assert isinstance(instance, Instance)
+        assert "text" in instance.fields
+        assert "label" in instance.fields
 
 
 def test_lazy_dataset_creation(pipeline_test: Pipeline, datasource_test: DataSource):
