@@ -6,7 +6,7 @@ from allennlp.common import FromParams, Params
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
-from biome.text.data import DataSource
+from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
 from .features import CharFeatures, WordFeatures
 from .featurizer import InputFeaturizer
@@ -45,7 +45,7 @@ class FeaturesConfiguration(FromParams):
     __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
 
     def __init__(
-        self, word: Optional[WordFeatures] = None, char: Optional[CharFeatures] = None,
+        self, word: Optional[WordFeatures] = None, char: Optional[CharFeatures] = None
     ):
         self.word = word or None
         self.char = char or None
@@ -166,6 +166,7 @@ class TokenizerConfiguration(FromParams):
     end_tokens
         A list of token strings to the sequence after tokenized input text.
     """
+
     # note: It's important that it inherits from FromParas so that `Pipeline.from_pretrained()` works!
     def __init__(
         self,
@@ -401,8 +402,8 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    sources: `List[DataSource]`
-        Datasource to be used for data creation
+    sources: `Union[List[DataSource], List[InstancesDataset]]`
+        Datasource or instance datasets to be used for data creation
     min_count: `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature.
@@ -425,7 +426,7 @@ class VocabularyConfiguration:
 
     def __init__(
         self,
-        sources: List[DataSource],
+        sources: Union[List[DataSource], List[InstancesDataset]],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,

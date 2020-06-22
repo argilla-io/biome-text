@@ -11,7 +11,10 @@ from biome.text.modules.heads import TextClassificationConfiguration
 def datasource_test(tmp_path) -> DataSource:
     data_file = tmp_path / "classifier.parquet"
     df = pd.DataFrame(
-        {"text": ["A common text", "This is why you get", "Seriosly?, I'm not sure"], "label": ["one", "zero", "zero"]}
+        {
+            "text": ["A common text", "This is why you get", "Seriosly?, I'm not sure"],
+            "label": ["one", "zero", "zero"],
+        }
     )
     df.to_parquet(data_file)
 
@@ -22,7 +25,7 @@ def datasource_test(tmp_path) -> DataSource:
 def pipeline_test() -> Pipeline:
     config = PipelineConfiguration(
         name="test-classifier",
-        head=TextClassificationConfiguration(labels=["one", "zero"])
+        head=TextClassificationConfiguration(labels=["one", "zero"]),
     )
     return Pipeline.from_config(config)
 
@@ -38,7 +41,7 @@ def test_datasets_creation(pipeline_test: Pipeline, datasource_test: DataSource)
         assert isinstance(instance, Instance)
 
 
-def test_lazy_dataset_creation(pipeline_test: Pipeline, datasource_test:DataSource):
+def test_lazy_dataset_creation(pipeline_test: Pipeline, datasource_test: DataSource):
     df = datasource_test.to_dataframe()
     dataset = pipeline_test.create_dataset(datasource_test, lazy=True)
     assert isinstance(dataset, AllennlpLazyDataset)
