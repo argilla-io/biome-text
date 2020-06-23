@@ -292,11 +292,15 @@ class PipelineTrainer:
             with_data_bucketing=self._trainer_config.data_bucketing,
         )
 
-        validation_data_loader = self._configure_dataloader(
-            self._validation,
-            batch_size=self._trainer_config.batch_size,
-            with_data_bucketing=self._trainer_config.data_bucketing,
-        ) if self._validation else None
+        validation_data_loader = (
+            self._configure_dataloader(
+                self._validation,
+                batch_size=self._trainer_config.batch_size,
+                with_data_bucketing=self._trainer_config.data_bucketing,
+            )
+            if self._validation
+            else None
+        )
 
         self._trainer = Trainer.from_params(
             model=pipeline_model,
