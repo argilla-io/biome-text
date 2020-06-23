@@ -170,7 +170,7 @@ class Pipeline:
         validation:
             The validation DataSource (optional)
         test:
-            The test data source
+            The test DataSource (optional)
         extend_vocab:
             Extends vocab tokens with provided configuration
         restore:
