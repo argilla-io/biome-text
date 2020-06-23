@@ -164,7 +164,7 @@ class Pipeline:
         output:
             The experiment output path
         training:
-            The training data source
+            The training DataSource
         trainer:
             The trainer file path
         validation:
