@@ -403,7 +403,7 @@ class VocabularyConfiguration:
     Parameters
     ----------
     sources: 
-        Datasource or instance datasets to be used for data creation
+        List of DataSource or InstancesDataset objects to be used for data creation
     min_count: `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature.
