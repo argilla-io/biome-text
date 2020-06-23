@@ -205,7 +205,7 @@ class PipelineTrainer:
     """
     Default trainer for `PipelineModel`
 
-    Attributes
+    Parameters
     ----------
     pipeline:
         The trainable pipeline

@@ -315,62 +315,77 @@ class TrainerConfiguration:
     Doc strings mainly provided by
     [AllenNLP](https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects)
 
+    Attributes
+    ----------
+
+    optimizer: `Dict[str, Any]`, default `{"type": "adam"}`
+      [Pytorch optimizers](https://pytorch.org/docs/stable/optim.html)
+      that can be constructed via the AllenNLP configuration framework
+
+    validation_metric: `str`, default `-loss`
+      Validation metric to measure for whether to stop training using patience
+      and whether to serialize an is_best model each epoch.
+      The metric name must be prepended with either "+" or "-",
+      which specifies whether the metric is an increasing or decreasing function.
+
+    patience: `Optional[int]`, default `2`
+      Number of epochs to be patient before early stopping:
+      the training is stopped after `patience` epochs with no improvement.
+      If given, it must be > 0. If `None`, early stopping is disabled.
+
+    num_epochs: `int`, default `20`
+      Number of training epochs
+
+    cuda_device: `int`, default `-1`
+      An integer specifying the CUDA device to use for this process. If -1, the CPU is used.
+
+    grad_norm: `Optional[float]`, default `None`
+      If provided, gradient norms will be rescaled to have a maximum of this value.
+
+    grad_clipping: `Optional[float]`, default `None`
+      If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
+      If you are getting `NaN`s in your gradients during training that are not solved by using grad_norm,
+      you may need this.
+
+    learning_rate_scheduler: `Optional[Dict[str, Any]]`, default `None`
+      If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
+      (or batch, if the scheduler implements the step_batch method).
+      If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
+      to determine if learning has plateaued.
+
+    momentum_scheduler: `Optional[Dict[str, Any]]`, default `None`
+      If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
+
+    moving_average: `Optional[Dict[str, Any]]`, default `None`
+      If provided, we will maintain moving averages for all parameters.
+      During training, we employ a shadow variable for each parameter, which maintains the moving average.
+      During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
+      Be careful that when saving the checkpoint, we will save the moving averages of parameters.
+      This is necessary because we want the saved model to perform as well as the validated model if we load it later.
+
+    batch_size: `Optional[int]`, default `16`
+      Size of the batch.
+
+    data_bucketing: `bool`, default `False`
+      If enabled, try to apply data bucketing over training batches.
+
     """
 
     optimizer: Dict[str, Any] = dataclasses.field(
         default_factory=lambda: {"type": "adam"}
     )
-    """
-        [Pytorch optimizers](https://pytorch.org/docs/stable/optim.html)
-        that can be constructed via the AllenNLP configuration framework
-    """
     validation_metric: str = "-loss"
-    """
-        Validation metric to measure for whether to stop training using patience
-        and whether to serialize an is_best model each epoch.
-        The metric name must be prepended with either "+" or "-",
-        which specifies whether the metric is an increasing or decreasing function.
-    """
     patience: Optional[int] = 2
-    """
-        Number of epochs to be patient before early stopping:
-        the training is stopped after `patience` epochs with no improvement.
-        If given, it must be > 0. If `None`, early stopping is disabled.
-    """
     num_epochs: int = 20
-    """Number of training epochs"""
     cuda_device: int = -1
-    """An integer specifying the CUDA device to use for this process. If -1, the CPU is used."""
     grad_norm: Optional[float] = None
-    """If provided, gradient norms will be rescaled to have a maximum of this value."""
     grad_clipping: Optional[float] = None
-    """
-        If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
-        If you are getting `NaN`s in your gradients during training that are not solved by using grad_norm,
-        you may need this.
-    """
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
-    """
-        If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
-        (or batch, if the scheduler implements the step_batch method).
-        If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
-        to determine if learning has plateaued.
-    """
     momentum_scheduler: Optional[Dict[str, Any]] = None
-    """If specified, the momentum will be updated at the end of each batch or epoch according to the schedule."""
     moving_average: Optional[Dict[str, Any]] = None
-    """
-        If provided, we will maintain moving averages for all parameters.
-        During training, we employ a shadow variable for each parameter, which maintains the moving average.
-        During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
-        Be careful that when saving the checkpoint, we will save the moving averages of parameters.
-        This is necessary because we want the saved model to perform as well as the validated model if we load it later.
-    """
     # Data loader parameters
     batch_size: Optional[int] = 16
-    """Size of the batch"""
     data_bucketing: bool = False
-    """If enabled, try to apply data bucketing over training batches"""
 
 
 class VocabularyConfiguration:
