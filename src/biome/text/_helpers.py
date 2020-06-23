@@ -13,6 +13,7 @@ import uvicorn
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
 from allennlp.data import DataLoader
+from allennlp.data.samplers import BucketBatchSampler
 from allennlp.models import archive_model
 from allennlp.models.archival import CONFIG_NAME
 from allennlp.training import Trainer
@@ -20,13 +21,10 @@ from allennlp.training.util import evaluate
 from dask import dataframe as dd
 from dask_elk.client import DaskElasticClient
 from fastapi import FastAPI
-from torch.utils.data.dataset import Dataset
+from torch.utils.data.dataset import IterableDataset
 
 from biome.text import Pipeline, PipelineConfiguration, TrainerConfiguration, helpers
-from biome.text._configuration import (
-    ElasticsearchExplore,
-    ExploreConfiguration,
-)
+from biome.text._configuration import ElasticsearchExplore, ExploreConfiguration
 from biome.text._model import PipelineModel
 from biome.text.constants import EXPLORE_APP_ENDPOINT
 from biome.text.data import DataSource, InstancesDataset
@@ -207,7 +205,7 @@ class PipelineTrainer:
     """
     Default trainer for `PipelineModel`
 
-    Attributes
+    Parameters
     ----------
     pipeline:
         The trainable pipeline
@@ -241,18 +239,15 @@ class PipelineTrainer:
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
     ):
-        self._model = pipeline._model
-        self._config = copy.deepcopy(pipeline.config)
+        self._pipeline = pipeline
         self._trainer_config = copy.deepcopy(trainer_config)
         self._output_dir = output_dir
         self._batch_weight_key = batch_weight_key
         self._embedding_sources_mapping = embedding_sources_mapping
         self._batch_size = self._trainer_config.batch_size
-        self._all_datasets = {
-            "training": training,
-            "validation": validation,
-            "test": test,
-        }
+        self._training = training
+        self._validation = validation
+        self._test = test
 
         self._setup()
 
@@ -260,58 +255,78 @@ class PipelineTrainer:
         """Setup the trainer components and local resources"""
 
         prepare_environment(Params({}))
-
-        if os.path.exists(self._output_dir) and os.listdir(self._output_dir):
-            self.__LOGGER.info(
-                f"Serialization directory ({self._output_dir}) "
-                f"already exists and is not empty."
-            )
-
         os.makedirs(self._output_dir, exist_ok=True)
 
         # We don't need to load pretrained weights from saved models
-        if self._config.features.word:
-            self._config.features.word.weights_file = None
+        if self._pipeline.config.features.word:
+            self._pipeline.config.features.word.weights_file = None
 
         serialization_params = sanitize(
-            self._allennlp_configuration(self._config, self._trainer_config)
+            self._allennlp_configuration(self._pipeline.config, self._trainer_config)
         )
         with open(os.path.join(self._output_dir, CONFIG_NAME), "w") as param_file:
             json.dump(serialization_params, param_file, indent=4)
 
-        vocab = self._model.vocab
-        vocab.save_to_files(os.path.join(self._output_dir, "vocabulary"))
+        self._pipeline.save_vocabulary(os.path.join(self._output_dir, "vocabulary"))
 
-        for dataset in self._all_datasets.values():
+        for dataset in [self._training, self._validation, self._test]:
             if dataset and hasattr(dataset, "index_with"):
-                dataset.index_with(vocab)
+                dataset.index_with(self._pipeline.backbone.vocab)
 
         trainer_params = Params(
             self._trainer_as_allennlp_configuration(self._trainer_config)
         )
+
         no_grad_regexes = trainer_params.pop(
             "no_grad", ()
         )  # This could be nice to have exposed
-        for name, parameter in self._model.named_parameters():
+
+        pipeline_model = self._pipeline._model
+        for name, parameter in pipeline_model.named_parameters():
             if any(re.search(regex, name) for regex in no_grad_regexes):
                 parameter.requires_grad_(False)
 
-        training_data_loader = DataLoader(
-            self._all_datasets["training"], batch_size=self._batch_size
+        training_data_loader = self._configure_dataloader(
+            self._training,
+            batch_size=self._trainer_config.batch_size,
+            with_data_bucketing=self._trainer_config.data_bucketing,
         )
-        validation_ds = self._all_datasets.get("validation")
+
         validation_data_loader = (
-            DataLoader(validation_ds, batch_size=self._batch_size)
-            if validation_ds
+            self._configure_dataloader(
+                self._validation,
+                batch_size=self._trainer_config.batch_size,
+                with_data_bucketing=self._trainer_config.data_bucketing,
+            )
+            if self._validation
             else None
         )
 
         self._trainer = Trainer.from_params(
-            model=self._model,
+            model=pipeline_model,
             serialization_dir=self._output_dir,
             data_loader=training_data_loader,
             validation_data_loader=validation_data_loader,
             params=trainer_params,
+        )
+
+    @staticmethod
+    def _configure_dataloader(
+        dataset: InstancesDataset, batch_size: int, with_data_bucketing: bool
+    ):
+        """
+        Configures a pytorch dataloader for a given dataset, with a batch_size and setting
+        data bucketing if enabled and is possible.
+        """
+        return (
+            DataLoader(
+                dataset,
+                batch_sampler=BucketBatchSampler(
+                    data_source=dataset, batch_size=batch_size
+                ),
+            )
+            if with_data_bucketing and not isinstance(dataset, IterableDataset)
+            else DataLoader(dataset, batch_size=batch_size)
         )
 
     def test_evaluation(self) -> Dict[str, Any]:
@@ -323,13 +338,13 @@ class PipelineTrainer:
         Test metrics information
 
         """
-        test_data = self._all_datasets.get("test")
+        test_data = self._test
         if not test_data:
             return {}
 
         self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
         return evaluate(
-            self._model,
+            self._pipeline._model,
             data_loader=DataLoader(test_data, batch_size=self._batch_size),
             cuda_device=self._trainer.cuda_device,
             batch_weight_key=self._batch_weight_key,
@@ -378,12 +393,7 @@ class PipelineTrainer:
         trainer: TrainerConfiguration,
     ) -> Dict[str, Any]:
         """Creates trainer configuration dict"""
-        __excluded_keys = [
-            "data_bucketing",
-            "batch_size",
-            "cache_instances",
-            "in_memory_batches",
-        ]  # Data iteration attributes
+        __excluded_keys = ["data_bucketing", "batch_size"]  # Data loader attributes
         trainer_config = {
             k: v for k, v in vars(trainer).items() if k not in __excluded_keys
         }
@@ -395,28 +405,6 @@ class PipelineTrainer:
         )
         return trainer_config
 
-    @staticmethod
-    def _trainer_as_iterator_allennlp_configuration(
-        trainer: TrainerConfiguration,
-    ) -> Dict[str, Any]:
-        """Creates a data iterator configuration"""
-
-        iterator_config = {
-            "batch_size": trainer.batch_size,
-            "max_instances_in_memory": max(
-                trainer.batch_size * trainer.in_memory_batches, trainer.batch_size,
-            ),
-            "cache_instances": trainer.cache_instances,
-            "type": "basic",
-        }
-
-        if trainer.data_bucketing:
-            iterator_config.update(
-                {"type": "bucket",}
-            )
-
-        return iterator_config
-
     @classmethod
     def _allennlp_configuration(
         cls,
@@ -427,7 +415,6 @@ class PipelineTrainer:
 
         allennlp_config = {
             "trainer": cls._trainer_as_allennlp_configuration(trainer_config),
-            "iterator": cls._trainer_as_iterator_allennlp_configuration(trainer_config),
             "model": {
                 "config": pipeline_config.as_dict(),
                 "type": PipelineModel.__name__,

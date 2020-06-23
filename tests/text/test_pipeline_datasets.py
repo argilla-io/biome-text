@@ -1,8 +1,15 @@
+import os
+
 import pandas as pd
 import pytest
 from allennlp.data import AllennlpDataset, Instance, AllennlpLazyDataset
 
-from biome.text import Pipeline, PipelineConfiguration
+from biome.text import (
+    Pipeline,
+    PipelineConfiguration,
+    TrainerConfiguration,
+    VocabularyConfiguration,
+)
 from biome.text.data import DataSource
 from biome.text.modules.heads import TextClassificationConfiguration
 
@@ -12,11 +19,7 @@ def datasource_test(tmp_path) -> DataSource:
     data_file = tmp_path / "classifier.parquet"
     df = pd.DataFrame(
         {
-            "text": [
-                "A common text",
-                "This is why you get",
-                "Seriosly?, I'm not sure",
-            ],
+            "text": ["A common text", "This is why you get", "Seriosly?, I'm not sure"],
             "label": ["one", "zero", "zero"],
         }
     )
@@ -89,3 +92,29 @@ def test_lazy_dataset_creation(pipeline_test: Pipeline, datasource_test: DataSou
         assert isinstance(instance, Instance)
         assert "text" in instance.fields
         assert "label" in instance.fields
+
+
+def test_training_with_data_bucketing(
+    pipeline_test: Pipeline, datasource_test: DataSource, tmp_path: str
+):
+    lazy_ds = pipeline_test.create_dataset(datasource_test, lazy=True)
+    non_lazy_ds = pipeline_test.create_dataset(datasource_test)
+
+    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[lazy_ds]))
+
+    configuration = TrainerConfiguration(
+        data_bucketing=True, batch_size=2, num_epochs=5
+    )
+    pipeline_test.train(
+        output=os.path.join(tmp_path, "output"),
+        trainer=configuration,
+        training=lazy_ds,
+        validation=non_lazy_ds,
+    )
+
+    pipeline_test.train(
+        output=os.path.join(tmp_path, "output"),
+        trainer=configuration,
+        training=non_lazy_ds,
+        validation=lazy_ds,
+    )
