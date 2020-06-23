@@ -402,7 +402,7 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    sources: `Union[List[DataSource], List[InstancesDataset]]`
+    sources: 
         Datasource or instance datasets to be used for data creation
     min_count: `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary.
