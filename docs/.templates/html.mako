@@ -216,22 +216,6 @@ ${"### "}${"Subclasses"}
           % endfor
           </ul>
       % endif
-      % if class_vars:
-
-<pre class="title">
-
-
-${"### Class variables"}
-</pre>
-
-          <dl>
-          % for v in class_vars:
-              <% return_type = get_annotation(v.type_annotation) %>
-              <dt id="${v.refname}"><code class="name">var ${ident(v.name)}${return_type}</code></dt>
-              <dd>${show_desc(v)}</dd>
-          % endfor
-          </dl>
-      % endif
       % if smethods:
           <dl>
           % for f in smethods:
