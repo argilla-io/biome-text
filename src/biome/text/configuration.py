@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
@@ -307,90 +308,69 @@ class PipelineConfiguration(FromParams):
         return self.features.compile_embedder(vocab)
 
 
+@dataclasses.dataclass
 class TrainerConfiguration:
     """Creates a `TrainerConfiguration`
 
     Doc strings mainly provided by
     [AllenNLP](https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects)
 
-    Parameters
-    ----------
-    optimizer
+    """
+
+    optimizer: Dict[str, Any] = dataclasses.field(
+        default_factory=lambda: {"type": "adam"}
+    )
+    """
         [Pytorch optimizers](https://pytorch.org/docs/stable/optim.html)
         that can be constructed via the AllenNLP configuration framework
-    validation_metric
+    """
+    validation_metric: str = "-loss"
+    """
         Validation metric to measure for whether to stop training using patience
         and whether to serialize an is_best model each epoch.
         The metric name must be prepended with either "+" or "-",
         which specifies whether the metric is an increasing or decreasing function.
-    patience
+    """
+    patience: Optional[int] = 2
+    """
         Number of epochs to be patient before early stopping:
         the training is stopped after `patience` epochs with no improvement.
         If given, it must be > 0. If `None`, early stopping is disabled.
-    num_epochs
-        Number of training epochs
-    cuda_device
-        An integer specifying the CUDA device to use for this process. If -1, the CPU is used.
-    grad_norm
-        If provided, gradient norms will be rescaled to have a maximum of this value.
-    grad_clipping
+    """
+    num_epochs: int = 20
+    """Number of training epochs"""
+    cuda_device: int = -1
+    """An integer specifying the CUDA device to use for this process. If -1, the CPU is used."""
+    grad_norm: Optional[float] = None
+    """If provided, gradient norms will be rescaled to have a maximum of this value."""
+    grad_clipping: Optional[float] = None
+    """
         If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
         If you are getting `NaN`s in your gradients during training that are not solved by using grad_norm,
         you may need this.
-    learning_rate_scheduler
+    """
+    learning_rate_scheduler: Optional[Dict[str, Any]] = None
+    """
         If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
         (or batch, if the scheduler implements the step_batch method).
         If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
         to determine if learning has plateaued.
-    momentum_scheduler
-        If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
-    moving_average
+    """
+    momentum_scheduler: Optional[Dict[str, Any]] = None
+    """If specified, the momentum will be updated at the end of each batch or epoch according to the schedule."""
+    moving_average: Optional[Dict[str, Any]] = None
+    """
         If provided, we will maintain moving averages for all parameters.
         During training, we employ a shadow variable for each parameter, which maintains the moving average.
         During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
         Be careful that when saving the checkpoint, we will save the moving averages of parameters.
         This is necessary because we want the saved model to perform as well as the validated model if we load it later.
-        But this may cause problems if you restart the training from checkpoint.
-    batch_size
-        Size of the batch
-    cache_instances
-    in_memory_batches
-    data_bucketing
     """
-
-    def __init__(
-        self,
-        optimizer: Dict[str, Any] = None,
-        validation_metric: str = "-loss",
-        patience: Optional[int] = 2,
-        num_epochs: int = 20,
-        cuda_device: int = -1,
-        grad_norm: Optional[float] = None,
-        grad_clipping: Optional[float] = None,
-        learning_rate_scheduler: Optional[Dict[str, Any]] = None,
-        momentum_scheduler: Optional[Dict[str, Any]] = None,
-        moving_average: Optional[Dict[str, Any]] = None,
-        batch_size: Optional[int] = 16,
-        cache_instances: bool = True,
-        in_memory_batches: int = 2,
-        data_bucketing: bool = True,
-    ):
-        self.optimizer = optimizer or {"type": "adam"}
-        self.validation_metric = validation_metric
-        self.patience = patience
-        self.num_epochs = num_epochs
-        self.cuda_device = cuda_device
-        self.grad_norm = grad_norm
-        self.grad_clipping = grad_clipping
-        self.learning_rate_scheduler = learning_rate_scheduler
-        self.momentum_scheduler = momentum_scheduler
-        self.moving_average = moving_average
-
-        # Data Iteration
-        self.batch_size = batch_size
-        self.data_bucketing = data_bucketing
-        self.cache_instances = cache_instances
-        self.in_memory_batches = in_memory_batches
+    # Data loader parameters
+    batch_size: Optional[int] = 16
+    """Size of the batch"""
+    data_bucketing: bool = False
+    """If enabled, try to apply data bucketing over training batches"""
 
 
 class VocabularyConfiguration:
