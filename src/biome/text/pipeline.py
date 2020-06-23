@@ -168,7 +168,7 @@ class Pipeline:
         trainer:
             The trainer file path
         validation:
-            The validation data source
+            The validation DataSource (optional)
         test:
             The test data source
         extend_vocab:
