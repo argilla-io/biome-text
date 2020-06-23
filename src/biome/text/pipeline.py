@@ -172,7 +172,7 @@ class Pipeline:
         test:
             The test DataSource (optional)
         extend_vocab:
-            Extends vocab tokens with provided configuration
+            Extends the vocabulary tokens with the provided VocabularyConfiguration
         restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
