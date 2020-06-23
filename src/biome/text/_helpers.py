@@ -29,7 +29,7 @@ from biome.text._configuration import (
 )
 from biome.text._model import PipelineModel
 from biome.text.constants import EXPLORE_APP_ENDPOINT
-from biome.text.data import DataSource
+from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import http_error_handling
 from biome.text.ui import launch_ui
 
@@ -207,15 +207,23 @@ class PipelineTrainer:
     """
     Default trainer for `PipelineModel`
 
-    Arguments
+    Attributes
     ----------
-    pipeline : `Pipeline`
-        The trainable model
-    trainer_config: `TrainerConfiguration`
+    pipeline:
+        The trainable pipeline
+    trainer_config:
         The trainer configuration
-    batch_weight_key : ``str``, optional (default="")
+    output_dir:
+        The used training folder
+    training:
+        The training instances dataset
+    validation:
+        The validation instances dataset. Optional
+    test:
+        The test instances dataset. Optional
+    batch_weight_key:
         If non-empty, name of metric used to weight the loss on a per-batch basis.
-    embedding_sources_mapping: ``Dict[str, str]``, optional (default=None)
+    embedding_sources_mapping:
         mapping from model paths to the pretrained embedding filepaths
         used during fine-tuning.
     """
@@ -227,9 +235,9 @@ class PipelineTrainer:
         pipeline: Pipeline,
         trainer_config: TrainerConfiguration,
         output_dir: str,
-        training: str,
-        validation: Optional[str] = None,
-        test: Optional[str] = None,
+        training: InstancesDataset,
+        validation: Optional[InstancesDataset] = None,
+        test: Optional[InstancesDataset] = None,
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
     ):
@@ -240,7 +248,11 @@ class PipelineTrainer:
         self._batch_weight_key = batch_weight_key
         self._embedding_sources_mapping = embedding_sources_mapping
         self._batch_size = self._trainer_config.batch_size
-        self._all_datasets = self.datasets_from_params(training, validation, test)
+        self._all_datasets = {
+            "training": training,
+            "validation": validation,
+            "test": test,
+        }
 
         self._setup()
 
@@ -284,8 +296,8 @@ class PipelineTrainer:
             if any(re.search(regex, name) for regex in no_grad_regexes):
                 parameter.requires_grad_(False)
 
-        train_data_loader = DataLoader(
-            self._all_datasets["train"], batch_size=self._batch_size
+        training_data_loader = DataLoader(
+            self._all_datasets["training"], batch_size=self._batch_size
         )
         validation_ds = self._all_datasets.get("validation")
         validation_data_loader = (
@@ -297,34 +309,10 @@ class PipelineTrainer:
         self._trainer = Trainer.from_params(
             model=self._model,
             serialization_dir=self._output_dir,
-            data_loader=train_data_loader,
+            data_loader=training_data_loader,
             validation_data_loader=validation_data_loader,
             params=trainer_params,
         )
-
-    def datasets_from_params(
-        self,
-        training: str,
-        validation: Optional[str] = None,
-        test: Optional[str] = None,
-    ) -> Dict[str, Dataset]:
-        """
-        Load all the datasets specified by the config.
-
-        """
-
-        self.__LOGGER.info("Reading training data from %s", training)
-        datasets: Dict[str, Dataset] = {"train": self._model.read(training)}
-
-        if validation is not None:
-            self.__LOGGER.info("Reading validation data from %s", validation)
-            datasets["validation"] = self._model.read(validation)
-
-        if test is not None:
-            self.__LOGGER.info("Reading test data from %s", test)
-            datasets["test"] = self._model.read(test)
-
-        return datasets
 
     def test_evaluation(self) -> Dict[str, Any]:
         """

@@ -6,14 +6,15 @@ import shutil
 import tempfile
 import uuid
 from inspect import Parameter
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
 from allennlp.common import Params
-from allennlp.data import Vocabulary
+from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
+from dask.dataframe import DataFrame
 
 from biome.text import vocabulary
 from biome.text.configuration import (
@@ -21,14 +22,11 @@ from biome.text.configuration import (
     TrainerConfiguration,
     VocabularyConfiguration,
 )
-from biome.text.data import DataSource
+from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.helpers import update_method_signature
 from . import constants
-from ._configuration import (
-    ElasticsearchExplore,
-    ExploreConfiguration,
-)
+from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
 from .modules.heads import TaskHead, TaskHeadConfiguration
@@ -152,10 +150,10 @@ class Pipeline:
     def train(
         self,
         output: str,
-        training: DataSource,
+        training: Union[DataSource, InstancesDataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[DataSource] = None,
-        test: Optional[DataSource] = None,
+        validation: Optional[Union[DataSource, InstancesDataset]] = None,
+        test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> TrainingResults:
@@ -163,19 +161,19 @@ class Pipeline:
 
         Parameters
         ----------
-        output: `str`
+        output:
             The experiment output path
-        training: `DataSource`
-            The training data source
-        trainer: `TrainerConfiguration`
+        training:
+            The training DataSource
+        trainer:
             The trainer file path
-        validation: `Optional[DataSource]`
-            The validation data source
-        test: `Optional[DataSource]`
-            The test data source
-        extend_vocab: `Optional[VocabularyConfiguration]`
-            Extends vocab tokens with provided configuration
-        restore: `bool`
+        validation:
+            The validation DataSource (optional)
+        test:
+            The test DataSource (optional)
+        extend_vocab:
+            Extends the vocabulary tokens with the provided VocabularyConfiguration
+        restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
 
@@ -195,10 +193,6 @@ class Pipeline:
 
             # The original pipeline keeps unchanged
             train_pipeline = copy.deepcopy(self)
-            # creates the output folder if it does not exist
-            train_pipeline._model.cache_data(
-                os.path.join(output, self.__TRAINING_CACHE_DATA)
-            )
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
@@ -208,7 +202,6 @@ class Pipeline:
                 )
             if vocab:
                 train_pipeline._model.set_vocab(vocab)
-
             if vocabulary.is_empty(
                 train_pipeline._model.vocab, self.config.features.keys
             ):
@@ -217,39 +210,15 @@ class Pipeline:
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
                 )
 
-            # `_allennlp_configuration` needs strings
-            datasources_dir = os.path.join(output, self.__DATASOURCE_YAML_FOLDER)
-            training = training.to_yaml(
-                os.path.join(
-                    datasources_dir, f"training_{os.path.basename(training.source)}.yml"
-                ),
-                make_source_path_absolute=True,
-            )
-            if validation is not None:
-                validation = validation.to_yaml(
-                    os.path.join(
-                        datasources_dir,
-                        f"validation_{os.path.basename(validation.source)}.yml",
-                    ),
-                    make_source_path_absolute=True,
-                )
-            if test is not None:
-                test = test.to_yaml(
-                    os.path.join(
-                        datasources_dir, f"test_{os.path.basename(test.source)}.yml"
-                    ),
-                    make_source_path_absolute=True,
-                )
-
             from ._helpers import PipelineTrainer
 
+            datasets = {"training": training, "validation": validation, "test": test}
+            for name, dataset in datasets.items():
+                if isinstance(dataset, DataSource):
+                    datasets[name] = train_pipeline.create_dataset(dataset)
+
             trainer = PipelineTrainer(
-                train_pipeline,
-                trainer_config=trainer,
-                output_dir=output,
-                training=training,
-                validation=validation,
-                test=test,
+                train_pipeline, trainer_config=trainer, output_dir=output, **datasets
             )
 
             model_path, metrics = trainer.train()
@@ -257,6 +226,54 @@ class Pipeline:
 
         finally:
             allennlp_logger.setLevel(logging.ERROR)
+
+    def create_dataset(
+        self, datasource: DataSource, lazy: bool = False
+    ) -> InstancesDataset:
+        """
+        Creates an instances torch Dataset from an data source
+
+        Parameters
+        ----------
+        datasource:
+            The source of data
+        lazy:
+            If enabled, the returned dataset is a subclass of `torch.data.utils.IterableDataset`
+
+        Returns
+        -------
+
+        A torch Dataset containing the instances collection
+
+        """
+        mapping = {k: k for k in self.inputs + [self.output] if k}
+        mapping.update(datasource.mapping)
+
+        datasource.mapping = mapping
+        ddf = datasource.to_mapped_dataframe()
+        instances_ddf = ddf.map_partitions(
+            lambda df: df.apply(
+                lambda row: self.head.featurize(**row.to_dict()), axis=1
+            ),
+            meta=object,
+        ).persist()
+
+        def build_instance_generator(instances: DataFrame):
+            """Configures an instance generator from DataFrame"""
+
+            def instance_generator(path: str) -> Iterable[Instance]:
+                yield from instances
+
+            return instance_generator
+
+        return (
+            AllennlpLazyDataset(
+                instance_generator=build_instance_generator(instances_ddf),
+                file_path="dummy",
+            )
+            if lazy
+            else AllennlpDataset(instances_ddf.compute())
+        )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Returns a prediction given some input data based on the current state of the model
@@ -481,19 +498,14 @@ class Pipeline:
         vocab: `Vocabulary`
             An extended `Vocabulary` using the provided configuration
         """
-        source_paths = [
-            source.to_yaml(
-                tempfile.NamedTemporaryFile(delete=False).name,
-                make_source_path_absolute=True,
-            )
+
+        datasets = [
+            self.create_dataset(source) if isinstance(source, DataSource) else source
             for source in vocab_config.sources
         ]
+
         instances_vocab = Vocabulary.from_instances(
-            instances=(
-                instance
-                for data_source in source_paths
-                for instance in self._model.read(data_source)
-            ),
+            instances=(instance for dataset in datasets for instance in dataset),
             max_vocab_size=vocab_config.max_vocab_size,
             min_count=vocab_config.min_count,
             pretrained_files=vocab_config.pretrained_files,
@@ -530,10 +542,10 @@ class _BlankPipeline(Pipeline):
     def train(
         self,
         output: str,
-        training: DataSource,
+        training: Union[DataSource, InstancesDataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[DataSource] = None,
-        test: Optional[DataSource] = None,
+        validation: Optional[Union[DataSource, InstancesDataset]] = None,
+        test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         restore: bool = False,
     ) -> TrainingResults:
