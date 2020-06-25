@@ -5,7 +5,7 @@ import os
 import re
 import time
 from threading import Thread
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 from urllib.error import URLError
 from urllib.parse import urlparse
 
@@ -224,6 +224,9 @@ class PipelineTrainer:
     embedding_sources_mapping:
         mapping from model paths to the pretrained embedding filepaths
         used during fine-tuning.
+    epoch_callbacks:
+        A list of callbacks that will be called at the end of every epoch, and at the start of
+        training (with epoch = -1).
     """
 
     __LOGGER = logging.getLogger(__name__)
@@ -238,6 +241,7 @@ class PipelineTrainer:
         test: Optional[InstancesDataset] = None,
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
+        epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
     ):
         self._pipeline = pipeline
         self._trainer_config = copy.deepcopy(trainer_config)
@@ -248,6 +252,7 @@ class PipelineTrainer:
         self._training = training
         self._validation = validation
         self._test = test
+        self._epoch_callbacks = epoch_callbacks
 
         self._setup()
 
@@ -308,6 +313,7 @@ class PipelineTrainer:
             data_loader=training_data_loader,
             validation_data_loader=validation_data_loader,
             params=trainer_params,
+            epoch_callbacks=self._epoch_callbacks,
         )
 
     @staticmethod

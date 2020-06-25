@@ -154,6 +154,7 @@ class Pipeline:
         validation: Optional[Union[DataSource, InstancesDataset]] = None,
         test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
+        epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
         restore: bool = False,
     ) -> TrainingResults:
         """Launches a training run with the specified configurations and data sources
@@ -172,6 +173,9 @@ class Pipeline:
             The test DataSource (optional)
         extend_vocab:
             Extends the vocabulary tokens with the provided VocabularyConfiguration
+        epoch_callbacks:
+            A list of callbacks that will be called at the end of every epoch, and at the start of
+            training (with epoch = -1).
         restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
@@ -222,7 +226,11 @@ class Pipeline:
                     datasets[name] = train_pipeline.create_dataset(dataset)
 
             trainer = PipelineTrainer(
-                train_pipeline, trainer_config=trainer, output_dir=output, **datasets
+                train_pipeline,
+                trainer_config=trainer,
+                output_dir=output,
+                epoch_callbacks=epoch_callbacks,
+                **datasets,
             )
 
             model_path, metrics = trainer.train()
