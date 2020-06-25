@@ -118,3 +118,23 @@ def test_training_with_data_bucketing(
         training=non_lazy_ds,
         validation=lazy_ds,
     )
+
+
+def test_training_with_logging(
+    pipeline_test: Pipeline, datasource_test: DataSource, tmp_path: str
+):
+    training = pipeline_test.create_dataset(datasource_test)
+    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[training]))
+
+    configuration = TrainerConfiguration(
+        data_bucketing=True, batch_size=2, num_epochs=5
+    )
+    output_dir = os.path.join(tmp_path, "output")
+    pipeline_test.train(
+        output=output_dir, trainer=configuration, training=training, quiet=True
+    )
+
+    assert os.path.exists(os.path.join(output_dir, "train.log"))
+    with open(os.path.join(output_dir, "train.log")) as train_log:
+        for line in train_log.readlines():
+            assert "allennlp" in line
