@@ -3,7 +3,6 @@ import inspect
 import logging
 import os
 import shutil
-import tempfile
 import uuid
 from inspect import Parameter
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
@@ -182,6 +181,11 @@ class Pipeline:
 
         Training results information, containing the generated model path and the related metrics
         """
+        if extend_vocab is not None and isinstance(self, _BlankPipeline):
+            raise ActionNotSupportedError(
+                "If you want to customize pipeline vocab, please use create_vocab method instead"
+            )
+
         trainer = trainer or TrainerConfiguration()
 
         allennlp_logger = logging.getLogger("allennlp")
@@ -196,7 +200,7 @@ class Pipeline:
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
-            if extend_vocab and not vocab:
+            if extend_vocab is not None and not vocab:
                 vocab = train_pipeline._extend_vocabulary(
                     train_pipeline._model.vocab, vocab_config=extend_vocab
                 )
@@ -538,29 +542,6 @@ class _BlankPipeline(Pipeline):
     ) -> PipelineModel:
         """Creates a internal base model from a pipeline configuration"""
         return PipelineModel.from_params(Params({"config": config}), **extra_params)
-
-    def train(
-        self,
-        output: str,
-        training: Union[DataSource, InstancesDataset],
-        trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[Union[DataSource, InstancesDataset]] = None,
-        test: Optional[Union[DataSource, InstancesDataset]] = None,
-        extend_vocab: Optional[VocabularyConfiguration] = None,
-        restore: bool = False,
-    ) -> TrainingResults:
-        if extend_vocab:
-            raise ActionNotSupportedError(
-                "If you want to customize pipeline vocab, please use create_vocab method instead"
-            )
-        return super(_BlankPipeline, self).train(
-            output=output,
-            training=training,
-            trainer=trainer,
-            validation=validation,
-            test=test,
-            restore=restore,
-        )
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         vocab = self._extend_vocabulary(Vocabulary(), config)
