@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 import torch
 import yaml
 from allennlp.data import TextFieldTensors
+from allennlp.common import util
 from elasticsearch import Elasticsearch
 
 from . import environment
@@ -231,3 +232,30 @@ def stringify(value: Any) -> Any:
     if isinstance(value, Iterable):
         return [stringify(v) for v in value]
     return str(value)
+
+
+def sanitize_for_params(x: Any) -> Any:
+    """Sanitizes the input for a more flexible usage with AllenNLP's `.from_params()` machinery.
+
+    For now it is mainly used to transform numpy numbers to python types
+    """
+    # AllenNLP has a similar method (allennlp.common.util.sanitize) but it does not work for my purpose, since
+    # numpy types are checked only after the float type check, and:
+    # isinstance(numpy.float64, float) == True !!!
+    if isinstance(x, util.numpy.number):
+        return x.item()
+    elif isinstance(x, util.numpy.bool_):
+        # Numpy bool_ need to be converted to python bool.
+        return bool(x)
+    if isinstance(x, (str, float, int, bool)):
+        return x
+    elif isinstance(x, dict):
+        # Dicts need their values sanitized
+        return {key: sanitize_for_params(value) for key, value in x.items()}
+    # Lists and Tuples need their values sanitized
+    elif isinstance(x, list):
+        return [sanitize_for_params(x_i) for x_i in x]
+    elif isinstance(x, tuple):
+        return tuple(sanitize_for_params(x_i) for x_i in x)
+
+    return x
