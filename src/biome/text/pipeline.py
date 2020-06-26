@@ -156,6 +156,7 @@ class Pipeline:
         extend_vocab: Optional[VocabularyConfiguration] = None,
         epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
         restore: bool = False,
+        quiet: bool = False,
     ) -> TrainingResults:
         """Launches a training run with the specified configurations and data sources
 
@@ -179,6 +180,9 @@ class Pipeline:
         restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
+        quiet:
+            If enabled, disables most logging messages keeping only warning and error messages.
+            In any case, all logging info will be stored into a file at ${output}/train.log
 
         Returns
         -------
@@ -191,13 +195,11 @@ class Pipeline:
             )
 
         trainer = trainer or TrainerConfiguration()
-
-        allennlp_logger = logging.getLogger("allennlp")
         try:
-            allennlp_logger.setLevel(logging.INFO)
-
             if not restore and os.path.isdir(output):
                 shutil.rmtree(output)
+
+            self.__configure_training_logging(output, quiet)
 
             # The original pipeline keeps unchanged
             train_pipeline = copy.deepcopy(self)
@@ -237,7 +239,59 @@ class Pipeline:
             return TrainingResults(model_path, metrics)
 
         finally:
-            allennlp_logger.setLevel(logging.ERROR)
+            self.__restore_training_logging()
+
+    @staticmethod
+    def __restore_training_logging():
+        """Restore the training logging. This method should be called after a training process"""
+
+        try:
+            import tqdm
+
+            tqdm.tqdm.disable = False
+        except ModuleNotFoundError:
+            pass
+
+        for logger_name, level in [
+            ("allennlp", logging.ERROR),
+            ("biome", logging.INFO),
+        ]:
+            logger = logging.getLogger(logger_name)
+            logger.setLevel(level)
+            logger.propagate = True
+            logger.handlers = []
+
+    @staticmethod
+    def __configure_training_logging(output_dir: str, quiet: bool = False) -> None:
+        """Configures training logging"""
+        try:
+            import tqdm
+
+            tqdm.tqdm.disable = quiet
+        except ModuleNotFoundError:
+            pass
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # create file handler which logs even debug messages
+        file_handler = logging.FileHandler(os.path.join(output_dir, "train.log"))
+        file_handler.setLevel(logging.INFO)
+        # create console handler with a higher log level
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.WARNING if quiet else logging.INFO)
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+        # add the handlers to the referred loggers
+        for logger_name in ["allennlp", "biome"]:
+            logger = logging.getLogger(logger_name)
+            logger.propagate = False
+            logger.setLevel(logging.INFO)
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
 
     def create_dataset(
         self, datasource: DataSource, lazy: bool = False
