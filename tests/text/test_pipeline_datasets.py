@@ -1,9 +1,10 @@
+import logging
 import os
 
 import pandas as pd
 import pytest
-from allennlp.data import AllennlpDataset, Instance, AllennlpLazyDataset
 
+# fmt: off
 from biome.text import (
     Pipeline,
     PipelineConfiguration,
@@ -12,6 +13,9 @@ from biome.text import (
 )
 from biome.text.data import DataSource
 from biome.text.modules.heads import TextClassificationConfiguration
+
+from allennlp.data import AllennlpDataset, Instance, AllennlpLazyDataset
+# fmt: on
 
 
 @pytest.fixture
@@ -138,3 +142,6 @@ def test_training_with_logging(
     with open(os.path.join(output_dir, "train.log")) as train_log:
         for line in train_log.readlines():
             assert "allennlp" in line
+
+    assert logging.getLogger("allennlp").level == logging.ERROR
+    assert logging.getLogger("biome").level == logging.INFO

@@ -252,12 +252,14 @@ class Pipeline:
         except ModuleNotFoundError:
             pass
 
-        for logger_name in ["allennlp", "biome"]:
+        for logger_name, level in [
+            ("allennlp", logging.ERROR),
+            ("biome", logging.INFO),
+        ]:
             logger = logging.getLogger(logger_name)
-            logger.setLevel(logging.ERROR)
+            logger.setLevel(level)
             logger.propagate = True
             logger.handlers = []
-
 
     @staticmethod
     def __configure_training_logging(output_dir: str, quiet: bool = False) -> None:
