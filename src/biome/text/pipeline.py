@@ -199,7 +199,7 @@ class Pipeline:
             if not restore and os.path.isdir(output):
                 shutil.rmtree(output)
 
-            self.__configure_allennlp_logger(output, quiet)
+            self.__configure_training_logging(output, quiet)
 
             # The original pipeline keeps unchanged
             train_pipeline = copy.deepcopy(self)
@@ -239,22 +239,38 @@ class Pipeline:
             return TrainingResults(model_path, metrics)
 
         finally:
-            self.__restore_allennlp_logger()
+            self.__restore_training_logging()
 
     @staticmethod
-    def __restore_allennlp_logger():
-        logger = logging.getLogger("allennlp")
-        logger.propagate = True
-        logger.handlers = []
-        logger.setLevel(logging.ERROR)
+    def __restore_training_logging():
+        """Restore the training logging. This method should be called after a training process"""
+
+        try:
+            import tqdm
+
+            tqdm.tqdm.disable = False
+        except ModuleNotFoundError:
+            pass
+
+        for logger_name in ["allennlp", "biome"]:
+            logger = logging.getLogger(logger_name)
+            logger.setLevel(logging.ERROR)
+            logger.propagate = True
+            logger.handlers = []
+
 
     @staticmethod
-    def __configure_allennlp_logger(output_dir: str, quiet: bool = False) -> None:
-        """Configures allennlp logging"""
+    def __configure_training_logging(output_dir: str, quiet: bool = False) -> None:
+        """Configures training logging"""
+        try:
+            import tqdm
+
+            tqdm.tqdm.disable = quiet
+        except ModuleNotFoundError:
+            pass
+
         os.makedirs(output_dir, exist_ok=True)
-        logger = logging.getLogger("allennlp")
-        logger.propagate = False
-        logger.setLevel(logging.DEBUG)
+
         # create file handler which logs even debug messages
         file_handler = logging.FileHandler(os.path.join(output_dir, "train.log"))
         file_handler.setLevel(logging.INFO)
@@ -267,9 +283,13 @@ class Pipeline:
         )
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
-        # add the handlers to the logger
-        logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
+        # add the handlers to the referred loggers
+        for logger_name in ["allennlp", "biome"]:
+            logger = logging.getLogger(logger_name)
+            logger.propagate = False
+            logger.setLevel(logging.INFO)
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
 
     def create_dataset(
         self, datasource: DataSource, lazy: bool = False
