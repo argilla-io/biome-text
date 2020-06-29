@@ -248,7 +248,6 @@ class PipelineTrainer:
         self._output_dir = output_dir
         self._batch_weight_key = batch_weight_key
         self._embedding_sources_mapping = embedding_sources_mapping
-        self._batch_size = self._trainer_config.batch_size
         self._training = training
         self._validation = validation
         self._test = test
@@ -279,7 +278,9 @@ class PipelineTrainer:
                 dataset.index_with(self._pipeline.backbone.vocab)
 
         trainer_params = Params(
-            self._trainer_as_allennlp_configuration(self._trainer_config)
+            helpers.sanitize_for_params(
+                self._trainer_as_allennlp_configuration(self._trainer_config)
+            )
         )
 
         no_grad_regexes = trainer_params.pop(
@@ -351,7 +352,9 @@ class PipelineTrainer:
         self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
         return evaluate(
             self._pipeline._model,
-            data_loader=DataLoader(test_data, batch_size=self._batch_size),
+            data_loader=DataLoader(
+                test_data, batch_size=self._trainer_config.batch_size
+            ),
             cuda_device=self._trainer.cuda_device,
             batch_weight_key=self._batch_weight_key,
         )

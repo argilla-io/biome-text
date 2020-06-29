@@ -11,7 +11,7 @@ from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
 from .features import CharFeatures, WordFeatures
 from .featurizer import InputFeaturizer
-from .helpers import save_dict_as_yaml
+from .helpers import save_dict_as_yaml, sanitize_for_params
 from .modules.encoders import Encoder
 from .modules.heads.task_head import TaskHeadConfiguration
 from .tokenizer import Tokenizer
@@ -252,6 +252,7 @@ class PipelineConfiguration(FromParams):
         -------
         pipeline_configuration
         """
+        config_dict = sanitize_for_params(copy.deepcopy(config_dict))
         return PipelineConfiguration.from_params(Params(config_dict))
 
     def as_dict(self) -> Dict[str, Any]:
