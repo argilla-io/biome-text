@@ -174,7 +174,7 @@ class ClassificationHead(TaskHead):
                 for i, v in enumerate(values):
                     label = vocabulary.label_for_index(self.backbone.vocab, i)
                     # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
-                    label = helpers.clean_metric_name(label)
+                    label = helpers.sanitize_metric_name(label)
                     final_metrics.update({"_{}/{}".format(k, label): v})
 
         return final_metrics

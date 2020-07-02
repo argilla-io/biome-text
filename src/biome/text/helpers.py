@@ -120,7 +120,18 @@ def split_signature_params_by_predicate(
     return matches_group, non_matches_group
 
 
-def clean_metric_name(name: str) -> str:
+def sanitize_metric_name(name: str) -> str:
+    """Sanitizes the name to comply with tensorboardX conventions when logging.
+
+    Parameter
+    ---------
+    name
+        Name of the metric
+
+    Returns
+    -------
+    sanitized_name
+    """
     if not name:
         return name
     new_name = _INVALID_TAG_CHARACTERS.sub("_", name)
@@ -224,7 +235,17 @@ def get_full_class_name(the_class: Type) -> str:
 
 
 def stringify(value: Any) -> Any:
-    """Creates an equivalent data structure representing data values as string"""
+    """Creates an equivalent data structure representing data values as string
+
+    Parameters
+    ----------
+    value
+        Value to be stringified
+
+    Returns
+    -------
+    stringified_value
+    """
     if isinstance(value, str):
         return value
     if isinstance(value, dict):
@@ -238,6 +259,15 @@ def sanitize_for_params(x: Any) -> Any:
     """Sanitizes the input for a more flexible usage with AllenNLP's `.from_params()` machinery.
 
     For now it is mainly used to transform numpy numbers to python types
+
+    Parameters
+    ----------
+    x
+        The parameter passed on to `allennlp.common.FromParams.from_params()`
+
+    Returns
+    -------
+    sanitized_x
     """
     # AllenNLP has a similar method (allennlp.common.util.sanitize) but it does not work for my purpose, since
     # numpy types are checked only after the float type check, and:
