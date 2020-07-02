@@ -241,7 +241,7 @@ def sanitize_for_params(x: Any) -> Any:
     """
     # AllenNLP has a similar method (allennlp.common.util.sanitize) but it does not work for my purpose, since
     # numpy types are checked only after the float type check, and:
-    # isinstance(numpy.float64, float) == True !!!
+    # isinstance(numpy.float64(1), float) == True !!!
     if isinstance(x, util.numpy.number):
         return x.item()
     elif isinstance(x, util.numpy.bool_):
