@@ -54,7 +54,6 @@ class BaseTrainLogger(EpochCallback):
 
         Parameters
         ----------
-
         epoch:
             The current epoch
         metrics:
