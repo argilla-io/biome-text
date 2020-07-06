@@ -8,8 +8,8 @@ from biome.text.data import InstancesDataset
 from biome.text.training_results import TrainingResults
 
 
-class BaseTrainingLogger(EpochCallback):
-    """Base training logger for pipeline training"""
+class BaseTrainLogger(EpochCallback):
+    """Base train logger for pipeline training"""
 
     def init_train(
         self,
@@ -79,7 +79,7 @@ class BaseTrainingLogger(EpochCallback):
             self.log_epoch_metrics(epoch, metrics)
 
 
-class MlflowLogger(BaseTrainingLogger):
+class MlflowLogger(BaseTrainLogger):
     """A common mlflow logger for pipeline training"""
 
     def __init__(self, experiment_name: str = None, artifact_location: str = None):
