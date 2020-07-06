@@ -23,7 +23,6 @@ class BaseTrainLogger(EpochCallback):
 
         Parameters
         ----------
-
         pipeline:
             The training pipeline
         trainer_configuration:
