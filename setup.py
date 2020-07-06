@@ -94,6 +94,7 @@ if __name__ == "__main__":
             "s3fs~=0.4.0",
             "captum~=0.2.0",
             "ipywidgets~=7.5.1",
+            "mlflow~=1.9.0",
         ],
         extras_require={
             "testing": [
@@ -112,7 +113,7 @@ if __name__ == "__main__":
                 for file in glob.glob("src/biome/text/ui/webapp/**/*.*", recursive=True)
             ]
         },
-        entry_points={"console_scripts": ["biome=biome.text.cli:main",]},
+        entry_points={"console_scripts": ["biome=biome.text.cli:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,
     )
