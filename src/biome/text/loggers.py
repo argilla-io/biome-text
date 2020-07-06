@@ -33,7 +33,6 @@ class BaseTrainLogger(EpochCallback):
             Validation dataset
         test:
             Test dataset
-
         """
         pass
 
