@@ -11,16 +11,16 @@ from biome.text.training_results import TrainingResults
 class BaseTrainingLogger(EpochCallback):
     """Base training logger for pipeline training"""
 
-    def init_training(
+    def init_train(
         self,
         pipeline: Pipeline,
         trainer_configuration: TrainerConfiguration,
-        train: InstancesDataset,
+        training: InstancesDataset,
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,
     ):
         """
-        Init training logging
+        Init train logging
 
         Parameters
         ----------
@@ -29,8 +29,8 @@ class BaseTrainingLogger(EpochCallback):
             The training pipeline
         trainer_configuration:
             The trainer configuration
-        train:
-            Train dataset
+        training:
+            Training dataset
         validation:
             Validation dataset
         test:
@@ -39,9 +39,9 @@ class BaseTrainingLogger(EpochCallback):
         """
         pass
 
-    def end_training(self, results: TrainingResults):
+    def end_train(self, results: TrainingResults):
         """
-        End training logging
+        End train logging
 
         Parameters
         ----------
@@ -97,11 +97,11 @@ class MlflowLogger(BaseTrainingLogger):
         ).info.run_id
         self._skipped_metrics = ["training_duration"]
 
-    def init_training(
+    def init_train(
         self,
         pipeline: Pipeline,
         trainer_configuration: TrainerConfiguration,
-        train: InstancesDataset,
+        training: InstancesDataset,
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,
     ):
@@ -120,7 +120,7 @@ class MlflowLogger(BaseTrainingLogger):
             if k not in self._skipped_metrics
         ]
 
-    def end_training(self, results: TrainingResults):
+    def end_train(self, results: TrainingResults):
         try:
             self._client.log_artifact(self._run_id, local_path=results.model_path)
             [

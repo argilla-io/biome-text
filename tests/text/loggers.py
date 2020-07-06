@@ -22,13 +22,13 @@ def test_mlflow_logger():
     )
     trainer = TrainerConfiguration()
 
-    logger.init_training(pipeline, trainer, train=None)
+    logger.init_train(pipeline, trainer, training=None)
     for epoch in range(0, 10):
         logger.log_epoch_metrics(epoch, metrics={"key": 10 * epoch})
 
     model_path = mkdtemp()
     metrics = {"metric": 200}
-    logger.end_training(TrainingResults(model_path, metrics))
+    logger.end_train(TrainingResults(model_path, metrics))
 
     run = mlflow.get_run(logger._run_id)
     assert run
