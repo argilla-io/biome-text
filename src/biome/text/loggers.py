@@ -43,7 +43,6 @@ class BaseTrainLogger(EpochCallback):
 
         Parameters
         ----------
-
         results:
             The training result set
 
