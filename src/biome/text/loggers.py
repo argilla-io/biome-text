@@ -68,7 +68,6 @@ class BaseTrainLogger(EpochCallback):
         epoch: int,
         is_master: bool,
     ):
-
         if epoch >= 0:
             self.log_epoch_metrics(epoch, metrics)
 
