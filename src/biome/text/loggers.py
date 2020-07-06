@@ -58,7 +58,6 @@ class BaseTrainLogger(EpochCallback):
             The current epoch
         metrics:
             The metrics related to current epoch
-
         """
         pass
 
