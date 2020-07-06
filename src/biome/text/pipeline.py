@@ -354,6 +354,21 @@ class Pipeline:
         """
         return self._model.predict(*args, **kwargs)
 
+    def predict_batch(
+        self, input_dicts: Iterable[Dict[str, Any]]
+    ) -> List[Dict[str, numpy.ndarray]]:
+        """Returns predictions given some input data based on the current state of the model
+
+        The predictions will be computed batch-wise, which is faster
+        than calling `self.predict` for every single input data.
+
+        Parameters
+        ----------
+        input_dicts
+            The input data. The keys of the dicts must comply with the `self.inputs` attribute
+        """
+        return self._model.predict_batch(input_dicts)
+
     def explain(self, *args, n_steps: int = 5, **kwargs) -> Dict[str, Any]:
         """Returns a prediction given some input data including the attribution of each token to the prediction.
 
