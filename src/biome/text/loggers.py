@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 from allennlp.training import EpochCallback, GradientDescentTrainer
 from mlflow.tracking import MlflowClient
 
-from biome.text import Pipeline, TrainerConfiguration
 from biome.text.data import InstancesDataset
 from biome.text.training_results import TrainingResults
 
@@ -13,8 +12,8 @@ class BaseTrainLogger(EpochCallback):
 
     def init_train(
         self,
-        pipeline: Pipeline,
-        trainer_configuration: TrainerConfiguration,
+        pipeline: "Pipeline",
+        trainer_configuration: "TrainerConfiguration",
         training: InstancesDataset,
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,
@@ -99,8 +98,8 @@ class MlflowLogger(BaseTrainLogger):
 
     def init_train(
         self,
-        pipeline: Pipeline,
-        trainer_configuration: TrainerConfiguration,
+        pipeline: "Pipeline",
+        trainer_configuration: "TrainerConfiguration",
         training: InstancesDataset,
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,

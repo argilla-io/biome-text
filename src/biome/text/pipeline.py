@@ -28,7 +28,7 @@ from . import constants
 from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .loggers import BaseTrainingLogger
+from .loggers import BaseTrainLogger
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
 
@@ -156,7 +156,7 @@ class Pipeline:
         test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
-        loggers: List[BaseTrainingLogger] = None,
+        loggers: List[BaseTrainLogger] = None,
         restore: bool = False,
         quiet: bool = False,
     ) -> TrainingResults:
