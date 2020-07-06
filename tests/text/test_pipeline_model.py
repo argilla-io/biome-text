@@ -58,3 +58,17 @@ def test_explain_without_steps():
         "This is a simple test with only tokens in explain", n_steps=0
     )
     assert "explain" in prediction
+
+
+def test_predict_batch():
+    pipeline_config = PipelineConfiguration(
+        name="test-classifier",
+        head=TaskHeadConfiguration(type=TestHead),
+        features=FeaturesConfiguration(),
+    )
+    pipeline = Pipeline.from_config(pipeline_config)
+    predictions = pipeline.predict_batch([{"text": "test1"}, {"text": "test2"}])
+
+    assert len(predictions) == 2
+    assert all([isinstance(prediction, dict) for prediction in predictions])
+

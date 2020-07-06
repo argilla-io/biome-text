@@ -15,15 +15,13 @@ import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import DataLoader, Field, Instance, Token, Vocabulary
+from allennlp.data import Field, Instance, Token, Vocabulary
 from allennlp.data.fields import ListField, TextField
 from allennlp.models.archival import CONFIG_NAME
-from dask.dataframe import Series as DaskSeries
 
 from . import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
-from .data import DataSource
 from .errors import MissingArgumentError, WrongValueError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead, TaskOutput
@@ -157,7 +155,7 @@ class PipelineModel(allennlp.models.Model):
         """Fetch metrics defined in head layer"""
         return self._head.get_metrics(reset)
 
-    def text_to_instance(self, **inputs: Dict[str, Any]) -> Optional[Instance]:
+    def text_to_instance(self, **inputs) -> Optional[Instance]:
         """Applies the head featurize method"""
         try:
             return self._head.featurize(**inputs)
@@ -276,6 +274,38 @@ class PipelineModel(allennlp.models.Model):
         self.log_prediction(inputs, prediction)
 
         return prediction
+
+    def predict_batch(
+        self, input_dicts: Iterable[Dict[str, Any]],
+    ) -> List[Dict[str, numpy.ndarray]]:
+        """Returns predictions given some input data based on the current state of the model
+
+        The predictions will be computed batch-wise, which is faster
+        than calling `self.predict` for every single input data.
+
+        Parameters
+        ----------
+        input_dicts
+            The input data. The keys of the dicts must comply with the `self.inputs` attribute
+
+        Returns
+        -------
+        predictions
+        """
+        if self.training:
+            warnings.warn(
+                "Train model enabled. "
+                "Disabling training mode automatically. You can manually disable it: "
+                "self.eval() or self.train(False)"
+            )
+            self.eval()
+
+        instances = [self.text_to_instance(**input_dict) for input_dict in input_dicts]
+        predictions = self.forward_on_instances(instances)
+        for input_dict, prediction in zip(input_dicts, predictions):
+            self.log_prediction(input_dict, prediction)
+
+        return predictions
 
     def explain(self, *args, n_steps: int, **kwargs) -> Dict[str, Any]:
         """
