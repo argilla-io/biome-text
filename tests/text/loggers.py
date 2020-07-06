@@ -38,7 +38,9 @@ def test_mlflow_logger():
     assert str(trainer) == run.data.params["trainer"]
     assert str(pipeline.config.as_dict()) == run.data.params["pipeline"]
     # Artifacts
-    assert os.path.basename(model_path) in os.listdir(urlparse(run.info.artifact_uri).path)
+    assert os.path.basename(model_path) in os.listdir(
+        urlparse(run.info.artifact_uri).path
+    )
     # Metrics
     for metric in metrics:
         assert (
