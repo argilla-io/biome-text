@@ -180,7 +180,7 @@ class Pipeline:
             A list of callbacks that will be called at the end of every epoch, and at the start of
             training (with epoch = -1).
         loggers:
-            A list of training loggers used in training. See `MlflowLogger` as example
+            A list of loggers that execute a callback before the training, after each epoch, and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)```
         restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
