@@ -202,8 +202,7 @@ class Pipeline:
             self.__configure_training_logging(output, quiet)
 
             # The original pipeline keeps unchanged
-            #train_pipeline = copy.deepcopy(self)
-            train_pipeline = self
+            train_pipeline = self.__clone_pipeline()
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
@@ -241,6 +240,20 @@ class Pipeline:
 
         finally:
             self.__restore_training_logging()
+
+    def __clone_pipeline(self):
+        """
+        Handles pipeline clone. Tries to apply a deepcopy as default and, if is not possible,
+        create pipelines from self instance type manually
+        """
+        try:
+            return copy.deepcopy(self)
+        except Exception as e:
+            if isinstance(self, _BlankPipeline):
+                return _BlankPipeline(config=self.config, vocab=self._model.vocab)
+            if isinstance(self, _PreTrainedPipeline):
+                return Pipeline.from_pretrained(self.trained_path)
+            raise ValueError(f"Cannot clone pipeline {self}")
 
     @staticmethod
     def __restore_training_logging():
