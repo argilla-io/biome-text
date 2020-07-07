@@ -28,6 +28,7 @@ from . import constants
 from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
+from .loggers import BaseTrainLogger
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
 
@@ -154,7 +155,7 @@ class Pipeline:
         validation: Optional[Union[DataSource, InstancesDataset]] = None,
         test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
-        epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
+        loggers: List[BaseTrainLogger] = None,
         restore: bool = False,
         quiet: bool = False,
     ) -> TrainingResults:
@@ -174,9 +175,9 @@ class Pipeline:
             The test DataSource (optional)
         extend_vocab:
             Extends the vocabulary tokens with the provided VocabularyConfiguration
-        epoch_callbacks:
-            A list of callbacks that will be called at the end of every epoch, and at the start of
-            training (with epoch = -1).
+        loggers:
+            A list of loggers that execute a callback before the training, after each epoch,
+            and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
         restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
@@ -227,16 +228,40 @@ class Pipeline:
                 if isinstance(dataset, DataSource):
                     datasets[name] = train_pipeline.create_dataset(dataset)
 
-            trainer = PipelineTrainer(
+            loggers = loggers or []
+
+            pipeline_trainer = PipelineTrainer(
                 train_pipeline,
                 trainer_config=trainer,
                 output_dir=output,
-                epoch_callbacks=epoch_callbacks,
+                epoch_callbacks=loggers,
                 **datasets,
             )
 
-            model_path, metrics = trainer.train()
-            return TrainingResults(model_path, metrics)
+            for logger in loggers:
+                try:
+                    logger.init_train(
+                        pipeline=train_pipeline,
+                        trainer_configuration=trainer,
+                        **datasets,
+                    )
+                except Exception as e:
+                    self.__LOGGER.warning(
+                        "Logger %s failed on init_train: %s", logger, e
+                    )
+
+            model_path, metrics = pipeline_trainer.train()
+            train_results = TrainingResults(model_path, metrics)
+
+            for logger in loggers:
+                try:
+                    logger.end_train(train_results)
+                except Exception as e:
+                    self.__LOGGER.warning(
+                        "Logger %s failed on end_traing: %s", logger, e
+                    )
+
+            return train_results
 
         finally:
             self.__restore_training_logging()

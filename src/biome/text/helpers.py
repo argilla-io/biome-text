@@ -66,7 +66,9 @@ def get_env_cuda_device() -> int:
     return cuda_device
 
 
-def update_method_signature(signature: inspect.Signature, to_method: Callable) -> Callable:
+def update_method_signature(
+    signature: inspect.Signature, to_method: Callable
+) -> Callable:
     """Updates the signature of a method
 
     Parameters
@@ -80,6 +82,7 @@ def update_method_signature(signature: inspect.Signature, to_method: Callable) -
     -------
     updated_method
     """
+
     def wrapper(*args, **kwargs):
         return to_method(*args, **kwargs)
 
