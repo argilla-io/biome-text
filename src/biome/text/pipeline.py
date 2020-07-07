@@ -155,7 +155,6 @@ class Pipeline:
         validation: Optional[Union[DataSource, InstancesDataset]] = None,
         test: Optional[Union[DataSource, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
-        epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
         loggers: List[BaseTrainLogger] = None,
         restore: bool = False,
         quiet: bool = False,
@@ -176,11 +175,9 @@ class Pipeline:
             The test DataSource (optional)
         extend_vocab:
             Extends the vocabulary tokens with the provided VocabularyConfiguration
-        epoch_callbacks:
-            A list of callbacks that will be called at the end of every epoch, and at the start of
-            training (with epoch = -1).
         loggers:
-            A list of loggers that execute a callback before the training, after each epoch, and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)```
+            A list of loggers that execute a callback before the training, after each epoch,
+            and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
         restore:
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
@@ -231,14 +228,13 @@ class Pipeline:
                 if isinstance(dataset, DataSource):
                     datasets[name] = train_pipeline.create_dataset(dataset)
 
-            epoch_callbacks = epoch_callbacks or []
             loggers = loggers or []
 
             pipeline_trainer = PipelineTrainer(
                 train_pipeline,
                 trainer_config=trainer,
                 output_dir=output,
-                epoch_callbacks=epoch_callbacks + loggers,
+                epoch_callbacks=loggers,
                 **datasets,
             )
 
