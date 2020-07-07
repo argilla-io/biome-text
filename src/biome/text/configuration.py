@@ -9,7 +9,7 @@ from allennlp.modules import TextFieldEmbedder
 
 from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
-from .features import CharFeatures, WordFeatures
+from .features import CharFeatures, WordFeatures, TransformersFeatures
 from .featurizer import InputFeaturizer
 from .helpers import save_dict_as_yaml, sanitize_for_params
 from .modules.encoders import Encoder
@@ -37,21 +37,29 @@ class FeaturesConfiguration(FromParams):
     
     Parameters
     ----------
-    word : `biome.text.features.WordFeatures`
-        The word feature configurations, see `WordFeatures`
-    char: `biome.text.features.CharFeatures`
-        The character feature configurations, see `CharFeatures`
+    word
+        The word feature configurations, see `biome.text.features.WordFeatures`
+    char
+        The character feature configurations, see `biome.text.features.CharFeatures`
+    transformers
+        The transformers feature configuration, see `biome.text.features.TransformersFeatures`
+        A word-level representation of the [transformer](https://huggingface.co/models) models using AllenNLP's
+
     """
 
     __DEFAULT_CONFIG = WordFeatures(embedding_dim=50)
 
     def __init__(
-        self, word: Optional[WordFeatures] = None, char: Optional[CharFeatures] = None
+        self,
+        word: Optional[WordFeatures] = None,
+        char: Optional[CharFeatures] = None,
+        transformers: Optional[TransformersFeatures] = None,
     ):
         self.word = word or None
         self.char = char or None
+        self.transformers = transformers or None
 
-        if not (word or char):
+        if not (word or char or transformers):
             self.word = self.__DEFAULT_CONFIG
 
     @classmethod
@@ -65,8 +73,11 @@ class FeaturesConfiguration(FromParams):
         char = params.pop("char", None)
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
+        transformers = params.pop("transformers", None)
+        transformers = TransformersFeatures(**transformers.as_dict(quiet=True)) if transformers else None
+
         params.assert_empty("FeaturesConfiguration")
-        return cls(word=word, char=char)
+        return cls(word=word, char=char, transformers=transformers)
 
     @property
     def keys(self) -> List[str]:
@@ -78,7 +89,7 @@ class FeaturesConfiguration(FromParams):
 
         Parameters
         ----------
-        vocab: `Vocabulary`
+        vocab
             The vocabulary for which to create the embedder
 
         Returns
@@ -115,12 +126,12 @@ class FeaturesConfiguration(FromParams):
 
         Parameters
         ----------
-        tokenizer: `Tokenizer`
+        tokenizer
             Tokenizer used for this featurizer
 
         Returns
         -------
-        featurizer: `InputFeaturizer`
+        featurizer
             The configured `InputFeaturizer`
         """
         configuration = self._make_allennlp_config()
@@ -139,7 +150,7 @@ class FeaturesConfiguration(FromParams):
         config_dict
         """
         configuration = {
-            spec.namespace: spec.config for spec in [self.word, self.char] if spec
+            spec.namespace: spec.config for spec in [self.word, self.char, self.transformers] if spec
         }
 
         return copy.deepcopy(configuration)
