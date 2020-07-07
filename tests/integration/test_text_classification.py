@@ -39,6 +39,9 @@ def pipeline_dict() -> dict:
                 },
                 "dropout": 0.1,
             },
+            "transformers": {
+                "model_name": "distilbert-base-multilingual-cased"
+            }
         },
         "head": {
             "type": "TextClassification",
@@ -88,7 +91,7 @@ def pipeline_dict() -> dict:
 def trainer_dict() -> dict:
     return {
         "batch_size": 64,
-        "num_epochs": 5,
+        "num_epochs": 1,
         "optimizer": {"type": "adam", "lr": 0.01,},
     }
 
@@ -119,7 +122,7 @@ def test_text_classification(
     pl.train(
         output=str(output),
         trainer=trainer,
-        training=train_valid_data_source[0],
+        training=train_valid_data_source[1],
         validation=train_valid_data_source[1],
     )
 

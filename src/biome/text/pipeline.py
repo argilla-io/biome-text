@@ -202,7 +202,8 @@ class Pipeline:
             self.__configure_training_logging(output, quiet)
 
             # The original pipeline keeps unchanged
-            train_pipeline = copy.deepcopy(self)
+            #train_pipeline = copy.deepcopy(self)
+            train_pipeline = self
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
