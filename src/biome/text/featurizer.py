@@ -28,12 +28,7 @@ class InputFeaturizer:
         self.tokenizer = tokenizer
         self.indexer = indexer
 
-    @property
-    def has_word_features(self) -> bool:
-        """Checks if word features are already configured as part of the featurization"""
-        return WordFeatures.namespace in self.indexer
-
-    def featurize(
+    def __call__(
         self,
         record: Union[str, List[str], Dict[str, Any]],
         to_field: str = "record",
@@ -61,17 +56,6 @@ class InputFeaturizer:
         -------
         instance: `Instance`
         """
-        return self(record, to_field, aggregate, tokenize, exclude_record_keys)
-
-    def __call__(
-        self,
-        record: Union[str, List[str], Dict[str, Any]],
-        to_field: str = "record",
-        aggregate: bool = False,
-        tokenize: bool = True,
-        exclude_record_keys: bool = False,
-    ):
-        """See `self.featurize()`"""
         data = record
 
         record_tokens = (
@@ -129,3 +113,9 @@ class InputFeaturizer:
         return ListField(
             [TextField(entry_tokens, self.indexer) for entry_tokens in tokens]
         )
+
+    @property
+    def has_word_features(self) -> bool:
+        """Checks if word features are already configured as part of the featurization"""
+        return WordFeatures.namespace in self.indexer
+
