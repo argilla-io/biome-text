@@ -1,8 +1,7 @@
-import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional
 
 import torch
-from allennlp.data import Instance, TextFieldTensors, Vocabulary
+from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
@@ -74,35 +73,3 @@ class ModelBackbone(torch.nn.Module):
         for model_path, module in self.named_modules():
             if hasattr(module, "extend_vocab"):
                 module.extend_vocab(self.vocab)
-
-    def featurize(
-        self,
-        record: Union[str, List[str], Dict[str, Any]],
-        to_field: str = "record",
-        aggregate: bool = False,
-        tokenize: bool = True,
-    ) -> Instance:
-        """Generates an allennlp instance from a record input.
-        DEPRECATED: use self.featurizer instead
-
-        Parameters
-        ----------
-        record: `Union[str, List[str], Dict[str, Any]]`
-            Input data
-        to_field: `str`
-            The field name in the returned instance
-        aggregate: `bool`
-            If true, the returned instance will contain a single `TextField` with all record fields;
-            If false, the instance will contain a `ListField` of `TextField`s.
-        tokenize: `bool`
-            If false, skip tokenization phase and pass record data as tokenized token list.
-
-        Returns
-        -------
-        instance: `Instance`
-        """
-        warnings.warn(
-            "backbone.featurize is deprecated. Use instead backbone.featurizer",
-            DeprecationWarning,
-        )
-        return self.featurizer(record, to_field, aggregate, tokenize)
