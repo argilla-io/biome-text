@@ -1,8 +1,7 @@
-import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional
 
 import torch
-from allennlp.data import Instance, TextFieldTensors, Vocabulary
+from allennlp.data import TextFieldTensors, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
