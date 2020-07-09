@@ -294,16 +294,9 @@ class PipelineConfiguration(FromParams):
             Path to the output file
         """
         config_dict = copy.deepcopy(self.as_dict())
-        config_dict["features"]["word"] = (
-            config_dict["features"]["word"].to_dict()
-            if config_dict["features"]["word"] is not None
-            else None
-        )
-        config_dict["features"]["char"] = (
-            config_dict["features"]["char"].to_dict()
-            if config_dict["features"]["char"] is not None
-            else None
-        )
+        for feature_name, feature in config_dict["features"]:
+            if feature is not None:
+                config_dict["features"][feature_name] = feature.to_dict()
 
         save_dict_as_yaml(config_dict, path)
 
