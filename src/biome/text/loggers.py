@@ -1,6 +1,8 @@
 from typing import Any, Dict, Optional
 
 from allennlp.training import EpochCallback, GradientDescentTrainer
+from mlflow.entities import Experiment
+from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 
 from biome.text.data import InstancesDataset
@@ -77,18 +79,35 @@ class MlflowLogger(BaseTrainLogger):
 
     def __init__(self, experiment_name: str = None, artifact_location: str = None):
         self._client = MlflowClient()
-        self._experiment = self._client.get_experiment_by_name(
-            experiment_name or "default"
+        self._experiment = self._configure_experiment_with_retry(
+            experiment_name, artifact_location
         )
-        if not self._experiment:
-            self._experiment = self._client.get_experiment(
+
+        run = self._client.create_run(self._experiment.experiment_id)
+        self._run_id = run.info.run_id
+
+        self._skipped_metrics = ["training_duration"]
+
+    def _configure_experiment_with_retry(
+        self, experiment_name: str, artifact_location: str, retries: int = 5
+    ) -> Optional[Experiment]:
+        """Tries to configure (fetch or create) an mlflow experiment with retrying process on errors"""
+        if retries <= 0:
+            return None
+        try:
+            experiment = self._client.get_experiment_by_name(
+                experiment_name or "default"
+            )
+            if experiment:
+                return experiment
+
+            return self._client.get_experiment(
                 self._client.create_experiment(experiment_name, artifact_location)
             )
-
-        self._run_id = self._client.create_run(
-            self._experiment.experiment_id
-        ).info.run_id
-        self._skipped_metrics = ["training_duration"]
+        except MlflowException:
+            return self._configure_experiment_with_retry(
+                experiment_name, artifact_location, retries=retries - 1
+            )
 
     def init_train(
         self,
