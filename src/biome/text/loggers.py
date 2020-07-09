@@ -5,6 +5,7 @@ from allennlp.training import EpochCallback, GradientDescentTrainer
 from mlflow.entities import Experiment
 from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
+from mlflow.utils import mlflow_tags
 
 from biome.text.data import InstancesDataset
 from biome.text.training_results import TrainingResults
@@ -76,17 +77,42 @@ class BaseTrainLogger(EpochCallback):
 
 
 class MlflowLogger(BaseTrainLogger):
-    """A common mlflow logger for pipeline training"""
+    """
+    A common mlflow logger for pipeline training
+
+    Parameters
+    ----------
+
+    experiment_name:
+        The experiment name
+    artifact_location:
+        The artifact location used for this experiment
+    run_name:
+        If specified, set a name to created run
+    tags:
+        Extra arguments used as tags to created experiment run
+
+    """
 
     __LOGGER = logging.getLogger(__name__)
 
-    def __init__(self, experiment_name: str = None, artifact_location: str = None):
+    def __init__(
+        self,
+        experiment_name: str = None,
+        artifact_location: str = None,
+        run_name: str = None,
+        **tags,
+    ):
         self._client = MlflowClient()
         self._experiment = self._configure_experiment_with_retry(
             experiment_name, artifact_location
         )
 
-        run = self._client.create_run(self._experiment.experiment_id)
+        tags = tags or {}
+        if run_name:
+            tags[mlflow_tags.MLFLOW_RUN_NAME] = run_name
+
+        run = self._client.create_run(self._experiment.experiment_id, tags=tags)
         self._run_id = run.info.run_id
 
         self._skipped_metrics = ["training_duration"]
