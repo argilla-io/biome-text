@@ -62,16 +62,15 @@ class ClassificationHead(TaskHead):
             return instance
 
         field = None
-        if (
-            isinstance(label, numpy.ndarray) or isinstance(label, list)
-        ) and self._multilabel:
+        # check if multilabel and if adequate type
+        if self._multilabel and isinstance(label, (list, numpy.ndarray)):
             label = label.tolist() if isinstance(label, numpy.ndarray) else label
             field = MultiLabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
-        if isinstance(label, (str, int)) and not self._multilabel:
+        # check if not multilabel and adequate type + check for empty strings
+        if not self._multilabel and isinstance(label, (str, int)) and label:
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
-        if (
-            not field
-        ):  # We have label info but we cannot build the label field --> discard the instance
+        if not field:
+            # We have label info but we cannot build the label field --> discard the instance
             return None
 
         instance.add_field(to_field, field)
