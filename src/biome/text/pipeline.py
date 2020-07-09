@@ -1,4 +1,3 @@
-import copy
 import inspect
 import logging
 import os
@@ -9,7 +8,7 @@ from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
 from allennlp.common import Params
-from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary
+from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary, Token
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
@@ -703,6 +702,10 @@ class _BlankPipeline(Pipeline):
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         vocab = self._extend_vocabulary(Vocabulary(), config)
         self._model = self.__model_from_config(self.config, vocab=vocab)
+        # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Pipeline's vocab
+        # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token:
+        for indexer in self._model.head.backbone.featurizer.indexer.values():
+            indexer.tokens_to_indices([Token("")], vocab)
 
 
 class _PreTrainedPipeline(Pipeline):

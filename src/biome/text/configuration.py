@@ -104,6 +104,7 @@ class FeaturesConfiguration(FromParams):
             embedder_cfg = configuration["word"]["embedder"]
             if "pretrained_file" in embedder_cfg:
                 embedder_cfg["pretrained_file"] = None
+
         return TextFieldEmbedder.from_params(
             Params(
                 {
@@ -140,6 +141,7 @@ class FeaturesConfiguration(FromParams):
             feature: TokenIndexer.from_params(Params(config["indexer"]))
             for feature, config in configuration.items()
         }
+
         return InputFeaturizer(tokenizer, indexer=indexer)
 
     def _make_allennlp_config(self) -> Dict[str, Any]:
