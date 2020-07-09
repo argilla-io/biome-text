@@ -273,7 +273,7 @@ class PipelineModel(allennlp.models.Model):
         try:
             prediction = self.forward_on_instance(instance)
         except Exception as error:
-            raise RuntimeError(f"Failed to make a prediction for '{inputs}'") from error
+            raise WrongValueError(f"Failed to make a prediction for '{inputs}'") from error
         self.log_prediction(inputs, prediction)
 
         return prediction
@@ -307,7 +307,7 @@ class PipelineModel(allennlp.models.Model):
         try:
             predictions = self.forward_on_instances(instances)
         except Exception as error:
-            raise RuntimeError(f"Failed to make predictions for '{input_dicts}'") from error
+            raise WrongValueError(f"Failed to make predictions for '{input_dicts}'") from error
         for input_dict, prediction in zip(input_dicts, predictions):
             self.log_prediction(input_dict, prediction)
 
@@ -334,7 +334,7 @@ class PipelineModel(allennlp.models.Model):
         try:
             prediction = self.forward_on_instance(instance)
         except Exception as error:
-            raise RuntimeError(f"Failed to make a prediction for '{inputs}'") from error
+            raise WrongValueError(f"Failed to make a prediction for '{inputs}'") from error
         explained_prediction = (
             prediction
             if n_steps <= 0
