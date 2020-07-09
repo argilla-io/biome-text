@@ -644,22 +644,21 @@ class Pipeline:
         """
         Extends a data vocabulary from a given configuration.
 
-        The source vocabulary won't be changed, instead of that, a new vocabulary will be created
-        including source vocab with extended configuration
+        The source vocabulary `vocab` won't be changed, instead a new vocabulary is created
+        that includes the source vocabulary `vocab` and a vocabulary created from `vocab_config`
 
         Parameters
         ----------
-        vocab: `Vocabulary`
+        vocab
             The source vocabulary
-        vocab_config: `VocabularyConfiguration`
+        vocab_config
             The vocab extension configuration
 
         Returns
         -------
-        vocab: `Vocabulary`
+        extended_vocab
             An extended `Vocabulary` using the provided configuration
         """
-
         datasets = [
             self.create_dataset(source) if isinstance(source, DataSource) else source
             for source in vocab_config.sources
@@ -675,6 +674,7 @@ class Pipeline:
             tokens_to_add=vocab_config.tokens_to_add,
         )
         instances_vocab.extend_from_vocab(vocab)
+
         return instances_vocab
 
 
