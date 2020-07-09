@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Optional
 
 from allennlp.training import EpochCallback, GradientDescentTrainer
@@ -77,6 +78,8 @@ class BaseTrainLogger(EpochCallback):
 class MlflowLogger(BaseTrainLogger):
     """A common mlflow logger for pipeline training"""
 
+    __LOGGER = logging.getLogger(__name__)
+
     def __init__(self, experiment_name: str = None, artifact_location: str = None):
         self._client = MlflowClient()
         self._experiment = self._configure_experiment_with_retry(
@@ -104,7 +107,8 @@ class MlflowLogger(BaseTrainLogger):
             return self._client.get_experiment(
                 self._client.create_experiment(experiment_name, artifact_location)
             )
-        except MlflowException:
+        except Exception as e:
+            self.__LOGGER.debug(e)
             return self._configure_experiment_with_retry(
                 experiment_name, artifact_location, retries=retries - 1
             )
