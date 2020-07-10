@@ -34,7 +34,7 @@ def training_data_source(tmp_path) -> DataSource:
 
 
 @pytest.fixture
-def path_to_pipeline_yaml(tmp_path) -> str:
+def pipeline_dict() -> Dict:
     pipeline_dict = {
         "name": "biome-bimpm",
         "tokenizer": {"text_cleaning": {"rules": ["strip_spaces"]}},
@@ -141,11 +141,8 @@ def path_to_pipeline_yaml(tmp_path) -> str:
             },
         },
     }
-    pipeline_yaml = tmp_path / "pipeline.yml"
-    with pipeline_yaml.open("w") as f:
-        yaml.safe_dump(pipeline_dict, f)
 
-    return str(pipeline_yaml)
+    return pipeline_dict
 
 
 @pytest.fixture
@@ -158,16 +155,24 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-def test_explain(path_to_pipeline_yaml):
-    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml)
+def test_explain(pipeline_dict):
+    pipeline = Pipeline.from_config(pipeline_dict)
     explain = pipeline.explain(
         record1={"first_name": "Hans"}, record2={"first_name": "Hansel"},
     )
+
     assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
+    assert explain["explain"]["record1"][0]["token"] == "first_name Hans"
+    assert explain["explain"]["record2"][0]["token"] == "first_name Hansel"
+
+    with pytest.raises(RuntimeError):
+        pipeline.explain(
+            record1={"first_name": "Hans", "last_name": "Zimmermann"}, record2={"first_name": "Hansel"},
+        )
 
 
-def test_train(path_to_pipeline_yaml, training_data_source, trainer_dict, tmp_path):
-    pipeline = Pipeline.from_yaml(path_to_pipeline_yaml,)
+def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
+    pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
 

@@ -13,11 +13,6 @@ from allennlp.nn import InitializerApplicator, util
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
-from biome.text.configuration import CharFeatures, WordFeatures
-from biome.text.helpers import (
-    get_char_tokens_ids_from_text_field_tensors,
-    get_word_tokens_ids_from_text_field_tensors,
-)
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.configuration import (
     BiMpmMatchingConfiguration,
@@ -66,6 +61,9 @@ class RecordPairClassification(ClassificationHead):
     initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
         If provided, will be used to initialize the model parameters.
     """
+
+    _RECORD1_ARG_NAME_IN_FORWARD = "record1"
+    _RECORD2_ARG_NAME_IN_FORWARD = "record2"
 
     def __init__(
         self,
@@ -156,8 +154,8 @@ class RecordPairClassification(ClassificationHead):
         )
         instance = Instance(
             {
-                "record1": record1_instance.get("record"),
-                "record2": record2_instance.get("record"),
+                self._RECORD1_ARG_NAME_IN_FORWARD: record1_instance.get("record"),
+                self._RECORD2_ARG_NAME_IN_FORWARD: record2_instance.get("record"),
             }
         )
         instance = self.add_label(instance, label)
@@ -388,22 +386,22 @@ class RecordPairClassification(ClassificationHead):
         prediction_dict
             The prediction dictionary with a newly added "explain" key
         """
-        # TODO(dcfidalgo): optimize: for the prediction we already embedded and field encoded the records.
-        #     Also, the forward passes here are always done on cpu!
-
         batch = Batch([instance])
         tokens_ids = batch.as_tensor_dict()
 
-        # get attributions for each field
+        # 1. Get field encodings
+        # TODO(dcfidalgo): optimize: for the prediction we already embedded and field encoded the records.
+        #     Also, the forward passes here are always done on cpu!
         field_encoded_record1, record_mask_record1 = self._field_encoding(
-            tokens_ids.get("record1")
+            tokens_ids.get(self._RECORD1_ARG_NAME_IN_FORWARD)
         )
         field_encoded_record2, record_mask_record2 = self._field_encoding(
-            tokens_ids.get("record2")
+            tokens_ids.get(self._RECORD2_ARG_NAME_IN_FORWARD)
         )
-        if not field_encoded_record2.size() == field_encoded_record2.size():
+        if not field_encoded_record1.size() == field_encoded_record2.size():
             raise RuntimeError("Both records must have the same number of data fields!")
 
+        # 2. Get attributes
         ig = IntegratedGradients(self._bimpm_forward)
 
         prediction_target = int(np.argmax(prediction["probs"]))
@@ -465,20 +463,24 @@ class RecordPairClassification(ClassificationHead):
             ig_attribute_record2, 1
         )
 
-        # get tokens corresponding to the attributions
-        field_tokens_record1 = self._get_field_tokens(tokens_ids.get("record1"))
-        field_tokens_record2 = self._get_field_tokens(tokens_ids.get("record2"))
+        # 3. Get tokens corresponding to the attributions
+        field_tokens_record1 = []
+        for textfield in instance.get(self._RECORD1_ARG_NAME_IN_FORWARD):
+            field_tokens_record1.append(" ".join([token.text for token in textfield.tokens]))
+        field_tokens_record2 = []
+        for textfield in instance.get(self._RECORD2_ARG_NAME_IN_FORWARD):
+            field_tokens_record2.append(" ".join([token.text for token in textfield.tokens]))
 
         return {
             **prediction,
             "explain": {
-                "record1": [
+                self._RECORD1_ARG_NAME_IN_FORWARD: [
                     {"token": token, "attribution": attribution}
                     for token, attribution in zip(
                         field_tokens_record1, attributions_record1
                     )
                 ],
-                "record2": [
+                self._RECORD2_ARG_NAME_IN_FORWARD: [
                     {"token": token, "attribution": attribution}
                     for token, attribution in zip(
                         field_tokens_record2, attributions_record2
@@ -486,57 +488,6 @@ class RecordPairClassification(ClassificationHead):
                 ],
             },
         }
-
-    def _get_field_tokens(self, record_token_ids: TextFieldTensors) -> List[str]:
-        """
-        TODO(dcfidalgo): This can very likely be optimised!
-        Parameters
-        ----------
-        record_token_ids
-
-        Returns
-        -------
-
-        """
-        field_tokens = []
-
-        if WordFeatures.namespace in record_token_ids:
-            # batch size is 1 -> [0]
-            for field in get_word_tokens_ids_from_text_field_tensors(record_token_ids)[
-                0
-            ]:
-                tokens = []
-                for word_idx in field:
-                    # skipp padding
-                    if word_idx.item() == 0:
-                        continue
-                    token = self.backbone.vocab.get_token_from_index(
-                        word_idx.item(), namespace=WordFeatures.namespace
-                    )
-                    tokens.append(token)
-                field_tokens.append(" ".join(tokens))
-
-        elif CharFeatures.namespace in record_token_ids:
-            # batch size is 1 -> [0]
-            for field in get_char_tokens_ids_from_text_field_tensors(record_token_ids)[
-                0
-            ]:
-                tokens = []
-                for word in field:
-                    token = []
-                    for char_idx in word:
-                        # skipp padding
-                        if char_idx.item() == 0:
-                            continue
-                        char = self.backbone.vocab.get_token_from_index(
-                            char_idx.item(), namespace=CharFeatures.namespace
-                        )
-                        token.append(char)
-                    if token:
-                        tokens.append("".join(token))
-                field_tokens.append(" ".join(tokens))
-
-        return field_tokens
 
     @staticmethod
     def _get_attributions_and_delta(
