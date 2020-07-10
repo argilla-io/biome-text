@@ -260,25 +260,9 @@ class PipelineModel(allennlp.models.Model):
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Make a single model prediction"""
-        if self.training:
-            warnings.warn(
-                "Train model enabled. "
-                "Disabling training mode automatically. You can manually disable it: "
-                "self.eval() or self.train(False)"
-            )
-            self.eval()
-
         inputs = self._model_inputs_from_args(*args, **kwargs)
-        instance = self.text_to_instance(**inputs)
-        try:
-            prediction = self.forward_on_instance(instance)
-        except Exception as error:
-            raise WrongValueError(
-                f"Failed to make a prediction for '{inputs}'"
-            ) from error
-        self.log_prediction(inputs, prediction)
 
-        return prediction
+        return self.predict_batch([inputs])[0]
 
     def predict_batch(
         self, input_dicts: Iterable[Dict[str, Any]]
