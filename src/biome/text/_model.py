@@ -273,13 +273,15 @@ class PipelineModel(allennlp.models.Model):
         try:
             prediction = self.forward_on_instance(instance)
         except Exception as error:
-            raise WrongValueError(f"Failed to make a prediction for '{inputs}'") from error
+            raise WrongValueError(
+                f"Failed to make a prediction for '{inputs}'"
+            ) from error
         self.log_prediction(inputs, prediction)
 
         return prediction
 
     def predict_batch(
-        self, input_dicts: Iterable[Dict[str, Any]],
+        self, input_dicts: Iterable[Dict[str, Any]]
     ) -> List[Dict[str, numpy.ndarray]]:
         """Returns predictions given some input data based on the current state of the model
 
@@ -307,11 +309,47 @@ class PipelineModel(allennlp.models.Model):
         try:
             predictions = self.forward_on_instances(instances)
         except Exception as error:
-            raise WrongValueError(f"Failed to make predictions for '{input_dicts}'") from error
+            raise WrongValueError(
+                f"Failed to make predictions for '{input_dicts}'"
+            ) from error
         for input_dict, prediction in zip(input_dicts, predictions):
             self.log_prediction(input_dict, prediction)
 
         return predictions
+
+    def explain_batch(self, input_dicts: Iterable[Dict[str, Any]], n_steps: int):
+        """
+        Applies a batch prediction including token attribution explanation
+
+        Parameters
+        ----------
+
+        input_dicts
+            The input data. The keys of the dicts must comply with the `self.inputs` attribute
+        n_steps: int
+            The number of steps for token attribution calculation (if proceed).
+            If the number of steps is less than 1, the attributions will not be calculated
+
+        Returns
+        -------
+            The predictions with information of internal data representation.
+
+        """
+        instances = [self.text_to_instance(**input_dict) for input_dict in input_dicts]
+
+        try:
+            predictions = self.forward_on_instances(instances)
+        except Exception as error:
+            raise WrongValueError(
+                f"Failed to make predictions for '{input_dicts}'"
+            ) from error
+
+        explained_predictions = [
+            self.__build_explained_prediction(prediction, instance, n_steps)
+            for instance, prediction in zip(instances, predictions)
+        ]
+
+        return explained_predictions
 
     def explain(self, *args, n_steps: int, **kwargs) -> Dict[str, Any]:
         """
@@ -334,7 +372,16 @@ class PipelineModel(allennlp.models.Model):
         try:
             prediction = self.forward_on_instance(instance)
         except Exception as error:
-            raise WrongValueError(f"Failed to make a prediction for '{inputs}'") from error
+            raise WrongValueError(
+                f"Failed to make a prediction for '{inputs}'"
+            ) from error
+
+        return self.__build_explained_prediction(prediction, instance, n_steps)
+
+    def __build_explained_prediction(
+        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
+    ):
+
         explained_prediction = (
             prediction
             if n_steps <= 0
@@ -342,10 +389,12 @@ class PipelineModel(allennlp.models.Model):
                 prediction=prediction, instance=instance, n_steps=n_steps
             )
         )
+
         # If no explain was found, we return input tokenization as default
         # TODO: We should use an explain data structure instead of dict
         if not explained_prediction.get("explain"):
             explained_prediction["explain"] = self._get_instance_tokenization(instance)
+
         return explained_prediction
 
     def _get_instance_tokenization(self, instance: Instance) -> Dict[str, Any]:

@@ -72,3 +72,22 @@ def test_predict_batch():
     assert len(predictions) == 2
     assert all([isinstance(prediction, dict) for prediction in predictions])
 
+
+def test_explain_batch():
+    pipeline_config = PipelineConfiguration(
+        name="test-classifier",
+        head=TaskHeadConfiguration(type=TestHead),
+        features=FeaturesConfiguration(),
+    )
+    pipeline = Pipeline.from_config(pipeline_config)
+    predictions = pipeline.explain_batch([{"text": "test1"}, {"text": "test2"}])
+    assert len(predictions) == 2
+
+    for prediction in predictions:
+        explain: Dict[str, Any] = prediction["explain"]
+
+        assert explain
+        assert explain.get("text")
+        for token_info in explain["text"]:
+            assert isinstance(token_info.get("token"), str)
+            assert token_info.get("attribution") == 0.0
