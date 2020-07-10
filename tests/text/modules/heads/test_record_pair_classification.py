@@ -172,7 +172,7 @@ def test_explain(pipeline_dict):
 
 
 def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
-    pipeline = Pipeline.from_yaml(pipeline_dict, )
+    pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
 
