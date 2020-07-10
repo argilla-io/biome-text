@@ -249,13 +249,21 @@ class PipelineModel(allennlp.models.Model):
         self.__setattr__("predict", predict_wrapper)
         self.__setattr__("_predict_with_cache", predict_with_cache)
 
-    def log_prediction(
-        self, inputs: Dict[str, Any], prediction: Dict[str, Any]
+    def _log_predictions(
+        self, input_dicts: Iterable[Dict[str, Any]], predictions: Iterable[Dict[str, Any]]
     ) -> None:
-        """Store prediction for model analysis and feedback sessions"""
-        if hasattr(self, "_prediction_logger"):
+        """Log predictions to a file for a model analysis and feedback sessions.
+
+        Parameters
+        ----------
+        input_dicts
+            Input data to the model
+        predictions
+            Returned predictions from the model
+        """
+        for input_dict, prediction in zip(input_dicts, predictions):
             self._prediction_logger.info(
-                json.dumps(dict(inputs=inputs, annotation=sanitize(prediction)))
+                json.dumps(dict(inputs=input_dict, annotation=sanitize(prediction)))
             )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
@@ -288,6 +296,10 @@ class PipelineModel(allennlp.models.Model):
         """
         _, predictions = self._get_instances_and_predictions(input_dicts)
 
+        # Log predictions if the prediction logger was initialized
+        if hasattr(self, "_prediction_logger"):
+            self._log_predictions(input_dicts, predictions)
+
         return predictions
 
     def _get_instances_and_predictions(self, input_dicts) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
@@ -319,9 +331,6 @@ class PipelineModel(allennlp.models.Model):
             raise WrongValueError(
                 f"Failed to make predictions for '{input_dicts}'"
             ) from error
-
-        for input_dict, prediction in zip(input_dicts, predictions):
-            self.log_prediction(input_dict, prediction)
 
         return instances, predictions
 
