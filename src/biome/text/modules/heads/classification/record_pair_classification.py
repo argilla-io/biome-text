@@ -13,11 +13,6 @@ from allennlp.nn import InitializerApplicator, util
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
-from biome.text.configuration import CharFeatures, WordFeatures
-from biome.text.helpers import (
-    get_char_tokens_ids_from_text_field_tensors,
-    get_word_tokens_ids_from_text_field_tensors,
-)
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.configuration import (
     BiMpmMatchingConfiguration,
