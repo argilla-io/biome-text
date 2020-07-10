@@ -5,10 +5,11 @@ import os
 import re
 import time
 from threading import Thread
-from typing import Any, Dict, Optional, Tuple, List
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import URLError
 from urllib.parse import urlparse
 
+import pandas as pd
 import uvicorn
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
@@ -97,14 +98,18 @@ def _explore(
     # this only makes really sense when we have a predict_batch_json method implemented ...
     n_partitions = max(1, round(len(ddf_mapped) / config.batch_size))
 
+    apply_func = pipeline.explain_batch if config.explain else pipeline.predict_batch
+
+    def annotate_batch(df: pd.DataFrame):
+        """Applies data annotation at batch level"""
+        input_batch = df.to_dict(orient="records")
+        predictions = apply_func(input_batch)
+        return pd.Series(map(sanitize, predictions), index=df.index)
+
     # a persist is necessary here, otherwise it fails for n_partitions == 1
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-    ddf_mapped = ddf_mapped.repartition(npartitions=n_partitions).persist()
-
-    apply_func = pipeline.explain if config.explain else pipeline.predict
-    ddf_mapped["annotation"] = ddf_mapped[pipeline.inputs].apply(
-        lambda x: sanitize(apply_func(**x.to_dict())), axis=1, meta=(None, object)
-    )
+    ddf_mapped: dd.DataFrame = ddf_mapped.repartition(npartitions=n_partitions).persist()
+    ddf_mapped["annotation"] = ddf_mapped.map_partitions(annotate_batch, meta=(None, object))
 
     ddf_source = (
         data_source.to_dataframe().repartition(npartitions=n_partitions).persist()
