@@ -394,30 +394,6 @@ class Pipeline:
         """
         return self._model.predict_batch(input_dicts)
 
-    def explain_batch(
-        self, input_dicts: Iterable[Dict[str, Any]], n_steps: int = 5
-    ) -> List[Dict[str, numpy.ndarray]]:
-        """Returns a prediction given some input data including the attribution of each token to the prediction.
-
-        The predictions will be computed batch-wise, which is faster
-        than calling `self.predict` for every single input data.
-
-        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
-
-        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
-        (`print(Pipeline.inputs)`)
-
-
-        Parameters
-        ----------
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
-        n_steps: int
-            The number of steps used when calculating the attribution of each token.
-            If the number of steps is less than 1, the attributions will not be calculated.
-        """
-        return self._model.explain_batch(input_dicts, n_steps=n_steps)
-
     def explain(self, *args, n_steps: int = 5, **kwargs) -> Dict[str, Any]:
         """Returns a prediction given some input data including the attribution of each token to the prediction.
 
@@ -438,6 +414,34 @@ class Pipeline:
             A dictionary containing the predictions and attributions
         """
         return self._model.explain(*args, n_steps=n_steps, **kwargs)
+
+    def explain_batch(
+        self, input_dicts: Iterable[Dict[str, Any]], n_steps: int = 5
+    ) -> List[Dict[str, numpy.ndarray]]:
+        """Returns a prediction given some input data including the attribution of each token to the prediction.
+
+        The predictions will be computed batch-wise, which is faster
+        than calling `self.predict` for every single input data.
+
+        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
+
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
+
+        Parameters
+        ----------
+        input_dicts
+            The input data. The keys of the dicts must comply with the `self.inputs` attribute
+        n_steps
+            The number of steps used when calculating the attribution of each token.
+            If the number of steps is less than 1, the attributions will not be calculated.
+
+        Returns
+        -------
+        predictions
+            A list of dictionaries containing the predictions and attributions
+        """
+        return self._model.explain_batch(input_dicts, n_steps=n_steps)
 
     def save_vocabulary(self, directory: str) -> None:
         """Saves the pipeline's vocabulary in a directory

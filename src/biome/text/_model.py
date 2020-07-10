@@ -8,7 +8,7 @@ import warnings
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast, Tuple
 
 import allennlp
 import numpy
@@ -249,36 +249,37 @@ class PipelineModel(allennlp.models.Model):
         self.__setattr__("predict", predict_wrapper)
         self.__setattr__("_predict_with_cache", predict_with_cache)
 
-    def log_prediction(
-        self, inputs: Dict[str, Any], prediction: Dict[str, Any]
+    def _log_predictions(
+        self, input_dicts: Iterable[Dict[str, Any]], predictions: Iterable[Dict[str, Any]]
     ) -> None:
-        """Store prediction for model analysis and feedback sessions"""
-        if hasattr(self, "_prediction_logger"):
+        """Log predictions to a file for a model analysis and feedback sessions.
+
+        Parameters
+        ----------
+        input_dicts
+            Input data to the model
+        predictions
+            Returned predictions from the model
+        """
+        for input_dict, prediction in zip(input_dicts, predictions):
             self._prediction_logger.info(
-                json.dumps(dict(inputs=inputs, annotation=sanitize(prediction)))
+                json.dumps(dict(inputs=input_dict, annotation=sanitize(prediction)))
             )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
-        """Make a single model prediction"""
-        if self.training:
-            warnings.warn(
-                "Train model enabled. "
-                "Disabling training mode automatically. You can manually disable it: "
-                "self.eval() or self.train(False)"
-            )
-            self.eval()
+        """Returns a prediction given some input data based on the current state of the model
 
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
+
+        Returns
+        -------
+        predictions: `Dict[str, numpy.ndarray]`
+            A dictionary containing the predictions and additional information
+        """
         inputs = self._model_inputs_from_args(*args, **kwargs)
-        instance = self.text_to_instance(**inputs)
-        try:
-            prediction = self.forward_on_instance(instance)
-        except Exception as error:
-            raise WrongValueError(
-                f"Failed to make a prediction for '{inputs}'"
-            ) from error
-        self.log_prediction(inputs, prediction)
 
-        return prediction
+        return self.predict_batch([inputs])[0]
 
     def predict_batch(
         self, input_dicts: Iterable[Dict[str, Any]]
@@ -292,10 +293,28 @@ class PipelineModel(allennlp.models.Model):
         ----------
         input_dicts
             The input data. The keys of the dicts must comply with the `self.inputs` attribute
+        """
+        _, predictions = self._get_instances_and_predictions(input_dicts)
+
+        # Log predictions if the prediction logger was initialized
+        if hasattr(self, "_prediction_logger"):
+            self._log_predictions(input_dicts, predictions)
+
+        return predictions
+
+    def _get_instances_and_predictions(self, input_dicts) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
+        """Returns instances from the input_dicts and their predictions.
+
+        Helper method used by the predict and explain methods.
+
+        Parameters
+        ----------
+        input_dicts
+            The input data. The keys of the dicts must comply with the `self.inputs` attribute
 
         Returns
         -------
-        predictions
+        (instances, predictions)
         """
         if self.training:
             warnings.warn(
@@ -312,37 +331,57 @@ class PipelineModel(allennlp.models.Model):
             raise WrongValueError(
                 f"Failed to make predictions for '{input_dicts}'"
             ) from error
-        for input_dict, prediction in zip(input_dicts, predictions):
-            self.log_prediction(input_dict, prediction)
 
-        return predictions
+        return instances, predictions
 
-    def explain_batch(self, input_dicts: Iterable[Dict[str, Any]], n_steps: int):
-        """
-        Applies a batch prediction including token attribution explanation
+    def explain(self, *args, n_steps: int, **kwargs) -> Dict[str, Any]:
+        """Returns a prediction given some input data including the attribution of each token to the prediction.
+
+        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
+
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
 
         Parameters
         ----------
-
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
         n_steps: int
-            The number of steps for token attribution calculation (if proceed).
-            If the number of steps is less than 1, the attributions will not be calculated
+            The number of steps used when calculating the attribution of each token.
+            If the number of steps is less than 1, the attributions will not be calculated.
 
         Returns
         -------
-            The predictions with information of internal data representation.
-
+        predictions: `Dict[str, numpy.ndarray]`
+            A dictionary containing the predictions and attributions
         """
-        instances = [self.text_to_instance(**input_dict) for input_dict in input_dicts]
+        inputs = self._model_inputs_from_args(*args, **kwargs)
 
-        try:
-            predictions = self.forward_on_instances(instances)
-        except Exception as error:
-            raise WrongValueError(
-                f"Failed to make predictions for '{input_dicts}'"
-            ) from error
+        return self.explain_batch([inputs], n_steps)[0]
+
+    def explain_batch(self, input_dicts: Iterable[Dict[str, Any]], n_steps: int):
+        """Returns a prediction given some input data including the attribution of each token to the prediction.
+
+        The predictions will be computed batch-wise, which is faster
+        than calling `self.predict` for every single input data.
+
+        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
+
+        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
+        (`print(Pipeline.inputs)`)
+
+        Parameters
+        ----------
+        input_dicts
+            The input data. The keys of the dicts must comply with the `self.inputs` attribute
+        n_steps
+            The number of steps used when calculating the attribution of each token.
+            If the number of steps is less than 1, the attributions will not be calculated.
+
+        Returns
+        -------
+        predictions
+            A list of dictionaries containing the predictions and attributions
+        """
+        instances, predictions = self._get_instances_and_predictions(input_dicts)
 
         explained_predictions = [
             self.__build_explained_prediction(prediction, instance, n_steps)
@@ -351,35 +390,8 @@ class PipelineModel(allennlp.models.Model):
 
         return explained_predictions
 
-    def explain(self, *args, n_steps: int, **kwargs) -> Dict[str, Any]:
-        """
-        Applies an prediction including token attribution explanation
-
-        Parameters
-        ----------
-        n_steps: int
-            The number of steps for token attribution calculation (if proceed).
-            If the number of steps is less than 1, the attributions will not be calculated
-        args and kwargs:
-            Dynamic arguments aligned to the current model head input features.
-
-        Returns
-        -------
-            The input prediction data include information about prediction explanation
-        """
-        inputs = self._model_inputs_from_args(*args, **kwargs)
-        instance = self.text_to_instance(**inputs)
-        try:
-            prediction = self.forward_on_instance(instance)
-        except Exception as error:
-            raise WrongValueError(
-                f"Failed to make a prediction for '{inputs}'"
-            ) from error
-
-        return self.__build_explained_prediction(prediction, instance, n_steps)
-
     def __build_explained_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
+            self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
     ):
 
         explained_prediction = (
