@@ -483,10 +483,6 @@ class Pipeline:
         """
         self._model.vocab.save_to_files(directory)
 
-    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        """Creates a vocabulary an set it to pipeline"""
-        raise NotImplementedError
-
     def explore(
         self,
         data_source: DataSource,
@@ -759,11 +755,6 @@ class _PreTrainedPipeline(Pipeline):
         if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
         self._update_prediction_signatures()
-
-    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        raise ActionNotSupportedError(
-            "Cannot create a vocabulary for an already pretrained model!!!"
-        )
 
     @staticmethod
     def __model_from_archive(archive: Archive) -> PipelineModel:
