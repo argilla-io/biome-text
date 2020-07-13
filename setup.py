@@ -82,6 +82,7 @@ if __name__ == "__main__":
             "fastapi~=0.55.0",
             "uvicorn~=0.11.0",
             "dask[complete]~=2.17.0",
+            "distributed~=2.17.0",
             "msgpack~=0.6.0",
             "cachey~=0.2.0",
             "pyarrow~=0.17.0",
