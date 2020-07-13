@@ -8,7 +8,14 @@ from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
 from allennlp.common import Params
-from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary, Token
+from allennlp.data import (
+    AllennlpDataset,
+    AllennlpLazyDataset,
+    Instance,
+    Vocabulary,
+    Token,
+)
+from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
@@ -30,6 +37,7 @@ from .backbone import ModelBackbone
 from .loggers import BaseTrainLogger
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
+from biome.text.features import TransformersFeatures
 
 try:
     import ujson as json
@@ -191,7 +199,7 @@ class Pipeline:
         """
         if extend_vocab is not None and isinstance(self, _BlankPipeline):
             raise ActionNotSupportedError(
-                "If you want to customize pipeline vocab, please use create_vocab method instead"
+                "If you want to customize pipeline vocab, please use the `create_vocabulary()` method instead"
             )
 
         trainer = trainer or TrainerConfiguration()
@@ -700,12 +708,36 @@ class _BlankPipeline(Pipeline):
         return PipelineModel.from_params(Params({"config": config}), **extra_params)
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        vocab = self._extend_vocabulary(Vocabulary(), config)
+        """Creates the vocabulary for the pipeline
+
+        Parameters
+        ----------
+        config
+            Specifies the sources of the vocabulary and how to extract it
+        """
+        # Following is a hack, because AllenNLP handles the Transformers vocab differently!
+        # The transformer vocab has its own padding and oov token, so we add it to the non_padded_namespaces.
+        # AllenNLP gives its "transformer vocab" by default the "tags" namespace, which is a non_padded_namespace ...
+        # If we do not do this, then writing the vocab to a file and loading it will fail, since AllenNLP will
+        # look for its default OVV token in the vocab unless it is flagged as non_padded_namespace.
+        # (see the doc string of `allennlp.data.token_indexers.PretrainedTransformerIndexer`)
+        if TransformersFeatures.namespace in self.backbone.featurizer.indexer:
+            empty_vocab = Vocabulary(
+                non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
+                + (TransformersFeatures.namespace,)
+            )
+        else:
+            empty_vocab = Vocabulary()
+
+        vocab = self._extend_vocabulary(empty_vocab, config)
         self._model = self.__model_from_config(self.config, vocab=vocab)
-        # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Pipeline's vocab
-        # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token:
-        for indexer in self._model.head.backbone.featurizer.indexer.values():
-            indexer.tokens_to_indices([Token("")], vocab)
+
+        # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
+        # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token.
+        # Actually i am not sure why they add it to their vocab in the first place ...
+        for namespace, indexer in self.backbone.featurizer.indexer.items():
+            if namespace == TransformersFeatures.namespace:
+                indexer.tokens_to_indices([Token("")], vocab)
 
 
 class _PreTrainedPipeline(Pipeline):
