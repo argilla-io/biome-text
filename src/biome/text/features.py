@@ -156,3 +156,53 @@ class CharFeatures:
             "dropout": self.dropout,
             **self.extra_params,
         }
+
+
+class TransformersFeatures:
+    """Configuration of the feature extracted with the [transformers models](https://huggingface.co/models).
+
+    We use AllenNLPs "mismatched" indexer and embedder to get word-level representations.
+    Most of the transformers models work with word-piece tokenizers.
+
+    Parameters
+    ----------
+    model_name
+        Name of one of the [transformers models](https://huggingface.co/models).
+    trainable
+        If false, freeze the transformer weights
+    """
+
+    namespace = "transformers"
+
+    def __init__(self, model_name: str, trainable: bool = False):
+        self.model_name = model_name
+        self.trainable = trainable
+
+    @property
+    def config(self) -> Dict:
+        """Returns the config in AllenNLP format"""
+        config = {
+            "indexer": {
+                "type": "pretrained_transformer_mismatched",
+                "model_name": self.model_name,
+                "namespace": self.namespace
+            },
+            "embedder": {
+                "type": "pretrained_transformer_mismatched",
+                "model_name": self.model_name,
+                "train_parameters": self.trainable,
+            },
+        }
+
+        return config
+
+    def to_dict(self) -> Dict:
+        """Returns the config as dict"""
+        return {
+            "model_name": self.model_name,
+            "trainable": self.trainable,
+        }
+
+    def to_json(self) -> Dict:
+        """Returns the config as dict for the serialized json config file"""
+        return self.to_dict()

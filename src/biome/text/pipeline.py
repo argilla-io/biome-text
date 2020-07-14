@@ -1,4 +1,3 @@
-import copy
 import inspect
 import logging
 import os
@@ -9,7 +8,14 @@ from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
 from allennlp.common import Params
-from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary
+from allennlp.data import (
+    AllennlpDataset,
+    AllennlpLazyDataset,
+    Instance,
+    Vocabulary,
+    Token,
+)
+from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask import dataframe as dd
@@ -31,6 +37,7 @@ from .backbone import ModelBackbone
 from .loggers import BaseTrainLogger
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
+from biome.text.features import TransformersFeatures
 
 try:
     import ujson as json
@@ -192,7 +199,7 @@ class Pipeline:
         """
         if extend_vocab is not None and isinstance(self, _BlankPipeline):
             raise ActionNotSupportedError(
-                "If you want to customize pipeline vocab, please use create_vocab method instead"
+                "If you want to customize pipeline vocab, please use the `create_vocabulary()` method instead"
             )
 
         trainer = trainer or TrainerConfiguration()
@@ -203,18 +210,20 @@ class Pipeline:
             self.__configure_training_logging(output, quiet)
 
             # The original pipeline keeps unchanged
-            train_pipeline = copy.deepcopy(self)
+            train_pipeline = self.__make_copy()
             vocab = None
+
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
             if extend_vocab is not None and not vocab:
                 vocab = train_pipeline._extend_vocabulary(
-                    train_pipeline._model.vocab, vocab_config=extend_vocab
+                    train_pipeline.backbone.vocab, vocab_config=extend_vocab
                 )
             if vocab:
-                train_pipeline._model.set_vocab(vocab)
+                train_pipeline._set_vocab(vocab)
+
             if vocabulary.is_empty(
-                train_pipeline._model.vocab, self.config.features.keys
+                train_pipeline.backbone.vocab, self.config.features.keys
             ):
                 raise EmptyVocabError(
                     "Found an empty vocabulary. "
@@ -265,6 +274,28 @@ class Pipeline:
 
         finally:
             self.__restore_training_logging()
+
+    def _set_vocab(self, vocab: Vocabulary):
+        """
+        Updates pipeline vocabulary with passed one. This method will overwrite the current vocab.
+
+        Parameters
+        ----------
+        vocab:
+            The vocabulary to set
+
+        """
+        self._model.set_vocab(vocab)
+
+    def __make_copy(self) -> "Pipeline":
+        """
+        Creates a copy of current pipeline instance
+        """
+        if isinstance(self, _BlankPipeline):
+            return _BlankPipeline(config=self.config, vocab=self.backbone.vocab)
+        if isinstance(self, _PreTrainedPipeline):
+            return Pipeline.from_pretrained(self.trained_path)
+        raise ValueError(f"Cannot clone pipeline {self}")
 
     @staticmethod
     def __restore_training_logging():
@@ -452,10 +483,6 @@ class Pipeline:
         """
         self._model.vocab.save_to_files(directory)
 
-    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        """Creates a vocabulary an set it to pipeline"""
-        raise NotImplementedError
-
     def explore(
         self,
         data_source: DataSource,
@@ -618,21 +645,23 @@ class Pipeline:
         self, vocab: Vocabulary, vocab_config: VocabularyConfiguration
     ) -> Vocabulary:
         """
-        Extends a data vocabulary from a given configuration
+        Extends a data vocabulary from a given configuration.
+
+        The source vocabulary `vocab` won't be changed, instead a new vocabulary is created
+        that includes the source vocabulary `vocab` and a vocabulary created from `vocab_config`
 
         Parameters
         ----------
-        vocab: `Vocabulary`
+        vocab
             The source vocabulary
-        vocab_config: `VocabularyConfiguration`
+        vocab_config
             The vocab extension configuration
 
         Returns
         -------
-        vocab: `Vocabulary`
+        extended_vocab
             An extended `Vocabulary` using the provided configuration
         """
-
         datasets = [
             self.create_dataset(source) if isinstance(source, DataSource) else source
             for source in vocab_config.sources
@@ -647,8 +676,9 @@ class Pipeline:
             min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
             tokens_to_add=vocab_config.tokens_to_add,
         )
-        vocab.extend_from_vocab(instances_vocab)
-        return vocab
+        instances_vocab.extend_from_vocab(vocab)
+
+        return instances_vocab
 
 
 class _BlankPipeline(Pipeline):
@@ -674,8 +704,36 @@ class _BlankPipeline(Pipeline):
         return PipelineModel.from_params(Params({"config": config}), **extra_params)
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        vocab = self._extend_vocabulary(Vocabulary(), config)
+        """Creates the vocabulary for the pipeline
+
+        Parameters
+        ----------
+        config
+            Specifies the sources of the vocabulary and how to extract it
+        """
+        # Following is a hack, because AllenNLP handles the Transformers vocab differently!
+        # The transformer vocab has its own padding and oov token, so we add it to the non_padded_namespaces.
+        # AllenNLP gives its "transformer vocab" by default the "tags" namespace, which is a non_padded_namespace ...
+        # If we do not do this, then writing the vocab to a file and loading it will fail, since AllenNLP will
+        # look for its default OVV token in the vocab unless it is flagged as non_padded_namespace.
+        # (see the doc string of `allennlp.data.token_indexers.PretrainedTransformerIndexer`)
+        if TransformersFeatures.namespace in self.backbone.featurizer.indexer:
+            empty_vocab = Vocabulary(
+                non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
+                + (TransformersFeatures.namespace,)
+            )
+        else:
+            empty_vocab = Vocabulary()
+
+        vocab = self._extend_vocabulary(empty_vocab, config)
         self._model = self.__model_from_config(self.config, vocab=vocab)
+
+        # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
+        # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token.
+        # Actually i am not sure why they add it to their vocab in the first place ...
+        for namespace, indexer in self.backbone.featurizer.indexer.items():
+            if namespace == TransformersFeatures.namespace:
+                indexer.tokens_to_indices([Token("")], vocab)
 
 
 class _PreTrainedPipeline(Pipeline):
@@ -697,11 +755,6 @@ class _PreTrainedPipeline(Pipeline):
         if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
         self._update_prediction_signatures()
-
-    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        raise ActionNotSupportedError(
-            "Cannot create a vocabulary for an already pretrained model!!!"
-        )
 
     @staticmethod
     def __model_from_archive(archive: Archive) -> PipelineModel:
