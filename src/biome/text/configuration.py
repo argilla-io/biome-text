@@ -376,6 +376,9 @@ class TrainerConfiguration:
     data_bucketing: `bool`, optional (default=False)
         If enabled, try to apply data bucketing over training batches.
 
+    no_grad
+        Freeze a list of parameters.
+        The parameter names have to match those of the `Pipeline.trainable_parameter_names`.
     """
 
     optimizer: Dict[str, Any] = dataclasses.field(
@@ -393,6 +396,7 @@ class TrainerConfiguration:
     # Data loader parameters
     batch_size: Optional[int] = 16
     data_bucketing: bool = False
+    no_grad: List[str] = None
 
 
 class VocabularyConfiguration:

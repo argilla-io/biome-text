@@ -2,7 +2,6 @@ import copy
 import json
 import logging
 import os
-import re
 import time
 from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple
@@ -288,14 +287,7 @@ class PipelineTrainer:
             )
         )
 
-        no_grad_regexes = trainer_params.pop(
-            "no_grad", ()
-        )  # This could be nice to have exposed
-
         pipeline_model = self._pipeline._model
-        for name, parameter in pipeline_model.named_parameters():
-            if any(re.search(regex, name) for regex in no_grad_regexes):
-                parameter.requires_grad_(False)
 
         training_data_loader = self._configure_dataloader(
             self._training,
