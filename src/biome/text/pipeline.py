@@ -27,6 +27,7 @@ from biome.text.configuration import (
     PipelineConfiguration,
     TrainerConfiguration,
     VocabularyConfiguration,
+    FindLRConfiguration,
 )
 from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
@@ -155,7 +156,12 @@ class Pipeline:
         """
         self._model.init_prediction_cache(max_size)
 
-    def find_lr(self, trainer_config, lr_find_config, training_data):
+    def find_lr(
+        self,
+        trainer_config: TrainerConfiguration,
+        find_lr_config: FindLRConfiguration,
+        training_data: Union[DataSource, InstancesDataset],
+    ):
         """Returns a learning rate scan on the model.
 
         It increases the learning rate step by step while recording the losses.
@@ -164,7 +170,7 @@ class Pipeline:
         ----------
         trainer_config
             A trainer configuration
-        lr_find_config
+        find_lr_config
             A configuration for finding the learning rate
         training_data
             The training data
@@ -177,17 +183,22 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
+        find_lr_pipeline = copy.deepcopy(self)
+
+        if isinstance(training_data, DataSource):
+            training_data = find_lr_pipeline.create_dataset(training_data)
+
         trainer = create_trainer_for_finding_lr(
             self, trainer_config=trainer_config, training_data=training_data
         )
 
         learning_rates, losses = search_learning_rate(
             trainer=trainer,
-            start_lr=lr_find_config.start_lr,
-            end_lr=lr_find_config.end_lr,
-            num_batches=lr_find_config.num_batches,
-            linear_steps=lr_find_config.linear_steps,
-            stopping_factor=lr_find_config.stopping_factor,
+            start_lr=find_lr_config.start_lr,
+            end_lr=find_lr_config.end_lr,
+            num_batches=find_lr_config.num_batches,
+            linear_steps=find_lr_config.linear_steps,
+            stopping_factor=find_lr_config.stopping_factor,
         )
 
         return learning_rates, losses

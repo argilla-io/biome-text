@@ -419,9 +419,9 @@ def create_dataloader(
 
 
 def create_trainer_for_finding_lr(
-        pipeline: Pipeline,
-        trainer_config: TrainerConfiguration,
-        training_data: InstancesDataset,
+    pipeline: Pipeline,
+    trainer_config: TrainerConfiguration,
+    training_data: InstancesDataset,
 ) -> GradientDescentTrainer:
     """Returns an AllenNLP Trainer used for the learning rate scan.
 
@@ -448,5 +448,8 @@ def create_trainer_for_finding_lr(
     )
 
     return Trainer.from_params(
-        model=pipeline._model, data_loader=training_data_loader, params=trainer_params,
+        model=pipeline._model,
+        data_loader=training_data_loader,
+        params=trainer_params,
+        serialization_dir=None,
     )
