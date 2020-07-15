@@ -183,13 +183,24 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
-        find_lr_pipeline = copy.deepcopy(self)
+        # The original pipeline keeps unchanged
+        find_lr_pipeline = self.__make_copy()
+
+        if vocabulary.is_empty(
+            find_lr_pipeline.backbone.vocab, self.config.features.keys
+        ):
+            raise EmptyVocabError(
+                "Found an empty vocabulary. "
+                "You probably forgot to create a vocabulary with '.create_vocabulary()'."
+            )
 
         if isinstance(training_data, DataSource):
             training_data = find_lr_pipeline.create_dataset(training_data)
 
         trainer = create_trainer_for_finding_lr(
-            self, trainer_config=trainer_config, training_data=training_data
+            pipeline=find_lr_pipeline,
+            trainer_config=trainer_config,
+            training_data=training_data,
         )
 
         learning_rates, losses = search_learning_rate(
