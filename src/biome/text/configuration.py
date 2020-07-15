@@ -398,6 +398,25 @@ class TrainerConfiguration:
     data_bucketing: bool = False
     no_grad: List[str] = None
 
+    def to_allennlp_trainer(self) -> Dict[str, Any]:
+        """Returns a configuration dict formatted for AllenNLP's trainer
+
+        Returns
+        -------
+        allennlp_trainer_config
+        """
+        __excluded_keys = ["data_bucketing", "batch_size"]  # Data loader attributes
+        trainer_config = {
+            k: v for k, v in vars(self).items() if k not in __excluded_keys
+        }
+        trainer_config.update(
+            {
+                "checkpointer": {"num_serialized_models_to_keep": 1},
+                "tensorboard_writer": {"should_log_learning_rate": True},
+            }
+        )
+        return trainer_config
+
 
 class VocabularyConfiguration:
     """Configures a `Vocabulary` before it gets created from the data

@@ -21,9 +21,9 @@ from allennlp.training.util import evaluate
 from dask import dataframe as dd
 from dask_elk.client import DaskElasticClient
 from fastapi import FastAPI
-from torch.utils.data.dataset import IterableDataset
+from torch.utils.data import IterableDataset
 
-from biome.text import Pipeline, PipelineConfiguration, TrainerConfiguration, helpers
+from biome.text import Pipeline, TrainerConfiguration, helpers
 from biome.text._configuration import ElasticsearchExplore, ExploreConfiguration
 from biome.text._model import PipelineModel
 from biome.text.constants import EXPLORE_APP_ENDPOINT
@@ -107,8 +107,12 @@ def _explore(
 
     # a persist is necessary here, otherwise it fails for n_partitions == 1
     # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-    ddf_mapped: dd.DataFrame = ddf_mapped.repartition(npartitions=n_partitions).persist()
-    ddf_mapped["annotation"] = ddf_mapped.map_partitions(annotate_batch, meta=(None, object))
+    ddf_mapped: dd.DataFrame = ddf_mapped.repartition(
+        npartitions=n_partitions
+    ).persist()
+    ddf_mapped["annotation"] = ddf_mapped.map_partitions(
+        annotate_batch, meta=(None, object)
+    )
 
     ddf_source = (
         data_source.to_dataframe().repartition(npartitions=n_partitions).persist()
@@ -269,9 +273,7 @@ class PipelineTrainer:
         if self._pipeline.config.features.word:
             self._pipeline.config.features.word.weights_file = None
 
-        serialization_params = sanitize(
-            self._allennlp_configuration(self._pipeline.config, self._trainer_config)
-        )
+        serialization_params = sanitize(self._allennlp_configuration())
         with open(os.path.join(self._output_dir, CONFIG_NAME), "w") as param_file:
             json.dump(serialization_params, param_file, indent=4)
 
@@ -282,24 +284,22 @@ class PipelineTrainer:
                 dataset.index_with(self._pipeline.backbone.vocab)
 
         trainer_params = Params(
-            helpers.sanitize_for_params(
-                self._trainer_as_allennlp_configuration(self._trainer_config)
-            )
+            helpers.sanitize_for_params(self._trainer_config.to_allennlp_trainer())
         )
 
         pipeline_model = self._pipeline._model
 
-        training_data_loader = self._configure_dataloader(
+        training_data_loader = create_dataloader(
             self._training,
-            batch_size=self._trainer_config.batch_size,
-            with_data_bucketing=self._trainer_config.data_bucketing,
+            self._trainer_config.batch_size,
+            self._trainer_config.data_bucketing,
         )
 
         validation_data_loader = (
-            self._configure_dataloader(
+            create_dataloader(
                 self._validation,
-                batch_size=self._trainer_config.batch_size,
-                with_data_bucketing=self._trainer_config.data_bucketing,
+                self._trainer_config.batch_size,
+                self._trainer_config.data_bucketing,
             )
             if self._validation
             else None
@@ -312,25 +312,6 @@ class PipelineTrainer:
             validation_data_loader=validation_data_loader,
             params=trainer_params,
             epoch_callbacks=self._epoch_callbacks,
-        )
-
-    @staticmethod
-    def _configure_dataloader(
-        dataset: InstancesDataset, batch_size: int, with_data_bucketing: bool
-    ):
-        """
-        Configures a pytorch dataloader for a given dataset, with a batch_size and setting
-        data bucketing if enabled and is possible.
-        """
-        return (
-            DataLoader(
-                dataset,
-                batch_sampler=BucketBatchSampler(
-                    data_source=dataset, batch_size=batch_size
-                ),
-            )
-            if with_data_bucketing and not isinstance(dataset, IterableDataset)
-            else DataLoader(dataset, batch_size=batch_size)
         )
 
     def test_evaluation(self) -> Dict[str, Any]:
@@ -394,37 +375,44 @@ class PipelineTrainer:
         """Packages the best model as tar.gz archive"""
         archive_model(self._output_dir)
 
-    @staticmethod
-    def _trainer_as_allennlp_configuration(
-        trainer: TrainerConfiguration,
-    ) -> Dict[str, Any]:
-        """Creates trainer configuration dict"""
-        __excluded_keys = ["data_bucketing", "batch_size"]  # Data loader attributes
-        trainer_config = {
-            k: v for k, v in vars(trainer).items() if k not in __excluded_keys
-        }
-        trainer_config.update(
-            {
-                "checkpointer": {"num_serialized_models_to_keep": 1},
-                "tensorboard_writer": {"should_log_learning_rate": True},
-            }
-        )
-        return trainer_config
-
-    @classmethod
-    def _allennlp_configuration(
-        cls,
-        pipeline_config: PipelineConfiguration,
-        trainer_config: TrainerConfiguration,
-    ) -> Dict[str, Any]:
-        """Creates a allennlp configuration for pipeline train experiment configuration"""
-
+    def _allennlp_configuration(self) -> Dict[str, Any]:
+        """Creates an allennlp configuration for pipeline train experiment configuration"""
         allennlp_config = {
-            "trainer": cls._trainer_as_allennlp_configuration(trainer_config),
+            "trainer": self._trainer_config.to_allennlp_trainer(),
             "model": {
-                "config": pipeline_config.as_dict(),
+                "config": self._pipeline.config.as_dict(),
                 "type": PipelineModel.__name__,
             },
         }
 
         return copy.deepcopy({k: v for k, v in allennlp_config.items() if v})
+
+
+def create_dataloader(
+    dataset: InstancesDataset, batch_size: int, data_bucketing: bool
+) -> DataLoader:
+    """Returns a pytorch DataLoader for AllenNLP
+
+    Parameters
+    ----------
+    dataset
+        The data set for the DataLoader
+    batch_size
+        Size of the batch.
+    data_bucketing
+        If enabled, try to apply data bucketing over training batches.
+
+    Returns
+    -------
+    data_loader
+    """
+    return (
+        DataLoader(
+            dataset,
+            batch_sampler=BucketBatchSampler(
+                data_source=dataset, batch_size=batch_size
+            ),
+        )
+        if data_bucketing and not isinstance(dataset, IterableDataset)
+        else DataLoader(dataset, batch_size=batch_size)
+    )
