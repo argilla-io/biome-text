@@ -16,7 +16,7 @@ from allennlp.data import DataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.models import archive_model
 from allennlp.models.archival import CONFIG_NAME
-from allennlp.training import Trainer
+from allennlp.training import Trainer, GradientDescentTrainer
 from allennlp.training.util import evaluate
 from dask import dataframe as dd
 from dask_elk.client import DaskElasticClient
@@ -415,4 +415,38 @@ def create_dataloader(
         )
         if data_bucketing and not isinstance(dataset, IterableDataset)
         else DataLoader(dataset, batch_size=batch_size)
+    )
+
+
+def create_trainer_for_finding_lr(
+        pipeline: Pipeline,
+        trainer_config: TrainerConfiguration,
+        training_data: InstancesDataset,
+) -> GradientDescentTrainer:
+    """Returns an AllenNLP Trainer used for the learning rate scan.
+
+    Parameters
+    ----------
+    pipeline
+        The pipeline with the model
+    trainer_config
+        A trainer configuration
+    training_data
+        The training data
+    """
+    prepare_environment(Params({}))
+
+    if hasattr(training_data, "index_with"):
+        training_data.index_with(pipeline.backbone.vocab)
+
+    trainer_params = Params(
+        helpers.sanitize_for_params(trainer_config.to_allennlp_trainer())
+    )
+
+    training_data_loader = create_dataloader(
+        training_data, trainer_config.batch_size, trainer_config.data_bucketing
+    )
+
+    return Trainer.from_params(
+        model=pipeline._model, data_loader=training_data_loader, params=trainer_params,
     )

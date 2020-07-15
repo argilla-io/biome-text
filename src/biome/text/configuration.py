@@ -468,3 +468,30 @@ class VocabularyConfiguration:
         self.only_include_pretrained_words = only_include_pretrained_words
         self.tokens_to_add = tokens_to_add
         self.min_pretrained_embeddings = min_pretrained_embeddings
+
+
+@dataclasses.dataclass
+class FindLRConfiguration:
+    """A configuration for finding the learning rate via `Pipeline.find_lr()`.
+
+    The `Pipeline.find_lr()` method increases the learning rate from `start_lr` to `end_lr` recording the losses.
+
+    Parameters
+    ----------
+    start_lr
+        The learning rate to start the search.
+    end_lr
+        The learning rate upto which search is done.
+    num_batches
+        Number of batches to run the learning rate finder.
+    linear_steps
+        Increase learning rate linearly if False exponentially.
+    stopping_factor
+        Stop the search when the current loss exceeds the best loss recorded by
+        multiple of stopping factor. If `None` search proceeds till the `end_lr`
+    """
+    start_lr: float = 1e-5
+    end_lr: float = 10
+    num_batches: int = 100
+    linear_steps: bool = False
+    stopping_factor: Optional[float] = None

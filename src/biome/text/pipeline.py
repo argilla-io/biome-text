@@ -18,6 +18,7 @@ from allennlp.data import (
 from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from allennlp.commands.find_learning_rate import search_learning_rate
 from dask import dataframe as dd
 from dask.dataframe import DataFrame
 
@@ -153,6 +154,43 @@ class Pipeline:
             Save up to max_size most recent (inputs).
         """
         self._model.init_prediction_cache(max_size)
+
+    def find_lr(self, trainer_config, lr_find_config, training_data):
+        """Returns a learning rate scan on the model.
+
+        It increases the learning rate step by step while recording the losses.
+
+        Parameters
+        ----------
+        trainer_config
+            A trainer configuration
+        lr_find_config
+            A configuration for finding the learning rate
+        training_data
+            The training data
+
+        Returns
+        -------
+        (learning_rates, losses)
+            Returns list of learning rates and corresponding losses.
+            Note: The losses are recorded before applying the corresponding learning rate
+        """
+        from biome.text._helpers import create_trainer_for_finding_lr
+
+        trainer = create_trainer_for_finding_lr(
+            self, trainer_config=trainer_config, training_data=training_data
+        )
+
+        learning_rates, losses = search_learning_rate(
+            trainer=trainer,
+            start_lr=lr_find_config.start_lr,
+            end_lr=lr_find_config.end_lr,
+            num_batches=lr_find_config.num_batches,
+            linear_steps=lr_find_config.linear_steps,
+            stopping_factor=lr_find_config.stopping_factor,
+        )
+
+        return learning_rates, losses
 
     def train(
         self,
