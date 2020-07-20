@@ -165,6 +165,8 @@ class Pipeline:
         """Returns a learning rate scan on the model.
 
         It increases the learning rate step by step while recording the losses.
+        For a guide on how to select the learning rate please refer to this excellent
+        [blog post](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)
 
         Parameters
         ----------
