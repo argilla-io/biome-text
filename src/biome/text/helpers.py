@@ -238,32 +238,3 @@ def sanitize_for_params(x: Any) -> Any:
         return tuple(sanitize_for_params(x_i) for x_i in x)
 
     return x
-
-
-def moving_average(values: 'np.array_like', window: int = 3) -> np.array:
-    """Returns a simple moving average of the values.
-
-    It tries to take an equal number of data on either side of the central value by padding the `values`
-    on the left with `values[0]` and on the right with `values[-1]`.
-    If `window` is an even number, it takes one more value to the right than to the left of the central value.
-
-    Parameters
-    ----------
-    values
-        An `np.array_like` input of values to be averaged.
-    window
-        Size of the window.
-
-    Returns
-    -------
-    averages
-    """
-    # TODO: I would much rather use the pandas implementation, but it seems to be broken at the moment:
-    #       https://github.com/pandas-dev/pandas/issues/11704
-    pad_left = int((window - 1) / 2)
-    pad_right = int(window / 2)
-
-    values = np.concatenate([[values[0]] * pad_left, values, [values[-1]] * pad_right])
-    averages = np.convolve(np.array(values), np.ones(window) / window, mode="valid")
-
-    return averages
