@@ -180,7 +180,7 @@ class Pipeline:
         Returns
         -------
         (learning_rates, losses)
-            Returns list of learning rates and corresponding losses.
+            Returns a list of learning rates and corresponding losses.
             Note: The losses are recorded before applying the corresponding learning rate
         """
         from biome.text._helpers import create_trainer_for_finding_lr
