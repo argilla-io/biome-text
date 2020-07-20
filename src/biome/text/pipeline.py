@@ -682,18 +682,30 @@ class Pipeline:
 
 
 class _BlankPipeline(Pipeline):
-    """
+    """A blank pipeline initialized via a configuration
+
     Parameters
     ----------
     config: `Optional[PipelineConfiguration]`
         A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
+    vocab
+        The vocabulary for the pipeline
     """
 
-    def __init__(self, config: PipelineConfiguration, **extra_args):
+    def __init__(
+        self,
+        config: PipelineConfiguration,
+        vocab: Optional[Vocabulary] = None,
+        **extra_args,
+    ):
         self._config = config
-        self._model = self.__model_from_config(self._config, **extra_args)
+        vocab = vocab or self._create_empty_vocab()
+        self._model = self.__model_from_config(self._config, vocab=vocab, **extra_args)
+
         if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
+
+        self._add_transformers_vocab_if_necessary(self._model.vocab)
         self._update_prediction_signatures()
 
     @staticmethod
@@ -711,13 +723,28 @@ class _BlankPipeline(Pipeline):
         config
             Specifies the sources of the vocabulary and how to extract it
         """
+        # TODO: Do we have to create an empty vocab here, can't we just use the current pipeline vocab?
+        #       If we use the pipeline vocab, the call to `self._add_transformers_vocab` is not necessary!
+        vocab = self._extend_vocabulary(self._create_empty_vocab(), config)
+        self._model = self.__model_from_config(self.config, vocab=vocab)
+
+        self._add_transformers_vocab_if_necessary(vocab)
+
+    def _create_empty_vocab(self) -> Vocabulary:
+        """Creates an empty Vocabulary with configured namespaces
+
+        Returns
+        -------
+        empty_vocab
+            If necessary, the transformers namespace is added to the `non_padded_namespace`.
+        """
         # Following is a hack, because AllenNLP handles the Transformers vocab differently!
         # The transformer vocab has its own padding and oov token, so we add it to the non_padded_namespaces.
         # AllenNLP gives its "transformer vocab" by default the "tags" namespace, which is a non_padded_namespace ...
         # If we do not do this, then writing the vocab to a file and loading it will fail, since AllenNLP will
         # look for its default OVV token in the vocab unless it is flagged as non_padded_namespace.
         # (see the doc string of `allennlp.data.token_indexers.PretrainedTransformerIndexer`)
-        if TransformersFeatures.namespace in self.backbone.featurizer.indexer:
+        if self._config.features.transformers is not None:
             empty_vocab = Vocabulary(
                 non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
                 + (TransformersFeatures.namespace,)
@@ -725,9 +752,16 @@ class _BlankPipeline(Pipeline):
         else:
             empty_vocab = Vocabulary()
 
-        vocab = self._extend_vocabulary(empty_vocab, config)
-        self._model = self.__model_from_config(self.config, vocab=vocab)
+        return empty_vocab
 
+    def _add_transformers_vocab_if_necessary(self, vocab):
+        """Adds the transformers vocabulary to the `vocab`
+
+        Parameters
+        ----------
+        vocab
+            The transformers vocabulary will be added to this vocab
+        """
         # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
         # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token.
         # Actually i am not sure why they add it to their vocab in the first place ...
