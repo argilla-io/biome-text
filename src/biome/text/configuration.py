@@ -376,6 +376,9 @@ class TrainerConfiguration:
     data_bucketing: `bool`, optional (default=False)
         If enabled, try to apply data bucketing over training batches.
 
+    no_grad
+        Freeze a list of parameters.
+        The parameter names have to match those of the `Pipeline.trainable_parameter_names`.
     """
 
     optimizer: Dict[str, Any] = dataclasses.field(
@@ -393,6 +396,26 @@ class TrainerConfiguration:
     # Data loader parameters
     batch_size: Optional[int] = 16
     data_bucketing: bool = False
+    no_grad: List[str] = None
+
+    def to_allennlp_trainer(self) -> Dict[str, Any]:
+        """Returns a configuration dict formatted for AllenNLP's trainer
+
+        Returns
+        -------
+        allennlp_trainer_config
+        """
+        __excluded_keys = ["data_bucketing", "batch_size"]  # Data loader attributes
+        trainer_config = {
+            k: v for k, v in vars(self).items() if k not in __excluded_keys
+        }
+        trainer_config.update(
+            {
+                "checkpointer": {"num_serialized_models_to_keep": 1},
+                "tensorboard_writer": {"should_log_learning_rate": True},
+            }
+        )
+        return trainer_config
 
 
 class VocabularyConfiguration:
@@ -445,3 +468,30 @@ class VocabularyConfiguration:
         self.only_include_pretrained_words = only_include_pretrained_words
         self.tokens_to_add = tokens_to_add
         self.min_pretrained_embeddings = min_pretrained_embeddings
+
+
+@dataclasses.dataclass
+class FindLRConfiguration:
+    """A configuration for finding the learning rate via `Pipeline.find_lr()`.
+
+    The `Pipeline.find_lr()` method increases the learning rate from `start_lr` to `end_lr` recording the losses.
+
+    Parameters
+    ----------
+    start_lr
+        The learning rate to start the search.
+    end_lr
+        The learning rate upto which search is done.
+    num_batches
+        Number of batches to run the learning rate finder.
+    linear_steps
+        Increase learning rate linearly if False exponentially.
+    stopping_factor
+        Stop the search when the current loss exceeds the best loss recorded by
+        multiple of stopping factor. If `None` search proceeds till the `end_lr`
+    """
+    start_lr: float = 1e-5
+    end_lr: float = 10
+    num_batches: int = 100
+    linear_steps: bool = False
+    stopping_factor: Optional[float] = None

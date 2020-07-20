@@ -18,6 +18,7 @@ from allennlp.data import (
 from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from allennlp.commands.find_learning_rate import search_learning_rate
 from dask import dataframe as dd
 from dask.dataframe import DataFrame
 
@@ -26,6 +27,7 @@ from biome.text.configuration import (
     PipelineConfiguration,
     TrainerConfiguration,
     VocabularyConfiguration,
+    FindLRConfiguration,
 )
 from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
@@ -153,6 +155,66 @@ class Pipeline:
             Save up to max_size most recent (inputs).
         """
         self._model.init_prediction_cache(max_size)
+
+    def find_lr(
+        self,
+        trainer_config: TrainerConfiguration,
+        find_lr_config: FindLRConfiguration,
+        training_data: Union[DataSource, InstancesDataset],
+    ):
+        """Returns a learning rate scan on the model.
+
+        It increases the learning rate step by step while recording the losses.
+        For a guide on how to select the learning rate please refer to this excellent
+        [blog post](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)
+
+        Parameters
+        ----------
+        trainer_config
+            A trainer configuration
+        find_lr_config
+            A configuration for finding the learning rate
+        training_data
+            The training data
+
+        Returns
+        -------
+        (learning_rates, losses)
+            Returns a list of learning rates and corresponding losses.
+            Note: The losses are recorded before applying the corresponding learning rate
+        """
+        from biome.text._helpers import create_trainer_for_finding_lr
+
+        # The original pipeline keeps unchanged
+        find_lr_pipeline = self.__make_copy()
+
+        if vocabulary.is_empty(
+            find_lr_pipeline.backbone.vocab, self.config.features.keys
+        ):
+            raise EmptyVocabError(
+                "Found an empty vocabulary. "
+                "You probably forgot to create a vocabulary with '.create_vocabulary()'."
+            )
+
+        if isinstance(training_data, DataSource):
+            training_data = find_lr_pipeline.create_dataset(training_data)
+
+        trainer = create_trainer_for_finding_lr(
+            pipeline=find_lr_pipeline,
+            trainer_config=trainer_config,
+            training_data=training_data,
+        )
+
+        learning_rates, losses = search_learning_rate(
+            trainer=trainer,
+            start_lr=find_lr_config.start_lr,
+            end_lr=find_lr_config.end_lr,
+            num_batches=find_lr_config.num_batches,
+            linear_steps=find_lr_config.linear_steps,
+            stopping_factor=find_lr_config.stopping_factor,
+        )
+
+        return learning_rates, losses
 
     def train(
         self,

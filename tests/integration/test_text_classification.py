@@ -15,7 +15,7 @@ from biome.text.data import DataSource
 
 @pytest.fixture
 def train_valid_data_source() -> Tuple[DataSource, DataSource]:
-    resources_path = Path(__file__).parent / "resources"
+    resources_path = Path(__file__).parent.parent / "resources" / "data"
     training_ds = DataSource(source=str(resources_path / "business.cat.2k.train.csv"))
     validation_ds = DataSource(source=str(resources_path / "business.cat.2k.valid.csv"))
 
