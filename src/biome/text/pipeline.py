@@ -284,9 +284,7 @@ class Pipeline:
             if vocab:
                 train_pipeline._set_vocab(vocab)
 
-            if vocabulary.is_empty(
-                train_pipeline.backbone.vocab, self.config.features.keys
-            ):
+            if train_pipeline.has_empty_vocab():
                 raise EmptyVocabError(
                     "Found an empty vocabulary. "
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
@@ -775,6 +773,10 @@ class Pipeline:
         instances_vocab.extend_from_vocab(vocab)
 
         return instances_vocab
+
+    def has_empty_vocab(self) -> bool:
+        """Determines if a pipeline has an empty vocab under configured features"""
+        return vocabulary.is_empty(self.backbone.vocab, self.config.features.keys)
 
 
 class _BlankPipeline(Pipeline):

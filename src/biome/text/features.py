@@ -61,7 +61,10 @@ class WordFeatures:
 
     def to_json(self) -> Dict:
         """Returns the config as dict for the serialized json config file"""
-        return self.to_dict()
+        data = vars(self)
+        data.update(data.pop("extra_params", {}))
+
+        return data
 
     def to_dict(self) -> Dict:
         """Returns the config as dict"""
@@ -140,7 +143,10 @@ class CharFeatures:
 
     def to_json(self):
         """Returns the config as dict for the serialized json config file"""
-        return self.to_dict()
+        data = vars(self)
+        data.update(data.pop("extra_params", {}))
+
+        return data
 
     def to_dict(self):
         """Returns the config as dict"""
