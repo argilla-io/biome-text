@@ -744,13 +744,11 @@ class _BlankPipeline(Pipeline):
         # If we do not do this, then writing the vocab to a file and loading it will fail, since AllenNLP will
         # look for its default OVV token in the vocab unless it is flagged as non_padded_namespace.
         # (see the doc string of `allennlp.data.token_indexers.PretrainedTransformerIndexer`)
-        if self._config.features.transformers is not None:
-            empty_vocab = Vocabulary(
-                non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
-                + (TransformersFeatures.namespace,)
-            )
-        else:
-            empty_vocab = Vocabulary()
+        
+        empty_vocab = Vocabulary(
+            non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
+            + (TransformersFeatures.namespace,)
+        )
 
         return empty_vocab
 
