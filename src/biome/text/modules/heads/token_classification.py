@@ -60,7 +60,7 @@ class TokenClassification(TaskHead):
 
         self.metrics = {"accuracy": CategoricalAccuracy()}
         if self.top_k:
-            self._metrics.update(
+            self.metrics.update(
                 {f"accuracy_{self.top_k}": CategoricalAccuracy(top_k=self.top_k)}
             )
         self.f1_metric = SpanBasedF1Measure(
@@ -137,7 +137,7 @@ class TokenClassification(TaskHead):
 
         if labels is not None:
             output.loss = self._loss(logits, labels, mask)
-            for metric in self._metrics.values() + [self.f1_metric]:
+            for metric in list(self.metrics.values()) + [self.f1_metric]:
                 metric(class_probabilities, labels, mask)
 
         return output
@@ -145,7 +145,7 @@ class TokenClassification(TaskHead):
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         metrics = {
             metric_name: metric.get_metric(reset)
-            for metric_name, metric in self._metrics.items()
+            for metric_name, metric in self.metrics.items()
             if metric_name != "f1"
         }
         metrics.update(self.f1_metric.get_metric(reset=reset))
