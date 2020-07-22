@@ -9,7 +9,9 @@ import logging
 from typing import Dict, List, Optional
 
 from allennlp.data import Vocabulary
-from allennlp.data.vocabulary import DEFAULT_OOV_TOKEN
+from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
+
+from biome.text.features import TransformersFeatures
 
 LABELS_NAMESPACE = "gold_labels"
 
@@ -131,19 +133,24 @@ def set_labels(vocab: Vocabulary, new_labels: List[str]):
     extend_labels(vocab, new_labels)
 
 
-def empty_vocabulary(namespaces):
-    """
-    Creates an empty vocabulary. Used for early pipeline initialization
+def create_empty_vocabulary() -> Vocabulary:
+    """Creates an empty Vocabulary with configured namespaces
 
-    Arguments
-    ----------
-    namespaces: `List[str]`
-        The vocab namespaces to create
+    Returns
+    -------
+    empty_vocab
+        The transformers namespace is added to the `non_padded_namespace`.
     """
-    vocab = Vocabulary()
-    for namespace in namespaces:
-        vocab.add_token_to_namespace(DEFAULT_OOV_TOKEN, namespace=namespace)
-    return vocab
+    # Following is a hack, because AllenNLP handles the Transformers vocab differently!
+    # The transformer vocab has its own padding and oov token, so we add it to the non_padded_namespaces.
+    # AllenNLP gives its "transformer vocab" by default the "tags" namespace, which is a non_padded_namespace ...
+    # If we do not do this, then writing the vocab to a file and loading it will fail, since AllenNLP will
+    # look for its default OVV token in the vocab unless it is flagged as non_padded_namespace.
+    # (see the doc string of `allennlp.data.token_indexers.PretrainedTransformerIndexer`)
+    return Vocabulary(
+        non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
+        + (TransformersFeatures.namespace,)
+    )
 
 
 def is_empty(vocab: Vocabulary, namespaces: List[str]) -> bool:

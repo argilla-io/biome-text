@@ -93,7 +93,7 @@ class PipelineModel(allennlp.models.Model):
         if not isinstance(config, PipelineConfiguration):
             config = PipelineConfiguration.from_params(config)
 
-        vocab = vocab or vocabulary.empty_vocabulary(namespaces=config.features.keys)
+        vocab = vocab or vocabulary.create_empty_vocabulary()
         tokenizer = config.build_tokenizer()
         featurizer = config.features.compile_featurizer(tokenizer)
         embedder = config.build_embedder(vocab)

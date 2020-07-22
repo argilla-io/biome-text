@@ -3,16 +3,13 @@ import os
 import os.path
 import re
 from inspect import Parameter
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
-import torch
 import yaml
-from allennlp.data import TextFieldTensors
 from allennlp.common import util
 from elasticsearch import Elasticsearch
 
 from . import environment
-from .features import CharFeatures, WordFeatures
 
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
