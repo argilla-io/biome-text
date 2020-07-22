@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Union, cast
 
 import torch
+from allennlp.common.checks import check_dimensions_match
 from allennlp.data import Instance, TextFieldTensors
 from allennlp.data.fields import SequenceLabelField, TextField
 from allennlp.modules import ConditionalRandomField, FeedForward, TimeDistributed
@@ -25,14 +26,15 @@ class TokenClassification(TaskHead):
         backbone: ModelBackbone,
         labels: List[str],
         label_encoding: Optional[str] = "BIOUL",
+        top_k: int = 1,
         dropout: Optional[float] = 0.0,
         feedforward: Optional[FeedForwardConfiguration] = None,
     ) -> None:
         super(TokenClassification, self).__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
 
+        self.top_k = top_k
         self.dropout = torch.nn.Dropout(dropout)
-
         self._feedforward: FeedForward = (
             None
             if not feedforward
@@ -55,14 +57,17 @@ class TokenClassification(TaskHead):
         self._crf = ConditionalRandomField(
             self.num_labels, constraints, include_start_end_transitions=True
         )
-        self._metrics = {
-            "accuracy": CategoricalAccuracy(),
-            "f1": SpanBasedF1Measure(
-                self.backbone.vocab,
-                tag_namespace=vocabulary.LABELS_NAMESPACE,
-                label_encoding=label_encoding,
-            ),
-        }
+
+        self.metrics = {"accuracy": CategoricalAccuracy()}
+        if self.top_k:
+            self._metrics.update(
+                {f"accuracy_{self.top_k}": CategoricalAccuracy(top_k=self.top_k)}
+            )
+        self.f1_metric = SpanBasedF1Measure(
+            self.backbone.vocab,
+            tag_namespace=vocabulary.LABELS_NAMESPACE,
+            label_encoding=label_encoding,
+        )
 
     def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """loss is calculated as -log_likelihood from crf"""
@@ -91,6 +96,21 @@ class TokenClassification(TaskHead):
     def task_name(self) -> TaskName:
         return TaskName.token_classification
 
+    def decode(self, output: TaskOutput) -> TaskOutput:
+        output.tags = (
+            [
+                [
+                    vocabulary.label_for_index(self.backbone.vocab, idx)
+                    for idx in tags[0]
+                ]
+                for instance_k_tags in output.k_tags
+                for tags in instance_k_tags
+            ],
+        )
+
+        del output.k_tags
+        return output
+
     def forward(  # type: ignore
         self, text: TextFieldTensors, labels: torch.IntTensor = None
     ) -> TaskOutput:
@@ -101,8 +121,10 @@ class TokenClassification(TaskHead):
             embedded_text = self._feedforward(embedded_text)
 
         logits = self._label_projection_layer(embedded_text)
-        best_paths = self._crf.viterbi_tags(logits, mask)
-        predicted_tags = cast(List[List[int]], [x[0] for x in best_paths])
+        # batch_paths = self._crf.viterbi_tags(logits, mask)
+        # We just keep the best path for every instance
+        batch_paths = self._crf.viterbi_tags(logits, mask, top_k=self.top_k)
+        predicted_tags = cast(List[List[int]], [paths[0][0] for paths in batch_paths])
         class_probabilities = logits * 0.0
 
         for i, instance_tags in enumerate(predicted_tags):
@@ -110,18 +132,12 @@ class TokenClassification(TaskHead):
                 class_probabilities[i, j, tag_id] = 1
 
         output = TaskOutput(
-            logits=logits,
-            probs=class_probabilities,
-            mask=mask,
-            tags=[
-                [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
-                for tags in predicted_tags
-            ],
+            logits=logits, probs=class_probabilities, k_tags=batch_paths, mask=mask
         )
 
         if labels is not None:
             output.loss = self._loss(logits, labels, mask)
-            for metric in self._metrics.values():
+            for metric in self._metrics.values() + [self.f1_metric]:
                 metric(class_probabilities, labels, mask)
 
         return output
@@ -132,8 +148,7 @@ class TokenClassification(TaskHead):
             for metric_name, metric in self._metrics.items()
             if metric_name != "f1"
         }
-        f1_dict = self._metrics.get("f1").get_metric(reset=reset)
-        metrics.update(f1_dict)
+        metrics.update(self.f1_metric.get_metric(reset=reset))
         return metrics
 
 
