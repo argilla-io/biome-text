@@ -15,7 +15,6 @@ from allennlp.data import (
     Vocabulary,
     Token,
 )
-from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.commands.find_learning_rate import search_learning_rate
@@ -31,6 +30,7 @@ from biome.text.configuration import (
 )
 from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
+from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
 from . import constants
 from ._configuration import ElasticsearchExplore, ExploreConfiguration
@@ -39,7 +39,6 @@ from .backbone import ModelBackbone
 from .loggers import BaseTrainLogger
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
-from biome.text.features import TransformersFeatures
 
 try:
     import ujson as json
@@ -744,58 +743,81 @@ class Pipeline:
 
 
 class _BlankPipeline(Pipeline):
-    """
+    """A blank pipeline initialized via a configuration
+
     Parameters
     ----------
     config: `Optional[PipelineConfiguration]`
         A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
+    vocab
+        The vocabulary for the pipeline
     """
 
-    def __init__(self, config: PipelineConfiguration, **extra_args):
+    def __init__(
+        self,
+        config: PipelineConfiguration,
+        vocab: Optional[Vocabulary] = None,
+        **extra_args,
+    ):
         self._config = config
-        self._model = self.__model_from_config(self._config, **extra_args)
+        self._model = self.__model_from_config(self._config, vocab=vocab, **extra_args)
+
         if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
+
+        self._add_transformers_vocab_if_necessary(self._model.vocab)
         self._update_prediction_signatures()
 
-    @staticmethod
-    def __model_from_config(
-        config: PipelineConfiguration, **extra_params
-    ) -> PipelineModel:
-        """Creates a internal base model from a pipeline configuration"""
-        return PipelineModel.from_params(Params({"config": config}), **extra_params)
-
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        """Creates the vocabulary for the pipeline
+        """Creates the vocabulary for the pipeline from scratch
 
         Parameters
         ----------
         config
             Specifies the sources of the vocabulary and how to extract it
         """
-        # Following is a hack, because AllenNLP handles the Transformers vocab differently!
-        # The transformer vocab has its own padding and oov token, so we add it to the non_padded_namespaces.
-        # AllenNLP gives its "transformer vocab" by default the "tags" namespace, which is a non_padded_namespace ...
-        # If we do not do this, then writing the vocab to a file and loading it will fail, since AllenNLP will
-        # look for its default OVV token in the vocab unless it is flagged as non_padded_namespace.
-        # (see the doc string of `allennlp.data.token_indexers.PretrainedTransformerIndexer`)
-        if TransformersFeatures.namespace in self.backbone.featurizer.indexer:
-            empty_vocab = Vocabulary(
-                non_padded_namespaces=DEFAULT_NON_PADDED_NAMESPACES
-                + (TransformersFeatures.namespace,)
-            )
-        else:
-            empty_vocab = Vocabulary()
-
-        vocab = self._extend_vocabulary(empty_vocab, config)
+        vocab = self._extend_vocabulary(vocabulary.create_empty_vocabulary(), config)
+        # TODO (dcfidalgo): This can maybe optimized, do we really need to create a new PipelineModel
+        #  and add again the transformers vocab?
         self._model = self.__model_from_config(self.config, vocab=vocab)
+        self._add_transformers_vocab_if_necessary(self._model.vocab)
 
+    @staticmethod
+    def __model_from_config(
+            config: PipelineConfiguration,
+            vocab: Optional[Vocabulary] = None,
+            **extra_params
+    ) -> PipelineModel:
+        """Creates a internal base model from a pipeline configuration
+
+        Parameters
+        ----------
+        config
+            Configuration of the pipeline
+        vocab
+            Vocabulary for the pipeline
+        **extra_params
+
+        Returns
+        -------
+        pipeline_model
+        """
+        return PipelineModel.from_params(Params({"config": config}), vocab=vocab, **extra_params)
+
+    def _add_transformers_vocab_if_necessary(self, vocab):
+        """Adds the transformers vocabulary to the `vocab`
+
+        Parameters
+        ----------
+        vocab
+            The transformers vocabulary will be added to this vocab
+        """
         # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
         # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token.
         # Actually i am not sure why they add it to their vocab in the first place ...
-        for namespace, indexer in self.backbone.featurizer.indexer.items():
-            if namespace == TransformersFeatures.namespace:
-                indexer.tokens_to_indices([Token("")], vocab)
+        transformers_indexer = self.backbone.featurizer.indexer.get(TransformersFeatures.namespace)
+        if transformers_indexer is not None:
+            transformers_indexer.tokens_to_indices([Token("")], vocab)
 
 
 class _PreTrainedPipeline(Pipeline):
