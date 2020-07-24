@@ -63,7 +63,7 @@ class ElasticsearchExplore:
             self.es_host = f"http://{self.es_host}"
 
         self.client = Elasticsearch(
-            hosts=es_host, retry_on_timeout=True, http_compress=True
+            hosts=self.es_host, retry_on_timeout=True, http_compress=True
         )
         self.es_doc = helpers.get_compatible_doc_type(self.client)
 
