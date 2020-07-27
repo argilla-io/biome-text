@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 from typing import Any, Dict, Optional
 
@@ -147,11 +148,17 @@ class MlflowLogger(BaseTrainLogger):
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,
     ):
+        from pandas import json_normalize
+
         # fmt: off
-        self._client.log_param(self._run_id, key="name", value=pipeline.name)
-        self._client.log_param(self._run_id, key="pipeline", value=pipeline.config.as_dict())
-        self._client.log_param(self._run_id, key="num_parameters", value=pipeline.trainable_parameters)
-        self._client.log_param(self._run_id, key="trainer", value=trainer_configuration)
+        for prefix, params_set in [
+            ("pipeline", json_normalize(pipeline.config.as_dict())),
+            ("trainer", json_normalize(dataclasses.asdict(trainer_configuration)))
+        ]:
+            for key, value in params_set.to_dict(orient="records")[0].items():
+                if value:
+                    self._client.log_param(self._run_id, f"{prefix}.{key}", value)
+        self._client.log_param(self._run_id, key="pipeline.num_parameters", value=pipeline.trainable_parameters)
         # fmt: on
 
     def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):

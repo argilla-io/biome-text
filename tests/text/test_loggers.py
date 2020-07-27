@@ -13,7 +13,9 @@ from biome.text.training_results import TrainingResults
 
 def test_mlflow_logger():
 
-    logger = MlflowLogger(experiment_name="test-experiment", run_name="test_run", tag1="my-tag")
+    logger = MlflowLogger(
+        experiment_name="test-experiment", run_name="test_run", tag1="my-tag"
+    )
 
     pipeline = Pipeline.from_config(
         PipelineConfiguration(
@@ -37,10 +39,22 @@ def test_mlflow_logger():
     assert "test_run" == run.data.tags[mlflow_tags.MLFLOW_RUN_NAME]
     assert "my-tag" == run.data.tags["tag1"]
     # Parameters
-    assert pipeline.name == run.data.params["name"]
-    assert str(pipeline.trainable_parameters) == run.data.params["num_parameters"]
-    assert str(trainer) == run.data.params["trainer"]
-    assert str(pipeline.config.as_dict()) == run.data.params["pipeline"]
+    expected_parmams = {
+        "pipeline.features.word.trainable": "True",
+        "pipeline.num_parameters": "202",
+        "pipeline.features.word.embedding_dim": "50",
+        "pipeline.head.type": "biome.text.modules.heads.classification.text_classification.TextClassification",
+        "pipeline.head.labels": "['A', 'B']",
+        "pipeline.name": "test-pipeline",
+        "pipeline.tokenizer.lang": "en",
+        "trainer.batch_size": "16",
+        "trainer.validation_metric": "-loss",
+        "trainer.optimizer.type": "adam",
+        "trainer.patience": "2",
+        "trainer.num_epochs": "20",
+        "trainer.cuda_device": "-1",
+    }
+    assert expected_parmams == run.data.params
     # Artifacts
     assert os.path.basename(model_path) in os.listdir(
         urlparse(run.info.artifact_uri).path
