@@ -9,9 +9,9 @@ from allennlp.modules import TextFieldEmbedder
 
 from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
-from .features import CharFeatures, WordFeatures, TransformersFeatures
+from .features import CharFeatures, TransformersFeatures, WordFeatures
 from .featurizer import InputFeaturizer
-from .helpers import save_dict_as_yaml, sanitize_for_params
+from .helpers import sanitize_for_params, save_dict_as_yaml
 from .modules.encoders import Encoder
 from .modules.heads.task_head import TaskHeadConfiguration
 from .tokenizer import Tokenizer
@@ -285,7 +285,7 @@ class PipelineConfiguration(FromParams):
         if self.encoder:
             config["encoder"] = self.encoder.config
 
-        return config
+        return sanitize_for_params(config)
 
     def to_yaml(self, path: str):
         """Saves the pipeline configuration to a yaml formatted file

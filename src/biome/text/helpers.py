@@ -218,7 +218,7 @@ def sanitize_for_params(x: Any) -> Any:
     -------
     sanitized_x
     """
-    # AllenNLP has a similar method (allennlp.common.util.sanitize) but it does not work for my purpose, since
+    # AllenNLP has a similar function (allennlp.common.util.sanitize) but it does not work for my purpose, since
     # numpy types are checked only after the float type check, and:
     # isinstance(numpy.float64(1), float) == True !!!
     if isinstance(x, util.numpy.number):
@@ -236,5 +236,7 @@ def sanitize_for_params(x: Any) -> Any:
         return [sanitize_for_params(x_i) for x_i in x]
     elif isinstance(x, tuple):
         return tuple(sanitize_for_params(x_i) for x_i in x)
-
+    # We include `to_json` function customize sanitization for user defined classes
+    elif hasattr(x, "to_json"):
+        return x.to_json()
     return x
