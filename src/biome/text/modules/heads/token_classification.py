@@ -69,6 +69,9 @@ class TokenClassification(TaskHead):
             label_encoding=label_encoding,
         )
 
+        self.__all_metrics = [self.f1_metric]
+        self.__all_metrics.extend(self.metrics.values())
+
     def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """loss is calculated as -log_likelihood from crf"""
         return -1 * self._crf(logits, labels, mask)
@@ -137,7 +140,7 @@ class TokenClassification(TaskHead):
 
         if labels is not None:
             output.loss = self._loss(logits, labels, mask)
-            for metric in list(self.metrics.values()) + [self.f1_metric]:
+            for metric in self.__all_metrics:
                 metric(class_probabilities, labels, mask)
 
         return output
