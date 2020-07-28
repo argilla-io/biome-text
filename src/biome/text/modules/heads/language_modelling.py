@@ -57,19 +57,17 @@ class LanguageModelling(TaskHead):
             self._dropout = lambda x: x
 
         self.metrics = {"perplexity": Perplexity()}
-        print(self._forward_dim)
+
         self._loss = SoftmaxLoss(
             num_words=vocabulary.words_vocab_size(self.backbone.vocab),
             embedding_dim=self._forward_dim,
         )
-        print(self._loss)
 
     def on_vocab_update(self):
         self._loss = SoftmaxLoss(
             num_words=vocabulary.words_vocab_size(self.backbone.vocab),
             embedding_dim=self._forward_dim,
         )
-        print(self._loss)
 
     def featurize(self, text: str) -> Optional[Instance]:
         return self.backbone.featurizer(text, to_field="text", aggregate=True)
