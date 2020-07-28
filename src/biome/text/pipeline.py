@@ -1,3 +1,4 @@
+import copy
 import inspect
 import logging
 import os
@@ -15,7 +16,7 @@ from allennlp.data import (
     Vocabulary,
     Token,
 )
-from allennlp.models import load_archive
+from allennlp.models import load_archive, Model
 from allennlp.models.archival import Archive
 from allennlp.commands.find_learning_rate import search_learning_rate
 from dask import dataframe as dd
@@ -185,7 +186,7 @@ class Pipeline:
         from biome.text._helpers import create_trainer_for_finding_lr
 
         # The original pipeline keeps unchanged
-        find_lr_pipeline = self.__make_copy()
+        find_lr_pipeline = self._make_copy()
 
         if vocabulary.is_empty(
             find_lr_pipeline.backbone.vocab, self.config.features.keys
@@ -271,7 +272,7 @@ class Pipeline:
             self.__configure_training_logging(output, quiet)
 
             # The original pipeline keeps unchanged
-            train_pipeline = self.__make_copy()
+            train_pipeline = self._make_copy()
             vocab = None
 
             if restore:
@@ -348,15 +349,11 @@ class Pipeline:
         """
         self._model.set_vocab(vocab)
 
-    def __make_copy(self) -> "Pipeline":
+    def _make_copy(self) -> "Pipeline":
         """
         Creates a copy of current pipeline instance
         """
-        if isinstance(self, _BlankPipeline):
-            return _BlankPipeline(config=self.config, vocab=self.backbone.vocab)
-        if isinstance(self, _PreTrainedPipeline):
-            return Pipeline.from_pretrained(self.trained_path)
-        raise ValueError(f"Cannot clone pipeline {self}")
+        return _PipelineCopy(self)
 
     @staticmethod
     def __restore_training_logging():
@@ -631,7 +628,7 @@ class Pipeline:
             The `TaskHead` specific arguments (e.g., the classification head needs a `pooler` layer)
         """
 
-        self._config.head = TaskHeadConfiguration(type=type.__name__, **kwargs)
+        self._config.head = TaskHeadConfiguration(type=type, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
     @property
@@ -702,6 +699,30 @@ class Pipeline:
                 method.__name__, update_method_signature(new_signature, method)
             )
 
+    @staticmethod
+    def _model_from_config(
+        config: PipelineConfiguration,
+        vocab: Optional[Vocabulary] = None,
+        **extra_params,
+    ) -> PipelineModel:
+        """Creates a internal base model from a pipeline configuration
+
+        Parameters
+        ----------
+        config
+            Configuration of the pipeline
+        vocab
+            Vocabulary for the pipeline
+        **extra_params
+
+        Returns
+        -------
+        pipeline_model
+        """
+        return PipelineModel.from_params(
+            Params({"config": config}), vocab=vocab, **extra_params
+        )
+
     def _extend_vocabulary(
         self, vocab: Vocabulary, vocab_config: VocabularyConfiguration
     ) -> Vocabulary:
@@ -760,7 +781,7 @@ class _BlankPipeline(Pipeline):
         **extra_args,
     ):
         self._config = config
-        self._model = self.__model_from_config(self._config, vocab=vocab, **extra_args)
+        self._model = self._model_from_config(self._config, vocab=vocab, **extra_args)
 
         if not isinstance(self._model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {self._model}")
@@ -779,30 +800,8 @@ class _BlankPipeline(Pipeline):
         vocab = self._extend_vocabulary(vocabulary.create_empty_vocabulary(), config)
         # TODO (dcfidalgo): This can maybe optimized, do we really need to create a new PipelineModel
         #  and add again the transformers vocab?
-        self._model = self.__model_from_config(self.config, vocab=vocab)
+        self._model = self._model_from_config(self.config, vocab=vocab)
         self._add_transformers_vocab_if_necessary(self._model.vocab)
-
-    @staticmethod
-    def __model_from_config(
-            config: PipelineConfiguration,
-            vocab: Optional[Vocabulary] = None,
-            **extra_params
-    ) -> PipelineModel:
-        """Creates a internal base model from a pipeline configuration
-
-        Parameters
-        ----------
-        config
-            Configuration of the pipeline
-        vocab
-            Vocabulary for the pipeline
-        **extra_params
-
-        Returns
-        -------
-        pipeline_model
-        """
-        return PipelineModel.from_params(Params({"config": config}), vocab=vocab, **extra_params)
 
     def _add_transformers_vocab_if_necessary(self, vocab):
         """Adds the transformers vocabulary to the `vocab`
@@ -815,7 +814,9 @@ class _BlankPipeline(Pipeline):
         # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
         # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token.
         # Actually i am not sure why they add it to their vocab in the first place ...
-        transformers_indexer = self.backbone.featurizer.indexer.get(TransformersFeatures.namespace)
+        transformers_indexer = self.backbone.featurizer.indexer.get(
+            TransformersFeatures.namespace
+        )
         if transformers_indexer is not None:
             transformers_indexer.tokens_to_indices([Token("")], vocab)
 
@@ -855,3 +856,16 @@ class _PreTrainedPipeline(Pipeline):
     def trained_path(self) -> str:
         """Gets the path to the pretrained binary file"""
         return self._binary
+
+
+class _PipelineCopy(Pipeline):
+    """A copy of a pipeline ready for training."""
+
+    def __init__(self, from_pipeline: Pipeline):
+        self._model = self._model_from_config(
+            from_pipeline.config, vocab=from_pipeline.backbone.vocab
+        )
+        if isinstance(from_pipeline, _PreTrainedPipeline):
+            self._model.load_state_dict(from_pipeline._model.state_dict())
+
+        self._config = copy.deepcopy(from_pipeline.config)

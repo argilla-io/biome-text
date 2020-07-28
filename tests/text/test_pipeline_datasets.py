@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 
 # fmt: off
+import torch
+
 from biome.text import (
     Pipeline,
     PipelineConfiguration,
@@ -16,6 +18,7 @@ from biome.text.modules.heads import TextClassificationConfiguration
 
 from allennlp.data import AllennlpDataset, Instance, AllennlpLazyDataset
 # fmt: on
+from tests.text.test_pipeline_model import TestHead
 
 
 @pytest.fixture
@@ -122,6 +125,33 @@ def test_training_with_data_bucketing(
         training=non_lazy_ds,
         validation=lazy_ds,
     )
+
+
+def test_training_from_pretrained_with_head_replace(
+    pipeline_test: Pipeline, datasource_test: DataSource, tmp_path: str
+):
+    training = pipeline_test.create_dataset(datasource_test)
+    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[training]))
+    configuration = TrainerConfiguration(
+        data_bucketing=True, batch_size=2, num_epochs=5
+    )
+    output_dir = os.path.join(tmp_path, "output")
+    results = pipeline_test.train(
+        output=output_dir, trainer=configuration, training=training, quiet=True
+    )
+
+    trained = Pipeline.from_pretrained(results.model_path)
+    trained.set_head(TestHead)
+    trained.config.tokenizer.max_nr_of_sentences = 3
+    copied = trained._make_copy()
+    assert isinstance(copied.head, TestHead)
+    assert copied.trainable_parameters == trained.trainable_parameters
+    copied_model_state = copied._model.state_dict()
+    original_model_state = trained._model.state_dict()
+    for key, value in copied_model_state.items():
+        if "backbone" in key:
+            assert torch.all(torch.eq(value, original_model_state[key]))
+    assert copied.backbone.featurizer.tokenizer.max_nr_of_sentences == 3
 
 
 def test_training_with_logging(
