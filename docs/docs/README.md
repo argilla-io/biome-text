@@ -9,7 +9,7 @@ actionText: Get Started
 actionLink: /documentation/
 features:
 - title: Easy to use
-  details: Create NLP custom models with powerful building blocks and simple workflows.
+  details: Create natural language processing custom models with powerful building blocks and simple workflows.
 - title: Powerful
   details:  Benefit from the latest research and models in NLP powered by PyTorch and AllenNLP.
   img1: /assets/img/pytorch.svg
