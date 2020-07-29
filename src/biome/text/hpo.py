@@ -71,7 +71,7 @@ def tune_hpo_train(config, reporter):
 
     shared_vocab.save_to_files("vocabulary") if shared_vocab else None
     pipeline = Pipeline.from_config(pipeline_config, vocab_path="vocabulary")
-    trainer_config = TrainerConfiguration(**trainer_config)
+    trainer_config = TrainerConfiguration(**helpers.sanitize_for_params(trainer_config))
 
     train_ds = pipeline.create_dataset(DataSource(train_source))
     valid_ds = pipeline.create_dataset(DataSource(validation_source))
@@ -163,11 +163,11 @@ class HpoExperiment:
             "mlflow_tracking_uri": mlflow.get_tracking_uri(),
             "pipeline": helpers.merge_dicts(
                 self.hpo_params.pipeline,
-                helpers.sanitize_for_params(self.pipeline.config.as_dict()),
+                helpers.sanitize_for_params(self.pipeline.config.as_dict())
             ),
             "trainer": helpers.merge_dicts(
                 self.hpo_params.trainer,
-                asdict(self.trainer),
+                helpers.sanitize_for_params(asdict(self.trainer))
             ),
         }
         if self.shared_vocab:
