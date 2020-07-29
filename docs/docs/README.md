@@ -4,7 +4,7 @@ navImage: /assets/img/biome.svg
 heroImage: /assets/img/biome-isotype.svg
 heroText: biome.
 heroSubText: text
-tagline: Practical natural language processing library
+tagline: Practical NLP open source library
 actionText: Get Started
 actionLink: /documentation/
 features:
