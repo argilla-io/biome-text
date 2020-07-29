@@ -16,7 +16,7 @@ function getSidebarChildren(location, replacement) {
 module.exports = {
   dest: 'site',
   title: 'biome.text',
-  description: 'biome.text documentation',
+  description: 'biome.text practical NLP open source library.',
   head: [
     ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
   ],
