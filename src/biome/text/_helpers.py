@@ -12,7 +12,7 @@ import pandas as pd
 import uvicorn
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
-from allennlp.data import DataLoader
+from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.models import archive_model
 from allennlp.models.archival import CONFIG_NAME
@@ -340,7 +340,7 @@ class PipelineTrainer:
         self.__LOGGER.info("The model will be evaluated using the best epoch weights.")
         return evaluate(
             self._pipeline._model,
-            data_loader=DataLoader(
+            data_loader=PyTorchDataLoader(
                 test_data, batch_size=self._trainer_config.batch_size
             ),
             cuda_device=self._trainer.cuda_device,
@@ -403,7 +403,7 @@ def create_dataloader(
     batch_size: int,
     data_bucketing: bool = False,
     batches_per_epoch: Optional[int] = None,
-) -> DataLoader:
+) -> PyTorchDataLoader:
     """Returns a pytorch DataLoader for AllenNLP
 
     Parameters
@@ -425,7 +425,7 @@ def create_dataloader(
     data_loader
     """
     return (
-        DataLoader(
+        PyTorchDataLoader(
             dataset,
             batch_sampler=BucketBatchSampler(
                 data_source=dataset, batch_size=batch_size
@@ -433,7 +433,7 @@ def create_dataloader(
             batches_per_epoch=batches_per_epoch,
         )
         if data_bucketing and not isinstance(dataset, IterableDataset)
-        else DataLoader(
+        else PyTorchDataLoader(
             dataset, batch_size=batch_size, batches_per_epoch=batches_per_epoch
         )
     )
