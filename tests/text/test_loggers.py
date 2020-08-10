@@ -14,7 +14,9 @@ from biome.text.training_results import TrainingResults
 def test_mlflow_logger():
 
     logger = MlflowLogger(
-        experiment_name="test-experiment", run_name="test_run", tag1="my-tag"
+        experiment_name="test-experiment",
+        run_name="test_run",
+        tag1="my-tag"
     )
 
     pipeline = Pipeline.from_config(
@@ -53,6 +55,7 @@ def test_mlflow_logger():
         "trainer.patience": "2",
         "trainer.num_epochs": "20",
         "trainer.cuda_device": "-1",
+        'pipeline.tokenizer.use_spacy_tokens': 'True',
     }
     assert expected_parmams == run.data.params
     # Artifacts
