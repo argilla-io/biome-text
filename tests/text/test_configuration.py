@@ -1,5 +1,7 @@
 import pytest
 import yaml
+from allennlp.data.fields import ListField, TextField
+from spacy.tokens.token import Token
 
 from biome.text import Pipeline
 from biome.text.configuration import (
@@ -132,6 +134,15 @@ def test_pipeline_config(pipeline_yaml):
     assert pl.trainable_parameters == pl_yaml.trainable_parameters
 
     sample_text = "My simple text"
-    assert pl.backbone.featurizer(sample_text) == pl_yaml.backbone.featurizer(
-        sample_text
-    )
+    for instance in [
+        pl.backbone.featurizer(sample_text),
+        pl_yaml.backbone.featurizer(sample_text),
+    ]:
+        for key, value in instance.items():
+            assert key == "record"
+            assert isinstance(value, ListField)
+            assert len(value) == 1
+            for text in value:
+                assert isinstance(text, TextField)
+                assert all(map(lambda t: isinstance(t, Token), text.tokens))
+                assert sample_text == " ".join([t.text for t in text.tokens])

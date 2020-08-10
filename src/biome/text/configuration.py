@@ -74,7 +74,11 @@ class FeaturesConfiguration(FromParams):
         char = CharFeatures(**char.as_dict(quiet=True)) if char else None
 
         transformers = params.pop("transformers", None)
-        transformers = TransformersFeatures(**transformers.as_dict(quiet=True)) if transformers else None
+        transformers = (
+            TransformersFeatures(**transformers.as_dict(quiet=True))
+            if transformers
+            else None
+        )
 
         params.assert_empty("FeaturesConfiguration")
         return cls(word=word, char=char, transformers=transformers)
@@ -152,7 +156,9 @@ class FeaturesConfiguration(FromParams):
         config_dict
         """
         configuration = {
-            spec.namespace: spec.config for spec in [self.word, self.char, self.transformers] if spec
+            spec.namespace: spec.config
+            for spec in [self.word, self.char, self.transformers]
+            if spec
         }
 
         return copy.deepcopy(configuration)
@@ -173,8 +179,11 @@ class TokenizerConfiguration(FromParams):
     text_cleaning
         A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
     segment_sentences
-        Whether to segment input texts in to sentences using the default `SentenceSplitter` or
-        providing a specific configuration for a `SentenceSplitter`.
+        Whether to segment input texts in to sentences.
+    use_spacy_tokens
+        If True, tokenized token list will return spacy tokens instead allennlp tokens
+    remove_space_tokens
+        If True, all found space tokens will be removed from resultant token list.
     start_tokens
         A list of token strings to the sequence before tokenized input text.
     end_tokens
@@ -188,7 +197,9 @@ class TokenizerConfiguration(FromParams):
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
-        segment_sentences: Union[bool, Dict[str, Any]] = False,
+        segment_sentences: bool = False,
+        use_spacy_tokens: bool = True,
+        remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
     ):
@@ -199,6 +210,8 @@ class TokenizerConfiguration(FromParams):
         self.segment_sentences = segment_sentences
         self.start_tokens = start_tokens
         self.end_tokens = end_tokens
+        self.use_spacy_tokens = use_spacy_tokens
+        self.remove_space_tokens = remove_space_tokens
 
 
 class PipelineConfiguration(FromParams):
@@ -490,6 +503,7 @@ class FindLRConfiguration:
         Stop the search when the current loss exceeds the best loss recorded by
         multiple of stopping factor. If `None` search proceeds till the `end_lr`
     """
+
     start_lr: float = 1e-5
     end_lr: float = 10
     num_batches: int = 100
