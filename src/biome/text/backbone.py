@@ -7,6 +7,7 @@ from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
 from .featurizer import InputFeaturizer
 from .modules.encoders import Encoder
+from .tokenizer import Tokenizer
 
 
 class ModelBackbone(torch.nn.Module):
@@ -45,8 +46,12 @@ class ModelBackbone(torch.nn.Module):
             else PassThroughEncoder(self.embedder.get_output_dim())
         )
 
+    @property
+    def tokenizer(self) -> Tokenizer:
+        return self.featurizer.tokenizer
+
     def forward(
-        self, text: TextFieldTensors, mask: torch.Tensor, num_wrapping_dims: int = 0,
+        self, text: TextFieldTensors, mask: torch.Tensor, num_wrapping_dims: int = 0
     ) -> torch.Tensor:
         """Applies the embedding and encoding layer
 
