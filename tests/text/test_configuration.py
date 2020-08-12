@@ -22,9 +22,12 @@ from biome.text.modules.configuration.allennlp_configuration import (
 def pipeline_yaml(tmp_path):
     pipeline_dict = {
         "name": "test_pipeline_config",
-        "tokenizer": {"text_cleaning": {"rules": ["strip_spaces"]},},
+        "tokenizer": {
+            "text_cleaning": {"rules": ["strip_spaces"]},
+            "use_spacy_tokens": True
+        },
         "features": {
-            "word": {"embedding_dim": 2, "lowercase_tokens": True,},
+            "word": {"embedding_dim": 2, "lowercase_tokens": True},
             "char": {
                 "embedding_dim": 2,
                 "encoder": {
@@ -45,7 +48,7 @@ def pipeline_yaml(tmp_path):
         "head": {
             "type": "TextClassification",
             "labels": ["duplicate", "not_duplicate"],
-            "pooler": {"type": "boe",},
+            "pooler": {"type": "boe"},
         },
     }
 
@@ -93,7 +96,9 @@ def test_pipeline_without_word_features():
 
 
 def test_pipeline_config(pipeline_yaml):
-    tokenizer_config = TokenizerConfiguration(text_cleaning={"rules": ["strip_spaces"]})
+    tokenizer_config = TokenizerConfiguration(
+        text_cleaning={"rules": ["strip_spaces"]}, use_spacy_tokens=True
+    )
 
     word_features = WordFeatures(embedding_dim=2, lowercase_tokens=True)
     char_features = CharFeatures(
