@@ -106,6 +106,7 @@ if __name__ == "__main__":
                 "black",
                 "GitPython",
                 "pdoc3~=0.8.1",
+                "aiohttp", # Problems with new version of fsspec
                 "pytest-notebook~=0.6.0",
             ]
         },
