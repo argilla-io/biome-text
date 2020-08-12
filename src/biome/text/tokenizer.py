@@ -123,7 +123,11 @@ class Tokenizer:
                 for doc in self.__nlp__.pipe(paragraphs)
                 for sentence in doc.sents
             ]
-        return self._batch_tokenize(paragraphs[: self.max_nr_of_sentences])
+
+        return [
+            self._tokenize(paragraph)
+            for paragraph in paragraphs[: self.max_nr_of_sentences]
+        ]
 
     def tokenize_record(
         self, record: Dict[str, Any], exclude_record_keys: bool
@@ -197,14 +201,6 @@ class Tokenizer:
         for end_token in self._end_tokens:
             tokens.append(Token(end_token, -1))
         return tokens
-
-    def _batch_tokenize(self, texts: List[str]) -> List[List[Token]]:
-        return [
-            self._sanitize(_remove_spaces(tokens) if self._remove_spaces else tokens)
-            for tokens in self.nlp.pipe(
-                map(lambda text: text[: self.max_sequence_length], texts), n_process=-1
-            )
-        ]
 
 
 def _fetch_spacy_model(lang: str):
