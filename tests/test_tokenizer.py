@@ -65,7 +65,7 @@ def test_document_cleaning():
 
 
 def test_using_spacy_tokens():
-    tokenizer = Tokenizer(TokenizerConfiguration())
+    tokenizer = Tokenizer(TokenizerConfiguration(use_spacy_tokens=True))
     tokenized = tokenizer.tokenize_text("This is a text")
     assert len(tokenized) == 1
     assert len(tokenized[0]) == 4

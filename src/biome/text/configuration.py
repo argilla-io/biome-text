@@ -198,7 +198,7 @@ class TokenizerConfiguration(FromParams):
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
         segment_sentences: bool = False,
-        use_spacy_tokens: bool = True,
+        use_spacy_tokens: bool = False,
         remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
