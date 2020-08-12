@@ -250,7 +250,9 @@ class PipelineModel(allennlp.models.Model):
         self.__setattr__("_predict_with_cache", predict_with_cache)
 
     def _log_predictions(
-        self, input_dicts: Iterable[Dict[str, Any]], predictions: Iterable[Dict[str, Any]]
+        self,
+        input_dicts: Iterable[Dict[str, Any]],
+        predictions: Iterable[Dict[str, Any]],
     ) -> None:
         """Log predictions to a file for a model analysis and feedback sessions.
 
@@ -302,7 +304,9 @@ class PipelineModel(allennlp.models.Model):
 
         return predictions
 
-    def _get_instances_and_predictions(self, input_dicts) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
+    def _get_instances_and_predictions(
+        self, input_dicts
+    ) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
         """Returns instances from the input_dicts and their predictions.
 
         Helper method used by the predict and explain methods.
@@ -391,7 +395,7 @@ class PipelineModel(allennlp.models.Model):
         return explained_predictions
 
     def __build_explained_prediction(
-            self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
+        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
     ):
 
         explained_prediction = (

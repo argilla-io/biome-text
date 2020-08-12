@@ -180,7 +180,7 @@ class TransformersFeatures:
             "indexer": {
                 "type": "pretrained_transformer_mismatched",
                 "model_name": self.model_name,
-                "namespace": self.namespace
+                "namespace": self.namespace,
             },
             "embedder": {
                 "type": "pretrained_transformer_mismatched",
