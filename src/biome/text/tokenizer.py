@@ -45,7 +45,7 @@ class Tokenizer:
         self.max_sequence_length = config.max_sequence_length
 
         self.__nlp__ = get_spacy_model(
-            self.lang, pos_tags=False, ner=False, parse=False
+            self.lang, pos_tags=True, ner=False, parse=False
         )
         if self.segment_sentences and not self.__nlp__.has_pipe(
             self.__SPACY_SENTENCIZER__
