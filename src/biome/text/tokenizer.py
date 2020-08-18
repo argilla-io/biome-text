@@ -41,9 +41,7 @@ class Tokenizer:
         # this makes sure they show up in the right order.
         self._start_tokens.reverse()
         self.max_nr_of_sentences = config.max_nr_of_sentences
-        self.segment_sentences = (
-            config.segment_sentences or self.max_nr_of_sentences is not None
-        )
+        self.segment_sentences = config.segment_sentences
         self.max_sequence_length = config.max_sequence_length
 
         self.__nlp__ = get_spacy_model(self.lang, pos_tags=True, ner=False, parse=False)
@@ -116,12 +114,12 @@ class Tokenizer:
         -------
         tokens: `List[List[Token]]`
         """
-        paragraphs = [self.text_cleaning(text) for text in document]
+        texts = [self.text_cleaning(text) for text in document]
         if not self.segment_sentences:
-            return list(map(self._tokenize, paragraphs))
+            return list(map(self._tokenize, texts[: self.max_nr_of_sentences]))
         sentences = [
             sentence.string.strip()
-            for doc in self.__nlp__.pipe(paragraphs)
+            for doc in self.__nlp__.pipe(texts)
             for sentence in doc.sents
         ]
         return list(map(self._tokenize, sentences[: self.max_nr_of_sentences]))
