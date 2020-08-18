@@ -73,6 +73,7 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         install_requires=[
             "allennlp~=1.0.0",
+            "spacy~=2.2.0",
             "gevent~=1.4.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
@@ -105,6 +106,7 @@ if __name__ == "__main__":
                 "black",
                 "GitPython",
                 "pdoc3~=0.8.1",
+                "aiohttp", # Problems with new version of fsspec
                 "pytest-notebook~=0.6.0",
             ]
         },

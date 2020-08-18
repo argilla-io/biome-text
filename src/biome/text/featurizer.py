@@ -118,4 +118,3 @@ class InputFeaturizer:
     def has_word_features(self) -> bool:
         """Checks if word features are already configured as part of the featurization"""
         return WordFeatures.namespace in self.indexer
-

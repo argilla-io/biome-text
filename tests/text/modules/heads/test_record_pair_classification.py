@@ -167,7 +167,8 @@ def test_explain(pipeline_dict):
 
     with pytest.raises(RuntimeError):
         pipeline.explain(
-            record1={"first_name": "Hans", "last_name": "Zimmermann"}, record2={"first_name": "Hansel"},
+            record1={"first_name": "Hans", "last_name": "Zimmermann"},
+            record2={"first_name": "Hansel"},
         )
 
 

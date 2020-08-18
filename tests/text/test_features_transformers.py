@@ -24,9 +24,7 @@ def train_data_source() -> DataSource:
 def pipeline_dict() -> dict:
     pipeline_dict = {
         "name": "emotions_with_transformers",
-        "features": {
-            "transformers": {"model_name": "distilroberta-base"},
-        },
+        "features": {"transformers": {"model_name": "distilroberta-base"},},
         "head": {
             "type": "TextClassification",
             "labels": ["anger", "fear", "joy", "love", "sadness", "surprise",],

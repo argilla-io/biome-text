@@ -53,6 +53,7 @@ def test_mlflow_logger():
         "trainer.patience": "2",
         "trainer.num_epochs": "20",
         "trainer.cuda_device": "-1",
+        "pipeline.tokenizer.remove_space_tokens": "True",
     }
     assert expected_parmams == run.data.params
     # Artifacts

@@ -28,7 +28,7 @@ def pipeline_dict() -> dict:
     pipeline_dict = {
         "name": "german_business_names",
         "features": {
-            "word": {"embedding_dim": 16, "lowercase_tokens": True,},
+            "word": {"embedding_dim": 16, "lowercase_tokens": True},
             "char": {
                 "embedding_dim": 16,
                 "encoder": {
@@ -89,7 +89,7 @@ def trainer_dict() -> dict:
     return {
         "batch_size": 64,
         "num_epochs": 5,
-        "optimizer": {"type": "adam", "lr": 0.01,},
+        "optimizer": {"type": "adam", "lr": 0.01},
     }
 
 
@@ -104,10 +104,10 @@ def test_text_classification(
         torch.cuda.manual_seed_all(4222)
 
     pl = Pipeline.from_config(pipeline_dict)
+    train_ds = pl.create_dataset(train_valid_data_source[0])
+    valid_ds = pl.create_dataset(train_valid_data_source[1])
     trainer = TrainerConfiguration(**trainer_dict)
-    vocab = VocabularyConfiguration(
-        sources=[train_valid_data_source[0]], max_vocab_size={"word": 50}
-    )
+    vocab = VocabularyConfiguration(sources=[train_ds], max_vocab_size={"word": 50})
 
     pl.create_vocabulary(vocab)
 
@@ -117,10 +117,7 @@ def test_text_classification(
     output = tmp_path / "output"
 
     pl.train(
-        output=str(output),
-        trainer=trainer,
-        training=train_valid_data_source[0],
-        validation=train_valid_data_source[1],
+        output=str(output), trainer=trainer, training=train_ds, validation=valid_ds
     )
 
     assert pl.trainable_parameters == 22070

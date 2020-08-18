@@ -466,10 +466,14 @@ class RecordPairClassification(ClassificationHead):
         # 3. Get tokens corresponding to the attributions
         field_tokens_record1 = []
         for textfield in instance.get(self._RECORD1_ARG_NAME_IN_FORWARD):
-            field_tokens_record1.append(" ".join([token.text for token in textfield.tokens]))
+            field_tokens_record1.append(
+                " ".join([token.text for token in textfield.tokens])
+            )
         field_tokens_record2 = []
         for textfield in instance.get(self._RECORD2_ARG_NAME_IN_FORWARD):
-            field_tokens_record2.append(" ".join([token.text for token in textfield.tokens]))
+            field_tokens_record2.append(
+                " ".join([token.text for token in textfield.tokens])
+            )
 
         return {
             **prediction,

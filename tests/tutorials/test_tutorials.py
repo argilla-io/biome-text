@@ -48,7 +48,9 @@ def test_slot_filling_tutorial(tmp_path):
     for cell in notebook["cells"]:
         if cell["source"].startswith("!pip install"):
             cell["source"] = re.sub(r"!pip install", r"#!pip install", cell["source"])
-        if cell["source"].startswith("from biome.text.configuration import FeaturesConfiguration"):
+        if cell["source"].startswith(
+            "from biome.text.configuration import FeaturesConfiguration"
+        ):
             cell["source"] = re.sub(
                 r"https://dl.fbaipublicfiles.com/fasttext/vectors-english/wiki-news-300d-1M.vec.zip",
                 r"https://biome-tutorials-data.s3-eu-west-1.amazonaws.com/token_classifier/wiki-news-300d-1M.head.vec",
@@ -62,7 +64,9 @@ def test_slot_filling_tutorial(tmp_path):
             )
         if cell["source"].startswith("pl.train("):
             cell["source"] = re.sub(
-                r"pl.train", r"from biome.text.configuration import TrainerConfiguration\npl.train", cell["source"],
+                r"pl.train",
+                r"from biome.text.configuration import TrainerConfiguration\npl.train",
+                cell["source"],
             )
             cell["source"] = re.sub(
                 r"training=train_ds", r"training=valid_ds", cell["source"],
