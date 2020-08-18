@@ -78,3 +78,16 @@ def test_using_allennlp_tokens():
     assert len(tokenized) == 1
     assert len(tokenized[0]) == 4
     assert all(map(lambda t: isinstance(t, AllennlpToken), tokenized[0]))
+
+
+def test_set_sentence_segmentation_with_max_number_of_sentences():
+    tokenizer = Tokenizer(TokenizerConfiguration(max_nr_of_sentences=2))
+    assert tokenizer.segment_sentences
+
+    tokenized = tokenizer.tokenize_text(
+        """
+This is a sentence. This is another sentence.
+One more sentence here. Last sentence here.
+"""
+    )
+    assert len(tokenized) == 2

@@ -24,7 +24,7 @@ def pipeline_yaml(tmp_path):
         "name": "test_pipeline_config",
         "tokenizer": {
             "text_cleaning": {"rules": ["strip_spaces"]},
-            "use_spacy_tokens": True
+            "use_spacy_tokens": True,
         },
         "features": {
             "word": {"embedding_dim": 2, "lowercase_tokens": True},

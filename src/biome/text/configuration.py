@@ -206,8 +206,8 @@ class TokenizerConfiguration(FromParams):
         self.lang = lang
         self.max_sequence_length = max_sequence_length
         self.max_nr_of_sentences = max_nr_of_sentences
-        self.text_cleaning = text_cleaning
         self.segment_sentences = segment_sentences
+        self.text_cleaning = text_cleaning
         self.start_tokens = start_tokens
         self.end_tokens = end_tokens
         self.use_spacy_tokens = use_spacy_tokens

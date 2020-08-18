@@ -40,13 +40,13 @@ class Tokenizer:
         # We reverse the tokens here because we're going to insert them with `insert(0)` later;
         # this makes sure they show up in the right order.
         self._start_tokens.reverse()
-        self.segment_sentences = config.segment_sentences
         self.max_nr_of_sentences = config.max_nr_of_sentences
+        self.segment_sentences = (
+            config.segment_sentences or self.max_nr_of_sentences is not None
+        )
         self.max_sequence_length = config.max_sequence_length
 
-        self.__nlp__ = get_spacy_model(
-            self.lang, pos_tags=True, ner=False, parse=False
-        )
+        self.__nlp__ = get_spacy_model(self.lang, pos_tags=True, ner=False, parse=False)
         if self.segment_sentences and not self.__nlp__.has_pipe(
             self.__SPACY_SENTENCIZER__
         ):
@@ -117,17 +117,14 @@ class Tokenizer:
         tokens: `List[List[Token]]`
         """
         paragraphs = [self.text_cleaning(text) for text in document]
-        if self.segment_sentences:
-            paragraphs = [
-                sentence.string.strip()
-                for doc in self.__nlp__.pipe(paragraphs)
-                for sentence in doc.sents
-            ]
-
-        return [
-            self._tokenize(paragraph)
-            for paragraph in paragraphs[: self.max_nr_of_sentences]
+        if not self.segment_sentences:
+            return list(map(self._tokenize, paragraphs))
+        sentences = [
+            sentence.string.strip()
+            for doc in self.__nlp__.pipe(paragraphs)
+            for sentence in doc.sents
         ]
+        return list(map(self._tokenize, sentences[: self.max_nr_of_sentences]))
 
     def tokenize_record(
         self, record: Dict[str, Any], exclude_record_keys: bool
