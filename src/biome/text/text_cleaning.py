@@ -38,12 +38,17 @@ class TextCleaningRule:
     __REGISTERED_RULES = {}
 
     def __init__(self, func: Callable[[str], str]):
+        self.__callable__ = func
         self.__REGISTERED_RULES[func.__name__] = func
 
     @classmethod
     def registered_rules(cls) -> Dict[str, Callable[[str], str]]:
         """Registered rules dictionary"""
         return copy.deepcopy(cls.__REGISTERED_RULES)
+
+    def __call__(self, *args, **kwargs) -> str:
+        """Enables call single rule"""
+        return self.__callable__(*args, **kwargs)
 
 
 @TextCleaning.register(TextCleaning.default_implementation)
