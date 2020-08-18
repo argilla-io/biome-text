@@ -179,11 +179,11 @@ class TokenizerConfiguration(FromParams):
     text_cleaning
         A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
     segment_sentences
-        Whether to segment input texts in to sentences.
+        Whether to segment input texts into sentences.
     use_spacy_tokens
-        If True, tokenized token list will return spacy tokens instead allennlp tokens
+        If True, the tokenized token list contains spacy tokens instead of allennlp tokens
     remove_space_tokens
-        If True, all found space tokens will be removed from resultant token list.
+        If True, all found space tokens will be removed from the final token list.
     start_tokens
         A list of token strings to the sequence before tokenized input text.
     end_tokens
