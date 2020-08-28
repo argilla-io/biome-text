@@ -16,7 +16,7 @@ from allennlp.data import (
     Vocabulary,
     Token,
 )
-from allennlp.models import load_archive, Model
+from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.commands.find_learning_rate import search_learning_rate
 from dask import dataframe as dd
@@ -37,7 +37,7 @@ from . import constants
 from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .loggers import BaseTrainLogger
+from .loggers import BaseTrainLogger, add_default_wandb_logger_if_needed
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
 
@@ -256,8 +256,8 @@ class Pipeline:
 
         Returns
         -------
-
-        Training results information, containing the generated model path and the related metrics
+        training_results
+            Training results including the generated model path and the related metrics
         """
         if extend_vocab is not None and isinstance(self, _BlankPipeline):
             raise ActionNotSupportedError(
@@ -300,6 +300,7 @@ class Pipeline:
                     datasets[name] = train_pipeline.create_dataset(dataset)
 
             loggers = loggers or []
+            add_default_wandb_logger_if_needed(loggers)
 
             pipeline_trainer = PipelineTrainer(
                 train_pipeline,
