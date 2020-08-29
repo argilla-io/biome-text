@@ -389,6 +389,13 @@ class TrainerConfiguration:
     data_bucketing: `bool`, optional (default=False)
         If enabled, try to apply data bucketing over training batches.
 
+    batches_per_epoch
+        Determines the number of batches after which a training epoch ends.
+        If the number is smaller than the total amount of batches in your training data,
+        the second "epoch" will take off where the first "epoch" ended.
+        If this is `None`, then an epoch is set to be one full pass through your training data.
+        This is useful if you want to evaluate your data more frequently on your validation data set during training.
+
     no_grad
         Freeze a list of parameters.
         The parameter names have to match those of the `Pipeline.trainable_parameter_names`.
@@ -409,6 +416,7 @@ class TrainerConfiguration:
     # Data loader parameters
     batch_size: Optional[int] = 16
     data_bucketing: bool = False
+    batches_per_epoch: Optional[int] = None
     no_grad: List[str] = None
 
     def to_allennlp_trainer(self) -> Dict[str, Any]:
@@ -418,7 +426,7 @@ class TrainerConfiguration:
         -------
         allennlp_trainer_config
         """
-        __excluded_keys = ["data_bucketing", "batch_size"]  # Data loader attributes
+        __excluded_keys = ["data_bucketing", "batch_size", "batches_per_epoch"]  # Data loader attributes
         trainer_config = {
             k: v for k, v in vars(self).items() if k not in __excluded_keys
         }

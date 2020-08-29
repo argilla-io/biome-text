@@ -293,6 +293,7 @@ class PipelineTrainer:
             self._training,
             self._trainer_config.batch_size,
             self._trainer_config.data_bucketing,
+            self._trainer_config.batches_per_epoch,
         )
 
         validation_data_loader = (
@@ -389,7 +390,10 @@ class PipelineTrainer:
 
 
 def create_dataloader(
-    dataset: InstancesDataset, batch_size: int, data_bucketing: bool
+    dataset: InstancesDataset,
+    batch_size: int,
+    data_bucketing: bool = False,
+    batches_per_epoch: Optional[int] = None,
 ) -> DataLoader:
     """Returns a pytorch DataLoader for AllenNLP
 
@@ -401,6 +405,11 @@ def create_dataloader(
         Size of the batch.
     data_bucketing
         If enabled, try to apply data bucketing over training batches.
+    batches_per_epoch
+        Determines the number of batches after which an epoch ends.
+        If the number is smaller than the total amount of batches in your data,
+        the second "epoch" will take off where the first "epoch" ended.
+        If this is `None`, then an epoch is set to be one full pass through your data.
 
     Returns
     -------
@@ -412,9 +421,12 @@ def create_dataloader(
             batch_sampler=BucketBatchSampler(
                 data_source=dataset, batch_size=batch_size
             ),
+            batches_per_epoch=batches_per_epoch,
         )
         if data_bucketing and not isinstance(dataset, IterableDataset)
-        else DataLoader(dataset, batch_size=batch_size)
+        else DataLoader(
+            dataset, batch_size=batch_size, batches_per_epoch=batches_per_epoch
+        )
     )
 
 
