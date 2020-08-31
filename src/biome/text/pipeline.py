@@ -668,9 +668,8 @@ class Pipeline:
         return self.head.__class__.__name__
 
     @property
-    def trainable_parameters(self) -> int:
-        """
-        Returns the number of trainable parameters.
+    def num_trainable_parameters(self) -> int:
+        """Number of trainable parameters present in the model.
 
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
@@ -682,7 +681,17 @@ class Pipeline:
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property
-    def trainable_parameter_names(self) -> List[str]:
+    def num_parameters(self) -> int:
+        """Number of parameters present in the model."""
+        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
+            self.__LOGGER.warning(
+                "Your vocabulary is still empty! "
+                "The number of trainable parameters usually depend on the size of your vocabulary."
+            )
+        return sum(p.numel() for p in self._model.parameters())
+
+    @property
+    def named_trainable_parameters(self) -> List[str]:
         """Returns the names of the trainable parameters in the pipeline"""
         return [name for name, p in self._model.named_parameters() if p.requires_grad]
 

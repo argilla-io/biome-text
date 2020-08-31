@@ -145,7 +145,8 @@ def test_training_from_pretrained_with_head_replace(
     trained.config.tokenizer.max_nr_of_sentences = 3
     copied = trained._make_copy()
     assert isinstance(copied.head, TestHead)
-    assert copied.trainable_parameters == trained.trainable_parameters
+    assert copied.num_parameters == trained.num_parameters
+    assert copied.num_trainable_parameters == trained.num_trainable_parameters
     copied_model_state = copied._model.state_dict()
     original_model_state = trained._model.state_dict()
     for key, value in copied_model_state.items():
