@@ -11,7 +11,7 @@ features:
 - title: Easy to use
   details: Create natural language processing custom models with powerful building blocks and simple workflows.
 - title: Powerful
-  details:  Benefit from the latest research and models in NLP powered by PyTorch and AllenNLP and Huggingface.
+  details:  Benefit from the latest research and models in NLP powered by PyTorch, AllenNLP and Huggingface.
   img1: /assets/img/pytorch.svg
   img2: /assets/img/allennlp.png
   img3: /assets/img/hugging.png
