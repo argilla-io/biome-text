@@ -120,7 +120,7 @@ def test_text_classification(
         output=str(output), trainer=trainer, training=train_ds, validation=valid_ds
     )
 
-    assert pl.trainable_parameters == 22070
+    assert pl.num_trainable_parameters == 22070
 
     with (output / "metrics.json").open() as file:
         metrics = json.load(file)

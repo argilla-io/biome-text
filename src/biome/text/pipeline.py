@@ -16,7 +16,7 @@ from allennlp.data import (
     Vocabulary,
     Token,
 )
-from allennlp.models import load_archive, Model
+from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.commands.find_learning_rate import search_learning_rate
 from dask import dataframe as dd
@@ -37,7 +37,7 @@ from . import constants
 from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .loggers import BaseTrainLogger
+from .loggers import BaseTrainLogger, add_default_wandb_logger_if_needed
 from .modules.heads import TaskHead, TaskHeadConfiguration
 from .training_results import TrainingResults
 
@@ -256,8 +256,8 @@ class Pipeline:
 
         Returns
         -------
-
-        Training results information, containing the generated model path and the related metrics
+        training_results
+            Training results including the generated model path and the related metrics
         """
         if extend_vocab is not None and isinstance(self, _BlankPipeline):
             raise ActionNotSupportedError(
@@ -300,6 +300,7 @@ class Pipeline:
                     datasets[name] = train_pipeline.create_dataset(dataset)
 
             loggers = loggers or []
+            add_default_wandb_logger_if_needed(loggers)
 
             pipeline_trainer = PipelineTrainer(
                 train_pipeline,
@@ -667,9 +668,8 @@ class Pipeline:
         return self.head.__class__.__name__
 
     @property
-    def trainable_parameters(self) -> int:
-        """
-        Returns the number of trainable parameters.
+    def num_trainable_parameters(self) -> int:
+        """Number of trainable parameters present in the model.
 
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
@@ -681,7 +681,17 @@ class Pipeline:
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property
-    def trainable_parameter_names(self) -> List[str]:
+    def num_parameters(self) -> int:
+        """Number of parameters present in the model."""
+        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
+            self.__LOGGER.warning(
+                "Your vocabulary is still empty! "
+                "The number of trainable parameters usually depend on the size of your vocabulary."
+            )
+        return sum(p.numel() for p in self._model.parameters())
+
+    @property
+    def named_trainable_parameters(self) -> List[str]:
         """Returns the names of the trainable parameters in the pipeline"""
         return [name for name, p in self._model.named_parameters() if p.requires_grad]
 

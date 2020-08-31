@@ -1,6 +1,6 @@
 import dataclasses
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from allennlp.training import EpochCallback, GradientDescentTrainer
 from mlflow.entities import Experiment
@@ -10,6 +10,15 @@ from mlflow.utils import mlflow_tags
 
 from biome.text.data import InstancesDataset
 from biome.text.training_results import TrainingResults
+
+# We do not require wandb
+try:
+    import wandb
+except ImportError:
+    _HAS_WANDB = False
+else:
+    wandb.ensure_configured()
+    _HAS_WANDB = True
 
 
 class BaseTrainLogger(EpochCallback):
@@ -150,16 +159,21 @@ class MlflowLogger(BaseTrainLogger):
     ):
         from pandas import json_normalize
 
-        # fmt: off
         for prefix, params_set in [
             ("pipeline", json_normalize(pipeline.config.as_dict())),
-            ("trainer", json_normalize(dataclasses.asdict(trainer_configuration)))
+            ("trainer", json_normalize(dataclasses.asdict(trainer_configuration))),
         ]:
             for key, value in params_set.to_dict(orient="records")[0].items():
                 if value:
                     self._client.log_param(self._run_id, f"{prefix}.{key}", value)
-        self._client.log_param(self._run_id, key="pipeline.num_parameters", value=pipeline.trainable_parameters)
-        # fmt: on
+        self._client.log_param(
+            self._run_id, key="pipeline.num_parameters", value=pipeline.num_parameters
+        )
+        self._client.log_param(
+            self._run_id,
+            key="pipeline.num_trainable_parameters",
+            value=pipeline.num_trainable_parameters,
+        )
 
     def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):
 
@@ -179,3 +193,74 @@ class MlflowLogger(BaseTrainLogger):
             ]
         finally:
             self._client.set_terminated(self._run_id)
+
+
+class WandBLogger(BaseTrainLogger):
+    """Logger for WandB
+
+    Parameters
+    ----------
+    project_name
+        Name of your WandB project
+    run_name
+        Name of your run
+    tags
+        Extra arguments used as tags to created experiment run
+    """
+
+    def __init__(
+        self, project_name: str = "biome", run_name: str = None, tags: List[str] = None
+    ):
+        if wandb.api.api_key is None:
+            wandb.termwarn(
+                "W&B installed but not logged in. "
+                "Run `wandb login` or `import wandb; wandb.login()` or set the WANDB_API_KEY env variable."
+            )
+
+        self.project_name = project_name
+        self.run_name = run_name
+        self.tags = tags
+
+    def init_train(
+        self,
+        pipeline: "Pipeline",
+        trainer_configuration: "TrainerConfiguration",
+        training: InstancesDataset,
+        validation: Optional[InstancesDataset] = None,
+        test: Optional[InstancesDataset] = None,
+    ):
+        config = {
+            "pipeline": pipeline.config.as_dict(),
+            "trainer": dataclasses.asdict(trainer_configuration),
+        }
+        config["pipeline"]["num_parameters"] = pipeline.num_parameters
+        config["pipeline"]["num_trainable_parameters"] = pipeline.num_trainable_parameters
+        wandb.init(
+            project=self.project_name, name=self.run_name, tags=self.tags, config=config
+        )
+
+    def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):
+        wandb.log(metrics)
+
+
+def add_default_wandb_logger_if_needed(loggers: List[BaseTrainLogger]) -> None:
+    """Adds the default WandBLogger if a WandB login is detected and no WandBLogger is found in `loggers`.
+
+    Parameters
+    ----------
+    loggers
+        List of loggers used in the training
+    """
+    if not _HAS_WANDB:
+        pass
+    elif any([isinstance(logger, WandBLogger) for logger in loggers]):
+        pass
+    elif wandb.api.api_key is None:
+        wandb.termwarn(
+            "W&B installed but not logged in. "
+            "Run `wandb login` or `import wandb; wandb.login()` or set the WANDB_API_KEY env variable."
+        )
+    else:
+        loggers.append(WandBLogger())
+
+    return None

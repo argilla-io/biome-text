@@ -135,8 +135,9 @@ def test_pipeline_config(pipeline_yaml):
 
     pl_yaml = Pipeline.from_yaml(pipeline_yaml)
 
-    assert pl.trainable_parameter_names == pl_yaml.trainable_parameter_names
-    assert pl.trainable_parameters == pl_yaml.trainable_parameters
+    assert pl.named_trainable_parameters == pl_yaml.named_trainable_parameters
+    assert pl.num_trainable_parameters == pl_yaml.num_trainable_parameters
+    assert pl.num_parameters == pl_yaml.num_parameters
 
     sample_text = "My simple text"
     for instance in [
