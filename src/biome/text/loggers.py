@@ -224,6 +224,7 @@ class WandBLogger(BaseTrainLogger):
             "pipeline": pipeline.config.as_dict(),
             "trainer": dataclasses.asdict(trainer_configuration),
         }
+        config["pipeline"]["trainable_parameters"] = pipeline.trainable_parameters
         wandb.init(project=self.project_name, name=self.run_name, tags=self.tags, config=config)
 
     def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):
