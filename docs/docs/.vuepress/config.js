@@ -19,7 +19,7 @@ module.exports = {
   description: 'biome.text practical NLP open source library.',
   head: [
     ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
-    ['meta', { prefix: ogprefix, property: 'og:image', content: 'https://www.recogn.ai/images/biome_og.png' }],
+    ['meta', { property: 'og:image', content: 'https://www.recogn.ai/images/biome_og.png' }],
   ],
   base: `/${baseContext}`,
   plugins: [
