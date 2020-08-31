@@ -42,6 +42,7 @@ def test_mlflow_logger():
     expected_parmams = {
         "pipeline.features.word.trainable": "True",
         "pipeline.num_parameters": "202",
+        "pipeline.num_trainable_parameters": "202",
         "pipeline.features.word.embedding_dim": "50",
         "pipeline.head.type": "biome.text.modules.heads.classification.text_classification.TextClassification",
         "pipeline.head.labels": "['A', 'B']",
