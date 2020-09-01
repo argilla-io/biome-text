@@ -265,8 +265,17 @@ class PipelineTrainer:
 
     def _setup(self):
         """Setup the trainer components and local resources"""
-
-        prepare_environment(Params({}))
+        prepare_environment(
+            Params(
+                {}
+                if self._trainer_config.random_seed is None
+                else {
+                    "random_seed": self._trainer_config.random_seed,
+                    "numpy_seed": self._trainer_config.random_seed,
+                    "pytorch_seed": self._trainer_config.random_seed,
+                }
+            )
+        )
         os.makedirs(self._output_dir, exist_ok=True)
 
         # We don't need to load pretrained weights from saved models

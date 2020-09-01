@@ -399,6 +399,10 @@ class TrainerConfiguration:
     no_grad
         Freeze a list of parameters.
         The parameter names have to match those of the `Pipeline.trainable_parameter_names`.
+
+    random_seed
+        Seed for the underlying random number generator.
+        If None, we take the random seeds provided by AllenNLP's `prepare_environment` method.
     """
 
     optimizer: Dict[str, Any] = dataclasses.field(
@@ -418,6 +422,7 @@ class TrainerConfiguration:
     data_bucketing: bool = False
     batches_per_epoch: Optional[int] = None
     no_grad: List[str] = None
+    random_seed: Optional[int] = None
 
     def to_allennlp_trainer(self) -> Dict[str, Any]:
         """Returns a configuration dict formatted for AllenNLP's trainer
@@ -426,7 +431,8 @@ class TrainerConfiguration:
         -------
         allennlp_trainer_config
         """
-        __excluded_keys = ["data_bucketing", "batch_size", "batches_per_epoch"]  # Data loader attributes
+        # Data loader and prepare_env attributes
+        __excluded_keys = ["data_bucketing", "batch_size", "batches_per_epoch", "random_seed"]
         trainer_config = {
             k: v for k, v in vars(self).items() if k not in __excluded_keys
         }
