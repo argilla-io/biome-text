@@ -45,6 +45,12 @@ def pipeline_dict() -> Dict:
                 },
             },
         },
+        "encoder": {
+            "type": "gru",
+            "num_layers": 1,
+            "hidden_size": 10,
+            "bidirectional": True,
+        },
         "head": {"type": "LanguageModelling", "dropout": 0.1, "bidirectional": True},
     }
 
