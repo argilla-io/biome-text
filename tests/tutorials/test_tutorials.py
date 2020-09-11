@@ -5,6 +5,14 @@ from pytest_notebook.nb_regression import NBRegressionFixture
 from pytest_notebook.notebook import load_notebook, dump_notebook
 
 from tests import TUTORIALS_PATH
+import pytest
+
+
+pytestmark = pytest.mark.skip(
+    reason="The pytest-notebook package is not actively maintained and "
+    "the tutorial tests are quite heavy on resources. "
+    "The idea is to run those tests locally and manually from time to time."
+)
 
 
 def test_text_classifier_tutorial(tmp_path):
