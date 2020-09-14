@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import torch
 from allennlp.common.checks import ConfigurationError
@@ -22,8 +22,15 @@ class LanguageModelling(TaskHead):
     def task_name(self) -> TaskName:
         return TaskName.language_modelling
 
-    def __init__(self, backbone: ModelBackbone, dropout: float = None) -> None:
+    def __init__(
+        self,
+        backbone: ModelBackbone,
+        dropout: float = None,
+        bidirectional: bool = False,
+    ) -> None:
         super(LanguageModelling, self).__init__(backbone)
+
+        self.bidirectional = bidirectional
 
         if not backbone.featurizer.has_word_features:
             raise ConfigurationError(
@@ -31,7 +38,18 @@ class LanguageModelling(TaskHead):
                 "Please check your `features` configuration to enable at least `words` features."
             )
 
-        self._forward_dim = backbone.encoder.get_output_dim()
+        if backbone.encoder.is_bidirectional() is not bidirectional:
+            raise ConfigurationError(
+                "Bidirectionality of contextualizer must match bidirectionality of "
+                "language model. "
+                f"Contextualizer bidirectional: {backbone.encoder.is_bidirectional()}, "
+                f"language model bidirectional: {bidirectional}"
+            )
+
+        if self.bidirectional:
+            self._forward_dim = backbone.encoder.get_output_dim() // 2
+        else:
+            self._forward_dim = backbone.encoder.get_output_dim()
 
         if dropout:
             self._dropout = torch.nn.Dropout(dropout)
@@ -42,13 +60,13 @@ class LanguageModelling(TaskHead):
 
         self._loss = SoftmaxLoss(
             num_words=vocabulary.words_vocab_size(self.backbone.vocab),
-            embedding_dim=self.backbone.encoder.get_output_dim(),
+            embedding_dim=self._forward_dim,
         )
 
     def on_vocab_update(self):
         self._loss = SoftmaxLoss(
             num_words=vocabulary.words_vocab_size(self.backbone.vocab),
-            embedding_dim=self.backbone.encoder.get_output_dim(),
+            embedding_dim=self._forward_dim,
         )
 
     def featurize(self, text: str) -> Optional[Instance]:
@@ -60,9 +78,7 @@ class LanguageModelling(TaskHead):
 
         mask = get_text_field_mask(text)
         contextual_embeddings = self.backbone.forward(text, mask)
-        # NOTE: @dvsrepo, Allennlp 1.0 includes a second features level that I'm not sure of understand.
-        # Anyway, they proved a function to realize the target here (the function docstring clarifies the
-        # real spaghetti inside indexer code references, :-)
+
         token_ids = get_token_ids_from_text_field_tensors(text)
         assert isinstance(contextual_embeddings, torch.Tensor)
 
@@ -72,13 +88,19 @@ class LanguageModelling(TaskHead):
         forward_targets = torch.zeros_like(token_ids)
         forward_targets[:, 0:-1] = token_ids[:, 1:]
 
+        if self.bidirectional:
+            backward_targets = torch.zeros_like(token_ids)
+            backward_targets[:, 1:] = token_ids[:, 0:-1]
+        else:
+            backward_targets = None
+
         # add dropout
         contextual_embeddings_with_dropout = self._dropout(contextual_embeddings)
 
         # compute softmax loss
         try:
-            forward_loss = self._compute_loss(
-                contextual_embeddings_with_dropout, forward_targets
+            forward_loss, backward_loss = self._compute_loss(
+                contextual_embeddings_with_dropout, forward_targets, backward_targets
             )
         except IndexError:
             raise IndexError(
@@ -87,8 +109,14 @@ class LanguageModelling(TaskHead):
             )
 
         num_targets = torch.sum((forward_targets > 0).long())
+
         if num_targets > 0:
-            average_loss = forward_loss / num_targets.float()
+            if self.bidirectional:
+                average_loss = (
+                    0.5 * (forward_loss + backward_loss) / num_targets.float()
+                )
+            else:
+                average_loss = forward_loss / num_targets.float()
         else:
             average_loss = torch.tensor(0.0).to(forward_targets.device)
 
@@ -99,7 +127,7 @@ class LanguageModelling(TaskHead):
             logits=None,
             probs=None,
             loss=average_loss,
-            **{"lm_embeddings": contextual_embeddings, "mask": mask}
+            **{"lm_embeddings": contextual_embeddings, "mask": mask},
         )
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
@@ -109,17 +137,27 @@ class LanguageModelling(TaskHead):
         }
 
     def _compute_loss(
-        self, lm_embeddings: torch.Tensor, forward_targets: torch.Tensor
-    ) -> torch.Tensor:
-        forward_embeddings = lm_embeddings
-        forward_loss = self._loss_helper(0, forward_embeddings, forward_targets)
-        return forward_loss
+        self,
+        lm_embeddings: torch.Tensor,
+        forward_targets: torch.Tensor,
+        backward_targets: torch.Tensor = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        # If bidirectional, lm_embeddings is shape (batch_size, timesteps, dim * 2)
+        # If unidirectional, lm_embeddings is shape (batch_size, timesteps, dim)
+        # forward_targets, backward_targets (None in the unidirectional case) are
+        # shape (batch_size, timesteps) masked with 0
+        if self.bidirectional:
+            forward_embeddings, backward_embeddings = lm_embeddings.chunk(2, -1)
+            backward_loss = self._loss_helper(backward_embeddings, backward_targets)
+        else:
+            forward_embeddings = lm_embeddings
+            backward_loss = None
+
+        forward_loss = self._loss_helper(forward_embeddings, forward_targets)
+        return forward_loss, backward_loss
 
     def _loss_helper(
-        self,
-        direction: int,
-        direction_embeddings: torch.Tensor,
-        direction_targets: torch.Tensor,
+        self, direction_embeddings: torch.Tensor, direction_targets: torch.Tensor,
     ) -> torch.Tensor:
         mask = direction_targets > 0
         # we need to subtract 1 to undo the padding id since the softmax
@@ -132,6 +170,7 @@ class LanguageModelling(TaskHead):
         non_masked_embeddings = direction_embeddings.masked_select(
             mask.unsqueeze(-1)
         ).view(-1, self._forward_dim)
+
         return self._loss(non_masked_embeddings, non_masked_targets)
 
 

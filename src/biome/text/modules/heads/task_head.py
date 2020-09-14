@@ -19,7 +19,7 @@ class TaskOutput:
     """
 
     def __init__(
-        self, logits: torch.Tensor, loss: Optional[torch.Tensor] = None, **extra_data
+        self, logits: torch.Tensor = None, loss: Optional[torch.Tensor] = None, **extra_data
     ):
         self.logits = logits
         self.loss = loss
