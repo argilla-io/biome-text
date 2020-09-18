@@ -455,7 +455,7 @@ class Pipeline:
                 file_path="dummy",
             )
             if lazy
-            else AllennlpDataset(instances_series.compute())
+            else AllennlpDataset(list(instances_series.compute()))
         )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
