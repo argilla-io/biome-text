@@ -16,6 +16,7 @@ from biome.text.modules.configuration import (
     ComponentConfiguration,
     FeedForwardConfiguration,
 )
+from biome.text.helpers import span_labels_to_tag_labels, bioul_tags_to_bio_tags
 from .task_head import TaskHead, TaskName, TaskOutput
 
 
@@ -51,8 +52,12 @@ class TokenClassification(TaskHead):
 
         # Convert span labels to tag labels if necessary
         # We just check if "O" is in the label list, a necessary tag for IOB/BIOUL schemes, an unlikely label for spans
-        if "O" not in labels:
-            labels = self._convert_span_labels_to_tag_labels(labels)
+        if "O" not in labels and "o" not in labels:
+            labels = span_labels_to_tag_labels(labels, self._label_encoding)
+        # Issue a warning if you have the "O" tag but no other BIO/BIOUL looking tags.
+        elif not any([label.lower().startswith(tag) for label in labels for tag in ["b-", "i-"]]):
+            self.__LOGGER.warning("We interpreted the 'O' label as tag label, but did not find a 'B' or 'I' tag."
+                                  "Make sure your tag labels comply with the BIO/BIOUL tagging scheme.")
 
         vocabulary.set_labels(self.backbone.vocab, labels)
 
@@ -94,22 +99,6 @@ class TokenClassification(TaskHead):
 
         self.__all_metrics = [self.f1_metric]
         self.__all_metrics.extend(self.metrics.values())
-
-    def _convert_span_labels_to_tag_labels(self, labels: List[str]) -> List[str]:
-        if self._label_encoding == "BIOUL":
-            converted_labels = [
-                f"{char}-{label}" for char in ["B", "I", "U", "L"] for label in labels
-            ] + ["O"]
-        elif self._label_encoding == "BIO":
-            converted_labels = [
-                f"{char}-{label}" for char in ["B", "I"] for label in labels
-            ] + ["O"]
-        else:
-            raise ValueError(
-                f"'{self._label_encoding}' is not a supported label encoding scheme."
-            )
-
-        return converted_labels
 
     def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """loss is calculated as -log_likelihood from crf"""
@@ -155,7 +144,7 @@ class TokenClassification(TaskHead):
                     return None
 
                 if self._label_encoding == "BIO":
-                    labels = self._bioul2bio(labels)
+                    labels = bioul_tags_to_bio_tags(labels)
 
             instance.add_field(
                 "labels",
