@@ -2,7 +2,6 @@ import inspect
 import os
 import os.path
 import re
-import numpy as np
 from inspect import Parameter
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
 
@@ -240,3 +239,50 @@ def sanitize_for_params(x: Any) -> Any:
     elif hasattr(x, "to_json"):
         return x.to_json()
     return x
+
+
+def span_labels_to_tag_labels(
+    labels: List[str], label_encoding: str = "BIO"
+) -> List[str]:
+    """Converts a list of span labels to tag labels following `spacy.gold.biluo_tags_from_offsets`
+
+    Parameters
+    ----------
+    labels
+        Span labels to convert
+    label_encoding
+        The label format used for the tag labels
+
+    Returns
+    -------
+    tag_labels
+    """
+    if label_encoding == "BIOUL":
+        converted_labels = [
+            f"{char}-{label}" for char in ["B", "I", "U", "L"] for label in labels
+        ] + ["O"]
+    elif label_encoding == "BIO":
+        converted_labels = [
+            f"{char}-{label}" for char in ["B", "I"] for label in labels
+        ] + ["O"]
+    else:
+        raise ValueError(
+            f"'{label_encoding}' is not a supported label encoding scheme."
+        )
+
+    return converted_labels
+
+
+def bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
+    """Converts BIOUL tags to BIO tags
+
+    Parameters
+    ----------
+    tags
+        BIOUL tags to convert
+
+    Returns
+    -------
+    bio_tags
+    """
+    return [tag.replace("L-", "I-", 1).replace("U-", "B-", 1) for tag in tags]

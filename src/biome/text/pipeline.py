@@ -432,12 +432,14 @@ class Pipeline:
 
         datasource.mapping = mapping
         ddf = datasource.to_mapped_dataframe()
-        instances_ddf = ddf.map_partitions(
+        instances_series: "dask.dataframe.core.Series" = ddf.map_partitions(
             lambda df: df.apply(
                 lambda row: self.head.featurize(**row.to_dict()), axis=1
             ),
             meta=object,
         ).persist()
+        # We remove the not featurizable examples from the data set. The head should log a warning for them though!
+        instances_series = instances_series.dropna()
 
         def build_instance_generator(instances: DataFrame):
             """Configures an instance generator from DataFrame"""
@@ -449,11 +451,11 @@ class Pipeline:
 
         return (
             AllennlpLazyDataset(
-                instance_generator=build_instance_generator(instances_ddf),
+                instance_generator=build_instance_generator(instances_series),
                 file_path="dummy",
             )
             if lazy
-            else AllennlpDataset(instances_ddf.compute())
+            else AllennlpDataset(list(instances_series.compute()))
         )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
