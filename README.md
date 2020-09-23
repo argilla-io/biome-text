@@ -40,72 +40,25 @@
 * **Compatible with AllenNLP**
 
 ## Installation
-You can install *biome.text* with pip or from source.
 For the installation we recommend setting up a fresh [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html):
 
-```shell
+```shell script
 conda create -n biome python==3.7.1
 conda activate biome
 ```
 
-### Pip
-The recommended way for installing the library is using pip. You can install everything required for the library as follows:
+The recommended way to install *biome.text* is via `pip`:
 
 ```shell script
 pip install biome-text
 ```
 
-### Install from Source
-To install **biome.text* from source, clone the repository from github:
-
-````shell script
-git clone https://github.com/recognai/biome-text.git
-cd biome-text
-pip install .
-````
-
-For the UI to work you need to build the static web resources:
-````shell script
-cd ui 
-npm install 
-npm run build
-````
-
-*Note: node>=12 is required in your machine. 
-You can follow installation instructions [here](https://nodejs.org/en/download/)*
-
-For development you should install *biome.text* in the editable mode together with the test dependencies:
-
+After installing *biome.text*, the best way to test your installation is by running the *biome.text* cli command:
 ```shell script
-cd biome-text
-pip install --upgrade -e .[testing]
+biome --help
 ```
 
-If the `make` command is enabled in your system, you can instead use the `make dev` directive for a development installation:
-
-````shell script
-make dev
-````
-
-and the `make ui` directive for building the static web resources:
-
-````shell script
-make ui
-````
-
-You can see all defined directives with:
-````shell script
-make help
-````
-
-#### Tests
-*Biome.text* uses [pytest](https://docs.pytest.org/en/latest/) for its unit and integration tests.
-To run the tests, make sure you installed *biome.text* together with its test dependencies and simply execute pytest from within the `biome-text` directory:
-
-````shell script
-cd biome-text
-pytest
-````
+Please refer to our [documentation](https://www.recogn.ai/biome-text) if you want to [contribute](https://www.recogn.ai/biome-text/documentation/community/contributing.html) to *biome.text* or install the library [from source](https://www.recogn.ai/biome-text/documentation/).
 
 ## Licensing
 
