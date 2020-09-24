@@ -33,7 +33,7 @@ class BiMpmMatchingConfiguration(ComponentConfiguration[BiMpmMatching]):
     pass
 
 
-class EmbeddingConfigugitration(ComponentConfiguration[Embedding]):
+class EmbeddingConfiguration(ComponentConfiguration[Embedding]):
     """Layer spec for Embedding components"""
 
     pass
