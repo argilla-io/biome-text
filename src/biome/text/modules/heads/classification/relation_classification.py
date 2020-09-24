@@ -1,0 +1,132 @@
+from typing import Any, Dict, List, Optional, Union, cast
+
+import torch
+from allennlp.data import Batch, Instance, TextFieldTensors
+from allennlp.data.fields import TextField, SequenceLabelField
+from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
+from allennlp.nn.util import get_text_field_mask
+
+from biome.text.backbone import ModelBackbone
+from biome.text.helpers import tags_from_offsets
+from biome.text.modules.configuration import (
+    ComponentConfiguration,
+    FeedForwardConfiguration,
+    Seq2VecEncoderConfiguration,
+    EmbeddingConfiguration,
+)
+
+# from biome.text.modules.encoders.multi_head_self_attention_encoder import MultiheadSelfAttentionEncoder
+
+from .text_classification import TextClassification
+
+from ..task_head import TaskOutput
+
+
+class RelationClassification(TextClassification):
+    """
+    Task head for relation classification
+    """
+
+    def __init__(
+        self,
+        backbone: ModelBackbone,
+        labels: List[str],
+        pooler: Optional[Seq2VecEncoderConfiguration] = None,
+        feedforward: Optional[FeedForwardConfiguration] = None,
+        entities_embedder: Optional[EmbeddingConfiguration] = None,
+        multilabel: bool = False,
+        entity_encoding: Optional[str] = "BIOUL"
+        # self_attention: Optional[MultiheadSelfAttentionEncoder] = None
+    ) -> None:
+
+        super(RelationClassification, self).__init__(
+            backbone,
+            labels,
+            pooler=pooler,
+            feedforward=feedforward,
+            multilabel=multilabel,
+        )
+
+        self._label_encoding = entity_encoding
+
+        self.entities_embedder = (
+            entities_embedder.compile() if entities_embedder else None
+        )
+        encoding_output_dim = self.backbone.encoder.get_output_dim() + (
+            self.entities_embedder.get_output_dim() if self.entities_embedder else 0
+        )
+        self.pooler = (
+            pooler.input_dim(encoding_output_dim).compile()
+            if pooler
+            else BagOfEmbeddingsEncoder(encoding_output_dim)
+        )
+
+        self.feedforward = (
+            None
+            if not feedforward
+            else feedforward.input_dim(self.pooler.get_output_dim()).compile()
+        )
+        self._classification_layer = torch.nn.Linear(
+            (self.feedforward or self.pooler).get_output_dim(), self.num_labels
+        )
+        # self.self_attention = self_attention
+
+    def forward(  # type: ignore
+        self,
+        text: TextFieldTensors,
+        entities: torch.IntTensor,
+        label: torch.IntTensor = None,
+    ) -> TaskOutput:
+
+        mask = get_text_field_mask(text)
+        embedded_text = self.backbone.forward(text, mask)
+
+        if self.entities_embedder:
+            embedded_ents = self.entities_embedder(entities)
+            embedded_text = torch.cat((embedded_text, embedded_ents), dim=-1)
+        """
+        if self.self_attention:
+            embedded_text = self.self_attention(embedded_text)
+        """
+        embedded_text = self.pooler(embedded_text, mask=mask)
+
+        if self.feedforward is not None:
+            embedded_text = self.feedforward(embedded_text)
+
+        logits = self._classification_layer(embedded_text)
+        return self.calculate_output(logits=logits, label=label)
+
+    def featurize(
+        self,
+        text: Any,
+        entities: List[Dict],
+        label: Optional[Union[int, str, List[Union[int, str]]]] = None,
+    ) -> Optional[Instance]:
+
+        instance = self.backbone.featurizer(
+            text,
+            to_field=self.forward_arg_name,
+            aggregate=True,
+            exclude_record_keys=True,
+        )
+
+        doc = self.backbone.tokenizer.nlp(text)
+        labels = tags_from_offsets(doc, entities, self._label_encoding)
+        # here we choose not to discard misaligned offsets, as partial entity tags might still be useful feats
+        instance.add_field(
+            "entities",
+            SequenceLabelField(
+                labels,
+                sequence_field=cast(TextField, instance["text"]),
+                label_namespace="entities",
+            ),
+        )
+        return self.add_label(instance, label, to_field=self.label_name)
+
+
+class RelationClassificationConfiguration(
+    ComponentConfiguration[RelationClassification]
+):
+    """Configuration for classification head components"""
+
+    pass

@@ -3,11 +3,13 @@ import os
 import os.path
 import re
 from inspect import Parameter
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, Optional
 
+import spacy
 import yaml
 from allennlp.common import util
 from elasticsearch import Elasticsearch
+from spacy.tokens.doc import Doc
 
 from . import environment
 
@@ -273,7 +275,7 @@ def span_labels_to_tag_labels(
     return converted_labels
 
 
-def bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
+def _bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
     """Converts BIOUL tags to BIO tags
 
     Parameters
@@ -286,3 +288,29 @@ def bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
     bio_tags
     """
     return [tag.replace("L-", "I-", 1).replace("U-", "B-", 1) for tag in tags]
+
+
+def tags_from_offsets(
+    doc: Doc, offsets: List[Dict], label_encoding: Optional[str] = "BIOUL"
+):
+    """Converts offsets to BIOUL or BIO tags
+
+    Parameters
+    ----------
+    doc
+        A spaCy Doc created with `text` and the backbone tokenizer
+    offsets
+        A list of span offsets with start and end characters and the span label
+    label_encoding
+        The label encoding to be used: BIOUL or BIO
+
+    Returns
+    -------
+    tags (BIOUL or BIO)
+    """
+    labels = spacy.gold.biluo_tags_from_offsets(
+        doc, [(offset["start"], offset["end"], offset["label"]) for offset in offsets]
+    )
+    if label_encoding == "BIO":
+        labels = _bioul_tags_to_bio_tags(labels)
+    return labels
