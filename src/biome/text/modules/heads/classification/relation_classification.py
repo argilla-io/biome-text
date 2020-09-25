@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional, Union, cast
 
 import torch
@@ -27,6 +28,8 @@ class RelationClassification(TextClassification):
     Task head for relation classification
     """
 
+    __LOGGER = logging.getLogger(__name__)
+
     def __init__(
         self,
         backbone: ModelBackbone,
@@ -48,6 +51,8 @@ class RelationClassification(TextClassification):
         )
 
         self._label_encoding = entity_encoding
+        # it's important to use *tags or *labels naming, to setup the vocab namespace as non-padded
+        self._entity_tags_namespace = "entity_labels"
 
         self.entities_embedder = (
             entities_embedder.compile() if entities_embedder else None
@@ -110,17 +115,23 @@ class RelationClassification(TextClassification):
             exclude_record_keys=True,
         )
 
-        doc = self.backbone.tokenizer.nlp(text)
-        labels = tags_from_offsets(doc, entities, self._label_encoding)
-        # here we choose not to discard misaligned offsets, as partial entity tags might still be useful feats
-        instance.add_field(
-            "entities",
-            SequenceLabelField(
-                labels,
-                sequence_field=cast(TextField, instance["text"]),
-                label_namespace="entities",
-            ),
-        )
+        if entities:
+            doc = self.backbone.tokenizer.nlp(text)
+            labels = tags_from_offsets(doc, entities, self._label_encoding)
+
+            if "-" in labels:
+                self.__LOGGER.warning(
+                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                )
+                return None
+            instance.add_field(
+                "entities",
+                SequenceLabelField(
+                    labels,
+                    sequence_field=cast(TextField, instance["text"]),
+                    label_namespace=self._entity_tags_namespace,
+                ),
+            )
         return self.add_label(instance, label, to_field=self.label_name)
 
 
