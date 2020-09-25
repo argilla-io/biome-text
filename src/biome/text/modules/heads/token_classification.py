@@ -138,12 +138,13 @@ class TokenClassification(TaskHead):
             # First convert span labels to tag labels
             if labels == [] or isinstance(labels[0], dict):
                 doc = self.backbone.tokenizer.nlp(text)
-                labels = tags_from_offsets(doc, labels, self._label_encoding)
+                tags = tags_from_offsets(doc, labels, self._label_encoding)
                 # discard misaligned examples for now
                 if "-" in labels:
                     self.__LOGGER.warning(
-                        f"Could not align spans with tokens for following example: '{text}' {labels}"
+                        f"Could not align spans with tokens for following example: '{text}' {tags}"
                     )
+                    labels = tags
                     return None
 
             instance.add_field(

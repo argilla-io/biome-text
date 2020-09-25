@@ -117,17 +117,17 @@ class RelationClassification(TextClassification):
 
         if entities:
             doc = self.backbone.tokenizer.nlp(text)
-            labels = tags_from_offsets(doc, entities, self._label_encoding)
+            entity_tags = tags_from_offsets(doc, entities, self._label_encoding)
 
-            if "-" in labels:
+            if "-" in entity_tags:
                 self.__LOGGER.warning(
-                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                    f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
             instance.add_field(
                 "entities",
                 SequenceLabelField(
-                    labels,
+                    entity_tags,
                     sequence_field=cast(TextField, instance["text"]),
                     label_namespace=self._entity_tags_namespace,
                 ),
