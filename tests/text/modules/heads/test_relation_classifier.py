@@ -69,36 +69,6 @@ def pipeline_dict() -> Dict:
 
 
 @pytest.fixture
-def pipeline_dict_no_entity_emb() -> Dict:
-    pipeline_dict = {
-        "name": "biome-rele",
-        "features": {
-            "word": {"embedding_dim": 2},
-            "char": {
-                "embedding_dim": 2,
-                "dropout": 0.1,
-                "encoder": {
-                    "type": "gru",
-                    "hidden_size": 2,
-                },
-            },
-        },
-        "head": {
-            "type": "RelationClassification",
-            "labels": ["Message-Topic(e1,e2)", "Product-Producer(e2,e1)"],
-            "feedforward": {
-                "num_layers": 1,
-                "hidden_dims": [4],
-                "activations": ["relu"],
-                "dropout": [0.1],
-            },
-        },
-    }
-
-    return pipeline_dict
-
-
-@pytest.fixture
 def trainer_dict() -> Dict:
     trainer_dict = {
         "num_epochs": 1,
@@ -124,12 +94,4 @@ def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
         trainer=TrainerConfiguration(**trainer_dict),
         training=training_data_source,
         validation=training_data_source,
-    )
-
-
-def test_train_no_entity_emb(
-    pipeline_dict_no_entity_emb, training_data_source, trainer_dict, tmp_path
-):
-    test_train(
-        pipeline_dict_no_entity_emb, training_data_source, trainer_dict, tmp_path
     )
