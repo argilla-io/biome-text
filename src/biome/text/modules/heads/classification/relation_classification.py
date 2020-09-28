@@ -34,9 +34,9 @@ class RelationClassification(TextClassification):
         self,
         backbone: ModelBackbone,
         labels: List[str],
+        entities_embedder: EmbeddingConfiguration,
         pooler: Optional[Seq2VecEncoderConfiguration] = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
-        entities_embedder: Optional[EmbeddingConfiguration] = None,
         multilabel: bool = False,
         entity_encoding: Optional[str] = "BIOUL"
         # self_attention: Optional[MultiheadSelfAttentionEncoder] = None
@@ -53,11 +53,11 @@ class RelationClassification(TextClassification):
         self._label_encoding = entity_encoding
         self._entity_tags_namespace = "entities"
 
-        self.entities_embedder = (
-            entities_embedder.compile() if entities_embedder else None
-        )
-        encoding_output_dim = self.backbone.encoder.get_output_dim() + (
-            self.entities_embedder.get_output_dim() if self.entities_embedder else 0
+        self.entities_embedder = entities_embedder.compile()
+
+        encoding_output_dim = (
+            self.backbone.encoder.get_output_dim()
+            + self.entities_embedder.get_output_dim()
         )
         self.pooler = (
             pooler.input_dim(encoding_output_dim).compile()
@@ -85,9 +85,8 @@ class RelationClassification(TextClassification):
         mask = get_text_field_mask(text)
         embedded_text = self.backbone.forward(text, mask)
 
-        if self.entities_embedder:
-            embedded_ents = self.entities_embedder(entities)
-            embedded_text = torch.cat((embedded_text, embedded_ents), dim=-1)
+        embedded_ents = self.entities_embedder(entities)
+        embedded_text = torch.cat((embedded_text, embedded_ents), dim=-1)
         """
         if self.self_attention:
             embedded_text = self.self_attention(embedded_text)
@@ -114,23 +113,24 @@ class RelationClassification(TextClassification):
             exclude_record_keys=True,
         )
 
-        if entities:
-            doc = self.backbone.tokenizer.nlp(text)
-            entity_tags = tags_from_offsets(doc, entities, self._label_encoding)
+        doc = self.backbone.tokenizer.nlp(text)
+        entity_tags = tags_from_offsets(doc, entities, self._label_encoding)
 
-            if "-" in entity_tags:
-                self.__LOGGER.warning(
-                    f"Could not align spans with tokens for following example: '{text}' {entities}"
-                )
-                return None
-            instance.add_field(
-                "entities",
-                SequenceLabelField(
-                    entity_tags,
-                    sequence_field=cast(TextField, instance["text"]),
-                    label_namespace=self._entity_tags_namespace,
-                ),
+        if "-" in entity_tags:
+            self.__LOGGER.warning(
+                f"Could not align spans with tokens for following example: '{text}' {entities}"
             )
+            return None
+
+        instance.add_field(
+            "entities",
+            SequenceLabelField(
+                entity_tags,
+                sequence_field=cast(TextField, instance["text"]),
+                label_namespace=self._entity_tags_namespace,
+            ),
+        )
+
         return self.add_label(instance, label, to_field=self.label_name)
 
 
