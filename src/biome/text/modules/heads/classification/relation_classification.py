@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union, cast
 
 import torch
-from allennlp.data import Batch, Instance, TextFieldTensors
+from allennlp.data import Instance, TextFieldTensors
 from allennlp.data.fields import TextField, SequenceLabelField
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
@@ -51,8 +51,7 @@ class RelationClassification(TextClassification):
         )
 
         self._label_encoding = entity_encoding
-        # it's important to use *tags or *labels naming, to setup the vocab namespace as non-padded
-        self._entity_tags_namespace = "entity_labels"
+        self._entity_tags_namespace = "entities"
 
         self.entities_embedder = (
             entities_embedder.compile() if entities_embedder else None
