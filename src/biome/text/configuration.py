@@ -411,7 +411,7 @@ class TrainerConfiguration:
     validation_metric: str = "-loss"
     patience: Optional[int] = 2
     num_epochs: int = 20
-    cuda_device: int = -1
+    cuda_device: int = None
     grad_norm: Optional[float] = None
     grad_clipping: Optional[float] = None
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
