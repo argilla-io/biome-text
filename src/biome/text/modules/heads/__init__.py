@@ -8,10 +8,17 @@ from .classification.record_classification import (
     RecordClassification,
     RecordClassificationConfiguration,
 )
-from .classification.record_pair_classification import RecordPairClassification
+from .classification.record_pair_classification import (
+    RecordPairClassification,
+    RecordPairClassificationConfiguration,
+)
 from .classification.text_classification import (
     TextClassification,
     TextClassificationConfiguration,
+)
+from .classification.relation_classification import (
+    RelationClassification,
+    RelationClassificationConfiguration,
 )
 
 from .language_modelling import LanguageModelling, LanguageModellingConfiguration
@@ -25,5 +32,6 @@ for head in [
     RecordClassification,
     LanguageModelling,
     RecordPairClassification,
+    RelationClassification
 ]:
     head.register(overrides=True)

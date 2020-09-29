@@ -2,7 +2,6 @@ import logging
 from typing import Dict, List, Optional, Union, cast
 
 import torch
-import spacy
 from allennlp.data import Instance, TextFieldTensors
 from allennlp.data.fields import SequenceLabelField, TextField
 from allennlp.modules import ConditionalRandomField, FeedForward, TimeDistributed
@@ -16,7 +15,7 @@ from biome.text.modules.configuration import (
     ComponentConfiguration,
     FeedForwardConfiguration,
 )
-from biome.text.helpers import span_labels_to_tag_labels, bioul_tags_to_bio_tags
+from biome.text.helpers import span_labels_to_tag_labels, tags_from_offsets
 from .task_head import TaskHead, TaskName, TaskOutput
 
 
@@ -35,6 +34,7 @@ class TokenClassification(TaskHead):
     dropout
     feedforward
     """
+
     __LOGGER = logging.getLogger(__name__)
 
     def __init__(
@@ -55,9 +55,13 @@ class TokenClassification(TaskHead):
         if "O" not in labels and "o" not in labels:
             labels = span_labels_to_tag_labels(labels, self._label_encoding)
         # Issue a warning if you have the "O" tag but no other BIO/BIOUL looking tags.
-        elif not any([label.lower().startswith(tag) for label in labels for tag in ["b-", "i-"]]):
-            self.__LOGGER.warning("We interpreted the 'O' label as tag label, but did not find a 'B' or 'I' tag."
-                                  "Make sure your tag labels comply with the BIO/BIOUL tagging scheme.")
+        elif not any(
+            [label.lower().startswith(tag) for label in labels for tag in ["b-", "i-"]]
+        ):
+            self.__LOGGER.warning(
+                "We interpreted the 'O' label as tag label, but did not find a 'B' or 'I' tag."
+                "Make sure your tag labels comply with the BIO/BIOUL tagging scheme."
+            )
 
         vocabulary.set_labels(self.backbone.vocab, labels)
 
@@ -133,18 +137,15 @@ class TokenClassification(TaskHead):
         if labels is not None:
             # First convert span labels to tag labels
             if labels == [] or isinstance(labels[0], dict):
-                spans = labels
                 doc = self.backbone.tokenizer.nlp(text)
-                labels = spacy.gold.biluo_tags_from_offsets(
-                    doc, [(span["start"], span["end"], span["label"]) for span in spans]
-                )
+                tags = tags_from_offsets(doc, labels, self._label_encoding)
                 # discard misaligned examples for now
                 if "-" in labels:
-                    self.__LOGGER.warning(f"Could not align spans with tokens for following example: '{text}' {spans}")
+                    self.__LOGGER.warning(
+                        f"Could not align spans with tokens for following example: '{text}' {tags}"
+                    )
+                    labels = tags
                     return None
-
-                if self._label_encoding == "BIO":
-                    labels = bioul_tags_to_bio_tags(labels)
 
             instance.add_field(
                 "labels",
