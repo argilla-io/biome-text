@@ -51,6 +51,7 @@ def trainer_dict() -> Dict:
         "num_epochs": 1,
         "batch_size": 1,
         "optimizer": {"type": "adam", "lr": 0.01},
+        "cuda_device": -1,
     }
 
     return trainer_dict
