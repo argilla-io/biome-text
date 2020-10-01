@@ -4,7 +4,7 @@
     <br>
 <p>
 <p align="center">
-    <a href="https://travis-ci.org/recognai/biome-text">
+    <a href="https://travis-ci.com/recognai/biome-text">
         <img alt="Build" src="https://travis-ci.org/recognai/biome-text.svg?branch=master">
     </a>
     <a href="https://github.com/recognai/biome-text/blob/master/LICENSE.txt">
