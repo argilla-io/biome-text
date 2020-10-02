@@ -265,7 +265,7 @@ class PipelineModel(allennlp.models.Model):
         """
         for input_dict, prediction in zip(input_dicts, predictions):
             self._prediction_logger.info(
-                json.dumps(dict(inputs=input_dict, annotation=sanitize(prediction)))
+                json.dumps(dict(inputs=input_dict, prediction=sanitize(prediction)))
             )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:

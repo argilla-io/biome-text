@@ -104,7 +104,7 @@ export default {
     // eslint-disable-next-line no-param-reassign, no-underscore-dangle
     document = document._source;
 
-    const annotation = document.annotation || {
+    const prediction = document.prediction || {
       classes: [],
       max_class_prob: 0.0,
     };
@@ -116,9 +116,9 @@ export default {
         acc[k] = getNestedValue(document, k);
         return acc;
       }, {}),
-      predicted: annotation.label || annotation.max_class,
-      confidence: annotation.prob || annotation.max_class_prob,
-      classes: annotation.classes,
+      predicted: prediction.label || prediction.max_class,
+      confidence: prediction.prob || prediction.max_class_prob,
+      classes: prediction.classes,
       activerecord: true,
       _source: Object.keys(document).reduce((acc, key) => {
         // Filtering non searchable values
@@ -133,10 +133,10 @@ export default {
 
     doc.interpretations = document.interpretations;
 
-    if (document.annotation.explain) {
-      doc.interpretations = Object.keys(document.annotation.explain).reduce((acc, k) => ({
+    if (document.prediction.explain) {
+      doc.interpretations = Object.keys(document.prediction.explain).reduce((acc, k) => ({
         ...acc,
-        [k]: document.annotation.explain[k].map((element) => {
+        [k]: document.prediction.explain[k].map((element) => {
           if (Array.isArray(element)) {
             return element.map((tokenInfo) => {
               const { token, attribution } = tokenInfo;

@@ -1,8 +1,8 @@
 /* eslint-disable no-shadow */
 const defaultMappingConfig = {
-  predicted: 'annotation.max_class.keyword',
+  predicted: 'prediction.max_class.keyword',
   gold: 'label.keyword',
-  confidence: 'annotation.max_class_prob',
+  confidence: 'prediction.max_class_prob',
   feedbackStatus: 'biome.feedback.status.keyword',
 };
 
