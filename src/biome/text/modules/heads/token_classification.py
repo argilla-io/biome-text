@@ -1,9 +1,9 @@
 import logging
-from typing import Dict, List, Optional, Union, cast
+from typing import Dict, List, Optional, Union, cast, Tuple
 
 import torch
 from allennlp.data import Instance, TextFieldTensors
-from allennlp.data.fields import SequenceLabelField, TextField
+from allennlp.data.fields import SequenceLabelField, TextField, MetadataField
 from allennlp.modules import ConditionalRandomField, FeedForward, TimeDistributed
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
@@ -15,7 +15,11 @@ from biome.text.modules.configuration import (
     ComponentConfiguration,
     FeedForwardConfiguration,
 )
-from biome.text.helpers import span_labels_to_tag_labels, tags_from_offsets
+from biome.text.helpers import (
+    span_labels_to_tag_labels,
+    tags_from_offsets,
+    offsets_from_tags,
+)
 from .task_head import TaskHead, TaskName, TaskOutput
 
 
@@ -91,7 +95,7 @@ class TokenClassification(TaskHead):
         )
 
         self.metrics = {"accuracy": CategoricalAccuracy()}
-        if self.top_k:
+        if self.top_k > 1:
             self.metrics.update(
                 {f"accuracy_{self.top_k}": CategoricalAccuracy(top_k=self.top_k)}
             )
@@ -133,6 +137,7 @@ class TokenClassification(TaskHead):
         instance = self.backbone.featurizer(
             text, to_field="text", tokenize=isinstance(text, str), aggregate=True
         )
+        instance.add_field(field_name="raw_text", field=MetadataField(text))
 
         if labels is not None:
             # First convert span labels to tag labels
@@ -158,30 +163,14 @@ class TokenClassification(TaskHead):
 
         return instance
 
-    @staticmethod
-    def _bioul2bio(labels: List[str]):
-        return [tag.replace("L-", "I-", 1).replace("U-", "B-", 1) for tag in labels]
-
     def task_name(self) -> TaskName:
         return TaskName.token_classification
 
-    def decode(self, output: TaskOutput) -> TaskOutput:
-        output.tags = (
-            [
-                [
-                    vocabulary.label_for_index(self.backbone.vocab, idx)
-                    for idx in tags[0]
-                ]
-                for instance_k_tags in output.k_tags
-                for tags in instance_k_tags
-            ],
-        )
-
-        del output.k_tags
-        return output
-
     def forward(  # type: ignore
-        self, text: TextFieldTensors, labels: torch.IntTensor = None
+        self,
+        text: TextFieldTensors,
+        raw_text: Union[str, List[str]],
+        labels: torch.IntTensor = None,
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
         embedded_text = self.dropout(self.backbone.forward(text, mask))
@@ -190,10 +179,12 @@ class TokenClassification(TaskHead):
             embedded_text = self._feedforward(embedded_text)
 
         logits = self._label_projection_layer(embedded_text)
-        # batch_paths = self._crf.viterbi_tags(logits, mask)
+        # dims are: batch, top_k, (tag_sequence, viterbi_score)
+        viterbi_paths: List[List[Tuple[List[int], float]]] = self._crf.viterbi_tags(
+            logits, mask, top_k=self.top_k
+        )
         # We just keep the best path for every instance
-        batch_paths = self._crf.viterbi_tags(logits, mask, top_k=self.top_k)
-        predicted_tags = cast(List[List[int]], [paths[0][0] for paths in batch_paths])
+        predicted_tags: List[List[int]] = [paths[0][0] for paths in viterbi_paths]
         class_probabilities = logits * 0.0
 
         for i, instance_tags in enumerate(predicted_tags):
@@ -201,13 +192,42 @@ class TokenClassification(TaskHead):
                 class_probabilities[i, j, tag_id] = 1
 
         output = TaskOutput(
-            logits=logits, probs=class_probabilities, k_tags=batch_paths, mask=mask
+            logits=logits,
+            probs=class_probabilities,
+            viterbi_paths=viterbi_paths,
+            mask=mask,
+            raw_text=raw_text,
         )
 
         if labels is not None:
             output.loss = self._loss(logits, labels, mask)
             for metric in self.__all_metrics:
                 metric(class_probabilities, labels, mask)
+
+        return output
+
+    def decode(self, output: TaskOutput) -> TaskOutput:
+        # Te dims are: batch, k_tags, tags
+        output.tags: List[List[List[str]]] = [
+            [
+                [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
+                for tags, prob in k_tags
+            ]
+            for k_tags in output.viterbi_paths  # loop over batch
+        ]
+        del output.viterbi_paths
+
+        if isinstance(output.raw_text[0], str):
+            entities: List[List[List[Dict]]] = []
+            for raw_text, k_tags in zip(output.raw_text, output.tags):
+                doc = self.backbone.tokenizer.nlp(raw_text)
+                top_k_entities: List[List[Dict]] = [
+                    offsets_from_tags(doc, tags, self._label_encoding) for tags in k_tags
+                ]
+                entities.append(top_k_entities)
+            output.entities = entities
+
+        del output.raw_text
 
         return output
 
