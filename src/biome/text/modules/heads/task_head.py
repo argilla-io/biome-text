@@ -31,7 +31,7 @@ class TaskOutput:
         self.__dict__[key] = value
 
     def as_dict(self) -> Dict[str, torch.Tensor]:
-        """Dict reprentation of task output"""
+        """Dict representation of task output"""
         return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
