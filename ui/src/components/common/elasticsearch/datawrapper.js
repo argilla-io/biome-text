@@ -104,7 +104,7 @@ export default {
     // eslint-disable-next-line no-param-reassign, no-underscore-dangle
     document = document._source;
 
-    const prediction = document.prediction || {
+    const prediction = document.prediction || document.annotation || {
       classes: [],
       max_class_prob: 0.0,
     };
@@ -133,10 +133,10 @@ export default {
 
     doc.interpretations = document.interpretations;
 
-    if (document.prediction.explain) {
-      doc.interpretations = Object.keys(document.prediction.explain).reduce((acc, k) => ({
+    if (prediction.explain) {
+      doc.interpretations = Object.keys(prediction.explain).reduce((acc, k) => ({
         ...acc,
-        [k]: document.prediction.explain[k].map((element) => {
+        [k]: prediction.explain[k].map((element) => {
           if (Array.isArray(element)) {
             return element.map((tokenInfo) => {
               const { token, attribution } = tokenInfo;
