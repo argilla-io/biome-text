@@ -169,7 +169,7 @@ class TokenClassification(TaskHead):
     def forward(  # type: ignore
         self,
         text: TextFieldTensors,
-        raw_text: Union[str, List[str]],
+        raw_text: Union[List[str], List[List[str]]],
         labels: torch.IntTensor = None,
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
