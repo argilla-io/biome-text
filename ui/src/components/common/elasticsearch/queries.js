@@ -1,11 +1,3 @@
-/* eslint-disable no-shadow */
-const defaultMappingConfig = {
-  predicted: 'prediction.max_class.keyword',
-  gold: 'label.keyword',
-  confidence: 'prediction.max_class_prob',
-  feedbackStatus: 'biome.feedback.status.keyword',
-};
-
 function defaultConfiguration(mappingConfig, enableGold, enableFeedback) {
   function goldAggregation() {
     if (!enableGold) {
@@ -23,8 +15,8 @@ function defaultConfiguration(mappingConfig, enableGold, enableFeedback) {
       },
     };
   }
-  function confusionMatrixAggregation(enableGold) {
-    if (!enableGold) {
+  function confusionMatrixAggregation(_enableGold) {
+    if (!_enableGold) {
       return {};
     }
     return {
@@ -65,7 +57,7 @@ function defaultConfiguration(mappingConfig, enableGold, enableFeedback) {
     return {
       feedbackStatus: {
         terms: {
-          field: mappingConfig.feedbackStatus,
+          field: 'biome.feedback.status.keyword',
           size: 100,
           order: {
             _count: 'desc',
@@ -77,13 +69,13 @@ function defaultConfiguration(mappingConfig, enableGold, enableFeedback) {
 
   function confidenceAggregation() {
     const ranges = (from, to, interval) => {
-      function range(from, to, step) {
+      function range(_from, _to, step) {
         // eslint-disable-next-line no-bitwise
-        const range = Array(~~((to - from) / step) + 1) // '~~' is Alternative for Math.floor()
+        const _range = Array(~~((_to - _from) / step) + 1) // '~~' is Alternative for Math.floor()
           .fill()
           .map((v, i) => from + i * step);
-        range.splice(-1, 1);
-        return range;
+        _range.splice(-1, 1);
+        return _range;
       }
 
       function zip(rows) {
@@ -93,9 +85,9 @@ function defaultConfiguration(mappingConfig, enableGold, enableFeedback) {
       const calculatedRanges = zip([
         range(from, to, interval),
         range(from + interval, to + interval, interval),
-      ]).map(range => ({
-        from: range[0],
-        to: range[1],
+      ]).map(_range => ({
+        from: _range[0],
+        to: _range[1],
       }));
 
       // calculatedRanges.push({ from: to - interval });
@@ -184,7 +176,7 @@ class ElasticManager {
       aggs: {
         feedback: {
           terms: {
-            field: defaultMappingConfig.feedbackStatus,
+            field: 'biome.feedback.status.keyword',
             size: 100,
             order: {
               _count: 'desc',
@@ -205,8 +197,15 @@ class ElasticManager {
       hasGold = false,
       hasFeedback = false,
       showAll = false,
+      usePrediction = false,
     },
   ) {
+    const defaultMappingConfig = {
+      predicted: (usePrediction ? 'prediction' : 'annotation').concat('.max_class.keyword'),
+      confidence: (usePrediction ? 'prediction' : 'annotation').concat('.max_class_prob'),
+      gold: 'label.keyword',
+      feedbackStatus: 'biome.feedback.status.keyword',
+    };
     const mappingConfig = { queryFields, ...defaultMappingConfig };
     const searchOptions = {
       filterTerms: Object.keys(filtersStatus).map((key) => {

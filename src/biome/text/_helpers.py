@@ -146,6 +146,7 @@ def _explore(
             "predict_signature": pipeline.inputs,
             "labels": pipeline.head.labels,
             "task": pipeline.head.task_name().as_string(),
+            "use_prediction": True,  # TODO(frascuchon): flag for ui backward compatibility. Remove in the future
         }
     )
     return ddf.persist()

@@ -34,6 +34,7 @@ export default {
     actionName: undefined,
     showEntityClassifier: false,
     jupyterView: false,
+    usePrediction: false,
   }),
   props: {
     filename: {
@@ -307,11 +308,13 @@ export default {
         }
         this.datasourceName = currentPrediction.dataSource;
         this.model = currentPrediction.model;
+        this.usePrediction = currentPrediction.usePrediction;
         if (currentPrediction.kind === 'explore') {
           this.actionName = `Explore ${this.$moment(currentPrediction.createdAt).format('MMM Do YYYY H:mm')}`;
         } else {
           this.actionName = currentPrediction.exploreName;
         }
+        return undefined;
       });
     },
   },
@@ -321,11 +324,13 @@ export default {
       this.totalRecords = r;
     });
 
+    const self = this;
     ESClient.fetchPrediction(prediction).then((p) => {
-      this.queryFields = p.searchableFields;
-      this.readableFields = p.readableFields;
-      this.outputField = p.output;
-      this.emitQueryUpdated();
+      self.queryFields = p.searchableFields;
+      self.readableFields = p.readableFields;
+      self.outputField = p.output;
+      self.usePrediction = p.usePrediction;
+      self.emitQueryUpdated(0, p.usePrediction);
     });
   },
   components: {
