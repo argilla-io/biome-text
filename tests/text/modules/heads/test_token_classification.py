@@ -59,7 +59,14 @@ def trainer_dict() -> Dict:
 
 def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
-    pipeline.predict(text="Test this NER machine")
+    predictions = pipeline.predict(["test", "this", "pretokenized", "text"])
+    assert "entities" not in predictions
+    assert "tags" in predictions
+
+    predictions = pipeline.predict_batch([{"text": "Test this NER system"}, {"text": "and this"}])
+    assert "entities" in predictions[0]
+    assert "tags" in predictions[0]
+
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
 
     pipeline.train(

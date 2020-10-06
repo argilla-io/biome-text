@@ -275,7 +275,7 @@ def span_labels_to_tag_labels(
     return converted_labels
 
 
-def _bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
+def bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
     """Converts BIOUL tags to BIO tags
 
     Parameters
@@ -291,16 +291,19 @@ def _bioul_tags_to_bio_tags(tags: List[str]) -> List[str]:
 
 
 def tags_from_offsets(
-    doc: Doc, offsets: List[Dict], label_encoding: Optional[str] = "BIOUL"
-):
-    """Converts offsets to BIOUL or BIO tags
+    doc: Doc,
+    offsets: List[Dict],
+    label_encoding: Optional[str] = "BIOUL",
+) -> List[str]:
+    """Converts offsets to BIOUL or BIO tags using spacy's `gold.biluo_tags_from_offsets`.
 
     Parameters
     ----------
     doc
         A spaCy Doc created with `text` and the backbone tokenizer
     offsets
-        A list of span offsets with start and end characters and the span label
+        A list of dicts with start and end character index with respect to the doc, and the span label:
+        `{"start": int, "end": int, "label": str}`
     label_encoding
         The label encoding to be used: BIOUL or BIO
 
@@ -308,9 +311,39 @@ def tags_from_offsets(
     -------
     tags (BIOUL or BIO)
     """
-    labels = spacy.gold.biluo_tags_from_offsets(
+    tags = spacy.gold.biluo_tags_from_offsets(
         doc, [(offset["start"], offset["end"], offset["label"]) for offset in offsets]
     )
     if label_encoding == "BIO":
-        labels = _bioul_tags_to_bio_tags(labels)
-    return labels
+        tags = bioul_tags_to_bio_tags(tags)
+    return tags
+
+
+def offsets_from_tags(
+    doc: Doc, tags: List[str], label_encoding: Optional[str] = "BIOUL"
+) -> List[Dict]:
+    """Converts BIOUL or BIO tags to offsets
+
+    Parameters
+    ----------
+    doc
+        A spaCy Doc created with `text` and the backbone tokenizer
+    tags
+        A list of BIOUL or BIO tags
+    label_encoding
+        The label encoding to be used: BIOUL or BIO
+
+    Returns
+    -------
+    offsets
+        A list of dicts with start and end character index with respect to the doc and the span label:
+        `{"start": int, "end": int, "label": str}`
+    """
+    if label_encoding == "BIO":
+        tags = bioul_tags_to_bio_tags(tags)
+    offsets = [
+        {"start": offset[0], "end": offset[1], "label": offset[2]}
+        for offset in spacy.gold.offsets_from_biluo_tags(doc, tags)
+    ]
+
+    return offsets
