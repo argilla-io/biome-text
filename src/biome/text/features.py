@@ -169,19 +169,24 @@ class TransformersFeatures:
         self.model_name = model_name
         self.trainable = trainable
         self.max_length = max_length
+        self.is_mismatched = True
 
     @property
     def config(self) -> Dict:
         """Returns the config in AllenNLP format"""
         config = {
             "indexer": {
-                "type": "pretrained_transformer_mismatched",
+                "type": "pretrained_transformer_mismatched"
+                if self.is_mismatched
+                else "pretrained_transformer",
                 "model_name": self.model_name,
                 "namespace": self.namespace,
                 "max_length": self.max_length,
             },
             "embedder": {
-                "type": "pretrained_transformer_mismatched",
+                "type": "pretrained_transformer_mismatched"
+                if self.is_mismatched
+                else "pretrained_transformer",
                 "model_name": self.model_name,
                 "train_parameters": self.trainable,
                 "max_length": self.max_length,
