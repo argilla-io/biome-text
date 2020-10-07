@@ -109,7 +109,7 @@ class ESClient {
   static async fetchPrediction(predictionId) {
     try {
       const results = await elasticsearch.get(`.biome/_doc/${predictionId}`);
-      const indexInfo = results.data._source;
+      const indexInfo = mapPrediction2ProjectInfo(results.data);
       const response = await elasticsearch.get(`${predictionId}/_mappings`);
       // Check elasticsearch fersion for mapping extraction properly (_doc)
       let propMappings;
