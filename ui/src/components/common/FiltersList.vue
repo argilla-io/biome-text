@@ -92,8 +92,6 @@ export default {
     feedbackMetrics: Object,
   },
   data: () => ({
-    sortBy: 'gold',
-    sortByDir: 'desc',
     filtersChanged: {},
     filtersNumber: undefined,
     showAllFilters: true,

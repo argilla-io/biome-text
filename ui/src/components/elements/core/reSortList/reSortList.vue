@@ -28,6 +28,7 @@
               >{{option.text}} {{sortedRange(option, sortOption)}}</li>
             </div>
           </span>
+          <li v-if="optionSelected" @click="sortDefault()" class="dropdown__list__item">Default</li>
         </ul>
       </div>
     </re-filter-dropdown>
@@ -50,6 +51,10 @@ export default {
   methods: {
     onVisibility(value) {
       this.visible = value;
+    },
+    sortDefault() {
+      this.sort(undefined, undefined);
+      this.optionSelected = false;
     },
     sort(currentSort, currentSortDir) {
       this.visible = false;
@@ -79,7 +84,7 @@ export default {
     sortedOption() {
       // TODO This should be passed as component props if we consider it as a component
       return [
-        // { filter: 'gold', text: 'Text', range: ['A', 'Z'] },
+        { filter: 'gold', text: 'Annotated as', range: ['A', 'Z'] },
         { filter: 'predicted', text: 'Predicted as', range: ['A', 'Z'] },
         { filter: 'confidence', text: 'Confidence', range: ['0', '100'] },
       ];
