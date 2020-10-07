@@ -99,8 +99,8 @@ def _explore(
 
     apply_func = pipeline.explain_batch if config.explain else pipeline.predict_batch
 
-    def annotate_batch(df: pd.DataFrame):
-        """Applies data annotation at batch level"""
+    def add_prediction(df: pd.DataFrame) -> pd.Series:
+        """Runs and returns the predictions for a given input dataframe"""
         input_batch = df.to_dict(orient="records")
         predictions = apply_func(input_batch)
         return pd.Series(map(sanitize, predictions), index=df.index)
@@ -110,8 +110,8 @@ def _explore(
     ddf_mapped: dd.DataFrame = ddf_mapped.repartition(
         npartitions=n_partitions
     ).persist()
-    ddf_mapped["annotation"] = ddf_mapped.map_partitions(
-        annotate_batch, meta=(None, object)
+    ddf_mapped["prediction"] = ddf_mapped.map_partitions(
+        add_prediction, meta=(None, object)
     )
 
     ddf_source = (
@@ -146,6 +146,7 @@ def _explore(
             "predict_signature": pipeline.inputs,
             "labels": pipeline.head.labels,
             "task": pipeline.head.task_name().as_string(),
+            "use_prediction": True,  # TODO(frascuchon): flag for ui backward compatibility. Remove in the future
         }
     )
     return ddf.persist()

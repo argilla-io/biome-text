@@ -3,7 +3,11 @@
     <!-- filters -->
     <section
       ref="header"
-      :class="['header--explore', 'header', !showHeader ? 'header--hidden' : '']"
+      :class="[
+        'header--explore',
+        'header',
+        !showHeader ? 'header--hidden' : '',
+      ]"
     >
       <div class="filters__area">
         <div class="filters__content">
@@ -19,11 +23,18 @@
                   <span
                     class="filters__title__datasource"
                     :title="datasourceName"
-                  >{{datasourceName}}</span>
-                  <span class="filters__title__records">({{results.total}} Records)</span>
+                    >{{ datasourceName }}</span
+                  >
+                  <span class="filters__title__records"
+                    >({{ results.total }} Records)</span
+                  >
                 </h2>
               </div>
-              <searchbar class="filters__searchbar" :query="query" @submit="onQuery"></searchbar>
+              <searchbar
+                class="filters__searchbar"
+                :query="query"
+                @submit="onQuery"
+              ></searchbar>
             </div>
             <!-- filters list -->
             <filters-list
@@ -51,10 +62,13 @@
       <transition name="fade" appear>
         <div
           class="grid"
-          :style="{paddingTop: !showHeader ? this.headerHeight + 'px' : ''}"
-          :class="[{'grid--fixed-mode' : fixedFilters}]"
+          :style="{ paddingTop: !showHeader ? this.headerHeight + 'px' : '' }"
+          :class="[{ 'grid--fixed-mode': fixedFilters }]"
         >
-          <re-empty-list v-if="results.total === 0" empty-title="0 results found"></re-empty-list>
+          <re-empty-list
+            v-if="results.total === 0"
+            empty-title="0 results found"
+          ></re-empty-list>
           <search-results
             v-else
             :showEntityClassifier="showEntityClassifier"
@@ -69,7 +83,10 @@
           ></search-results>
           <!-- metrics -->
           <sidebar
-            :class="[{'sidebar--fixed' : fixedFilters}, {'sidebar--fixed-top' : !showHeader && fixedFilters}]"
+            :class="[
+              { 'sidebar--fixed': fixedFilters },
+              { 'sidebar--fixed-top': !showHeader && fixedFilters },
+            ]"
             :loadingQ="loadingQ"
             v-if="results.total !== 0"
             :metrics="getMetrics"
@@ -94,19 +111,20 @@ export default {
     this.fetchData();
   },
   methods: {
-    emitQueryUpdated(from) {
+    emitQueryUpdated(from = 0, usePredicion = false) {
       if (!from) {
         this.from = 0;
       }
-      const query = this.buildQuery(from);
+      const query = this.buildQuery(from, usePredicion);
       this.$emit('queryChanged', query);
       this.routeConfig();
     },
-    buildQuery(from) {
+    buildQuery(from, usePredicion = false) {
       const query = {
         keyword: this.query,
         queryFields: this.queryFields,
         filtersStatus: this.filtersStatus,
+        usePrediction: usePredicion || this.usePredicion,
         esOptions: {
           from: from || 0,
           size: this.paginationSize,
@@ -117,6 +135,7 @@ export default {
         },
         hasGold: true,
       };
+      console.log('buildQuery', query);
       return elasticsearch.toESQuery({ ...query, showAll: true });
     },
   },
@@ -148,7 +167,7 @@ export default {
 <style lang="scss">
 body {
   &:after {
-    content: '';
+    content: "";
     border: 3px solid palette(orange);
     position: fixed;
     width: 100vw;
@@ -168,22 +187,24 @@ body {
       }
     }
   }
-  .filters__tags  {
-    border-bottom: 0 !important
+  .filters__tags {
+    border-bottom: 0 !important;
   }
-  .filter__sort, .filter__show-more {
+  .filter__sort,
+  .filter__show-more {
     min-width: 100px;
   }
   .show-more-data {
-    background: none !important
+    background: none !important;
   }
   &.iframe {
-    .main, .container {
-      max-width: none !important
+    .main,
+    .container {
+      max-width: none !important;
     }
   }
   .sidebar__wrapper {
-    top: 0 !important
+    top: 0 !important;
   }
 }
 </style>

@@ -20,6 +20,7 @@ function mapPrediction2ProjectInfo(prediction) {
     dataSource: info.datasource || 'unknown',
     model: info.model || 'none',
     kind: info.kind || 'explore',
+    usePrediction: info.use_prediction,
     exploreName: (info.explore_name || info.name).replace(/_/g, ' '),
     metrics: {
       f1: NaN,
@@ -68,7 +69,7 @@ class ESClient {
       }
       return {
         status,
-        annotation: {
+        prediction: {
           max_class: status,
           max_class_prob: 1.0,
         },
