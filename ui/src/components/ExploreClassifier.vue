@@ -111,20 +111,22 @@ export default {
     this.fetchData();
   },
   methods: {
-    emitQueryUpdated(from = 0, usePredicion = false) {
+    emitQueryUpdated(from = 0, usePrediction = false) {
+      console.log('emitQueryUpdated', usePrediction);
       if (!from) {
         this.from = 0;
       }
-      const query = this.buildQuery(from, usePredicion);
+      const query = this.buildQuery(from, usePrediction);
       this.$emit('queryChanged', query);
       this.routeConfig();
     },
-    buildQuery(from, usePredicion = false) {
+    buildQuery(from, usePrediction = false) {
+      console.log(usePrediction);
       const query = {
         keyword: this.query,
         queryFields: this.queryFields,
         filtersStatus: this.filtersStatus,
-        usePrediction: usePredicion || this.usePredicion,
+        usePrediction: usePrediction || this.usePrediction,
         esOptions: {
           from: from || 0,
           size: this.paginationSize,
@@ -135,7 +137,6 @@ export default {
         },
         hasGold: true,
       };
-      console.log('buildQuery', query);
       return elasticsearch.toESQuery({ ...query, showAll: true });
     },
   },
