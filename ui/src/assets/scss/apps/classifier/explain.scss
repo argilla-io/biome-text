@@ -63,6 +63,7 @@
   margin: 0;
   line-height: 1.2em;
   border-radius: 2px;
+  word-break: break-all;
   &:first-of-type {
     margin-left: 0;
   }
@@ -92,6 +93,7 @@
     @include font-size(13px);
     font-weight: lighter;
     border-radius: 3px;
+    word-break: normal;
   }
   ::v-deep .highlight-text {
     line-height: 16px;
