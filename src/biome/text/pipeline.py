@@ -427,10 +427,7 @@ class Pipeline:
         A torch Dataset containing the instances collection
 
         """
-        mapping = {k: k for k in self.inputs + [self.output] if k}
-        mapping.update(datasource.mapping)
-
-        datasource.mapping = mapping
+        datasource.mapping = self._update_ds_mapping_with_pipeline_input_output(datasource)
         ddf = datasource.to_mapped_dataframe()
         instances_series: "dask.dataframe.core.Series" = ddf.map_partitions(
             lambda df: df.apply(
@@ -457,6 +454,12 @@ class Pipeline:
             if lazy
             else AllennlpDataset(list(instances_series.compute()))
         )
+
+    def _update_ds_mapping_with_pipeline_input_output(self, datasource: DataSource) -> Dict:
+        mapping = {k: k for k in self.inputs + [self.output] if k}
+        mapping.update(datasource.mapping)
+
+        return mapping
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Returns a prediction given some input data based on the current state of the model
@@ -598,8 +601,7 @@ class Pipeline:
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
-        if not data_source.mapping:
-            data_source.mapping = self._model._default_ds_mapping
+        data_source.mapping = self._update_ds_mapping_with_pipeline_input_output(data_source)
         explore_df = _explore(self, data_source, config, es_config)
         _show_explore(es_config)
 
