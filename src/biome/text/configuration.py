@@ -1,9 +1,11 @@
 import copy
 import dataclasses
+import logging
 from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 from allennlp.common import FromParams, Params
+from allennlp.common.checks import ConfigurationError
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
@@ -14,7 +16,7 @@ from .featurizer import InputFeaturizer
 from .helpers import sanitize_for_params, save_dict_as_yaml
 from .modules.encoders import Encoder
 from .modules.heads.task_head import TaskHeadConfiguration
-from .tokenizer import Tokenizer
+from .tokenizer import Tokenizer, TransformersTokenizer
 
 
 class FeaturesConfiguration(FromParams):
@@ -188,6 +190,10 @@ class TokenizerConfiguration(FromParams):
         A list of token strings to the sequence before tokenized input text.
     end_tokens
         A list of token strings to the sequence after tokenized input text.
+    transformers_kwargs
+        If specified, we will use a pretrained transformers tokenizer and disregard all other parameters above.
+        This dict will be passed directly on to allenNLP's `PretrainedTransformerTokenizer` and should at least include
+        a `model_name` key.
     """
 
     # note: It's important that it inherits from FromParas so that `Pipeline.from_pretrained()` works!
@@ -202,6 +208,7 @@ class TokenizerConfiguration(FromParams):
         remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
+        transformers_kwargs: Optional[Dict] = None,
     ):
         self.lang = lang
         self.max_sequence_length = max_sequence_length
@@ -212,6 +219,12 @@ class TokenizerConfiguration(FromParams):
         self.end_tokens = end_tokens
         self.use_spacy_tokens = use_spacy_tokens
         self.remove_space_tokens = remove_space_tokens
+        self.transformers_kwargs = transformers_kwargs
+
+    def __eq__(self, other):
+        return all(a == b for a, b in zip(vars(self), vars(other)))
+
+
 
 
 class PipelineConfiguration(FromParams):
@@ -231,6 +244,8 @@ class PipelineConfiguration(FromParams):
         The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderConfiguration`
     """
 
+    __LOGGER = logging.getLogger(__name__)
+
     def __init__(
         self,
         name: str,
@@ -243,9 +258,34 @@ class PipelineConfiguration(FromParams):
 
         self.name = name
         self.head = head
-        self.tokenizer = tokenizer or TokenizerConfiguration()
         self.features = features or FeaturesConfiguration()
+        self.tokenizer_config = tokenizer or self._get_default_tokenizer()
+
+        # make sure we use the right indexer/embedder for the transformers feature
+        if self.tokenizer_config.transformers_kwargs:
+            self.features.transformers.is_mismatched = False
+
+            if self.features.word is not None or self.features.char is not None:
+                raise ConfigurationError(
+                    "You are trying to use word or char features on subwords and possibly special tokens."
+                    "This is not recommended!"
+                )
+
         self.encoder = encoder
+
+    def _get_default_tokenizer(self):
+        if (
+            self.features.transformers is not None
+            and self.features.word is None
+            and self.features.char is None
+        ):
+            return TokenizerConfiguration(
+                transformers_kwargs={
+                    "model_name": self.features.transformers.model_name
+                },
+            )
+
+        return TokenizerConfiguration()
 
     @classmethod
     def from_yaml(cls, path: str) -> "PipelineConfiguration":
@@ -290,7 +330,7 @@ class PipelineConfiguration(FromParams):
         """
         config = {
             "name": self.name,
-            "tokenizer": vars(self.tokenizer),
+            "tokenizer": vars(self.tokenizer_config),
             "features": vars(self.features),
             "head": self.head.config,
         }
@@ -317,7 +357,9 @@ class PipelineConfiguration(FromParams):
 
     def build_tokenizer(self) -> Tokenizer:
         """Build the pipeline tokenizer"""
-        return Tokenizer(self.tokenizer)
+        if self.tokenizer_config.transformers_kwargs is not None:
+            return TransformersTokenizer(self.tokenizer_config)
+        return Tokenizer(self.tokenizer_config)
 
     def build_featurizer(self) -> InputFeaturizer:
         """Creates the pipeline featurizer"""
@@ -432,7 +474,12 @@ class TrainerConfiguration:
         allennlp_trainer_config
         """
         # Data loader and prepare_env attributes
-        __excluded_keys = ["data_bucketing", "batch_size", "batches_per_epoch", "random_seed"]
+        __excluded_keys = [
+            "data_bucketing",
+            "batch_size",
+            "batches_per_epoch",
+            "random_seed",
+        ]
         trainer_config = {
             k: v for k, v in vars(self).items() if k not in __excluded_keys
         }
