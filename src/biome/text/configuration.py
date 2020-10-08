@@ -225,8 +225,6 @@ class TokenizerConfiguration(FromParams):
         return all(a == b for a, b in zip(vars(self), vars(other)))
 
 
-
-
 class PipelineConfiguration(FromParams):
     """Creates a `Pipeline` configuration
 
@@ -261,15 +259,11 @@ class PipelineConfiguration(FromParams):
         self.features = features or FeaturesConfiguration()
         self.tokenizer_config = tokenizer or self._get_default_tokenizer()
 
+        self._check_for_incompatible_configurations()
+
         # make sure we use the right indexer/embedder for the transformers feature
         if self.tokenizer_config.transformers_kwargs:
             self.features.transformers.is_mismatched = False
-
-            if self.features.word is not None or self.features.char is not None:
-                raise ConfigurationError(
-                    "You are trying to use word or char features on subwords and possibly special tokens."
-                    "This is not recommended!"
-                )
 
         self.encoder = encoder
 
@@ -286,6 +280,20 @@ class PipelineConfiguration(FromParams):
             )
 
         return TokenizerConfiguration()
+
+    def _check_for_incompatible_configurations(self):
+        if self.tokenizer_config.transformers_kwargs:
+            if self.features.word is not None or self.features.char is not None:
+                raise ConfigurationError(
+                    "You are trying to use word or char features on subwords and possibly special tokens."
+                    "This is not recommended!"
+                )
+
+            if "TokenClassification" in self.head.config["type"]:
+                raise NotImplementedError(
+                    "You specified a transformers tokenizer, "
+                    "but the 'TokenClassification' head is still not capable of dealing with subword/special tokens."
+                )
 
     @classmethod
     def from_yaml(cls, path: str) -> "PipelineConfiguration":

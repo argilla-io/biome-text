@@ -2,7 +2,6 @@ from biome.text import Pipeline
 from biome.text.configuration import TokenizerConfiguration
 from biome.text.tokenizer import Tokenizer, TransformersTokenizer
 from allennlp.data.token_indexers import PretrainedTransformerIndexer, PretrainedTransformerMismatchedIndexer
-from allennlp.common.checks import ConfigurationError
 import pytest
 
 
@@ -45,11 +44,3 @@ def test_pipeline_default_tokenizer(pipeline_dict):
     assert type(pl.backbone.tokenizer) is Tokenizer
 
     prediction = pl.predict("Test this!")
-
-
-def test_invalid_tokenizer_features_combination(pipeline_dict):
-    pipeline_dict["features"].update({"word": {"embedding_dim": 2}})
-    pipeline_dict["tokenizer"] = {"transformers_kwargs": {"model_name": "sshleifer/tiny-distilroberta-base"}}
-
-    with pytest.raises(ConfigurationError):
-        pl = Pipeline.from_config(pipeline_dict)
