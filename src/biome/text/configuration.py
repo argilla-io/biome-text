@@ -259,11 +259,13 @@ class PipelineConfiguration(FromParams):
         self.features = features or FeaturesConfiguration()
         self.tokenizer_config = tokenizer or self._get_default_tokenizer()
 
-        self._check_for_incompatible_configurations()
-
-        # make sure we use the right indexer/embedder for the transformers feature
+        # make sure we use the right tokenizer/indexer/embedder for the transformers feature
         if self.tokenizer_config.transformers_kwargs:
             self.features.transformers.is_mismatched = False
+            if self.tokenizer_config.transformers_kwargs.get("model_name") is None:
+                self.tokenizer_config.transformers_kwargs["model_name"] = self.features.transformers.model_name
+
+        self._check_for_incompatible_configurations()
 
         self.encoder = encoder
 
@@ -293,6 +295,13 @@ class PipelineConfiguration(FromParams):
                 raise NotImplementedError(
                     "You specified a transformers tokenizer, "
                     "but the 'TokenClassification' head is still not capable of dealing with subword/special tokens."
+                )
+
+            if self.tokenizer_config.transformers_kwargs["model_name"] != self.features.transformers.model_name:
+                raise ConfigurationError(
+                    f"The model_name of the TransformerTokenizer "
+                    f"({self.tokenizer_config.transformers_kwargs['model_name']}) does not match the model_name of "
+                    f"your transformers feature ({self.features.transformers.model_name})!"
                 )
 
     @classmethod

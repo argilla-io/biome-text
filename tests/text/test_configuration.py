@@ -65,17 +65,13 @@ def transformers_pipeline_config():
     return {
         "name": "transformers_tokenizer_plus_tokenclassification",
         "features": {
-            "transformers": {
-                "model_name": "sshleifer/tiny-distilroberta-base"
-            }
+            "transformers": {"model_name": "sshleifer/tiny-distilroberta-base"}
         },
         "head": {
-            "type": "TokenClassification",
-            "labels": ["NER"],
-            "label_encoding": "BIOUL",
+            "type": "TextClassification",
+            "labels": ["duplicate", "not_duplicate"],
         },
     }
-
 
 
 def test_pipeline_without_word_features():
@@ -175,16 +171,31 @@ def test_pipeline_config(pipeline_yaml):
 
 def test_invalid_tokenizer_features_combination(transformers_pipeline_config):
     transformers_pipeline_config["features"].update({"word": {"embedding_dim": 2}})
-    transformers_pipeline_config["tokenizer"] = {"transformers_kwargs": {"model_name": "sshleifer/tiny-distilroberta-base"}}
+    transformers_pipeline_config["tokenizer"] = {
+        "transformers_kwargs": {"model_name": "sshleifer/tiny-distilroberta-base"}
+    }
 
     with pytest.raises(ConfigurationError):
         Pipeline.from_config(transformers_pipeline_config)
 
 
-def test_transformers_with_tokenclassification(transformers_pipeline_config):
+def test_not_implemented_transformers_with_tokenclassification(
+    transformers_pipeline_config,
+):
+    transformers_pipeline_config["head"] = {
+        "type": "TokenClassification",
+        "labels": ["NER"],
+    }
     with pytest.raises(NotImplementedError):
         Pipeline.from_config(transformers_pipeline_config)
 
 
+def test_invalid_transformers_tokenizer_indexer_embedder_combination(
+    transformers_pipeline_config,
+):
+    transformers_pipeline_config["tokenizer"] = {
+        "transformers_kwargs": {"model_name": "distilroberta-base"}
+    }
 
-
+    with pytest.raises(ConfigurationError):
+        Pipeline.from_config(transformers_pipeline_config)
