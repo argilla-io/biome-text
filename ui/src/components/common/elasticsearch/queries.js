@@ -73,7 +73,7 @@ function defaultConfiguration(mappingConfig, enableGold, enableFeedback) {
         // eslint-disable-next-line no-bitwise
         const _range = Array(~~((_to - _from) / step) + 1) // '~~' is Alternative for Math.floor()
           .fill()
-          .map((v, i) => from + i * step);
+          .map((v, i) => _from + i * step);
         _range.splice(-1, 1);
         return _range;
       }
