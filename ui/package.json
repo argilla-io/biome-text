@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
-    "brunch": "github:hellyeahllc/brunch#yarn",
     "core-js": "^2.6.5",
     "flat": "^5.0.0",
     "lodash": "^4.17.14",
@@ -19,9 +18,9 @@
     "vue-moment": "^4.0.0",
     "vue-mq": "^1.0.1",
     "vue-router": "^3.0.3",
-    "vue-svgicon": "^3.2.6",
-    "vue-vega": "^1.0.0-alpha.13",
     "vue-smooth-scroll": "^1.0.13",
+    "vue-svgicon": "^3.2.8",
+    "vue-vega": "^1.0.0-alpha.13",
     "vue-waypoint": "^3.2.2",
     "vuex": "^3.0.1"
   },
