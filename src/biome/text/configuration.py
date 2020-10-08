@@ -311,7 +311,7 @@ class PipelineConfiguration(FromParams):
         config_dict = copy.deepcopy(self.as_dict())
         for feature_name, feature in config_dict["features"]:
             if feature is not None:
-                config_dict["features"][feature_name] = feature.to_dict()
+                config_dict["features"][feature_name] = feature.to_json()
 
         save_dict_as_yaml(config_dict, path)
 

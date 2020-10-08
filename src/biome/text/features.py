@@ -61,13 +61,6 @@ class WordFeatures:
 
     def to_json(self) -> Dict:
         """Returns the config as dict for the serialized json config file"""
-        data = vars(self)
-        data.update(data.pop("extra_params", {}))
-
-        return data
-
-    def to_dict(self) -> Dict:
-        """Returns the config as dict"""
         return {
             "embedding_dim": self.embedding_dim,
             "lowercase_tokens": self.lowercase_tokens,
@@ -143,13 +136,6 @@ class CharFeatures:
 
     def to_json(self):
         """Returns the config as dict for the serialized json config file"""
-        data = vars(self)
-        data.update(data.pop("extra_params", {}))
-
-        return data
-
-    def to_dict(self):
-        """Returns the config as dict"""
         return {
             "embedding_dim": self.embedding_dim,
             "lowercase_characters": self.lowercase_characters,
@@ -197,13 +183,9 @@ class TransformersFeatures:
 
         return config
 
-    def to_dict(self) -> Dict:
-        """Returns the config as dict"""
+    def to_json(self) -> Dict:
+        """Returns the config as dict for the serialized json config file"""
         return {
             "model_name": self.model_name,
             "trainable": self.trainable,
         }
-
-    def to_json(self) -> Dict:
-        """Returns the config as dict for the serialized json config file"""
-        return self.to_dict()
