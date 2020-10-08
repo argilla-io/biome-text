@@ -195,4 +195,5 @@ class TransformersFeatures:
         return {
             "model_name": self.model_name,
             "trainable": self.trainable,
+            "max_length": self.max_length,
         }
