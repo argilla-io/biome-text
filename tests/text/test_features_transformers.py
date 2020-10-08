@@ -1,6 +1,7 @@
 import pytest
 
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text.features import TransformersFeatures
 from biome.text.data import DataSource
 from pathlib import Path
 
@@ -76,4 +77,11 @@ def test_max_length_not_affecting_shorter_sequences(pipeline_dict):
     probs_max_length = pl.predict("Test this")["probs"]
 
     assert all([log1 == log2 for log1, log2 in zip(probs, probs_max_length)])
+
+
+def test_serialization(pipeline_dict):
+    feature = TransformersFeatures(**pipeline_dict["features"]["transformers"])
+    
+    assert feature == TransformersFeatures(**feature.to_json())
+
 

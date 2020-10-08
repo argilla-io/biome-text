@@ -197,3 +197,6 @@ class TransformersFeatures:
             "trainable": self.trainable,
             "max_length": self.max_length,
         }
+
+    def __eq__(self, other):
+        return all([a == b for a, b in zip(vars(self), vars(other))])
