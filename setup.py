@@ -95,7 +95,7 @@ if __name__ == "__main__":
             "captum~=0.2.0",
             "ipywidgets~=7.5.1",
             "mlflow~=1.9.0",
-            "ray>=0.8.6,<0.9.0"
+            "ray~=1.0.0"
         ],
         extras_require={
             "testing": [
