@@ -161,15 +161,21 @@ class TransformersFeatures:
         If positive, split the document into segments of this many tokens (including special tokens)
         before feeding into the embedder. The embedder embeds these segments independently and
         concatenate the results to get the original document representation.
+    last_layer_only
+        When `True`, only the final layer of the pretrained transformer is taken
+        for the embeddings. But if set to `False`, a scalar mix of all of the layers
+        is used.
     """
 
     namespace = "transformers"
 
     def __init__(self, model_name: str, trainable: bool = False, max_length: Optional[int] = None):
+    def __init__(self, model_name: str, trainable: bool = False, last_layer_only: bool = True):
         self.model_name = model_name
         self.trainable = trainable
         self.max_length = max_length
         self.is_mismatched = True
+        self.last_layer_only = last_layer_only
 
     @property
     def config(self) -> Dict:
@@ -189,6 +195,7 @@ class TransformersFeatures:
                 else "pretrained_transformer",
                 "model_name": self.model_name,
                 "train_parameters": self.trainable,
+                "last_layer_only": self.last_layer_only,
                 "max_length": self.max_length,
             },
         }
@@ -201,6 +208,7 @@ class TransformersFeatures:
             "model_name": self.model_name,
             "trainable": self.trainable,
             "max_length": self.max_length,
+            "last_layer_only": self.last_layer_only,
         }
 
     def __eq__(self, other):
