@@ -120,8 +120,7 @@ ENV/
 .history
 
 .vscode
-dask-worker-space
-tests/dask-worker-space
+**/dask-worker-space
 
 tools
 
@@ -133,3 +132,6 @@ generated*
 .DS_Store
 
 .dask
+
+**/mlruns/
+**/runs/

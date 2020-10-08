@@ -1,3 +1,4 @@
+import copy
 import inspect
 import os
 import os.path
@@ -347,3 +348,27 @@ def offsets_from_tags(
     ]
 
     return offsets
+
+
+def merge_dicts(source: Dict[str, Any], destination: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Merge two dictionaries recursivelly
+
+    >>> a = { 'first' : { 'all_rows' : { 'pass' : 'dog', 'number' : '1' } } }
+    >>> b = { 'first' : { 'all_rows' : { 'fail' : 'cat', 'number' : '5' } } }
+    >>> merge_dicts(b, a) == { 'first' : { 'all_rows' : { 'pass' : 'dog', 'fail' : 'cat', 'number' : '5' } } }
+
+    """
+    if not isinstance(destination, dict):
+        return source
+
+    result = copy.deepcopy(destination)
+
+    for key, value in source.items():
+        if isinstance(value, dict):
+            # get node or create one
+            node = result.setdefault(key, {})
+            value = merge_dicts(value, node)
+        result[key] = value
+
+    return result
