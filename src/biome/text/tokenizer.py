@@ -5,6 +5,7 @@ import spacy
 from allennlp.common import Params
 from allennlp.common.util import get_spacy_model
 from allennlp.data import Token
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 
@@ -13,14 +14,14 @@ from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
 
 class Tokenizer:
     """Pre-processes and tokenizes the input text
-    
+
     Transforms inputs (e.g., a text, a list of texts, etc.) into structures containing `allennlp.data.Token` objects.
-    
+
     Use its arguments to configure the first stage of the pipeline (i.e., pre-processing a given set of text inputs.)
-    
+
     Use methods for tokenization depending on the shape of the inputs
     (e.g., records with multiple fields, sentences lists).
-    
+
     Parameters
     ----------
     config
@@ -196,6 +197,30 @@ class Tokenizer:
         for end_token in self._end_tokens:
             tokens.append(Token(end_token, -1))
         return tokens
+
+
+class TransformersTokenizer(Tokenizer):
+    """This tokenizer uses the pretrained tokenizers from huggingface's transformers library.
+
+    This means the output will very likely be word pieces depending on the specified pretrained model.
+
+    Parameters
+    ----------
+    config
+        A `TokenizerConfiguration` object
+    """
+    def __init__(self, config):
+        self.pretrained_tokenizer = PretrainedTransformerTokenizer(**config.transformers_kwargs)
+
+    def tokenize_document(self, document: List[str]) -> List[List[Token]]:
+        return list(map(self._tokenize, document))
+
+    def _tokenize(self, text: str) -> List[Token]:
+        return self.pretrained_tokenizer.tokenize(text)
+
+    @property
+    def nlp(self) -> Language:
+        raise NotImplementedError("For the TransformerTokenizer we have no spaCy nlp")
 
 
 def _fetch_spacy_model(lang: str):

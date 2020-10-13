@@ -142,7 +142,7 @@ def test_training_from_pretrained_with_head_replace(
 
     trained = Pipeline.from_pretrained(results.model_path)
     trained.set_head(TestHead)
-    trained.config.tokenizer.max_nr_of_sentences = 3
+    trained.config.tokenizer_config.max_nr_of_sentences = 3
     copied = trained._make_copy()
     assert isinstance(copied.head, TestHead)
     assert copied.num_parameters == trained.num_parameters
