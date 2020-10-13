@@ -113,9 +113,13 @@ class _ElasticsearchDAO:
         )
         self.es_doc = helpers.get_compatible_doc_type(self.client)
 
-    def create_explore_data_record(
-        self, es_index: str, data_exploration: DataExploration, force_delete: bool
-    ):
+    def create_explore_index(
+        self,
+        es_index: str,
+        data_exploration: DataExploration,
+        ddf_content: dd.DataFrame,
+        force_delete: bool,
+    ) -> None:
         """Creates an exploration data record data exploration"""
         self.__create_data_index(es_index, force_delete)
 
@@ -139,6 +143,14 @@ class _ElasticsearchDAO:
                 ),
                 "doc_as_upsert": True,
             },
+        )
+
+        (
+            DaskElasticClient(
+                host=self.es_host, retry_on_timeout=True, http_compress=True
+            )
+            .save(ddf_content, index=es_index, doc_type=self.es_doc)
+            .persist()
         )
 
     def __create_data_index(self, es_index: str, force_delete: bool):
@@ -243,7 +255,7 @@ def _explore(
     data_source: DataSource,
     options: _ExploreOptions,
     es_dao: _ElasticsearchDAO,
-) -> dd.DataFrame:
+) -> None:
     """
     Executes a pipeline prediction over a datasource and register results int a elasticsearch index
 
@@ -298,10 +310,6 @@ def _explore(
         lambda df: helpers.stringify(sanitize(df.to_dict(orient="records")))
     )
 
-    ddf = DaskElasticClient(
-        host=es_dao.es_host, retry_on_timeout=True, http_compress=True
-    ).save(ddf_mapped, index=explore_id, doc_type=es_dao.es_doc)
-
     data_exploration = DataExploration(
         name=explore_id,
         datasource_name=data_source.source,
@@ -315,12 +323,12 @@ def _explore(
         use_prediction=True,
         metadata=options.metadata or {},
     )
-    es_dao.create_explore_data_record(
+    es_dao.create_explore_index(
         es_index=explore_id,
         data_exploration=data_exploration,
+        ddf_content=ddf_mapped,
         force_delete=options.force_delete,
     )
-    return ddf.persist()
 
 
 def show(explore_id: str, es_host: Optional[str] = None) -> None:
