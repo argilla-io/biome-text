@@ -29,6 +29,12 @@ def pipeline_dict() -> dict:
         "head": {
             "type": "TextClassification",
             "labels": ["anger", "fear", "joy", "love", "sadness", "surprise",],
+            "pooler": {
+                "type": "bert_pooler",
+                "pretrained_model": "distilroberta-base",
+                "requires_grad": True,
+                "dropout": 0.1,
+            },
         },
     }
 
@@ -44,18 +50,15 @@ def trainer_dict() -> dict:
     }
 
 
-def test_train(tmp_path, pipeline_dict, trainer_dict, train_data_source):
+def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_data_source):
     pl = Pipeline.from_config(pipeline_dict)
     trainer = TrainerConfiguration(**trainer_dict)
-    vocab = VocabularyConfiguration(sources=[train_data_source])
-    pl.create_vocabulary(vocab)
 
     assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
 
     pl.predict(text="test")
 
     output = tmp_path / "output"
-
     training_results = pl.train(
         output=str(output), trainer=trainer, training=train_data_source,
     )
@@ -64,6 +67,32 @@ def test_train(tmp_path, pipeline_dict, trainer_dict, train_data_source):
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
 
     assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
+
+
+def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_data_source):
+    del pipeline_dict["head"]["pooler"]
+    pipeline_dict["features"].update({"word": {"embedding_dim": 16, "lowercase_tokens": True}})
+
+    pl = Pipeline.from_config(pipeline_dict)
+    trainer = TrainerConfiguration(**trainer_dict)
+    vocab = VocabularyConfiguration(sources=[train_data_source])
+    pl.create_vocabulary(vocab)
+
+    assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
+    assert pl.backbone.vocab.get_vocab_size("word") == 273
+
+    pl.predict(text="test")
+
+    output = tmp_path / "output"
+    training_results = pl.train(
+        output=str(output), trainer=trainer, training=train_data_source,
+    )
+
+    # test vocab from a pretrained file
+    pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
+
+    assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
+    assert pl.backbone.vocab.get_vocab_size("word") == 273
 
 
 def test_max_length_not_affecting_shorter_sequences(pipeline_dict):
@@ -81,7 +110,7 @@ def test_max_length_not_affecting_shorter_sequences(pipeline_dict):
 
 def test_serialization(pipeline_dict):
     feature = TransformersFeatures(**pipeline_dict["features"]["transformers"])
-    
+
     assert feature == TransformersFeatures(**feature.to_json())
 
 

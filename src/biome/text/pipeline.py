@@ -90,7 +90,7 @@ class Pipeline:
         cls,
         config: Union[PipelineConfiguration, dict],
         vocab_path: Optional[str] = None,
-    ) -> "Pipeline":
+    ) -> "_BlankPipeline":
         """Creates a pipeline from a `PipelineConfiguration` object or a configuration dictionary
 
         Parameters
@@ -112,7 +112,7 @@ class Pipeline:
         )
 
     @classmethod
-    def from_pretrained(cls, path: str, **kwargs) -> "Pipeline":
+    def from_pretrained(cls, path: str, **kwargs) -> "_PreTrainedPipeline":
         """Loads a pipeline from a pre-trained pipeline providing a *model.tar.gz* file path
 
         Parameters
@@ -828,13 +828,17 @@ class _BlankPipeline(Pipeline):
             The transformers vocabulary will be added to this vocab
         """
         # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
-        # when the first `tokens_to_index()` is called. That is why we trigger this here by passing on a dummy token.
+        # when the first `tokens_to_index()` is called via the private _add_encoding_to_vocabulary_if_needed method.
+        # We trigger this here manually in a super ugly way ...
         # Actually i am not sure why they add it to their vocab in the first place ...
         transformers_indexer = self.backbone.featurizer.indexer.get(
             TransformersFeatures.namespace
         )
         if transformers_indexer is not None:
-            transformers_indexer.tokens_to_indices([Token("")], vocab)
+            try:
+                transformers_indexer._add_encoding_to_vocabulary_if_needed(vocab)
+            except AttributeError:
+                transformers_indexer._matched_indexer._add_encoding_to_vocabulary_if_needed(vocab)
 
 
 class _PreTrainedPipeline(Pipeline):

@@ -1,5 +1,6 @@
 import pytest
 import yaml
+from allennlp.common.checks import ConfigurationError
 from allennlp.data.fields import ListField, TextField
 from spacy.tokens.token import Token
 
@@ -12,10 +13,10 @@ from biome.text.configuration import (
     TokenizerConfiguration,
     WordFeatures,
 )
-from biome.text.modules.heads import TextClassification
 from biome.text.modules.configuration.allennlp_configuration import (
     Seq2SeqEncoderConfiguration,
 )
+from biome.text.modules.heads import TextClassification
 
 
 @pytest.fixture
@@ -57,6 +58,20 @@ def pipeline_yaml(tmp_path):
         yaml.safe_dump(pipeline_dict, file)
 
     return str(yaml_path)
+
+
+@pytest.fixture
+def transformers_pipeline_config():
+    return {
+        "name": "transformers_tokenizer_plus_tokenclassification",
+        "features": {
+            "transformers": {"model_name": "sshleifer/tiny-distilroberta-base"}
+        },
+        "head": {
+            "type": "TextClassification",
+            "labels": ["duplicate", "not_duplicate"],
+        },
+    }
 
 
 def test_pipeline_without_word_features():
@@ -152,3 +167,35 @@ def test_pipeline_config(pipeline_yaml):
                 assert isinstance(text, TextField)
                 assert all(map(lambda t: isinstance(t, Token), text.tokens))
                 assert sample_text == " ".join([t.text for t in text.tokens])
+
+
+def test_invalid_tokenizer_features_combination(transformers_pipeline_config):
+    transformers_pipeline_config["features"].update({"word": {"embedding_dim": 2}})
+    transformers_pipeline_config["tokenizer"] = {
+        "transformers_kwargs": {"model_name": "sshleifer/tiny-distilroberta-base"}
+    }
+
+    with pytest.raises(ConfigurationError):
+        Pipeline.from_config(transformers_pipeline_config)
+
+
+def test_not_implemented_transformers_with_tokenclassification(
+    transformers_pipeline_config,
+):
+    transformers_pipeline_config["head"] = {
+        "type": "TokenClassification",
+        "labels": ["NER"],
+    }
+    with pytest.raises(NotImplementedError):
+        Pipeline.from_config(transformers_pipeline_config)
+
+
+def test_invalid_transformers_tokenizer_indexer_embedder_combination(
+    transformers_pipeline_config,
+):
+    transformers_pipeline_config["tokenizer"] = {
+        "transformers_kwargs": {"model_name": "distilroberta-base"}
+    }
+
+    with pytest.raises(ConfigurationError):
+        Pipeline.from_config(transformers_pipeline_config)
