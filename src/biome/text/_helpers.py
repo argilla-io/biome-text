@@ -2,13 +2,8 @@ import copy
 import json
 import logging
 import os
-import time
-from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.error import URLError
-from urllib.parse import urlparse
 
-import pandas as pd
 import uvicorn
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment, sanitize
@@ -18,18 +13,13 @@ from allennlp.models import archive_model
 from allennlp.models.archival import CONFIG_NAME
 from allennlp.training import Trainer, GradientDescentTrainer
 from allennlp.training.util import evaluate
-from dask import dataframe as dd
-from dask_elk.client import DaskElasticClient
 from fastapi import FastAPI
 from torch.utils.data import IterableDataset
 
 from biome.text import Pipeline, TrainerConfiguration, helpers
-from biome.text._configuration import ElasticsearchExplore, ExploreConfiguration
 from biome.text._model import PipelineModel
-from biome.text.constants import EXPLORE_APP_ENDPOINT
-from biome.text.data import DataSource, InstancesDataset
+from biome.text.data import InstancesDataset
 from biome.text.errors import http_error_handling
-from biome.text.ui import launch_ui
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,151 +53,6 @@ def _serve(pipeline: Pipeline, port: int):
         return app
 
     uvicorn.run(make_app(), host="0.0.0.0", port=port)
-
-
-def _explore(
-    pipeline: Pipeline,
-    data_source: DataSource,
-    config: ExploreConfiguration,
-    elasticsearch: ElasticsearchExplore,
-) -> dd.DataFrame:
-    """
-    Executes a pipeline prediction over a datasource and register results int a elasticsearch index
-
-    Parameters
-    ----------
-    pipeline
-    data_source
-    config
-    elasticsearch
-
-    Returns
-    -------
-
-    """
-    if config.prediction_cache > 0:
-        pipeline.init_prediction_cache(config.prediction_cache)
-
-    ddf_mapped = data_source.to_mapped_dataframe()
-    # Stringify input data for better elasticsearch index mapping integration,
-    # avoiding properties with multiple value types (string and long,...)
-    for column in ddf_mapped.columns:
-        ddf_mapped[column] = ddf_mapped[column].apply(helpers.stringify)
-
-    # this only makes really sense when we have a predict_batch_json method implemented ...
-    n_partitions = max(1, round(len(ddf_mapped) / config.batch_size))
-
-    apply_func = pipeline.explain_batch if config.explain else pipeline.predict_batch
-
-    def add_prediction(df: pd.DataFrame) -> pd.Series:
-        """Runs and returns the predictions for a given input dataframe"""
-        input_batch = df.to_dict(orient="records")
-        predictions = apply_func(input_batch)
-        return pd.Series(map(sanitize, predictions), index=df.index)
-
-    # a persist is necessary here, otherwise it fails for n_partitions == 1
-    # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-    ddf_mapped: dd.DataFrame = ddf_mapped.repartition(
-        npartitions=n_partitions
-    ).persist()
-    ddf_mapped["prediction"] = ddf_mapped.map_partitions(
-        add_prediction, meta=(None, object)
-    )
-
-    ddf_source = (
-        data_source.to_dataframe().repartition(npartitions=n_partitions).persist()
-    )
-    # Keep as metadata only non used values/columns
-    ddf_source = ddf_source[
-        [c for c in ddf_source.columns if c not in ddf_mapped.columns]
-    ]
-    ddf_mapped["metadata"] = ddf_source.map_partitions(
-        lambda df: helpers.stringify(sanitize(df.to_dict(orient="records")))
-    )
-
-    ddf = DaskElasticClient(
-        host=elasticsearch.es_host, retry_on_timeout=True, http_compress=True
-    ).save(ddf_mapped, index=elasticsearch.es_index, doc_type=elasticsearch.es_doc)
-
-    elasticsearch.create_explore_data_index(force_delete=config.force_delete)
-    elasticsearch.create_explore_data_record(
-        {
-            **(config.metadata or {}),
-            "datasource": data_source.source,
-            # TODO: This should change when ui is normalized (action detail and action link naming)
-            "explore_name": elasticsearch.es_index,
-            "model": pipeline.name,
-            "columns": ddf.columns.values.tolist(),
-            "metadata_columns": data_source.to_dataframe().columns.values.tolist(),
-            "pipeline": pipeline.type_name,
-            "output": pipeline.output,
-            "inputs": pipeline.inputs,  # backward compatibility
-            "signature": pipeline.inputs + [pipeline.output],
-            "predict_signature": pipeline.inputs,
-            "labels": pipeline.head.labels,
-            "task": pipeline.head.task_name().as_string(),
-            "use_prediction": True,  # TODO(frascuchon): flag for ui backward compatibility. Remove in the future
-        }
-    )
-    return ddf.persist()
-
-
-def _show_explore(elasticsearch: ElasticsearchExplore) -> None:
-    """Shows explore ui for data prediction exploration"""
-
-    def is_service_up(url: str) -> bool:
-        import urllib.request
-
-        try:
-            status_code = urllib.request.urlopen(url).getcode()
-            return 200 <= status_code < 400
-        except URLError:
-            return False
-
-    def launch_ui_app(ui_port: int) -> Thread:
-        process = Thread(
-            target=launch_ui,
-            name="ui",
-            kwargs=dict(es_host=elasticsearch.es_host, port=ui_port),
-        )
-        process.start()
-        return process
-
-    def show_notebook_explore(url: str):
-        """Shows explore ui in a notebook cell"""
-        from IPython.core.display import HTML, display
-
-        iframe = f"<iframe src={url} width=100% height=840></iframe>"
-        display(HTML(iframe))
-
-    def show_browser_explore(url: str):
-        """Shows explore ui in a web browser"""
-        import webbrowser
-
-        webbrowser.open(url)
-
-    waiting_seconds = 1
-    url = f"{EXPLORE_APP_ENDPOINT}/{elasticsearch.es_index}"
-
-    if not is_service_up(url):
-        port = urlparse(EXPLORE_APP_ENDPOINT).port
-        if not port:
-            _LOGGER.warning(
-                "Cannot start explore application. "
-                "Please, be sure you can reach %s from your browser "
-                "or configure 'BIOME_EXPLORE_ENDPOINT' environment variable",
-                url,
-            )
-            return
-        launch_ui_app(port)
-    time.sleep(waiting_seconds)
-    _LOGGER.info("You can access to your data exploration from this url: %s", url)
-    show_func = (
-        show_notebook_explore
-        if helpers.is_running_on_notebook()
-        else show_browser_explore
-    )
-    show_func(url)
 
 
 class PipelineTrainer:

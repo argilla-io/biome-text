@@ -8,7 +8,7 @@ import warnings
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union, cast
 
 import allennlp
 import numpy
@@ -446,3 +446,15 @@ class PipelineModel(allennlp.models.Model):
         inputs.update(kwargs)
 
         return inputs
+
+
+def __register(impl_class, overrides: bool = False):
+    """Register the impl. class in allennlp components registry"""
+
+    allennlp.models.Model.register(impl_class.__name__, exist_ok=overrides)(impl_class)
+    allennlp.data.DatasetReader.register(impl_class.__name__, exist_ok=overrides)(
+        impl_class
+    )
+
+
+__register(PipelineModel, overrides=True)
