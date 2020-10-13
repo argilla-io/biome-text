@@ -1,13 +1,16 @@
 import copy
 import inspect
 import logging
+import multiprocessing
 import os
+import pickle
 import shutil
 import uuid
 from inspect import Parameter
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
+from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
 from allennlp.data import (
     AllennlpDataset,
@@ -18,9 +21,9 @@ from allennlp.data import (
 )
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
-from allennlp.commands.find_learning_rate import search_learning_rate
 from dask import dataframe as dd
 from dask.dataframe import DataFrame
+from datasets import Dataset
 
 from biome.text import vocabulary
 from biome.text.configuration import (
@@ -61,6 +64,7 @@ class Pipeline:
     __LOGGER = logging.getLogger(__name__)
     __TRAINING_CACHE_DATA = ".instances_data"
     __DATASOURCE_YAML_FOLDER = ".datasources"
+    _PICKLED_INSTANCES_COL = "PICKLED_INSTANCES_FOR_BIOME_PIPELINE"
 
     _model: PipelineModel = None
     _config: PipelineConfiguration = None
@@ -160,7 +164,7 @@ class Pipeline:
         self,
         trainer_config: TrainerConfiguration,
         find_lr_config: FindLRConfiguration,
-        training_data: Union[DataSource, InstancesDataset],
+        training_data: Union[DataSource, InstancesDataset, Dataset],
     ):
         """Returns a learning rate scan on the model.
 
@@ -196,7 +200,7 @@ class Pipeline:
                 "You probably forgot to create a vocabulary with '.create_vocabulary()'."
             )
 
-        if isinstance(training_data, DataSource):
+        if isinstance(training_data, (DataSource, Dataset)):
             training_data = find_lr_pipeline.create_dataset(training_data)
 
         trainer = create_trainer_for_finding_lr(
@@ -219,10 +223,10 @@ class Pipeline:
     def train(
         self,
         output: str,
-        training: Union[DataSource, InstancesDataset],
+        training: Union[DataSource, InstancesDataset, Dataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[Union[DataSource, InstancesDataset]] = None,
-        test: Optional[Union[DataSource, InstancesDataset]] = None,
+        validation: Optional[Union[DataSource, InstancesDataset, Dataset]] = None,
+        test: Optional[Union[DataSource, InstancesDataset, Dataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         loggers: List[BaseTrainLogger] = None,
         restore: bool = False,
@@ -235,13 +239,13 @@ class Pipeline:
         output:
             The experiment output path
         training:
-            The training DataSource
+            The training data
         trainer:
             The trainer file path
         validation:
-            The validation DataSource (optional)
+            The validation data
         test:
-            The test DataSource (optional)
+            The test data
         extend_vocab:
             Extends the vocabulary tokens with the provided VocabularyConfiguration
         loggers:
@@ -294,8 +298,8 @@ class Pipeline:
 
             datasets = {"training": training, "validation": validation, "test": test}
             for name, dataset in datasets.items():
-                if isinstance(dataset, DataSource):
-                    datasets[name] = train_pipeline.create_dataset(dataset)
+                if isinstance(dataset, (DataSource, Dataset)):
+                    datasets[name] = self.create_dataset(dataset)
 
             loggers = loggers or []
             add_default_wandb_logger_if_needed(loggers)
@@ -407,7 +411,7 @@ class Pipeline:
             logger.addHandler(console_handler)
 
     def create_dataset(
-        self, datasource: DataSource, lazy: bool = False
+        self, datasource: Union[DataSource, Dataset], lazy: bool = False,
     ) -> InstancesDataset:
         """
         Creates an instances torch Dataset from an data source
@@ -417,15 +421,25 @@ class Pipeline:
         datasource:
             The source of data
         lazy:
-            If enabled, the returned dataset is a subclass of `torch.data.utils.IterableDataset`
+            If enabled, the returned dataset is a subclass of `torch.data.utils.IterableDataset`.
+            This is always true if `datasource` is a `datasets.Dataset` instance.
 
         Returns
         -------
-
         A torch Dataset containing the instances collection
 
         """
-        datasource.mapping = self._update_ds_mapping_with_pipeline_input_output(datasource)
+        if isinstance(datasource, Dataset):
+            return self._create_instances_from_dataset(datasource)
+        elif isinstance(datasource, DataSource):
+            return self._create_instances_from_datasource(datasource, lazy)
+        else:
+            raise NotImplementedError
+
+    def _create_instances_from_datasource(self, datasource, lazy):
+        datasource.mapping = self._update_ds_mapping_with_pipeline_input_output(
+            datasource
+        )
         ddf = datasource.to_mapped_dataframe()
         instances_series: "dask.dataframe.core.Series" = ddf.map_partitions(
             lambda df: df.apply(
@@ -453,11 +467,49 @@ class Pipeline:
             else AllennlpDataset(list(instances_series.compute()))
         )
 
-    def _update_ds_mapping_with_pipeline_input_output(self, datasource: DataSource) -> Dict:
+    def _update_ds_mapping_with_pipeline_input_output(
+        self, datasource: DataSource
+    ) -> Dict:
         mapping = {k: k for k in self.inputs + [self.output] if k}
         mapping.update(datasource.mapping)
 
         return mapping
+
+    def _create_instances_from_dataset(self, dataset: Dataset):
+        def create_and_pickle_instances(
+                dataset_row, columns,
+        ):
+            instance = self.head.featurize(**{key: dataset_row[key] for key in columns})
+            return {self._PICKLED_INSTANCES_COL: pickle.dumps(instance)}
+
+        input_columns = [col for col in self.inputs + [self.output] if col]
+        self.__LOGGER.info("Creating instances from datasets")
+        dataset_with_pickled_instances = dataset.map(
+            create_and_pickle_instances,
+            fn_kwargs={
+                "columns": input_columns,
+            },
+            # trying to be smart about multiprocessing,
+            # at least 1000 examples per process to avoid overhead,
+            # but 1000 is a pretty random number, can surely be optimized
+            num_proc=min(
+                max(1, int(len(dataset) / 1000)),
+                int(multiprocessing.cpu_count() / 2),
+            ),
+        )
+
+        def build_instance_generator(pickled_instance_dataset: Dataset):
+            def instance_unpickler(dummy_path: str) -> Iterable[Instance]:
+                for row in pickled_instance_dataset:
+                    yield pickle.loads(row[self._PICKLED_INSTANCES_COL])
+
+            return instance_unpickler
+
+        return AllennlpLazyDataset(
+            instance_generator=build_instance_generator(dataset_with_pickled_instances),
+            file_path="dummy_path",
+            vocab=self.backbone.vocab,
+        )
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Returns a prediction given some input data based on the current state of the model
@@ -599,7 +651,9 @@ class Pipeline:
             es_host=es_host or constants.DEFAULT_ES_HOST,
         )
 
-        data_source.mapping = self._update_ds_mapping_with_pipeline_input_output(data_source)
+        data_source.mapping = self._update_ds_mapping_with_pipeline_input_output(
+            data_source
+        )
         explore_df = _explore(self, data_source, config, es_config)
         _show_explore(es_config)
 
@@ -757,7 +811,7 @@ class Pipeline:
             An extended `Vocabulary` using the provided configuration
         """
         datasets = [
-            self.create_dataset(source) if isinstance(source, DataSource) else source
+            self.create_dataset(source) if isinstance(source, (DataSource, Dataset)) else source
             for source in vocab_config.sources
         ]
 

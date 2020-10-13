@@ -6,6 +6,7 @@ import yaml
 from allennlp.common import FromParams, Params
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
+from datasets import Dataset
 
 from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
@@ -432,7 +433,12 @@ class TrainerConfiguration:
         allennlp_trainer_config
         """
         # Data loader and prepare_env attributes
-        __excluded_keys = ["data_bucketing", "batch_size", "batches_per_epoch", "random_seed"]
+        __excluded_keys = [
+            "data_bucketing",
+            "batch_size",
+            "batches_per_epoch",
+            "random_seed",
+        ]
         trainer_config = {
             k: v for k, v in vars(self).items() if k not in __excluded_keys
         }
@@ -455,7 +461,7 @@ class VocabularyConfiguration:
     Parameters
     ----------
     sources: 
-        List of DataSource or InstancesDataset objects to be used for data creation
+        List of DataSource, Dataset or InstancesDataset objects to be used for data creation
     min_count: `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature
@@ -480,7 +486,7 @@ class VocabularyConfiguration:
 
     def __init__(
         self,
-        sources: Union[List[DataSource], List[InstancesDataset]],
+        sources: Union[List[DataSource], List[InstancesDataset], List[Dataset]],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,
