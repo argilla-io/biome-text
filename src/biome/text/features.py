@@ -61,10 +61,6 @@ class WordFeatures:
 
     def to_json(self) -> Dict:
         """Returns the config as dict for the serialized json config file"""
-        return self.to_dict()
-
-    def to_dict(self) -> Dict:
-        """Returns the config as dict"""
         return {
             "embedding_dim": self.embedding_dim,
             "lowercase_tokens": self.lowercase_tokens,
@@ -140,10 +136,6 @@ class CharFeatures:
 
     def to_json(self):
         """Returns the config as dict for the serialized json config file"""
-        return self.to_dict()
-
-    def to_dict(self):
-        """Returns the config as dict"""
         return {
             "embedding_dim": self.embedding_dim,
             "lowercase_characters": self.lowercase_characters,
@@ -165,13 +157,18 @@ class TransformersFeatures:
         Name of one of the [transformers models](https://huggingface.co/models).
     trainable
         If false, freeze the transformer weights
+    max_length
+        If positive, split the document into segments of this many tokens (including special tokens)
+        before feeding into the embedder. The embedder embeds these segments independently and
+        concatenate the results to get the original document representation.
     """
 
     namespace = "transformers"
 
-    def __init__(self, model_name: str, trainable: bool = False):
+    def __init__(self, model_name: str, trainable: bool = False, max_length: Optional[int] = None):
         self.model_name = model_name
         self.trainable = trainable
+        self.max_length = max_length
 
     @property
     def config(self) -> Dict:
@@ -181,23 +178,25 @@ class TransformersFeatures:
                 "type": "pretrained_transformer_mismatched",
                 "model_name": self.model_name,
                 "namespace": self.namespace,
+                "max_length": self.max_length,
             },
             "embedder": {
                 "type": "pretrained_transformer_mismatched",
                 "model_name": self.model_name,
                 "train_parameters": self.trainable,
+                "max_length": self.max_length,
             },
         }
 
         return config
 
-    def to_dict(self) -> Dict:
-        """Returns the config as dict"""
+    def to_json(self) -> Dict:
+        """Returns the config as dict for the serialized json config file"""
         return {
             "model_name": self.model_name,
             "trainable": self.trainable,
+            "max_length": self.max_length,
         }
 
-    def to_json(self) -> Dict:
-        """Returns the config as dict for the serialized json config file"""
-        return self.to_dict()
+    def __eq__(self, other):
+        return all([a == b for a, b in zip(vars(self), vars(other))])
