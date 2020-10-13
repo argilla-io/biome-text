@@ -135,3 +135,4 @@ generated*
 
 **/mlruns/
 **/runs/
+**/.yalc/
