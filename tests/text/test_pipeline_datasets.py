@@ -3,6 +3,9 @@ import os
 
 import pandas as pd
 import pytest
+import datasets
+
+from tests import RESOURCES_PATH
 
 # fmt: off
 import torch
@@ -176,3 +179,38 @@ def test_training_with_logging(
 
     assert logging.getLogger("allennlp").level == logging.ERROR
     assert logging.getLogger("biome").level == logging.INFO
+
+
+def test_training_with_datasets():
+    ds = datasets.load_dataset("json", data_files=[os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")], split="train")
+    ds = ds.map(lambda x: {"text": x["hypothesis"]})
+    labels = list(set(ds["label"]))
+
+    pl = Pipeline.from_config({
+        "name": "datasets_test",
+        "features": {
+            "word": {"embedding_dim": 16, "lowercase_tokens": True},
+        },
+        "head": {
+            "type": "TextClassification",
+            "labels": labels,
+        },
+    })
+
+    vocab_config = VocabularyConfiguration(sources=[ds])
+    pl.create_vocabulary(vocab_config)
+
+    trainer_config = TrainerConfiguration(
+        optimizer={
+            "type": "adam",
+            "lr": 0.01,
+        },
+        num_epochs=1,
+        cuda_device=-1,
+    )
+
+    pl.train(
+        output="output",
+        training=ds,
+        trainer=trainer_config
+    )
