@@ -169,8 +169,13 @@ class TransformersFeatures:
 
     namespace = "transformers"
 
-    def __init__(self, model_name: str, trainable: bool = False, max_length: Optional[int] = None):
-    def __init__(self, model_name: str, trainable: bool = False, last_layer_only: bool = True):
+    def __init__(
+        self,
+        model_name: str,
+        trainable: bool = False,
+        max_length: Optional[int] = None,
+        last_layer_only: bool = True,
+    ):
         self.model_name = model_name
         self.trainable = trainable
         self.max_length = max_length
@@ -195,8 +200,8 @@ class TransformersFeatures:
                 else "pretrained_transformer",
                 "model_name": self.model_name,
                 "train_parameters": self.trainable,
-                "last_layer_only": self.last_layer_only,
                 "max_length": self.max_length,
+                "last_layer_only": self.last_layer_only,
             },
         }
 
