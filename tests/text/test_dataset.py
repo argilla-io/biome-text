@@ -31,7 +31,7 @@ def test_from_csv():
 
 def test_training_with_dataset():
     # TODO: this test can go away once we replace our DataSource with Dataset
-    ds = Dataset.read_json(paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl"))
+    ds = Dataset.from_json(paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl"))
     ds.dataset.rename_column_("hypothesis", "text")
     # or to keep the 'hypothesis' column and add the new 'text' column:
     # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
