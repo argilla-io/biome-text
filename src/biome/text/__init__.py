@@ -29,13 +29,13 @@ try:
 except ModuleNotFoundError:
     pass
 
-from .pipeline import (
-    Pipeline,
+from .dataset import Dataset
+from .pipeline import Pipeline
+from .configuration import (
     PipelineConfiguration,
     TrainerConfiguration,
     VocabularyConfiguration,
 )
-from .dataset import Dataset
 
 warnings.showwarning = warn_explicit
 logging.basicConfig()
