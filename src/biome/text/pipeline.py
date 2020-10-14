@@ -27,6 +27,7 @@ from biome.text.configuration import (
     VocabularyConfiguration,
     FindLRConfiguration,
 )
+from biome.text.dataset import Dataset
 from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.features import TransformersFeatures
@@ -156,7 +157,7 @@ class Pipeline:
         self,
         trainer_config: TrainerConfiguration,
         find_lr_config: FindLRConfiguration,
-        training_data: Union[DataSource, InstancesDataset],
+        training_data: Union[DataSource, Dataset, InstancesDataset],
     ):
         """Returns a learning rate scan on the model.
 
@@ -194,6 +195,8 @@ class Pipeline:
 
         if isinstance(training_data, DataSource):
             training_data = find_lr_pipeline.create_dataset(training_data)
+        elif isinstance(training_data, Dataset):
+            training_data: AllennlpLazyDataset = training_data.to_instances(pipeline=self)
 
         trainer = create_trainer_for_finding_lr(
             pipeline=find_lr_pipeline,
@@ -215,12 +218,13 @@ class Pipeline:
     def train(
         self,
         output: str,
-        training: Union[DataSource, InstancesDataset],
+        training: Union[DataSource, Dataset, InstancesDataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[Union[DataSource, InstancesDataset]] = None,
-        test: Optional[Union[DataSource, InstancesDataset]] = None,
+        validation: Optional[Union[DataSource, Dataset, InstancesDataset]] = None,
+        test: Optional[Union[DataSource, Dataset, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         loggers: List[BaseTrainLogger] = None,
+        lazy: bool = True,
         restore: bool = False,
         quiet: bool = False,
     ) -> TrainingResults:
@@ -228,25 +232,27 @@ class Pipeline:
 
         Parameters
         ----------
-        output:
+        output
             The experiment output path
-        training:
+        training
             The training DataSource
-        trainer:
+        trainer
             The trainer file path
-        validation:
+        validation
             The validation DataSource (optional)
-        test:
+        test
             The test DataSource (optional)
-        extend_vocab:
+        extend_vocab
             Extends the vocabulary tokens with the provided VocabularyConfiguration
-        loggers:
+        loggers
             A list of loggers that execute a callback before the training, after each epoch,
             and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
-        restore:
+        lazy
+            If true, load the data lazily from disk, otherwise load them in memory.
+        restore
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
-        quiet:
+        quiet
             If enabled, disables most logging messages keeping only warning and error messages.
             In any case, all logging info will be stored into a file at ${output}/train.log
 
@@ -292,6 +298,8 @@ class Pipeline:
             for name, dataset in datasets.items():
                 if isinstance(dataset, DataSource):
                     datasets[name] = train_pipeline.create_dataset(dataset)
+                elif isinstance(dataset, Dataset):
+                    datasets[name] = dataset.to_instances(pipeline=train_pipeline, lazy=lazy)
 
             loggers = loggers or []
             add_default_wandb_logger_if_needed(loggers)
