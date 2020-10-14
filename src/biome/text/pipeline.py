@@ -3,7 +3,6 @@ import inspect
 import logging
 import os
 import shutil
-import uuid
 from inspect import Parameter
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
@@ -19,7 +18,6 @@ from allennlp.data import (
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.commands.find_learning_rate import search_learning_rate
-from dask import dataframe as dd
 from dask.dataframe import DataFrame
 
 from biome.text import vocabulary
@@ -33,8 +31,6 @@ from biome.text.data import DataSource, InstancesDataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
-from . import constants
-from ._configuration import ElasticsearchExplore, ExploreConfiguration
 from ._model import PipelineModel
 from .backbone import ModelBackbone
 from .loggers import BaseTrainLogger, add_default_wandb_logger_if_needed
@@ -425,7 +421,9 @@ class Pipeline:
         A torch Dataset containing the instances collection
 
         """
-        datasource.mapping = self._update_ds_mapping_with_pipeline_input_output(datasource)
+        datasource.mapping = self._update_ds_mapping_with_pipeline_input_output(
+            datasource
+        )
         ddf = datasource.to_mapped_dataframe()
         instances_series: "dask.dataframe.core.Series" = ddf.map_partitions(
             lambda df: df.apply(
@@ -453,7 +451,10 @@ class Pipeline:
             else AllennlpDataset(list(instances_series.compute()))
         )
 
-    def _update_ds_mapping_with_pipeline_input_output(self, datasource: DataSource) -> Dict:
+    # TODO: Move to DataSource as method or helper
+    def _update_ds_mapping_with_pipeline_input_output(
+        self, datasource: DataSource
+    ) -> Dict:
         mapping = {k: k for k in self.inputs + [self.output] if k}
         mapping.update(datasource.mapping)
 
@@ -544,66 +545,6 @@ class Pipeline:
         directory: str
         """
         self._model.vocab.save_to_files(directory)
-
-    def explore(
-        self,
-        data_source: DataSource,
-        explore_id: Optional[str] = None,
-        es_host: Optional[str] = None,
-        batch_size: int = 50,
-        prediction_cache_size: int = 0,
-        explain: bool = False,
-        force_delete: bool = True,
-        **metadata,
-    ) -> dd.DataFrame:
-        """Launches the Explore UI for a given data source
-
-        Running this method inside an `IPython` notebook will try to render the UI directly in the notebook.
-
-        Running this outside a notebook will try to launch the standalone web application.
-
-        Parameters
-        ----------
-        data_source: `DataSource`
-            The data source or its yaml file path
-        explore_id: `Optional[str]`
-            A name or id for this explore run, useful for running and keep track of several explorations
-        es_host: `Optional[str]`
-            The URL to the Elasticsearch host for indexing predictions (default is `localhost:9200`)
-        batch_size: `int`
-            The batch size for indexing predictions (default is `500)
-        prediction_cache_size: `int`
-            The size of the cache for caching predictions (default is `0)
-        explain: `bool`
-            Whether to extract and return explanations of token importance (default is `False`)
-        force_delete: `bool`
-            Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
-
-        Returns
-        -------
-        pipeline: `Pipeline`
-            A configured pipeline
-        """
-        from ._helpers import _explore, _show_explore
-
-        config = ExploreConfiguration(
-            batch_size=batch_size,
-            prediction_cache_size=prediction_cache_size,
-            explain=explain,
-            force_delete=force_delete,
-            **metadata,
-        )
-
-        es_config = ElasticsearchExplore(
-            es_index=explore_id or str(uuid.uuid1()),
-            es_host=es_host or constants.DEFAULT_ES_HOST,
-        )
-
-        data_source.mapping = self._update_ds_mapping_with_pipeline_input_output(data_source)
-        explore_df = _explore(self, data_source, config, es_config)
-        _show_explore(es_config)
-
-        return explore_df
 
     def serve(self, port: int = 9998):
         """Launches a REST prediction service with the current model
