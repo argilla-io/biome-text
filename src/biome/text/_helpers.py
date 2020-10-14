@@ -135,7 +135,8 @@ class PipelineTrainer:
         self._pipeline.save_vocabulary(os.path.join(self._output_dir, "vocabulary"))
 
         for dataset in [self._training, self._validation, self._test]:
-            dataset.index_with(self._pipeline.backbone.vocab)
+            if dataset is not None:
+                dataset.index_with(self._pipeline.backbone.vocab)
 
         trainer_params = Params(
             helpers.sanitize_for_params(self._trainer_config.to_allennlp_trainer())
