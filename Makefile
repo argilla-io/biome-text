@@ -15,7 +15,7 @@ install: ## install package
 	@pip install .
 
 dev: ## install package in development mode
-	@pip install --upgrade -e .[testing]
+	@pip install --use-feature=2020-resolver --upgrade -e .[testing]
 
 ui: ## build the ui pages
 	@cd ui && npm install && npm run build
