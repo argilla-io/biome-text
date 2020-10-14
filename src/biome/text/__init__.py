@@ -35,6 +35,7 @@ from .pipeline import (
     TrainerConfiguration,
     VocabularyConfiguration,
 )
+from .dataset import Dataset
 
 warnings.showwarning = warn_explicit
 logging.basicConfig()
