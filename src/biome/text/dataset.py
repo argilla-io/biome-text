@@ -29,16 +29,57 @@ class Dataset:
         self.dataset: datasets.Dataset = dataset
 
     @classmethod
-    def load_dataset(cls, *args, split, **kwargs):
+    def load_dataset(cls, *args, split, **kwargs) -> "Dataset":
+        """Load a dataset using Huggingface's `datasets.load_dataset` method.
+
+        See https://huggingface.co/docs/datasets/loading_datasets.html
+
+        Parameters
+        ----------
+        split
+            See https://huggingface.co/docs/datasets/splits.html
+        *args/**kwargs
+            Passed on to the `dataset.load_dataset` method
+
+        Returns
+        -------
+        dataset
+        """
         return cls(datasets.load_dataset(*args, split=split, **kwargs))
 
     @classmethod
-    def read_json(cls, paths: Union[str, List[str]]):
-        return cls.load_dataset("json", data_file=paths, split="train")
+    def from_json(cls, paths: Union[str, List[str]], **kwargs) -> "Dataset":
+        """Convenient method to create a Dataset from a json file
+
+        Parameters
+        ----------
+        paths
+            One or several paths to json files
+        **kwargs
+            Passed on to the `datasets.load_dataset` method
+
+        Returns
+        -------
+        dataset
+        """
+        return cls.load_dataset("json", data_files=paths, split="train", **kwargs)
 
     @classmethod
-    def read_csv(cls, paths: Union[str, List[str]]):
-        return cls.load_dataset("csv", data_file=paths, split="train")
+    def from_csv(cls, paths: Union[str, List[str]], **kwargs) -> "Dataset":
+        """Convenient method to create a Dataset from a csv file
+
+        Parameters
+        ----------
+        paths
+            One or several paths to csv files
+        **kwargs
+            Passed on to the `datasets.load_dataset` method
+
+        Returns
+        -------
+        dataset
+        """
+        return cls.load_dataset("csv", data_files=paths, split="train", **kwargs)
 
     def to_instances(self, pipeline: "biome.text.Pipeline", lazy=True) -> InstancesDataset:
         """Convert input to instances for the pipeline
