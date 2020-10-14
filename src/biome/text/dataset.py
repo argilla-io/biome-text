@@ -6,8 +6,6 @@ from typing import Union, Dict, Iterable, List
 import datasets
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
 
-from biome.text import Pipeline
-
 InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
 
@@ -42,7 +40,7 @@ class Dataset:
     def read_csv(cls, paths: Union[str, List[str]]):
         return cls.load_dataset("csv", data_file=paths, split="train")
 
-    def to_instances(self, pipeline: Pipeline, lazy=True) -> InstancesDataset:
+    def to_instances(self, pipeline: "biome.text.Pipeline", lazy=True) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
         Parameters
