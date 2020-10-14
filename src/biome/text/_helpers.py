@@ -317,4 +317,4 @@ def create_trainer_for_finding_lr(
         data_loader=training_data_loader,
         params=trainer_params,
         serialization_dir=None,
-    )
+    ))
