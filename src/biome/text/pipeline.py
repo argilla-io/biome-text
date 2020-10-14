@@ -705,10 +705,14 @@ class Pipeline:
         extended_vocab
             An extended `Vocabulary` using the provided configuration
         """
-        datasets = [
-            self.create_dataset(source) if isinstance(source, DataSource) else source
-            for source in vocab_config.sources
-        ]
+        datasets = []
+        for source in vocab_config.sources:
+            if isinstance(source, DataSource):
+                datasets.append(self.create_dataset(source))
+            elif isinstance(source, Dataset):
+                datasets.append(source.to_instances(pipeline=self))
+            else:
+                datasets.append(source)
 
         instances_vocab = Vocabulary.from_instances(
             instances=(instance for dataset in datasets for instance in dataset),
