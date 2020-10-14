@@ -2,7 +2,7 @@ import copy
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import uvicorn
 from allennlp.common import Params
@@ -135,8 +135,7 @@ class PipelineTrainer:
         self._pipeline.save_vocabulary(os.path.join(self._output_dir, "vocabulary"))
 
         for dataset in [self._training, self._validation, self._test]:
-            if dataset and hasattr(dataset, "index_with"):
-                dataset.index_with(self._pipeline.backbone.vocab)
+            dataset.index_with(self._pipeline.backbone.vocab)
 
         trainer_params = Params(
             helpers.sanitize_for_params(self._trainer_config.to_allennlp_trainer())
@@ -303,8 +302,7 @@ def create_trainer_for_finding_lr(
     """
     prepare_environment(Params({}))
 
-    if hasattr(training_data, "index_with"):
-        training_data.index_with(pipeline.backbone.vocab)
+    training_data.index_with(pipeline.backbone.vocab)
 
     trainer_params = Params(
         helpers.sanitize_for_params(trainer_config.to_allennlp_trainer())
@@ -314,7 +312,7 @@ def create_trainer_for_finding_lr(
         training_data, trainer_config.batch_size, trainer_config.data_bucketing
     )
 
-    return Trainer.from_params(
+    return cast("GradientDescentTrainer", Trainer.from_params(
         model=pipeline._model,
         data_loader=training_data_loader,
         params=trainer_params,
