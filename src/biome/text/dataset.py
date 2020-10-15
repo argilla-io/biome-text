@@ -81,6 +81,40 @@ class Dataset:
         """
         return cls.load_dataset("csv", data_files=paths, split="train", **kwargs)
 
+    @classmethod
+    def from_pandas(cls, df: "pandas.DataFrame", **kwargs):
+        """Convenient method to create a Dataset from a `pandas.DataFrame`
+
+        Parameters
+        ----------
+        df
+            The data frame
+        **kwargs
+            Passed on to `datasets.Dataset.from_pandas` method
+
+        Returns
+        -------
+        dataset
+        """
+        return cls(datasets.Dataset.from_pandas(df=df, **kwargs))
+
+    @classmethod
+    def from_dict(cls, mapping: dict, **kwargs):
+        """Convenient method to create a Dataset from a python dictionary
+
+        Parameters
+        ----------
+        mapping
+            A mapping of strings to arrays or python lists.
+        **kwargs
+            Passed on to `datasets.Dataset.from_dict` method
+
+        Returns
+        -------
+        dataset
+        """
+        return cls(datasets.Dataset.from_dict(mapping=mapping, **kwargs))
+
     def to_instances(self, pipeline: "biome.text.Pipeline", lazy=True) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
