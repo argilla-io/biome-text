@@ -1,8 +1,21 @@
 import os
 
+import pandas as pd
+
 from biome.text import Pipeline, Dataset
 from biome.text.configuration import VocabularyConfiguration, TrainerConfiguration
 from tests import RESOURCES_PATH
+import pytest
+
+
+def test_load_dataset():
+    json_path = os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
+
+    with pytest.raises(TypeError):
+        Dataset.load_dataset("json", data_files=[json_path])
+
+    ds = Dataset.load_dataset("json", data_files=[json_path], split="train")
+    assert len(ds) == 4
 
 
 def test_from_json():
@@ -29,40 +42,47 @@ def test_from_csv():
     assert ds.dataset.column_names == ["label", "text"]
 
 
+def test_from_pandas():
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    ds = Dataset.from_pandas(df)
+
+    assert ds.dataset.column_names == ["a", "b"]
+    assert ds["a"] == [1, 2, 3]
+    assert len(ds) == 3
+
+
+def test_from_dict():
+    ds = Dataset.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
+
+    assert ds.dataset.column_names == ["a", "b"]
+    assert ds["a"] == [1, 2, 3]
+    assert len(ds) == 3
+
+
 def test_training_with_dataset():
     # TODO: this test can go away once we replace our DataSource with Dataset
-    ds = Dataset.from_json(paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl"))
+    ds = Dataset.from_json(
+        paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
+    )
     ds.dataset.rename_column_("hypothesis", "text")
     # or to keep the 'hypothesis' column and add the new 'text' column:
     # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
 
     labels = list(set(ds["label"]))
 
-    pl = Pipeline.from_config({
-        "name": "datasets_test",
-        "features": {
-            "word": {"embedding_dim": 2},
-        },
-        "head": {
-            "type": "TextClassification",
-            "labels": labels,
-        },
-    })
+    pl = Pipeline.from_config(
+        {
+            "name": "datasets_test",
+            "features": {"word": {"embedding_dim": 2},},
+            "head": {"type": "TextClassification", "labels": labels,},
+        }
+    )
 
     vocab_config = VocabularyConfiguration(sources=[ds])
     pl.create_vocabulary(vocab_config)
 
     trainer_config = TrainerConfiguration(
-        optimizer={
-            "type": "adam",
-            "lr": 0.01,
-        },
-        num_epochs=1,
-        cuda_device=-1,
+        optimizer={"type": "adam", "lr": 0.01,}, num_epochs=1, cuda_device=-1,
     )
 
-    pl.train(
-        output="output",
-        training=ds,
-        trainer=trainer_config
-    )
+    pl.train(output="output", training=ds, trainer=trainer_config)
