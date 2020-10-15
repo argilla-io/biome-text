@@ -302,7 +302,7 @@ class Pipeline:
                     datasets[name] = dataset.to_instances(pipeline=train_pipeline, lazy=lazy)
 
             loggers = loggers or []
-            add_default_wandb_logger_if_needed(loggers)
+            loggers = add_default_wandb_logger_if_needed(loggers)
 
             pipeline_trainer = PipelineTrainer(
                 train_pipeline,
