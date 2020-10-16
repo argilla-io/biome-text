@@ -1,4 +1,5 @@
 import pytest
+import torch
 from biome.text import Dataset, Pipeline, TrainerConfiguration, VocabularyConfiguration
 
 
@@ -30,6 +31,7 @@ def pipeline(dataset) -> Pipeline:
     return pl
 
 
+@pytest.mark.skipif(torch.cuda.device_count() < 1, reason="Using AMP requires a cuda device")
 def test_use_amp(dataset, pipeline, tmp_path, capsys):
     trainer_config = TrainerConfiguration(
         num_epochs=1,
