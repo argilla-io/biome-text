@@ -9,6 +9,7 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.data import TokenIndexer, Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
+from biome.text.dataset import Dataset
 from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
 from .features import CharFeatures, TransformersFeatures, WordFeatures
@@ -544,7 +545,7 @@ class VocabularyConfiguration:
 
     def __init__(
         self,
-        sources: Union[List[DataSource], List[InstancesDataset]],
+        sources: Union[List[DataSource], List[Dataset], List[InstancesDataset]],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,

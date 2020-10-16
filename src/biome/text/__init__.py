@@ -29,8 +29,9 @@ try:
 except ModuleNotFoundError:
     pass
 
-from .pipeline import (
-    Pipeline,
+from .dataset import Dataset
+from .pipeline import Pipeline
+from .configuration import (
     PipelineConfiguration,
     TrainerConfiguration,
     VocabularyConfiguration,
