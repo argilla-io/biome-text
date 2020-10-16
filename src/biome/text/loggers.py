@@ -32,45 +32,41 @@ class BaseTrainLogger(EpochCallback):
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,
     ):
-        """
-        Init train logging
+        """Init train logging
 
         Parameters
         ----------
-        pipeline:
+        pipeline
             The training pipeline
-        trainer_configuration:
+        trainer_configuration
             The trainer configuration
-        training:
+        training
             Training dataset
-        validation:
+        validation
             Validation dataset
-        test:
+        test
             Test dataset
         """
         pass
 
     def end_train(self, results: TrainingResults):
-        """
-        End train logging
+        """End train logging
 
         Parameters
         ----------
-        results:
+        results
             The training result set
-
         """
         pass
 
     def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):
-        """
-        Log epoch metrics
+        """Log epoch metrics
 
         Parameters
         ----------
-        epoch:
+        epoch
             The current epoch
-        metrics:
+        metrics
             The metrics related to current epoch
         """
         pass
@@ -87,21 +83,18 @@ class BaseTrainLogger(EpochCallback):
 
 
 class MlflowLogger(BaseTrainLogger):
-    """
-    A common mlflow logger for pipeline training
+    """A common mlflow logger for pipeline training
 
     Parameters
     ----------
-
-    experiment_name:
+    experiment_name
         The experiment name
-    artifact_location:
+    artifact_location
         The artifact location used for this experiment
-    run_name:
+    run_name
         If specified, set a name to created run
-    tags:
+    tags
         Extra arguments used as tags to created experiment run
-
     """
 
     __LOGGER = logging.getLogger(__name__)
@@ -243,24 +236,43 @@ class WandBLogger(BaseTrainLogger):
         wandb.log(metrics)
 
 
-def add_default_wandb_logger_if_needed(loggers: List[BaseTrainLogger]) -> None:
+def is_wandb_installed_and_logged_in() -> bool:
+    """Checks if wandb is installed and if a login is detected.
+
+    Returns
+    -------
+    bool
+        Is true, if wandb is installed and a login is detected, otherwise false.
+    """
+    if not _HAS_WANDB:
+        return False
+    if wandb.api.api_key is None:
+        wandb.termwarn(
+            "W&B installed but not logged in. "
+            "Run `wandb login` or `import wandb; wandb.login()` or set the WANDB_API_KEY env variable."
+        )
+        return False
+    return True
+
+
+def add_default_wandb_logger_if_needed(loggers: List[BaseTrainLogger]) -> List[BaseTrainLogger]:
     """Adds the default WandBLogger if a WandB login is detected and no WandBLogger is found in `loggers`.
 
     Parameters
     ----------
     loggers
         List of loggers used in the training
-    """
-    if not _HAS_WANDB:
-        pass
-    elif any([isinstance(logger, WandBLogger) for logger in loggers]):
-        pass
-    elif wandb.api.api_key is None:
-        wandb.termwarn(
-            "W&B installed but not logged in. "
-            "Run `wandb login` or `import wandb; wandb.login()` or set the WANDB_API_KEY env variable."
-        )
-    else:
-        loggers.append(WandBLogger())
 
-    return None
+    Returns
+    -------
+    loggers
+        List of loggers with a default WandBLogger at position 0 if needed
+    """
+    if any([isinstance(logger, WandBLogger) for logger in loggers]):
+        pass
+    elif not is_wandb_installed_and_logged_in():
+        pass
+    else:
+        loggers = [WandBLogger()] + loggers
+
+    return loggers
