@@ -12,7 +12,7 @@ except ImportError as error:
 
 from pip import __version__ as pip_version
 
-PIP_VERSION_REQUIRED = "19.1.1"
+PIP_VERSION_REQUIRED = "20.2.0"
 
 
 def check_pip_version(required_version: str, version: str) -> bool:
