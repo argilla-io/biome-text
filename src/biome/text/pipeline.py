@@ -33,7 +33,6 @@ from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
 from ._model import PipelineModel
-from biome.text._helpers import PipelineTrainer, create_trainer_for_finding_lr, create_dataloader
 from .backbone import ModelBackbone
 from .loggers import BaseTrainLogger, add_default_wandb_logger_if_needed
 from .modules.heads import TaskHead, TaskHeadConfiguration
@@ -181,6 +180,8 @@ class Pipeline:
             Returns a list of learning rates and corresponding losses.
             Note: The losses are recorded before applying the corresponding learning rate
         """
+        from biome.text._helpers import create_trainer_for_finding_lr
+
         # The original pipeline keeps unchanged
         find_lr_pipeline = self._make_copy()
 
@@ -290,6 +291,8 @@ class Pipeline:
                     "Found an empty vocabulary. "
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
                 )
+
+            from ._helpers import PipelineTrainer
 
             datasets = {"training": training, "validation": validation, "test": test}
             for name, dataset in datasets.items():
@@ -743,6 +746,8 @@ class Pipeline:
         metrics
             Metrics defined in the TaskHead
         """
+        from biome.text._helpers import create_dataloader
+
         # TODO: Since we do not update the weights inplace when training a model, we cannot do following flow:
         #  pl = Pipeline.from_config() -> pl.train -> pl.evaluate
         #  instead: pl = Pipeline.from_config() -> pl.train -> pl = Pipeline.from_pretrained() -> pl.evaluate
