@@ -13,11 +13,11 @@ from allennlp.data import (
     AllennlpLazyDataset,
     Instance,
     Vocabulary,
-    Token,
 )
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.commands.find_learning_rate import search_learning_rate
+from allennlp.training.util import evaluate
 from dask.dataframe import DataFrame
 
 from biome.text import vocabulary
@@ -33,6 +33,7 @@ from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
 from ._model import PipelineModel
+from biome.text._helpers import PipelineTrainer, create_trainer_for_finding_lr, create_dataloader
 from .backbone import ModelBackbone
 from .loggers import BaseTrainLogger, add_default_wandb_logger_if_needed
 from .modules.heads import TaskHead, TaskHeadConfiguration
@@ -180,8 +181,6 @@ class Pipeline:
             Returns a list of learning rates and corresponding losses.
             Note: The losses are recorded before applying the corresponding learning rate
         """
-        from biome.text._helpers import create_trainer_for_finding_lr
-
         # The original pipeline keeps unchanged
         find_lr_pipeline = self._make_copy()
 
@@ -291,8 +290,6 @@ class Pipeline:
                     "Found an empty vocabulary. "
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
                 )
-
-            from ._helpers import PipelineTrainer
 
             datasets = {"training": training, "validation": validation, "test": test}
             for name, dataset in datasets.items():
@@ -730,6 +727,39 @@ class Pipeline:
     def has_empty_vocab(self) -> bool:
         """Determines if a pipeline has an empty vocab under configured features"""
         return vocabulary.is_empty(self.backbone.vocab, self.config.features.keys)
+
+    def evaluate(self, dataset: Union[DataSource, Dataset], batch_size: int = 16) -> dict:
+        """Evaluates the pipeline on a given dataset
+
+        Parameters
+        ----------
+        dataset
+            The dataset to use for the evaluation
+        batch_size
+            Batch size used during the evaluation
+
+        Returns
+        -------
+        metrics
+            Metrics defined in the TaskHead
+        """
+        # TODO: Since we do not update the weights inplace when training a model, we cannot do following flow:
+        #  pl = Pipeline.from_config() -> pl.train -> pl.evaluate
+        #  instead: pl = Pipeline.from_config() -> pl.train -> pl = Pipeline.from_pretrained() -> pl.evaluate
+        #  Actually the same goes for the predict/explain methods! Should we move them to the _PreTrainedPipeline class?
+        if not isinstance(self, _PreTrainedPipeline):
+            raise ActionNotSupportedError("Evaluation only makes sense for a trained pipeline!")
+
+        if isinstance(dataset, DataSource):
+            dataset = self.create_dataset(dataset)
+        else:
+            dataset = dataset.to_instances(self)
+        dataset.index_with(self._model.vocab)
+
+        # TODO: Implement evaluation with a GPU! By default we always have our model on -1,
+        #  the command below only moves the data to the specified device.
+        #  So if we want to use a GPU we manually have to move the model there!
+        return evaluate(self._model, create_dataloader(dataset=dataset, batch_size=batch_size), cuda_device=-1)
 
 
 class _BlankPipeline(Pipeline):
