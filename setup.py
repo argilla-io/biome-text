@@ -117,6 +117,6 @@ if __name__ == "__main__":
             ]
         },
         entry_points={"console_scripts": ["biome=biome.text.cli:main"]},
-        python_requires=">=3.6.1",  # taken from AllenNLP
+        python_requires=">=3.7",  # we are using https://www.python.org/dev/peps/pep-0563/
         zip_safe=False,
     )

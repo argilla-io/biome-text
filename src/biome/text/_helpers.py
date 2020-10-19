@@ -1,8 +1,9 @@
+from __future__ import annotations
 import copy
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast, TYPE_CHECKING
 
 import uvicorn
 from allennlp.common import Params
@@ -16,10 +17,16 @@ from allennlp.training.util import evaluate
 from fastapi import FastAPI
 from torch.utils.data import IterableDataset
 
-from biome.text import Pipeline, TrainerConfiguration, helpers
+from biome.text.configuration import TrainerConfiguration
+from biome.text.helpers import sanitize_for_params
 from biome.text._model import PipelineModel
-from biome.text.data import InstancesDataset
 from biome.text.errors import http_error_handling
+
+if TYPE_CHECKING:
+    from biome.text.pipeline import Pipeline
+    from biome.text.data import InstancesDataset
+    from allennlp.training import EpochCallback
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +102,7 @@ class PipelineTrainer:
         test: Optional[InstancesDataset] = None,
         batch_weight_key: str = "",
         embedding_sources_mapping: Dict[str, str] = None,
-        epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
+        epoch_callbacks: List[EpochCallback] = None,
     ):
         self._pipeline = pipeline
         self._trainer_config = copy.deepcopy(trainer_config)
@@ -139,7 +146,7 @@ class PipelineTrainer:
                 dataset.index_with(self._pipeline.backbone.vocab)
 
         trainer_params = Params(
-            helpers.sanitize_for_params(self._trainer_config.to_allennlp_trainer())
+            sanitize_for_params(self._trainer_config.to_allennlp_trainer())
         )
 
         pipeline_model = self._pipeline._model
@@ -306,7 +313,7 @@ def create_trainer_for_finding_lr(
     training_data.index_with(pipeline.backbone.vocab)
 
     trainer_params = Params(
-        helpers.sanitize_for_params(trainer_config.to_allennlp_trainer())
+        sanitize_for_params(trainer_config.to_allennlp_trainer())
     )
 
     training_data_loader = create_dataloader(
