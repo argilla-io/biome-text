@@ -86,6 +86,7 @@ def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_confi
     vocab_config = VocabularyConfiguration(sources=[train_data_source])
 
     pl.create_vocabulary(vocab_config)
+    prev_prediction = pl.predict("test")
 
     learning_rates, losses = pl.find_lr(
         trainer_config=trainer_config,
@@ -94,3 +95,7 @@ def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_confi
     )
 
     assert len(learning_rates) == len(losses) == 12
+    assert all(
+        a == pytest.approx(b, rel=0.0001)
+        for a, b in zip(prev_prediction["logits"], pl.predict("test")["logits"])
+    )
