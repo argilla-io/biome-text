@@ -286,7 +286,7 @@ def create_dataloader(
 
 
 def create_trainer_for_finding_lr(
-    pipeline: Pipeline,
+    model: PipelineModel,
     trainer_config: TrainerConfiguration,
     training_data: InstancesDataset,
 ) -> GradientDescentTrainer:
@@ -294,16 +294,14 @@ def create_trainer_for_finding_lr(
 
     Parameters
     ----------
-    pipeline
-        The pipeline with the model
+    model
+        The underlying model
     trainer_config
         A trainer configuration
     training_data
         The training data
     """
     prepare_environment(Params({}))
-
-    training_data.index_with(pipeline.backbone.vocab)
 
     trainer_params = Params(
         helpers.sanitize_for_params(trainer_config.to_allennlp_trainer())
@@ -314,7 +312,7 @@ def create_trainer_for_finding_lr(
     )
 
     return cast("GradientDescentTrainer", Trainer.from_params(
-        model=pipeline._model,
+        model=model,
         data_loader=training_data_loader,
         params=trainer_params,
         serialization_dir=None,

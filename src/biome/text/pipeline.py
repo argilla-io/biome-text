@@ -196,9 +196,10 @@ class Pipeline:
             training_data = self.create_dataset(training_data)
         elif isinstance(training_data, Dataset):
             training_data: AllennlpLazyDataset = training_data.to_instances(pipeline=self)
+        training_data.index_with(self._model.vocab)
 
         trainer = create_trainer_for_finding_lr(
-            pipeline=self,
+            model=self._model,
             trainer_config=trainer_config,
             training_data=training_data,
         )
