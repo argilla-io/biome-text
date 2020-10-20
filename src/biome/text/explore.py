@@ -9,6 +9,8 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 
 import datasets
+import elasticsearch
+import elasticsearch.helpers
 import pandas as pd
 from allennlp.common.util import sanitize
 from dask import dataframe as dd
@@ -190,10 +192,23 @@ class _ElasticsearchDAO:
         )
 
     def _index_dataset(self, dataset: datasets.Dataset, index: str):
-        for col_name in dataset.column_names:
-            dataset.add_elasticsearch_index(
-                col_name, es_client=self.client, es_index_name=index, es_index_config={}
+        number_of_docs = len(dataset)
+        successes = 0
+
+        def passage_generator():
+            for idx, example in enumerate(dataset):
+                yield {"_id": idx, **example}
+
+        # create the ES index
+        for ok, action in elasticsearch.helpers.streaming_bulk(
+            client=self.client, index=index, actions=passage_generator()
+        ):
+            successes += ok
+        if successes != number_of_docs:
+            _LOGGER.warning(
+                f"Some documents failed to be added to ElasticSearch. Failures: {number_of_docs - successes}/{number_of_docs}"
             )
+        _LOGGER.info("Indexed %d documents" % (successes,))
 
 
 def create(
@@ -397,25 +412,27 @@ def _explore_a_dataset(
 
     # Here we include the pipeline.output so we do not use it for the metadata later on, see metadata below
     input_columns = [col for col in pipeline.inputs + [pipeline.output] if col]
-    dataset = dataset.map(
-        add_predictions,
-        fn_kwargs={"columns": input_columns},
-        batched=True,
-        batch_size=options.batch_size,
-        num_proc=options.num_proc,
-    )
-
     meta_columns = [
         col_name for col_name in dataset.column_names if col_name not in input_columns
     ]
-    dataset = dataset.map(
-        lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
-        remove_columns=meta_columns,
+
+    dataset = (dataset
+        .map(
+            lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
+            remove_columns=meta_columns)
+        .map(add_predictions,
+            fn_kwargs={"columns": input_columns},
+            batched=True,
+            batch_size=options.batch_size,
+            num_proc=options.num_proc,
+        )
     )
 
     data_exploration = DataExploration(
         name=explore_id,
-        datasource_name=list(dataset.info.download_checksums.keys())[0],  # TODO: find a better way ...
+        datasource_name=list(dataset.info.download_checksums.keys())[
+            0
+        ],  # TODO: find a better way ...
         datasource_columns=input_columns + meta_columns,
         pipeline_name=pipeline.name,
         pipeline_type=pipeline.type_name,
