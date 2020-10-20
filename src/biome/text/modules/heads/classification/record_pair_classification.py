@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 import torch
@@ -235,12 +235,12 @@ class RecordPairClassification(ClassificationHead):
         embedded_record = self._dropout(
             self.backbone.forward(record, mask=field_mask, num_wrapping_dims=1)
         )
-        field_encoded_record = self._dropout(
+        field_encoded_record: torch.Tensor = self._dropout(
             self._field_encoder(embedded_record, mask=field_mask)
         )
 
         # mask for the record encoder
-        record_mask = torch.sum(field_mask, -1) > 0
+        record_mask = cast(torch.BoolTensor, torch.sum(field_mask, -1) > 0)
 
         return field_encoded_record, record_mask
 
