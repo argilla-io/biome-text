@@ -95,7 +95,7 @@ if __name__ == "__main__":
             "captum~=0.2.0",
             "ipywidgets~=7.5.1",
             "mlflow~=1.9.0",
-            "elasticsearch>=6.8.0,<7.5.0"
+            "elasticsearch>=6.8.0,<7.5.0",
             "ray[tune]~=1.0.0",
             "datasets~=1.1.2"
         ],
