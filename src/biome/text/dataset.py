@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import inspect
 import logging
@@ -16,6 +17,7 @@ InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
 def copy_sign_and_docs(org_func):
     """Copy the signature and the docstring from the org_func"""
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -32,7 +34,11 @@ def copy_sign_and_docs(org_func):
 class Dataset:
     """A dataset to be used with biome.text Pipelines
 
-    Basically a light wrapper around HuggingFace's `datasets.Dataset`
+    Is is a very light wrapper around HuggingFace's awesome `datasets.Dataset`,
+    only including a biome.text specific `to_instances` method.
+
+    Most of the `datasets.Dataset` API is exposed and can be looked up in detail here:
+    https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset
 
     Parameters
     ----------
@@ -209,6 +215,32 @@ class Dataset:
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.unique
         """
         return self.dataset.unique(*args, **kwargs)
+
+    @copy_sign_and_docs(datasets.Dataset.set_format)
+    def set_format(self, *args, **kwargs):
+        """
+        https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.set_format
+        """
+        self.dataset.set_format(*args, **kwargs)
+
+    @copy_sign_and_docs(datasets.Dataset.reset_format)
+    def reset_format(self):
+        """
+        https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.reset_format
+        """
+        self.dataset.reset_format()
+
+    @contextlib.contextmanager
+    @copy_sign_and_docs(datasets.Dataset.formatted_as)
+    def formatted_as(self, *args, **kwargs):
+        """
+        https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.DatasetDict.formatted_as
+        """
+        with self.dataset.formatted_as(*args, **kwargs) as internal_cm:
+            try:
+                yield internal_cm
+            finally:
+                pass
 
     @property
     def column_names(self) -> List[str]:
