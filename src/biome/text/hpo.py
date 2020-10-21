@@ -196,7 +196,7 @@ class RayTuneTrainable:
     """This class provides a trainable function and a config to conduct an HPO with `ray.tune.run`
 
     Minimal usage:
-    >>> my_trainable = RayTuneTrainable(pipeline_config, trainer_config, train_ds, valid_dataset)
+    >>> my_trainable = RayTuneTrainable(pipeline_config, trainer_config, train_dataset, valid_dataset)
     >>> tune.run(my_trainable.func, config=my_trainable.config)
 
     Parameters
