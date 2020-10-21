@@ -108,6 +108,6 @@ def test_explore():
         }
     )
 
-    explore.create(pipeline=pl, data_source=ds, batch_size=1)
+    explore.create(pipeline=pl, data_source=ds, batch_size=1, show_explore=False)
 
 
