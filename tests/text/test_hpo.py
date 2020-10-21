@@ -2,11 +2,13 @@ import os
 
 import pandas as pd
 import pytest
+import mlflow
 from ray import tune
 
-from biome.text import Pipeline
+from biome.text import Pipeline, VocabularyConfiguration
 from biome.text.data import DataSource
-from biome.text.hpo import HpoExperiment, HpoParams
+from biome.text.dataset import Dataset
+from biome.text.hpo import HpoExperiment, HpoParams, RayTuneTrainable
 
 
 @pytest.fixture
@@ -81,3 +83,54 @@ def test_hpo_experiment_generation(datasource_test: DataSource):
 
     analysis = tune.run(experiment.as_tune_experiment())
     assert len(analysis.trials) == experiment.num_samples
+
+
+@pytest.fixture
+def dataset():
+    return Dataset.from_dict({"text": ["a", "b"], "label": ["a", "b"]})
+
+
+@pytest.fixture
+def pipeline_config():
+    return {
+        "name": "test_ray_tune_trainable",
+        "features": {"word": {"embedding_dim": 2},},
+        "head": {"type": "TextClassification", "labels": ["a", "b"]},
+    }
+
+
+@pytest.fixture
+def trainer_config():
+    return {
+        "optimizer": {"type": "adam", "lr": 0.01},
+        "num_epochs": 1,
+        "batch_size": 2,
+    }
+
+
+def test_ray_tune_trainable(dataset, pipeline_config, trainer_config, monkeypatch):
+    # avoid logging to wandb
+    monkeypatch.setenv("WANDB_MODE", "dryrun")
+
+    pl = Pipeline.from_config(pipeline_config)
+    pl.create_vocabulary(VocabularyConfiguration(sources=[dataset]))
+
+    pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
+    trainer_config["optimizer"]["lr"] = tune.loguniform(0.001, 0.01)
+
+    trainable = RayTuneTrainable(
+        pipeline_config=pipeline_config,
+        trainer_config=trainer_config,
+        train_dataset=dataset,
+        valid_dataset=dataset,
+        vocab=pl.backbone.vocab,
+    )
+
+    assert trainable._name.startswith("HPO on")
+    assert trainable._vocab_path is not None
+
+    analysis = tune.run(trainable.func, config=trainable.config, num_samples=1)
+    assert len(analysis.trials) == 1
+
+    mlflow.set_tracking_uri(mlflow.get_tracking_uri())
+    assert mlflow.get_experiment_by_name(trainable._name)
