@@ -4,7 +4,7 @@ import inspect
 import logging
 import multiprocessing
 import pickle
-from typing import Union, Dict, Iterable, List, Any, Tuple, TYPE_CHECKING
+from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECKING
 
 import datasets
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
@@ -262,7 +262,7 @@ class Dataset:
         """Number of rows in the dataset (same as `len(dataset)`)"""
         return self.dataset.num_rows
 
-    def to_instances(self, pipeline: "Pipeline", lazy=True) -> InstancesDataset:
+    def to_instances(self, pipeline: "Pipeline", lazy=True, num_proc: Optional[int] = None) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
         Parameters
@@ -271,6 +271,8 @@ class Dataset:
             The pipeline for which to create the instances.
         lazy
             If true, instances are lazily read from disk, otherwise they are kept in memory.
+        num_proc
+            Number of processes to be spawn. If None, we try to figure out a decent default.
         """
         self._LOGGER.info("Creating instances ...")
 
@@ -285,7 +287,7 @@ class Dataset:
             # trying to be smart about multiprocessing,
             # at least 1000 examples per process to avoid overhead,
             # but 1000 is a pretty random number, can surely be optimized
-            num_proc=min(
+            num_proc=num_proc or min(
                 max(1, int(len(self.dataset) / 1000)),
                 int(multiprocessing.cpu_count() / 2),
             ),
