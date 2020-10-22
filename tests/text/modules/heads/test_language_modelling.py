@@ -2,14 +2,12 @@ from typing import Dict
 
 import pandas as pd
 import pytest
-import yaml
 from biome.text import TrainerConfiguration, VocabularyConfiguration
-from biome.text import Pipeline
-from biome.text.data import DataSource
+from biome.text import Pipeline, Dataset
 
 
 @pytest.fixture
-def training_data_source(tmp_path) -> DataSource:
+def training_ds(tmp_path) -> Dataset:
     data_file = tmp_path / "record_pairs.json"
     df = pd.DataFrame(
         {
@@ -23,9 +21,7 @@ def training_data_source(tmp_path) -> DataSource:
     )
     df.to_json(data_file, lines=True, orient="records")
 
-    return DataSource(
-        source=str(data_file), flatten=False, lines=True, orient="records"
-    )
+    return Dataset.from_json(paths=str(data_file))
 
 
 @pytest.fixture
@@ -67,14 +63,14 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_ds, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(text="my name is juan")
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_ds]))
 
     pipeline.train(
         output=str(tmp_path / "lm"),
         trainer=TrainerConfiguration(**trainer_dict),
-        training=training_data_source,
-        validation=training_data_source,
+        training=training_ds,
+        validation=training_ds,
     )

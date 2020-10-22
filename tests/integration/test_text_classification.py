@@ -7,17 +7,16 @@ import numpy as np
 import pytest
 import torch
 
-from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text import Pipeline, Dataset, TrainerConfiguration, VocabularyConfiguration
 from biome.text.configuration import CharFeatures
 from biome.text.configuration import WordFeatures
-from biome.text.data import DataSource
 
 
 @pytest.fixture
-def train_valid_data_source() -> Tuple[DataSource, DataSource]:
+def train_valid_data_source() -> Tuple[Dataset, Dataset]:
     resources_path = Path(__file__).parent.parent / "resources" / "data"
-    training_ds = DataSource(source=str(resources_path / "business.cat.2k.train.csv"))
-    validation_ds = DataSource(source=str(resources_path / "business.cat.2k.valid.csv"))
+    training_ds = Dataset.from_csv(paths=str(resources_path / "business.cat.2k.train.csv"))
+    validation_ds = Dataset.from_csv(paths=str(resources_path / "business.cat.2k.valid.csv"))
 
     return training_ds, validation_ds
 
@@ -90,6 +89,7 @@ def trainer_dict() -> dict:
         "batch_size": 64,
         "num_epochs": 5,
         "optimizer": {"type": "adam", "lr": 0.01},
+        "cuda_device": -1,
     }
 
 
@@ -104,8 +104,8 @@ def test_text_classification(
         torch.cuda.manual_seed_all(4222)
 
     pl = Pipeline.from_config(pipeline_dict)
-    train_ds = pl.create_dataset(train_valid_data_source[0])
-    valid_ds = pl.create_dataset(train_valid_data_source[1])
+    train_ds = train_valid_data_source[0].to_instances(pipeline=pl)
+    valid_ds = train_valid_data_source[1].to_instances(pipeline=pl)
     trainer = TrainerConfiguration(**trainer_dict)
     vocab = VocabularyConfiguration(sources=[train_ds], max_vocab_size={"word": 50})
 
