@@ -4,10 +4,13 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from threading import Thread
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from urllib.error import URLError
 from urllib.parse import urlparse
 
+import datasets
+import elasticsearch
+import elasticsearch.helpers
 import pandas as pd
 from allennlp.common.util import sanitize
 from dask import dataframe as dd
@@ -16,6 +19,7 @@ from elasticsearch import Elasticsearch
 
 from biome.text import Pipeline, constants, helpers
 from biome.text.data import DataSource
+from biome.text.dataset import Dataset
 from biome.text.ui import launch_ui
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,27 +77,32 @@ class _ExploreOptions:
 
     Parameters
     ----------
-        batch_size: `int`
-            The batch size for indexing predictions (default is `500)
-        prediction_cache_size: `int`
-            The size of the cache for caching predictions (default is `0)
-        explain: `bool`
-            Whether to extract and return explanations of token importance (default is `False`)
-        force_delete: `bool`
-            Whether to delete existing explore with `explore_id` before indexing new items (default is `True)
-        metadata: `kwargs`
-            Additional metadata to index in Elasticsearch
+    batch_size
+        DataSource: The batch size for indexing predictions (default is `500)
+        Dataset: Batch size for the predictions
+    num_proc
+        Only for Dataset: Number of processes to run predictions in parallel (default: 1)
+    prediction_cache_size
+        The size of the cache for caching predictions (default is `0)
+    explain
+        Whether to extract and return explanations of token importance (default is `False`)
+    force_delete
+        Whether to delete existing explore with `explore_id` before indexing new items (default is `True)
+    **metadata
+        Additional metadata to index in Elasticsearch
     """
 
     def __init__(
         self,
         batch_size: int = 500,
+        num_proc: int = 1,
         prediction_cache_size: int = 0,
         explain: bool = False,
         force_delete: bool = True,
         **metadata,
     ):
         self.batch_size = batch_size
+        self.num_proc = num_proc
         self.prediction_cache = prediction_cache_size
         self.explain = explain
         self.force_delete = force_delete
@@ -117,7 +126,7 @@ class _ElasticsearchDAO:
         self,
         es_index: str,
         data_exploration: DataExploration,
-        ddf_content: dd.DataFrame,
+        ddf_content: Union[dd.DataFrame, datasets.Dataset],
         force_delete: bool,
     ) -> None:
         """Creates an exploration data record data exploration"""
@@ -145,13 +154,16 @@ class _ElasticsearchDAO:
             },
         )
 
-        (
-            DaskElasticClient(
-                host=self.es_host, retry_on_timeout=True, http_compress=True
+        if isinstance(ddf_content, datasets.Dataset):
+            self._index_dataset(dataset=ddf_content, index=es_index)
+        else:
+            (
+                DaskElasticClient(
+                    host=self.es_host, retry_on_timeout=True, http_compress=True
+                )
+                .save(ddf_content, index=es_index, doc_type=self.es_doc)
+                .persist()
             )
-            .save(ddf_content, index=es_index, doc_type=self.es_doc)
-            .persist()
-        )
 
     def __create_data_index(self, es_index: str, force_delete: bool):
         """Creates an explore data index if not exists or is forced"""
@@ -179,13 +191,33 @@ class _ElasticsearchDAO:
             params={"include_type_name": "true"},
         )
 
+    def _index_dataset(self, dataset: datasets.Dataset, index: str):
+        number_of_docs = len(dataset)
+        successes = 0
+
+        def passage_generator():
+            for idx, example in enumerate(dataset):
+                yield {"_id": idx, **example}
+
+        # create the ES index
+        for ok, action in elasticsearch.helpers.streaming_bulk(
+            client=self.client, index=index, actions=passage_generator()
+        ):
+            successes += ok
+        if successes != number_of_docs:
+            _LOGGER.warning(
+                f"Some documents failed to be added to ElasticSearch. Failures: {number_of_docs - successes}/{number_of_docs}"
+            )
+        _LOGGER.info("Indexed %d documents" % (successes,))
+
 
 def create(
     pipeline: Pipeline,
-    data_source: DataSource,
+    data_source: [DataSource, Dataset],
     explore_id: Optional[str] = None,
     es_host: Optional[str] = None,
     batch_size: int = 50,
+    num_proc: int = 1,
     prediction_cache_size: int = 0,
     explain: bool = False,
     force_delete: bool = True,
@@ -200,49 +232,63 @@ def create(
 
     Parameters
     ----------
-    pipeline: `Pipeline`
+    pipeline
         Pipeline used for data exploration
-    data_source: `DataSource`
-        The data source or its yaml file path
-    explore_id: `Optional[str]`
+    data_source
+        The data source/data set
+    explore_id
         A name or id for this explore run, useful for running and keep track of several explorations
-    es_host: `Optional[str]`
+    es_host
         The URL to the Elasticsearch host for indexing predictions (default is `localhost:9200`)
-    batch_size: `int`
-        The batch size for indexing predictions (default is `500)
-    prediction_cache_size: `int`
+    batch_size
+        DataSource: The batch size for indexing predictions (default is `500)
+        Dataset: Batch size for the predictions
+    num_proc
+        Only for Dataset: Number of processes to run predictions in parallel (default: 1)
+    prediction_cache_size
         The size of the cache for caching predictions (default is `0)
-    explain: `bool`
+    explain
         Whether to extract and return explanations of token importance (default is `False`)
-    force_delete: `bool`
+    force_delete
         Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
-    show_explore: `bool`
+    show_explore
         If true, show ui for data exploration interaction (default is `True`)
     """
 
     opts = _ExploreOptions(
         batch_size=batch_size,
+        num_proc=num_proc,
         prediction_cache_size=prediction_cache_size,
         explain=explain,
         force_delete=force_delete,
         **metadata,
     )
 
-    data_source.mapping = pipeline._update_ds_mapping_with_pipeline_input_output(
-        data_source
-    )
-
     explore_id = explore_id or str(uuid.uuid1())
 
     es_dao = _ElasticsearchDAO(es_host=es_host)
 
-    _explore(
-        explore_id,
-        pipeline=pipeline,
-        data_source=data_source,
-        options=opts,
-        es_dao=es_dao,
-    )
+    if isinstance(data_source, Dataset):
+        _explore_a_dataset(
+            explore_id=explore_id,
+            pipeline=pipeline,
+            dataset=data_source.dataset,
+            options=opts,
+            es_dao=es_dao,
+        )
+    else:
+        data_source.mapping = pipeline._update_ds_mapping_with_pipeline_input_output(
+            data_source
+        )
+
+        _explore(
+            explore_id,
+            pipeline=pipeline,
+            data_source=data_source,
+            options=opts,
+            es_dao=es_dao,
+        )
+
     if show_explore:
         show(explore_id, es_host=es_host)
     return explore_id
@@ -329,6 +375,82 @@ def _explore(
         ddf_content=ddf_mapped,
         force_delete=options.force_delete,
     )
+
+
+def _explore_a_dataset(
+    explore_id: str,
+    pipeline: Pipeline,
+    dataset: datasets.Dataset,
+    options: _ExploreOptions,
+    es_dao: _ElasticsearchDAO,
+):
+    if options.prediction_cache > 0:
+        pipeline.init_prediction_cache(options.prediction_cache)
+
+    # Stringify input data for better elasticsearch index mapping integration,
+    # avoiding properties with multiple value types (string and long,...)
+    column_names = dataset.column_names
+    dataset = dataset.map(
+        lambda x: {
+            col_name: helpers.stringify(x[col_name]) for col_name in column_names
+        }
+    )
+
+    # TODO: Here we should use a future evaluate method that takes as required input also the labels!!!
+    # Maybe a predict should actually fail if you pass on a label ...
+    apply_func = pipeline.explain_batch if options.explain else pipeline.predict_batch
+
+    def add_predictions(batch, columns):
+        # For the last batch, this batch_size can be smaller than the batch_size specified in the map function!
+        batch_size = len(batch[pipeline.inputs[0]])
+        input_dicts = [
+            {col_name: batch[col_name][i] for col_name in columns}
+            for i in range(batch_size)
+        ]
+        predictions = apply_func(input_dicts)
+        return {"prediction": sanitize(predictions)}
+
+    # Here we include the pipeline.output so we do not use it for the metadata later on, see metadata below
+    input_columns = [col for col in pipeline.inputs + [pipeline.output] if col]
+    meta_columns = [
+        col_name for col_name in dataset.column_names if col_name not in input_columns
+    ]
+
+    dataset = (dataset
+        .map(
+            lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
+            remove_columns=meta_columns)
+        .map(add_predictions,
+            fn_kwargs={"columns": input_columns},
+            batched=True,
+            batch_size=options.batch_size,
+            num_proc=options.num_proc,
+        )
+    )
+
+    data_exploration = DataExploration(
+        name=explore_id,
+        datasource_name=list(dataset.info.download_checksums.keys())[
+            0
+        ],  # TODO: find a better way ...
+        datasource_columns=input_columns + meta_columns,
+        pipeline_name=pipeline.name,
+        pipeline_type=pipeline.type_name,
+        pipeline_inputs=pipeline.inputs,
+        pipeline_outputs=[pipeline.output],
+        pipeline_labels=pipeline.head.labels,  # TODO(dvilasuero,dcfidalgo): Only for text classification ??????
+        task_name=pipeline.head.task_name().as_string(),
+        use_prediction=True,
+        metadata=options.metadata or {},
+    )
+
+    es_dao.create_explore_index(
+        es_index=explore_id,
+        data_exploration=data_exploration,
+        ddf_content=dataset,
+        force_delete=options.force_delete,
+    )
+    pass
 
 
 def show(explore_id: str, es_host: Optional[str] = None) -> None:
