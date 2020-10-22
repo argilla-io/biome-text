@@ -21,6 +21,7 @@ from biome.text.helpers import (
     offsets_from_tags,
 )
 from .task_head import TaskHead, TaskName, TaskOutput
+from ...errors import WrongValueError
 
 
 class TokenClassification(TaskHead):
@@ -31,7 +32,8 @@ class TokenClassification(TaskHead):
     backbone
         The model backbone
     labels
-        List of tag or span labels. Span labels get converted to tag labels internally.
+        List span labels. Span labels get converted to tag labels internally, using
+        configured label_encoding for that.
     label_encoding
         The format of the tags. Supported encodings are: ['BIO', 'BIOUL']
     top_k
@@ -52,22 +54,21 @@ class TokenClassification(TaskHead):
     ) -> None:
         super(TokenClassification, self).__init__(backbone)
 
-        self._label_encoding = label_encoding
-
-        # Convert span labels to tag labels if necessary
-        # We just check if "O" is in the label list, a necessary tag for IOB/BIOUL schemes, an unlikely label for spans
-        if "O" not in labels and "o" not in labels:
-            labels = span_labels_to_tag_labels(labels, self._label_encoding)
-        # Issue a warning if you have the "O" tag but no other BIO/BIOUL looking tags.
-        elif not any(
-            [label.lower().startswith(tag) for label in labels for tag in ["b-", "i-"]]
-        ):
-            self.__LOGGER.warning(
-                "We interpreted the 'O' label as tag label, but did not find a 'B' or 'I' tag."
-                "Make sure your tag labels comply with the BIO/BIOUL tagging scheme."
+        if label_encoding not in ["BIOUL", "BIO"]:
+            raise WrongValueError(
+                f"Label encoding {label_encoding} not supported. Allowed values are {['BIOUL', 'BIO']}"
             )
 
-        vocabulary.set_labels(self.backbone.vocab, labels)
+        self._span_labels = labels
+        self._label_encoding = label_encoding
+
+        vocabulary.set_labels(
+            self.backbone.vocab,
+            # Convert span labels to tag labels if necessary
+            # We just check if "O" is in the label list, a necessary tag for IOB/BIOUL schemes,
+            # an unlikely label for spans
+            span_labels_to_tag_labels(labels, self._label_encoding),
+        )
 
         self.top_k = top_k
         self.dropout = torch.nn.Dropout(dropout)
@@ -90,8 +91,11 @@ class TokenClassification(TaskHead):
             self._label_encoding,
             vocabulary.get_index_to_labels_dictionary(self.backbone.vocab),
         )
+
         self._crf = ConditionalRandomField(
-            self.num_labels, constraints, include_start_end_transitions=True
+            self.num_labels,
+            constraints,
+            include_start_end_transitions=True,
         )
 
         self.metrics = {"accuracy": CategoricalAccuracy()}
@@ -107,6 +111,10 @@ class TokenClassification(TaskHead):
 
         self.__all_metrics = [self.f1_metric]
         self.__all_metrics.extend(self.metrics.values())
+
+    @property
+    def span_labels(self) -> List[str]:
+        return self._span_labels
 
     def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """loss is calculated as -log_likelihood from crf"""
@@ -222,7 +230,8 @@ class TokenClassification(TaskHead):
             for raw_text, k_tags in zip(output.raw_text, output.tags):
                 doc = self.backbone.tokenizer.nlp(raw_text)
                 top_k_entities: List[List[Dict]] = [
-                    offsets_from_tags(doc, tags, self._label_encoding) for tags in k_tags
+                    offsets_from_tags(doc, tags, self._label_encoding)
+                    for tags in k_tags
                 ]
                 entities.append(top_k_entities)
             output.entities = entities
