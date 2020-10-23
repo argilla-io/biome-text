@@ -192,7 +192,7 @@ class HpoExperiment:
         )
 
 
-class RayTuneTrainable:
+class RayTuneTrainable(tune.Experiment):
     """This class provides a trainable function and a config to conduct an HPO with `ray.tune.run`
 
     Minimal usage:
@@ -215,6 +215,8 @@ class RayTuneTrainable:
     name
         Used as the project name in the WandB logger and as experiment name in the MLFlow logger.
         By default we construct following string: 'HPO on %date (%time)'
+    **kwargs
+
     """
 
     def __init__(
@@ -224,8 +226,13 @@ class RayTuneTrainable:
         train_dataset: Dataset,
         valid_dataset: Dataset,
         vocab: Optional[Vocabulary] = None,
-        name: Optional[str] = None
+        name: Optional[str] = None,
+        **kwargs,
     ):
+        if "run" in kwargs.keys() or "config" in kwargs.keys():
+            raise ValueError(f"Your kwargs must not contain the 'run' or the 'config' keys."
+                             f"These are provided automatically to `tune.Experiment`.")
+
         # save created tmp dirs in this list to clean them up when object gets destroyed
         self._created_tmp_dirs: List[tempfile.TemporaryDirectory] = []
 
@@ -238,6 +245,8 @@ class RayTuneTrainable:
             self._save_vocab_to_disk(vocab) if vocab is not None else None
         )
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
+
+        super().__init__(self._name, self.func, config=self.config, **kwargs)
 
     def _save_dataset_to_disk(self, dataset: Dataset) -> str:
         """Saves the dataset to disk if not saved already

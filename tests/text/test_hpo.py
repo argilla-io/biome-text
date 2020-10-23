@@ -100,7 +100,7 @@ def pipeline_config():
 
 
 @pytest.fixture
-def trainer_config():
+def trainer_config() -> dict:
     return {
         "optimizer": {"type": "adam", "lr": 0.01},
         "num_epochs": 1,
@@ -124,13 +124,16 @@ def test_ray_tune_trainable(dataset, pipeline_config, trainer_config, monkeypatc
         train_dataset=dataset,
         valid_dataset=dataset,
         vocab=pl.backbone.vocab,
+        num_samples=1,
     )
 
     assert trainable._name.startswith("HPO on")
     assert trainable._vocab_path is not None
 
-    analysis = tune.run(trainable.func, config=trainable.config, num_samples=1)
-    assert len(analysis.trials) == 1
+    # analysis = tune.run(trainable.func, config=trainable.config, num_samples=1)
+    analysis = tune.run_experiments(trainable)
+    print(analysis[0])
+    assert len(analysis[0].trials) == 1
 
     mlflow.set_tracking_uri(mlflow.get_tracking_uri())
     assert mlflow.get_experiment_by_name(trainable._name)
