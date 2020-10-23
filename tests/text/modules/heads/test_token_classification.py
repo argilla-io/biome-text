@@ -34,7 +34,7 @@ def training_data_source(tmp_path) -> DataSource:
 def pipeline_dict() -> Dict:
     pipeline_dict = {
         "name": "biome-bimpm",
-        "features": {"word": {"embedding_dim": 2,},},
+        "features": {"word": {"embedding_dim": 2}},
         "head": {
             "type": "TokenClassification",
             "labels": ["NER"],
@@ -59,11 +59,17 @@ def trainer_dict() -> Dict:
 
 def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
+
+    assert pipeline.head.span_labels == ["NER"]
+    assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
+
     predictions = pipeline.predict(["test", "this", "pretokenized", "text"])
     assert "entities" not in predictions
     assert "tags" in predictions
 
-    predictions = pipeline.predict_batch([{"text": "Test this NER system"}, {"text": "and this"}])
+    predictions = pipeline.predict_batch(
+        [{"text": "Test this NER system"}, {"text": "and this"}]
+    )
     assert "entities" in predictions[0]
     assert "tags" in predictions[0]
 

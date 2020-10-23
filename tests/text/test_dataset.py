@@ -86,3 +86,28 @@ def test_training_with_dataset():
     )
 
     pl.train(output="output", training=ds, trainer=trainer_config)
+
+
+# TODO: this test can go away once we replace our DataSource with Dataset
+def test_explore():
+    from biome.text import explore
+    ds = Dataset.from_json(
+        paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
+    )
+
+    ds.dataset.rename_column_("hypothesis", "text")
+    # or to keep the 'hypothesis' column and add the new 'text' column:
+    # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
+
+    labels = list(set(ds["label"]))
+
+    pl = Pipeline.from_config(
+        {
+            "name": "datasets_test",
+            "head": {"type": "TextClassification", "labels": labels, },
+        }
+    )
+
+    explore.create(pipeline=pl, data_source=ds, batch_size=1, show_explore=False)
+
+

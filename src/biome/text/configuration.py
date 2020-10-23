@@ -463,6 +463,9 @@ class TrainerConfiguration:
     random_seed
         Seed for the underlying random number generator.
         If None, we take the random seeds provided by AllenNLP's `prepare_environment` method.
+
+    use_amp
+        If `True`, we'll train using [Automatic Mixed Precision](https://pytorch.org/docs/stable/amp.html).
     """
 
     optimizer: Dict[str, Any] = dataclasses.field(
@@ -477,6 +480,7 @@ class TrainerConfiguration:
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
     momentum_scheduler: Optional[Dict[str, Any]] = None
     moving_average: Optional[Dict[str, Any]] = None
+    use_amp: bool = False
     # Data loader parameters
     batch_size: Optional[int] = 16
     data_bucketing: bool = False
