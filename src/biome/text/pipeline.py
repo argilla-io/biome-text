@@ -3,21 +3,23 @@ import inspect
 import logging
 import os
 import shutil
+import tempfile
 from inspect import Parameter
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 import numpy
+import torch
+from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
 from allennlp.data import (
     AllennlpDataset,
     AllennlpLazyDataset,
     Instance,
     Vocabulary,
-    Token,
 )
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
-from allennlp.commands.find_learning_rate import search_learning_rate
 from dask.dataframe import DataFrame
 
 from biome.text import vocabulary
@@ -27,8 +29,8 @@ from biome.text.configuration import (
     VocabularyConfiguration,
     FindLRConfiguration,
 )
-from biome.text.dataset import Dataset
 from biome.text.data import DataSource, InstancesDataset
+from biome.text.dataset import Dataset
 from biome.text.errors import ActionNotSupportedError, EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
@@ -182,11 +184,8 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
-        # The original pipeline keeps unchanged
-        find_lr_pipeline = self._make_copy()
-
         if vocabulary.is_empty(
-            find_lr_pipeline.backbone.vocab, self.config.features.keys
+            self._model.vocab, self.config.features.keys
         ):
             raise EmptyVocabError(
                 "Found an empty vocabulary. "
@@ -194,24 +193,31 @@ class Pipeline:
             )
 
         if isinstance(training_data, DataSource):
-            training_data = find_lr_pipeline.create_dataset(training_data)
+            training_data = self.create_dataset(training_data)
         elif isinstance(training_data, Dataset):
             training_data: AllennlpLazyDataset = training_data.to_instances(pipeline=self)
+        training_data.index_with(self._model.vocab)
 
         trainer = create_trainer_for_finding_lr(
-            pipeline=find_lr_pipeline,
+            model=self._model,
             trainer_config=trainer_config,
             training_data=training_data,
         )
 
-        learning_rates, losses = search_learning_rate(
-            trainer=trainer,
-            start_lr=find_lr_config.start_lr,
-            end_lr=find_lr_config.end_lr,
-            num_batches=find_lr_config.num_batches,
-            linear_steps=find_lr_config.linear_steps,
-            stopping_factor=find_lr_config.stopping_factor,
-        )
+        # restore the state after the lr search is done
+        tmp_state_path = Path(tempfile.gettempdir()) / f"model_state_before_findlr_{id(self)}.pth"
+        torch.save(self._model.state_dict(), tmp_state_path)
+        try:
+            learning_rates, losses = search_learning_rate(
+                trainer=trainer,
+                start_lr=find_lr_config.start_lr,
+                end_lr=find_lr_config.end_lr,
+                num_batches=find_lr_config.num_batches,
+                linear_steps=find_lr_config.linear_steps,
+                stopping_factor=find_lr_config.stopping_factor,
+            )
+        finally:
+            self._model.load_state_dict(torch.load(tmp_state_path))
 
         return learning_rates, losses
 
