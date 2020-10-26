@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import pandas as pd
 import pytest
@@ -8,7 +9,7 @@ from ray import tune
 from biome.text import Pipeline, VocabularyConfiguration
 from biome.text.data import DataSource
 from biome.text.dataset import Dataset
-from biome.text.hpo import HpoExperiment, HpoParams, RayTuneTrainable
+from biome.text.hpo import HpoExperiment, HpoParams, TuneExperiment
 
 
 @pytest.fixture
@@ -108,32 +109,67 @@ def trainer_config() -> dict:
     }
 
 
-def test_ray_tune_trainable(dataset, pipeline_config, trainer_config, monkeypatch):
+def test_tune_exp_default_trainable(dataset, pipeline_config, trainer_config, monkeypatch):
     # avoid logging to wandb
     monkeypatch.setenv("WANDB_MODE", "dryrun")
-
-    pl = Pipeline.from_config(pipeline_config)
-    pl.create_vocabulary(VocabularyConfiguration(sources=[dataset]))
 
     pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
     trainer_config["optimizer"]["lr"] = tune.loguniform(0.001, 0.01)
 
-    trainable = RayTuneTrainable(
+    my_exp = TuneExperiment(
+        pipeline_config=pipeline_config,
+        trainer_config=trainer_config,
+        train_dataset=dataset,
+        valid_dataset=dataset,
+        num_samples=1,
+    )
+
+    assert my_exp._name.startswith("HPO on")
+    assert my_exp.name == my_exp._name
+    assert my_exp._run_identifier == "_default_trainable"
+
+    analysis = tune.run(my_exp)
+    assert len(analysis.trials) == 1
+
+    mlflow.set_tracking_uri(mlflow.get_tracking_uri())
+    assert mlflow.get_experiment_by_name(my_exp._name)
+
+
+def test_tune_exp_save_dataset_and_vocab(dataset, pipeline_config, trainer_config, monkeypatch):
+    pl = Pipeline.from_config(pipeline_config)
+    pl.create_vocabulary(VocabularyConfiguration(sources=[dataset]))
+
+    my_exp = TuneExperiment(
         pipeline_config=pipeline_config,
         trainer_config=trainer_config,
         train_dataset=dataset,
         valid_dataset=dataset,
         vocab=pl.backbone.vocab,
-        num_samples=1,
     )
 
-    assert trainable._name.startswith("HPO on")
-    assert trainable._vocab_path is not None
+    config = my_exp.config
+    pl2 = Pipeline.from_config(config["pipeline_config"], config["vocab_path"])
 
-    # analysis = tune.run(trainable.func, config=trainable.config, num_samples=1)
-    analysis = tune.run_experiments(trainable)
-    print(analysis[0])
-    assert len(analysis[0].trials) == 1
+    assert pl.backbone.vocab._index_to_token == pl2.backbone.vocab._index_to_token
+    assert pl.backbone.vocab._token_to_index == pl2.backbone.vocab._token_to_index
 
-    mlflow.set_tracking_uri(mlflow.get_tracking_uri())
-    assert mlflow.get_experiment_by_name(trainable._name)
+    assert dataset[:] == Dataset.load_from_disk(config["train_dataset_path"])[:]
+    assert dataset[:] == Dataset.load_from_disk(config["valid_dataset_path"])[:]
+
+
+def test_tune_exp_custom_trainable(dataset, pipeline_config, trainer_config, monkeypatch):
+    def my_trainable(config):
+        pass
+
+    my_exp = TuneExperiment(
+        pipeline_config=pipeline_config,
+        trainer_config=trainer_config,
+        train_dataset=dataset,
+        valid_dataset=dataset,
+        name="custom trainable",
+        trainable=my_trainable
+    )
+
+    assert my_exp.name == "custom trainable"
+    assert my_exp.trainable == my_trainable
+    assert my_exp._run_identifier == "my_trainable"
