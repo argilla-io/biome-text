@@ -7,7 +7,7 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, Union, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import mlflow
 from allennlp.data import Vocabulary
@@ -173,11 +173,11 @@ class HpoExperiment:
             "mlflow_tracking_uri": mlflow.get_tracking_uri(),
             "pipeline": helpers.merge_dicts(
                 self.hpo_params.pipeline,
-                helpers.sanitize_for_params(self.pipeline.config.as_dict())
+                helpers.sanitize_for_params(self.pipeline.config.as_dict()),
             ),
             "trainer": helpers.merge_dicts(
                 self.hpo_params.trainer,
-                helpers.sanitize_for_params(asdict(self.trainer))
+                helpers.sanitize_for_params(asdict(self.trainer)),
             ),
         }
         if self.shared_vocab:
@@ -192,12 +192,12 @@ class HpoExperiment:
         )
 
 
-class RayTuneTrainable(tune.Experiment):
+class TuneExperiment(tune.Experiment):
     """This class provides a trainable function and a config to conduct an HPO with `ray.tune.run`
 
     Minimal usage:
-    >>> my_trainable = RayTuneTrainable(pipeline_config, trainer_config, train_dataset, valid_dataset)
-    >>> tune.run(my_trainable.func, config=my_trainable.config)
+    >>> my_exp = TuneExperiment(pipeline_config, trainer_config, train_dataset, valid_dataset)
+    >>> tune.run(my_exp)
 
     Parameters
     ----------
@@ -213,10 +213,22 @@ class RayTuneTrainable(tune.Experiment):
     vocab
         If you want to share the same vocabulary between the trials you can provide it here
     name
-        Used as the project name in the WandB logger and as experiment name in the MLFlow logger.
+        Used for the `tune.Experiment.name`, the project name in the WandB logger
+        and for the experiment name in the MLFlow logger.
         By default we construct following string: 'HPO on %date (%time)'
+    trainable
+        A custom trainable function that takes as input the `TuneExperiment.config` dict.
     **kwargs
+        The rest of the kwargs are passed on to `tune.Experiment.__init__`.
+        They must not contain the 'name', 'run' or the 'config' key,
+        since these are provided automatically by `TuneExperiment`.
 
+    Attributes
+    ----------
+    trainable
+        The trainable function used by ray tune
+    config
+        The config dict passed on to the trainable function
     """
 
     def __init__(
@@ -227,11 +239,18 @@ class RayTuneTrainable(tune.Experiment):
         valid_dataset: Dataset,
         vocab: Optional[Vocabulary] = None,
         name: Optional[str] = None,
+        trainable: Optional[Callable] = None,
         **kwargs,
     ):
-        if "run" in kwargs.keys() or "config" in kwargs.keys():
-            raise ValueError(f"Your kwargs must not contain the 'run' or the 'config' keys."
-                             f"These are provided automatically to `tune.Experiment`.")
+        if (
+            "name" in kwargs.keys()
+            or "run" in kwargs.keys()
+            or "config" in kwargs.keys()
+        ):
+            raise ValueError(
+                f"Your `kwargs` must not contain the 'name', 'run' or 'config' key."
+                f"These are provided automatically by `TuneExperiment`."
+            )
 
         # save created tmp dirs in this list to clean them up when object gets destroyed
         self._created_tmp_dirs: List[tempfile.TemporaryDirectory] = []
@@ -246,7 +265,11 @@ class RayTuneTrainable(tune.Experiment):
         )
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
 
-        super().__init__(self._name, self.func, config=self.config, **kwargs)
+        self.trainable = trainable or self._default_trainable
+
+        super().__init__(
+            name=self._name, run=self.trainable, config=self.config, **kwargs
+        )
 
     def _save_dataset_to_disk(self, dataset: Dataset) -> str:
         """Saves the dataset to disk if not saved already
@@ -314,7 +337,7 @@ class RayTuneTrainable(tune.Experiment):
 
     @property
     def config(self) -> dict:
-        """The config dictionary used by the `RayTuneTrainable.func` function"""
+        """The config dictionary used by the `TuneExperiment.trainable` function"""
         return {
             "pipeline_config": self._pipeline_config,
             "trainer_config": self._trainer_config,
@@ -326,8 +349,8 @@ class RayTuneTrainable(tune.Experiment):
         }
 
     @staticmethod
-    def func(config, reporter):
-        """The trainable function passed on to `ray.tune.run`
+    def _default_trainable(config, reporter):
+        """A default trainable function used by `tune.run`
 
         It performs the most straight forward training loop with the provided `config`:
         - Create the pipeline (optionally with a provided vocab)
@@ -375,6 +398,6 @@ class RayTuneTrainable(tune.Experiment):
         )
 
     def __del__(self):
-        """Cleans up the created tmp dirs with the datasets"""
+        """Cleans up the created tmp dirs for the datasets and vocab"""
         for tmp_dir in self._created_tmp_dirs:
             tmp_dir.cleanup()
