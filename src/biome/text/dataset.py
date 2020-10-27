@@ -55,7 +55,8 @@ class Dataset:
     _PICKLED_INSTANCES_COL_NAME = "PICKLED_INSTANCES_FOR_BIOME_PIPELINE"
 
     def __init__(
-        self, dataset: datasets.Dataset,
+        self,
+        dataset: datasets.Dataset,
     ):
         self.dataset: datasets.Dataset = dataset
 
@@ -262,7 +263,9 @@ class Dataset:
         """Number of rows in the dataset (same as `len(dataset)`)"""
         return self.dataset.num_rows
 
-    def to_instances(self, pipeline: "Pipeline", lazy=True, num_proc: Optional[int] = None) -> InstancesDataset:
+    def to_instances(
+        self, pipeline: "Pipeline", lazy=True, num_proc: Optional[int] = None
+    ) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
         Parameters
@@ -287,7 +290,8 @@ class Dataset:
             # trying to be smart about multiprocessing,
             # at least 1000 examples per process to avoid overhead,
             # but 1000 is a pretty random number, can surely be optimized
-            num_proc=num_proc or min(
+            num_proc=num_proc
+            or min(
                 max(1, int(len(self.dataset) / 1000)),
                 int(multiprocessing.cpu_count() / 2),
             ),
@@ -322,7 +326,11 @@ class Dataset:
 
         def instance_unpickler(instances_col_name: str) -> Iterable[Instance]:
             for row in pickled_instances:
-                yield pickle.loads(row[instances_col_name])
+                instance = pickle.loads(row[instances_col_name])
+                # We skip examples for which the head could not create an instance
+                # We leave it to the head to issue a logging.warning for these examples
+                if instance is not None:
+                    yield instance
 
         return instance_unpickler
 

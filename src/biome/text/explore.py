@@ -416,16 +416,15 @@ def _explore_a_dataset(
         col_name for col_name in dataset.column_names if col_name not in input_columns
     ]
 
-    dataset = (dataset
-        .map(
-            lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
-            remove_columns=meta_columns)
-        .map(add_predictions,
-            fn_kwargs={"columns": input_columns},
-            batched=True,
-            batch_size=options.batch_size,
-            num_proc=options.num_proc,
-        )
+    dataset = dataset.map(
+        lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
+        remove_columns=meta_columns,
+    ).map(
+        add_predictions,
+        fn_kwargs={"columns": input_columns},
+        batched=True,
+        batch_size=options.batch_size,
+        num_proc=options.num_proc,
     )
 
     data_exploration = DataExploration(
