@@ -276,7 +276,9 @@ class Dataset:
         """
         self._LOGGER.info("Creating instances ...")
 
-        input_columns = [col for col in pipeline.inputs + pipeline.output if col]
+        input_columns = [(col, False) for col in pipeline.inputs if col]
+        input_columns.extend([(col, True) for col in pipeline.output if col])
+
         dataset_with_pickled_instances = self.dataset.map(
             self._create_and_pickle_instances,
             fn_kwargs={
@@ -287,7 +289,8 @@ class Dataset:
             # trying to be smart about multiprocessing,
             # at least 1000 examples per process to avoid overhead,
             # but 1000 is a pretty random number, can surely be optimized
-            num_proc=num_proc or min(
+            num_proc=num_proc
+            or min(
                 max(1, int(len(self.dataset) / 1000)),
                 int(multiprocessing.cpu_count() / 2),
             ),
@@ -312,7 +315,12 @@ class Dataset:
     @staticmethod
     def _create_and_pickle_instances(row, input_columns, featurize, instances_col_name):
         """Helper function to be used together with the `datasets.Dataset.map` method"""
-        instance = featurize(**{key: row.get(key) for key in input_columns})
+        instance = featurize(
+            **{
+                key: row.get(key) if optional else row[key]
+                for key, optional in input_columns
+            }
+        )
 
         return {instances_col_name: pickle.dumps(instance)}
 
