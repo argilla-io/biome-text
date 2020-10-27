@@ -60,7 +60,7 @@ def trainer_dict() -> Dict:
 def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
 
-    assert pipeline.output == ["entities", "labels"]
+    assert pipeline.output == ["entities", "tags"]
 
     assert pipeline.head.span_labels == ["NER"]
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]

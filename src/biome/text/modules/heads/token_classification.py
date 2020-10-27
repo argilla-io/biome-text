@@ -124,7 +124,7 @@ class TokenClassification(TaskHead):
         self,
         text: Union[str, List[str]],
         entities: Optional[List[dict]] = None,
-        labels: Optional[Union[List[str], List[int]]] = None,
+        tags: Optional[Union[List[str], List[int]]] = None,
     ) -> Optional[Instance]:
         """
         Parameters
@@ -142,8 +142,8 @@ class TokenClassification(TaskHead):
             'label': str, label of the span
 
             They are used with the `spacy.gold.biluo_tags_from_offsets` method.
-        labels
-            A list of tag labels in the BIOUL or BIO format.
+        tags
+            A list of tags in the BIOUL or BIO format.
         """
         instance = self.backbone.featurizer(
             text, to_field="text", tokenize=isinstance(text, str), aggregate=True
@@ -162,16 +162,15 @@ class TokenClassification(TaskHead):
             # discard misaligned examples for now
             if "-" in tags:
                 self.__LOGGER.warning(
-                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                    f"Could not align spans with tokens for following example: '{text}' {tags}"
                 )
                 return None
-            labels = tags
 
-        if labels is not None:
+        if tags is not None:
             instance.add_field(
                 "labels",
                 SequenceLabelField(
-                    labels,
+                    tags,
                     sequence_field=cast(TextField, instance["text"]),
                     label_namespace=vocabulary.LABELS_NAMESPACE,
                 ),
