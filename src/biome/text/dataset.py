@@ -276,7 +276,7 @@ class Dataset:
         """
         self._LOGGER.info("Creating instances ...")
 
-        input_columns = [col for col in pipeline.inputs + [pipeline.output] if col]
+        input_columns = [col for col in pipeline.inputs + pipeline.output if col]
         dataset_with_pickled_instances = self.dataset.map(
             self._create_and_pickle_instances,
             fn_kwargs={
@@ -312,7 +312,7 @@ class Dataset:
     @staticmethod
     def _create_and_pickle_instances(row, input_columns, featurize, instances_col_name):
         """Helper function to be used together with the `datasets.Dataset.map` method"""
-        instance = featurize(**{key: row[key] for key in input_columns})
+        instance = featurize(**{key: row.get(key) for key in input_columns})
 
         return {instances_col_name: pickle.dumps(instance)}
 

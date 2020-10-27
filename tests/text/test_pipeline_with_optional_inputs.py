@@ -48,4 +48,4 @@ def test_check_pipeline_inputs_and_output():
     pipeline = Pipeline.from_config(config)
 
     assert pipeline.inputs == ["text", "second_text"]
-    assert pipeline.output == "label"
+    assert pipeline.output == ["label"]
