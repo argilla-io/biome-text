@@ -123,7 +123,8 @@ class TokenClassification(TaskHead):
     def featurize(
         self,
         text: Union[str, List[str]],
-        labels: Optional[Union[List[str], List[int], List[dict]]] = None,
+        entities: Optional[List[dict]] = None,
+        labels: Optional[Union[List[str], List[int]]] = None,
     ) -> Optional[Instance]:
         """
         Parameters
@@ -131,8 +132,8 @@ class TokenClassification(TaskHead):
         text
             Can be either a simple str or a list of str,
             in which case it will be treated as a list of pretokenized tokens
-        labels
-            A list of tag labels in the BIOUL or BIO format OR a list of span labels.
+        entities
+            A list of span labels
 
             Span labels are dictionaries that contain:
 
@@ -141,25 +142,32 @@ class TokenClassification(TaskHead):
             'label': str, label of the span
 
             They are used with the `spacy.gold.biluo_tags_from_offsets` method.
+        labels
+            A list of tag labels in the BIOUL or BIO format.
         """
         instance = self.backbone.featurizer(
             text, to_field="text", tokenize=isinstance(text, str), aggregate=True
         )
         instance.add_field(field_name="raw_text", field=MetadataField(text))
 
-        if labels is not None:
-            # First convert span labels to tag labels
-            if labels == [] or isinstance(labels[0], dict):
-                doc = self.backbone.tokenizer.nlp(text)
-                tags = tags_from_offsets(doc, labels, self._label_encoding)
-                # discard misaligned examples for now
-                if "-" in tags:
-                    self.__LOGGER.warning(
-                        f"Could not align spans with tokens for following example: '{text}' {labels}"
-                    )
-                    return None
-                labels = tags
+        if entities is not None:
+            if not isinstance(text, str):
+                self.__LOGGER.warning(
+                    f"Could not create tags from spans with pre-tokenized text: '{text}'"
+                )
+                return None
 
+            doc = self.backbone.tokenizer.nlp(text)
+            tags = tags_from_offsets(doc, entities, self._label_encoding)
+            # discard misaligned examples for now
+            if "-" in tags:
+                self.__LOGGER.warning(
+                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                )
+                return None
+            labels = tags
+
+        if labels is not None:
             instance.add_field(
                 "labels",
                 SequenceLabelField(
@@ -168,7 +176,6 @@ class TokenClassification(TaskHead):
                     label_namespace=vocabulary.LABELS_NAMESPACE,
                 ),
             )
-
         return instance
 
     def task_name(self) -> TaskName:
