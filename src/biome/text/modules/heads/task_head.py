@@ -141,7 +141,7 @@ class TaskHead(torch.nn.Module, Registrable):
         -------
             Prediction with explanation
         """
-        raise {**prediction, "explain": {}}
+        return {**prediction, "explain": {}}
 
 
 class TaskHeadConfiguration(ComponentConfiguration[TaskHead]):
