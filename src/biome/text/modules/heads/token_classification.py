@@ -146,17 +146,15 @@ class TokenClassification(TaskHead):
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
             tokens = [token.text for token in doc]
-            entitiy_tags = tags_from_offsets(doc, entities, self._label_encoding) if entities is not None else []
+            tags = tags_from_offsets(doc, entities, self._label_encoding) if entities is not None else []
             # discard misaligned examples for now
-            if "-" in entitiy_tags:
+            if "-" in tags:
                 self.__LOGGER.warning(
                     f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
-            tags = entitiy_tags
         else:
             tokens = text
-            tags = labels
 
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
@@ -166,7 +164,7 @@ class TokenClassification(TaskHead):
         if self.training:
             assert tags, f"No tags found when training. Data {text, tags, entities}"
             instance.add_field(
-                "labels",
+                "tags",
                 SequenceLabelField(
                     tags,
                     sequence_field=cast(TextField, instance["text"]),
@@ -182,7 +180,7 @@ class TokenClassification(TaskHead):
         self,
         text: TextFieldTensors,
         raw_text: Union[List[str], List[List[str]]],
-        labels: torch.IntTensor = None,
+        tags: torch.IntTensor = None,
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
         embedded_text = self.dropout(self.backbone.forward(text, mask))
@@ -211,10 +209,10 @@ class TokenClassification(TaskHead):
             raw_text=raw_text,
         )
 
-        if labels is not None:
-            output.loss = self._loss(logits, labels, mask)
+        if tags is not None:
+            output.loss = self._loss(logits, tags, mask)
             for metric in self.__all_metrics:
-                metric(class_probabilities, labels, mask)
+                metric(class_probabilities, tags, mask)
 
         return output
 

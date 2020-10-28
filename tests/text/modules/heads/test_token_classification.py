@@ -57,25 +57,25 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-
 def test_tokenization_with_blank_tokens(pipeline_dict):
     pipeline = Pipeline.from_config(pipeline_dict)
-    predictions = pipeline.predict(text="Test this text \n \n", labels=[])
+    predictions = pipeline.predict(text="Test this text \n \n", entities=[])
     assert len(predictions["tags"][0]) == 4
 
-    
-    
+
 def test_default_explain(pipeline_dict):
     pipeline = Pipeline.from_config(pipeline_dict)
 
     prediction = pipeline.explain("This is a simple text")
     assert prediction["explain"]
     assert len(prediction["explain"]["text"]) == len(prediction["tags"][0])
+    # enable training mode for generate instances with tags
+    pipeline.head.train()
 
-    prediction = pipeline.explain(text="This is a simple text", labels=[])
-    assert len(prediction["explain"]["labels"]) == len(prediction["explain"]["text"])
+    prediction = pipeline.explain(text="This is a simple text", entities=[])
+    assert len(prediction["explain"]["tags"]) == len(prediction["explain"]["text"])
 
-    for label in prediction["explain"]["labels"]:
+    for label in prediction["explain"]["tags"]:
         assert "label" in label
         assert "token" in label
 
