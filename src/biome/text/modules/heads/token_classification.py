@@ -93,9 +93,7 @@ class TokenClassification(TaskHead):
         )
 
         self._crf = ConditionalRandomField(
-            self.num_labels,
-            constraints,
-            include_start_end_transitions=True,
+            self.num_labels, constraints, include_start_end_transitions=True
         )
 
         self.metrics = {"accuracy": CategoricalAccuracy()}
@@ -145,28 +143,27 @@ class TokenClassification(TaskHead):
         tags
             A list of tags in the BIOUL or BIO format.
         """
-        instance = self.backbone.featurizer(
-            text, to_field="text", tokenize=isinstance(text, str), aggregate=True
-        )
-        instance.add_field(field_name="raw_text", field=MetadataField(text))
-
-        if entities is not None:
-            if not isinstance(text, str):
-                self.__LOGGER.warning(
-                    f"Could not create tags from spans with pre-tokenized text: '{text}'"
-                )
-                return None
-
+        if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
-            tags = tags_from_offsets(doc, entities, self._label_encoding)
+            tokens = [token.text for token in doc]
+            tags = tags_from_offsets(doc, labels, self._label_encoding) if labels is not None else []
             # discard misaligned examples for now
             if "-" in tags:
                 self.__LOGGER.warning(
-                    f"Could not align spans with tokens for following example: '{text}' {tags}"
+                    f"Could not align spans with tokens for following example: '{text}' {labels}"
                 )
                 return None
+        else:
+            tokens = text
+            tags = labels
 
-        if tags is not None:
+        instance = self.backbone.featurizer(
+            tokens, to_field="text", tokenize=False, aggregate=True
+        )
+        instance.add_field(field_name="raw_text", field=MetadataField(text))
+
+        if self.training:
+            assert tags, f"No tags found when training. Data {text, labels}"
             instance.add_field(
                 "labels",
                 SequenceLabelField(
