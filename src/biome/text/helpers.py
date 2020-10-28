@@ -7,6 +7,7 @@ from inspect import Parameter
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, Optional
 
 import spacy
+import spacy.gold
 import yaml
 from allennlp.common import util
 from elasticsearch import Elasticsearch
@@ -312,6 +313,9 @@ def tags_from_offsets(
     -------
     tags (BIOUL or BIO)
     """
+    if offsets is None:
+        return []
+
     tags = spacy.gold.biluo_tags_from_offsets(
         doc, [(offset["start"], offset["end"], offset["label"]) for offset in offsets]
     )

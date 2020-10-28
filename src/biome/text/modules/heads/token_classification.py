@@ -143,26 +143,28 @@ class TokenClassification(TaskHead):
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
             tokens = [token.text for token in doc]
-            tags = tags_from_offsets(doc, labels or [], self._label_encoding)
+            tags = tags_from_offsets(doc, labels, self._label_encoding)
             # discard misaligned examples for now
             if "-" in tags:
                 self.__LOGGER.warning(
                     f"Could not align spans with tokens for following example: '{text}' {labels}"
                 )
                 return None
-            labels = tags
         else:
             tokens = text
+            tags = labels
 
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
         )
         instance.add_field(field_name="raw_text", field=MetadataField(text))
-        if labels:
+
+        if self.training:
+            assert tags, f"No tags found when training. Data {text, labels}"
             instance.add_field(
                 "labels",
                 SequenceLabelField(
-                    labels,
+                    tags,
                     sequence_field=cast(TextField, instance["text"]),
                     label_namespace=vocabulary.LABELS_NAMESPACE,
                 ),
