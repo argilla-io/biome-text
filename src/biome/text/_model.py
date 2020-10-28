@@ -16,7 +16,7 @@ import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
 from allennlp.data import Field, Instance, Token, Vocabulary
-from allennlp.data.fields import ListField, TextField
+from allennlp.data.fields import ListField, MetadataField, SequenceLabelField, TextField
 from allennlp.models.archival import CONFIG_NAME
 
 from . import vocabulary
@@ -436,9 +436,21 @@ class PipelineModel(allennlp.models.Model):
                     extract_field_tokens(inner_field)
                     for inner_field in cast(ListField, field)
                 ]
+            if isinstance(field, SequenceLabelField):
+                return [
+                    {"label": label, "token": token["token"]}
+                    for label, token in zip(field.labels, extract_field_tokens(field.sequence_field))
+                ]
+            if isinstance(field, MetadataField):
+                return []
             raise WrongValueError(f"Cannot extract fields from [{type(field)}]")
 
-        return {name: extract_field_tokens(field) for name, field in instance.items()}
+        return {
+            name: tokens
+            for name, field in instance.items()
+            for tokens in [extract_field_tokens(field)]
+            if tokens
+        }
 
     def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
         """Returns model input data dictionary"""
