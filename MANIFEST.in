@@ -19,5 +19,8 @@ prune docs/node_modules
 prune docs/api
 prune dist
 prune tests/**/htmlcov
+prune tests/mlruns
+prune tests/runs
+prune tests/output
 
 global-exclude *.pyc *.o
