@@ -8,6 +8,7 @@ from allennlp.modules import ConditionalRandomField, FeedForward, TimeDistribute
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
+from spacy.tokens.doc import Doc
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
@@ -146,7 +147,11 @@ class TokenClassification(TaskHead):
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
             tokens = [token.text for token in doc]
-            tags = tags_from_offsets(doc, entities, self._label_encoding) if entities is not None else []
+            tags = (
+                tags_from_offsets(doc, entities, self._label_encoding)
+                if entities is not None
+                else []
+            )
             # discard misaligned examples for now
             if "-" in tags:
                 self.__LOGGER.warning(
@@ -154,15 +159,20 @@ class TokenClassification(TaskHead):
                 )
                 return None
         else:
+            # compose text with blank spaces
+            doc = self.backbone.tokenizer.nlp(" ".join(text))
             tokens = text
 
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
         )
-        instance.add_field(field_name="raw_text", field=MetadataField(text))
+        instance.add_field(
+            field_name="tokenization",
+            field=MetadataField((doc, not isinstance(text, str))),
+        )
 
         if self.training:
-            assert tags, f"No tags found when training. Data {text, tags, entities}"
+            assert tags, f"No tags found when training. Data [{text, tags, entities}]"
             instance.add_field(
                 "tags",
                 SequenceLabelField(
@@ -179,7 +189,7 @@ class TokenClassification(TaskHead):
     def forward(  # type: ignore
         self,
         text: TextFieldTensors,
-        raw_text: Union[List[str], List[List[str]]],
+        tokenization: List[Doc],
         tags: torch.IntTensor = None,
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
@@ -206,7 +216,7 @@ class TokenClassification(TaskHead):
             probs=class_probabilities,
             viterbi_paths=viterbi_paths,
             mask=mask,
-            raw_text=raw_text,
+            tokenization=tokenization,
         )
 
         if tags is not None:
@@ -225,20 +235,29 @@ class TokenClassification(TaskHead):
             ]
             for k_tags in output.viterbi_paths  # loop over batch
         ]
-        del output.viterbi_paths
 
-        if isinstance(output.raw_text[0], str):
-            entities: List[List[List[Dict]]] = []
-            for raw_text, k_tags in zip(output.raw_text, output.tags):
-                doc = self.backbone.tokenizer.nlp(raw_text)
-                top_k_entities: List[List[Dict]] = [
-                    offsets_from_tags(doc, tags, self._label_encoding)
+        entities: List[List[List[Dict]]] = []
+        tokens: List[List[str]] = []
+        # See self.featurize for tokenization structure
+        for (doc, pre_tokenized), k_tags in zip(output.tokenization, output.tags):
+            tokens.append([token.text for token in doc])
+            entities.append(
+                [
+                    offsets_from_tags(
+                        doc, tags, self._label_encoding, only_token_spans=pre_tokenized
+                    )
                     for tags in k_tags
                 ]
-                entities.append(top_k_entities)
-            output.entities = entities
+            )
 
-        del output.raw_text
+        output.tokens = tokens
+        output.entities = entities
+
+        del output.logits
+        del output.mask
+        del output.probs
+        del output.tokenization
+        del output.viterbi_paths
 
         return output
 
