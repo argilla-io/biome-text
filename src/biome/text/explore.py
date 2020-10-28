@@ -418,6 +418,7 @@ def _explore_a_dataset(
         for col_name in dataset.column_names
         if col_name not in pipeline.inputs + pipeline.output
     ]
+
     dataset = dataset.map(
         lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
         remove_columns=meta_columns,

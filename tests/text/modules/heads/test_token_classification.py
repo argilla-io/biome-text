@@ -1,14 +1,12 @@
 from typing import Dict
 
 import pytest
-from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration
-from biome.text.data import DataSource
+from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration, Dataset
 import pandas as pd
 
 
 @pytest.fixture
-def training_data_source(tmp_path) -> DataSource:
-    data_file = tmp_path / "train.json"
+def training_dataset() -> Dataset:
     df = pd.DataFrame(
         {
             "text": [
@@ -23,11 +21,8 @@ def training_data_source(tmp_path) -> DataSource:
             ],
         }
     )
-    df.to_json(data_file, lines=True, orient="records")
 
-    return DataSource(
-        source=str(data_file), flatten=False, lines=True, orient="records"
-    )
+    return Dataset.from_pandas(df)
 
 
 @pytest.fixture
@@ -80,7 +75,7 @@ def test_default_explain(pipeline_dict):
         assert "token" in label
 
 
-def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
 
     assert pipeline.output == ["entities", "tags"]
@@ -108,11 +103,11 @@ def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
         assert "start" in entity
         assert "end" in entity
 
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
+
 
     pipeline.train(
         output=str(tmp_path / "ner_experiment"),
         trainer=TrainerConfiguration(**trainer_dict),
-        training=training_data_source,
-        validation=training_data_source,
+        training=training_dataset,
     )
