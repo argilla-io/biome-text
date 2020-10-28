@@ -146,13 +146,14 @@ class TokenClassification(TaskHead):
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
             tokens = [token.text for token in doc]
-            tags = tags_from_offsets(doc, labels, self._label_encoding) if labels is not None else []
+            entitiy_tags = tags_from_offsets(doc, entities, self._label_encoding) if entities is not None else []
             # discard misaligned examples for now
-            if "-" in tags:
+            if "-" in entitiy_tags:
                 self.__LOGGER.warning(
-                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                    f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
+            tags = entitiy_tags
         else:
             tokens = text
             tags = labels
@@ -163,7 +164,7 @@ class TokenClassification(TaskHead):
         instance.add_field(field_name="raw_text", field=MetadataField(text))
 
         if self.training:
-            assert tags, f"No tags found when training. Data {text, labels}"
+            assert tags, f"No tags found when training. Data {text, tags, entities}"
             instance.add_field(
                 "labels",
                 SequenceLabelField(
