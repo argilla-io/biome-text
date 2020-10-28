@@ -240,7 +240,8 @@ class TokenClassification(TaskHead):
         tokens: List[List[str]] = []
         # See self.featurize for tokenization structure
         for (doc, pre_tokenized), k_tags in zip(output.tokenization, output.tags):
-            tokens.append([token.text for token in doc])
+            if not pre_tokenized:
+                tokens.append([token.text for token in doc])
             entities.append(
                 [
                     offsets_from_tags(
@@ -249,8 +250,8 @@ class TokenClassification(TaskHead):
                     for tags in k_tags
                 ]
             )
-
-        output.tokens = tokens
+        if tokens:
+            output.tokens = tokens
         output.entities = entities
 
         del output.logits
