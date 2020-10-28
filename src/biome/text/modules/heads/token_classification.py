@@ -143,7 +143,7 @@ class TokenClassification(TaskHead):
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
             tokens = [token.text for token in doc]
-            tags = tags_from_offsets(doc, labels, self._label_encoding)
+            tags = tags_from_offsets(doc, labels, self._label_encoding) if labels is not None else []
             # discard misaligned examples for now
             if "-" in tags:
                 self.__LOGGER.warning(
