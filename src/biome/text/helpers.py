@@ -7,6 +7,7 @@ from inspect import Parameter
 from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, Optional
 
 import spacy
+import spacy.gold
 import yaml
 from allennlp.common import util
 from elasticsearch import Elasticsearch

@@ -363,7 +363,7 @@ def _explore(
         pipeline_name=pipeline.name,
         pipeline_type=pipeline.type_name,
         pipeline_inputs=pipeline.inputs,
-        pipeline_outputs=[pipeline.output],
+        pipeline_outputs=pipeline.output,
         pipeline_labels=pipeline.head.labels,  # TODO(dvilasuero,dcfidalgo): Only for text classification ??????
         task_name=pipeline.head.task_name().as_string(),
         use_prediction=True,
@@ -411,7 +411,7 @@ def _explore_a_dataset(
         return {"prediction": sanitize(predictions)}
 
     # Here we include the pipeline.output so we do not use it for the metadata later on, see metadata below
-    input_columns = [col for col in pipeline.inputs + [pipeline.output] if col]
+    input_columns = [col for col in pipeline.inputs + pipeline.output if col]
     meta_columns = [
         col_name for col_name in dataset.column_names if col_name not in input_columns
     ]
@@ -436,7 +436,7 @@ def _explore_a_dataset(
         pipeline_name=pipeline.name,
         pipeline_type=pipeline.type_name,
         pipeline_inputs=pipeline.inputs,
-        pipeline_outputs=[pipeline.output],
+        pipeline_outputs=pipeline.output,
         pipeline_labels=pipeline.head.labels,  # TODO(dvilasuero,dcfidalgo): Only for text classification ??????
         task_name=pipeline.head.task_name().as_string(),
         use_prediction=True,

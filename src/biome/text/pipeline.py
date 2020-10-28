@@ -12,12 +12,7 @@ import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
-from allennlp.data import (
-    AllennlpDataset,
-    AllennlpLazyDataset,
-    Instance,
-    Vocabulary,
-)
+from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask.dataframe import DataFrame
@@ -469,7 +464,12 @@ class Pipeline:
     def _update_ds_mapping_with_pipeline_input_output(
         self, datasource: DataSource
     ) -> Dict:
-        mapping = {k: k for k in self.inputs + [self.output] if k}
+        output_keys = [
+            output_key
+            for output_key in self._model.output
+            if output_key in datasource.to_dataframe().columns
+        ]
+        mapping = {k: k for k in self.inputs + output_keys if k}
         mapping.update(datasource.mapping)
 
         return mapping
@@ -600,7 +600,7 @@ class Pipeline:
         return self._model.inputs
 
     @property
-    def output(self) -> str:
+    def output(self) -> List[str]:
         """Gets the pipeline output field names"""
         return self._model.output
 
