@@ -95,9 +95,8 @@ def package_version(version: str) -> str:
     if release_version and not repo_tag:
         assert version_matches(release_version, version)
         return version
-    today = datetime.today().strftime("%Y%m%d%H%M%S")
 
-    return repo_tag if repo_tag else f"{version}.dev{today}+{commit}"
+    return repo_tag if repo_tag else f"{version}.dev+{commit}"
 
 
 try:
