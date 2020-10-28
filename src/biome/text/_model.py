@@ -74,7 +74,7 @@ class PipelineModel(allennlp.models.Model):
         self._inputs = self._head.inputs() or [p.name for p in required]
         self._output = (
             [p.name for p in optional if p.name not in self._inputs] or [None]
-        )[0]
+        )
 
     @classmethod
     def from_params(
@@ -176,8 +176,8 @@ class PipelineModel(allennlp.models.Model):
         return self._inputs
 
     @property
-    def output(self) -> Optional[str]:
-        """The model output (not prediction): Corresponding to head.featurize optional argument names. Should be one"""
+    def output(self) -> List[str]:
+        """The model outputs (not prediction): Corresponding to head.featurize optional argument names."""
         return self._output
 
     def init_prediction_logger(

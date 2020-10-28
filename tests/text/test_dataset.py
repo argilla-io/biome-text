@@ -64,9 +64,6 @@ def test_training_with_dataset():
     ds = Dataset.from_json(
         paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
     )
-    ds.dataset.rename_column_("hypothesis", "text")
-    # or to keep the 'hypothesis' column and add the new 'text' column:
-    # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
 
     labels = list(set(ds["label"]))
 
@@ -74,9 +71,18 @@ def test_training_with_dataset():
         {
             "name": "datasets_test",
             "features": {"word": {"embedding_dim": 2},},
-            "head": {"type": "TextClassification", "labels": labels,},
+            "head": {"type": "TextClassification", "labels": labels},
         }
     )
+
+    with pytest.raises(Exception):
+        ds.to_instances(pl)
+
+    ds.dataset.rename_column_("hypothesis", "text")
+    # or to keep the 'hypothesis' column and add the new 'text' column:
+    # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
+    instances = ds.to_instances(pl, lazy=False)
+    assert len(instances) == 4
 
     vocab_config = VocabularyConfiguration(sources=[ds])
     pl.create_vocabulary(vocab_config)

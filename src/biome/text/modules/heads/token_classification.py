@@ -121,7 +121,8 @@ class TokenClassification(TaskHead):
     def featurize(
         self,
         text: Union[str, List[str]],
-        labels: Optional[Union[List[str], List[int], List[dict]]] = None,
+        entities: Optional[List[dict]] = None,
+        tags: Optional[Union[List[str], List[int]]] = None,
     ) -> Optional[Instance]:
         """
         Parameters
@@ -129,8 +130,8 @@ class TokenClassification(TaskHead):
         text
             Can be either a simple str or a list of str,
             in which case it will be treated as a list of pretokenized tokens
-        labels
-            A list of tag labels in the BIOUL or BIO format OR a list of span labels.
+        entities
+            A list of span labels
 
             Span labels are dictionaries that contain:
 
@@ -139,20 +140,21 @@ class TokenClassification(TaskHead):
             'label': str, label of the span
 
             They are used with the `spacy.gold.biluo_tags_from_offsets` method.
+        tags
+            A list of tags in the BIOUL or BIO format.
         """
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
             tokens = [token.text for token in doc]
-            tags = tags_from_offsets(doc, labels, self._label_encoding) if labels is not None else []
+            tags = tags_from_offsets(doc, entities, self._label_encoding) if entities is not None else []
             # discard misaligned examples for now
             if "-" in tags:
                 self.__LOGGER.warning(
-                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                    f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
         else:
             tokens = text
-            tags = labels
 
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
@@ -160,16 +162,15 @@ class TokenClassification(TaskHead):
         instance.add_field(field_name="raw_text", field=MetadataField(text))
 
         if self.training:
-            assert tags, f"No tags found when training. Data {text, labels}"
+            assert tags, f"No tags found when training. Data {text, tags, entities}"
             instance.add_field(
-                "labels",
+                "tags",
                 SequenceLabelField(
                     tags,
                     sequence_field=cast(TextField, instance["text"]),
                     label_namespace=vocabulary.LABELS_NAMESPACE,
                 ),
             )
-
         return instance
 
     def task_name(self) -> TaskName:
@@ -179,7 +180,7 @@ class TokenClassification(TaskHead):
         self,
         text: TextFieldTensors,
         raw_text: Union[List[str], List[List[str]]],
-        labels: torch.IntTensor = None,
+        tags: torch.IntTensor = None,
     ) -> TaskOutput:
         mask = get_text_field_mask(text)
         embedded_text = self.dropout(self.backbone.forward(text, mask))
@@ -208,10 +209,10 @@ class TokenClassification(TaskHead):
             raw_text=raw_text,
         )
 
-        if labels is not None:
-            output.loss = self._loss(logits, labels, mask)
+        if tags is not None:
+            output.loss = self._loss(logits, tags, mask)
             for metric in self.__all_metrics:
-                metric(class_probabilities, labels, mask)
+                metric(class_probabilities, tags, mask)
 
         return output
 
