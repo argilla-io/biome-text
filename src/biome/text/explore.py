@@ -155,8 +155,19 @@ class _ElasticsearchDAO:
         )
 
         if isinstance(ddf_content, datasets.Dataset):
+            column_names = ddf_content.column_names
+            ddf_content = ddf_content.map(
+                lambda x: {
+                    col_name: helpers.stringify(x[col_name]) for col_name in column_names
+                }
+            )
             self._index_dataset(dataset=ddf_content, index=es_index)
         else:
+            # Stringify input data for better elasticsearch index mapping integration,
+            # avoiding properties with multiple value types (string and long,...)
+            for column in ddf_content.columns:
+                ddf_content[column] = ddf_content[column].apply(helpers.stringify)
+
             (
                 DaskElasticClient(
                     host=self.es_host, retry_on_timeout=True, http_compress=True
@@ -320,10 +331,6 @@ def _explore(
         pipeline.init_prediction_cache(options.prediction_cache)
 
     ddf_mapped = data_source.to_mapped_dataframe()
-    # Stringify input data for better elasticsearch index mapping integration,
-    # avoiding properties with multiple value types (string and long,...)
-    for column in ddf_mapped.columns:
-        ddf_mapped[column] = ddf_mapped[column].apply(helpers.stringify)
 
     # this only makes really sense when we have a predict_batch_json method implemented ...
     n_partitions = max(1, round(len(ddf_mapped) / options.batch_size))
@@ -387,15 +394,6 @@ def _explore_a_dataset(
     if options.prediction_cache > 0:
         pipeline.init_prediction_cache(options.prediction_cache)
 
-    # Stringify input data for better elasticsearch index mapping integration,
-    # avoiding properties with multiple value types (string and long,...)
-    column_names = dataset.column_names
-    dataset = dataset.map(
-        lambda x: {
-            col_name: helpers.stringify(x[col_name]) for col_name in column_names
-        }
-    )
-
     # TODO: Here we should use a future evaluate method that takes as required input also the labels!!!
     # Maybe a predict should actually fail if you pass on a label ...
     apply_func = pipeline.explain_batch if options.explain else pipeline.predict_batch
@@ -404,28 +402,34 @@ def _explore_a_dataset(
         # For the last batch, this batch_size can be smaller than the batch_size specified in the map function!
         batch_size = len(batch[pipeline.inputs[0]])
         input_dicts = [
-            {col_name: batch[col_name][i] for col_name in columns}
+            {
+                col_name: batch[col_name][i]
+                for col_name, optional in columns
+                if batch.get(col_name)
+            }
             for i in range(batch_size)
         ]
         predictions = apply_func(input_dicts)
         return {"prediction": sanitize(predictions)}
 
-    # Here we include the pipeline.output so we do not use it for the metadata later on, see metadata below
-    input_columns = [col for col in pipeline.inputs + pipeline.output if col]
+    # we include the pipeline.output as input columns so we do not use it for the metadata
     meta_columns = [
-        col_name for col_name in dataset.column_names if col_name not in input_columns
+        col_name
+        for col_name in dataset.column_names
+        if col_name not in pipeline.inputs + pipeline.output
     ]
-
-    dataset = (dataset
-        .map(
-            lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
-            remove_columns=meta_columns)
-        .map(add_predictions,
-            fn_kwargs={"columns": input_columns},
-            batched=True,
-            batch_size=options.batch_size,
-            num_proc=options.num_proc,
-        )
+    dataset = dataset.map(
+        lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
+        remove_columns=meta_columns,
+    ).map(
+        add_predictions,
+        fn_kwargs={
+            "columns": [(col, False) for col in pipeline.inputs]
+            + [(col, True) for col in pipeline.output]
+        },
+        batched=True,
+        batch_size=options.batch_size,
+        num_proc=options.num_proc,
     )
 
     data_exploration = DataExploration(
@@ -433,7 +437,7 @@ def _explore_a_dataset(
         datasource_name=list(dataset.info.download_checksums.keys())[
             0
         ],  # TODO: find a better way ...
-        datasource_columns=input_columns + meta_columns,
+        datasource_columns=meta_columns,
         pipeline_name=pipeline.name,
         pipeline_type=pipeline.type_name,
         pipeline_inputs=pipeline.inputs,
@@ -450,7 +454,6 @@ def _explore_a_dataset(
         ddf_content=dataset,
         force_delete=options.force_delete,
     )
-    pass
 
 
 def show(explore_id: str, es_host: Optional[str] = None) -> None:
