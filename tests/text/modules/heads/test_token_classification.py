@@ -57,6 +57,12 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
+def test_tokenization_with_blank_tokens(pipeline_dict):
+    pipeline = Pipeline.from_config(pipeline_dict)
+    predictions = pipeline.predict(text="Test this text \n \n", labels=[])
+    assert len(predictions["tags"][0]) == 4
+
+
 def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
 

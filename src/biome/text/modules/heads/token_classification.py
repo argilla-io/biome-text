@@ -93,9 +93,7 @@ class TokenClassification(TaskHead):
         )
 
         self._crf = ConditionalRandomField(
-            self.num_labels,
-            constraints,
-            include_start_end_transitions=True,
+            self.num_labels, constraints, include_start_end_transitions=True
         )
 
         self.metrics = {"accuracy": CategoricalAccuracy()}
@@ -142,24 +140,25 @@ class TokenClassification(TaskHead):
 
             They are used with the `spacy.gold.biluo_tags_from_offsets` method.
         """
+        if isinstance(text, str):
+            doc = self.backbone.tokenizer.nlp(text)
+            tokens = [token.text for token in doc]
+            tags = tags_from_offsets(doc, labels or [], self._label_encoding)
+            # discard misaligned examples for now
+            if "-" in tags:
+                self.__LOGGER.warning(
+                    f"Could not align spans with tokens for following example: '{text}' {labels}"
+                )
+                return None
+            labels = tags
+        else:
+            tokens = text
+
         instance = self.backbone.featurizer(
-            text, to_field="text", tokenize=isinstance(text, str), aggregate=True
+            tokens, to_field="text", tokenize=False, aggregate=True
         )
         instance.add_field(field_name="raw_text", field=MetadataField(text))
-
-        if labels is not None:
-            # First convert span labels to tag labels
-            if labels == [] or isinstance(labels[0], dict):
-                doc = self.backbone.tokenizer.nlp(text)
-                tags = tags_from_offsets(doc, labels, self._label_encoding)
-                # discard misaligned examples for now
-                if "-" in tags:
-                    self.__LOGGER.warning(
-                        f"Could not align spans with tokens for following example: '{text}' {labels}"
-                    )
-                    return None
-                labels = tags
-
+        if labels:
             instance.add_field(
                 "labels",
                 SequenceLabelField(
