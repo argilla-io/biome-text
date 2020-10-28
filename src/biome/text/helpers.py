@@ -313,9 +313,6 @@ def tags_from_offsets(
     -------
     tags (BIOUL or BIO)
     """
-    if offsets is None:
-        return []
-
     tags = spacy.gold.biluo_tags_from_offsets(
         doc, [(offset["start"], offset["end"], offset["label"]) for offset in offsets]
     )
