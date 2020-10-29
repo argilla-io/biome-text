@@ -144,9 +144,12 @@ class TokenClassification(TaskHead):
         tags
             A list of tags in the BIOUL or BIO format.
         """
-        if isinstance(text, str):
+
+        pre_tokenized = not isinstance(text, str)
+        if pre_tokenized:  # compose spacy doc from tokens
+            doc = Doc(self.backbone.tokenizer.nlp.vocab, words=text)
+        else:
             doc = self.backbone.tokenizer.nlp(text)
-            tokens = [token.text for token in doc]
             tags = (
                 tags_from_offsets(doc, entities, self._label_encoding)
                 if entities is not None
@@ -158,21 +161,24 @@ class TokenClassification(TaskHead):
                     f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
-        else:
-            # compose text with blank spaces
-            doc = self.backbone.tokenizer.nlp(" ".join(text))
-            tokens = text
+
+        instance = self._featurize_tokens([token.text for token in doc], tags)
+        instance.add_field("spacy_doc", MetadataField(doc))
+        instance.add_field("pre_tokenized", MetadataField(pre_tokenized))
+
+        return instance
+
+    def _featurize_tokens(
+        self, tokens: List[str], tags: Union[List[str], List[int]]
+    ) -> Optional[Instance]:
+        """Create an example Instance from token and tags"""
 
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
         )
-        instance.add_field(
-            field_name="tokenization",
-            field=MetadataField((doc, not isinstance(text, str))),
-        )
 
         if self.training:
-            assert tags, f"No tags found when training. Data [{text, tags, entities}]"
+            assert tags, f"No tags found when training. Data [{tokens, tags}]"
             instance.add_field(
                 "tags",
                 SequenceLabelField(
@@ -189,9 +195,11 @@ class TokenClassification(TaskHead):
     def forward(  # type: ignore
         self,
         text: TextFieldTensors,
-        tokenization: List[Doc],
+        spacy_doc: List[Doc],
+        pre_tokenized: List[bool],
         tags: torch.IntTensor = None,
     ) -> TaskOutput:
+
         mask = get_text_field_mask(text)
         embedded_text = self.dropout(self.backbone.forward(text, mask))
 
@@ -216,7 +224,7 @@ class TokenClassification(TaskHead):
             probs=class_probabilities,
             viterbi_paths=viterbi_paths,
             mask=mask,
-            tokenization=tokenization,
+            tokenization=(spacy_doc, pre_tokenized),
         )
 
         if tags is not None:
@@ -226,33 +234,47 @@ class TokenClassification(TaskHead):
 
         return output
 
+    def _decode_tags(self, k_tags: List[List[int]]) -> List[List[str]]:
+        """Decode predicted tags"""
+        return [
+            [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
+            for tags, prob in k_tags
+        ]
+
+    def _decode_entities(
+        self, doc: Doc, tags: List[str], pre_tokenized: bool
+    ) -> List[Dict]:
+        """Decode predicted entities from tags"""
+        return offsets_from_tags(
+            doc, tags, self._label_encoding, only_token_spans=pre_tokenized
+        )
+
+    def _decode_tokens(self, doc: Doc) -> List[Dict]:
+        """Decode tokens"""
+        return [
+            {"text": token.text, "start": token.idx, "end": token.idx + len(token)}
+            for token in doc
+        ]
+
     def decode(self, output: TaskOutput) -> TaskOutput:
         # Te dims are: batch, k_tags, tags
         output.tags: List[List[List[str]]] = [
-            [
-                [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
-                for tags, prob in k_tags
-            ]
-            for k_tags in output.viterbi_paths  # loop over batch
+            self._decode_tags(k_tags) for k_tags in output.viterbi_paths
         ]
 
-        entities: List[List[List[Dict]]] = []
-        tokens: List[List[str]] = []
-        # See self.featurize for tokenization structure
-        for (doc, pre_tokenized), k_tags in zip(output.tokenization, output.tags):
-            if not pre_tokenized:
-                tokens.append([token.text for token in doc])
-            entities.append(
-                [
-                    offsets_from_tags(
-                        doc, tags, self._label_encoding, only_token_spans=pre_tokenized
-                    )
-                    for tags in k_tags
-                ]
+        # fmt: off
+        output.entities, output.tokens = zip(*[
+            (
+                [self._decode_entities(doc, tags, pre_tokenized) for tags in k_tags],
+                self._decode_tokens(doc) if not pre_tokenized else None
             )
-        if tokens:
-            output.tokens = tokens
-        output.entities = entities
+            for doc, pre_tokenized, k_tags in zip(*output.tokenization, output.tags)
+        ])
+        # fmt: on
+
+        output.tokens = [tokens for tokens in output.tokens if tokens]
+        if len(output.tokens) < 1:  # drop tokens field if no data
+            del output.tokens
 
         del output.logits
         del output.mask
