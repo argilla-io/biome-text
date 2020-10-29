@@ -346,6 +346,11 @@ def offsets_from_tags(
         A list of dicts with start and end character/token index with respect to the doc and the span label:
         `{"start": int, "end": int, "start_token": int, "end_token", "label": str}`
     """
+    # spacy.gold.offsets_from_biluo_tags surprisingly does not check this ...
+    if len(doc) != len(tags):
+        raise ValueError(f"Number of tokens and tags must be the same, "
+                         f"but 'len({list(doc)}) != len({tags})")
+
     if label_encoding == "BIO":
         tags = bioul_tags_to_bio_tags(tags)
 
