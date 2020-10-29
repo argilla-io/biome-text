@@ -129,6 +129,7 @@ def test_text_classification(tmp_path, pipeline_dict, trainer_dict, train_valid_
     with (output / "metrics.json").open() as file:
         metrics = json.load(file)
 
+    # It may fail in some systems
     assert metrics["training_loss"] == pytest.approx(0.670, abs=0.003)
 
     # Test vocab from a pretrained file
