@@ -359,7 +359,7 @@ def offsets_from_tags(
         span = doc.char_span(start, end)
         data = {
             "start_token": span.start,
-            "end_token": span.end - 1 if span.end < len(doc) else span.end,
+            "end_token": span.end,
             "label": label,
         }
         if not only_token_spans:
