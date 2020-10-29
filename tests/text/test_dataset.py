@@ -117,3 +117,15 @@ def test_explore():
     explore.create(pipeline=pl, data_source=ds, batch_size=1, show_explore=False)
 
 
+def test_instance_caching():
+    ds = Dataset.from_dict({"text": ["test", "this", "shaight"], "label": ["0", "0", "1"]})
+    config = {
+        "name": "datasets_test",
+        "features": {"word": {"embedding_dim": 2}, },
+        "head": {"type": "TextClassification", "labels": ds.unique("labels")},
+    }
+    pl = Pipeline.from_config(config)
+
+    ds.to_instances(pl)
+
+
