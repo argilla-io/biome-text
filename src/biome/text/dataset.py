@@ -7,6 +7,7 @@ import pickle
 from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECKING
 
 import datasets
+from datasets.fingerprint import Hasher
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
 
 if TYPE_CHECKING:
@@ -340,6 +341,18 @@ class Dataset:
                     yield instance
 
         return instance_unpickler
+
+    def _create_fingerprint_for_instance_dataset(self, pipeline: "Pipeline"):
+        """Idea is:
+        - use HF datasets Hasher() with its hasher.update and hasher.hexdigest
+        - use fingerprint of previous dataset: Dataset._fingerprint
+        - use biome.text.__version__, allennlp.__version__ and spaCy.__version__ just to be completely sure!
+        - use tokenizer config
+        - use indexer config of the features
+        """
+        hasher = Hasher()
+        hasher.update(self.dataset._fingerprint)
+        hasher.update(vars(pipeline.backbone.tokenizer.config))
 
     def __del__(self):
         self.dataset.__del__()
