@@ -111,3 +111,9 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
         trainer=TrainerConfiguration(**trainer_dict),
         training=training_dataset,
     )
+
+
+def test_that_fails(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+    pipeline = Pipeline.from_config(pipeline_dict)
+    predictions = pipeline.predict(["test", "this", "pre-tokenized", "text"])
+    print(predictions)
