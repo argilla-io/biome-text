@@ -19,8 +19,7 @@ class LanguageModelling(TaskHead):
     in a sequence of tokens.
     """
 
-    def task_name(self) -> TaskName:
-        return TaskName.language_modelling
+    task_name = TaskName.language_modelling
 
     def __init__(
         self,

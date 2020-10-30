@@ -15,6 +15,8 @@ from ..task_head import TaskHead, TaskName, TaskOutput
 class ClassificationHead(TaskHead):
     """Base abstract class for classification problems"""
 
+    task_name = TaskName.text_classification
+
     def __init__(
         self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
     ):
@@ -75,9 +77,6 @@ class ClassificationHead(TaskHead):
 
         instance.add_field(to_field, field)
         return instance
-
-    def task_name(self) -> TaskName:
-        return TaskName.text_classification
 
     def decode(self, output: TaskOutput) -> TaskOutput:
         """Completes the output for the prediction
@@ -179,7 +178,7 @@ class ClassificationHead(TaskHead):
         return final_metrics
 
     def single_label_output(
-        self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None,
+        self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None
     ) -> TaskOutput:
         output = TaskOutput(logits=logits)
 
@@ -191,7 +190,7 @@ class ClassificationHead(TaskHead):
         return output
 
     def multi_label_output(
-        self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None,
+        self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None
     ) -> TaskOutput:
         output = TaskOutput(logits=logits)
 
