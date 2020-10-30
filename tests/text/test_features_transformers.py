@@ -79,7 +79,7 @@ def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset)
 
 
 def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_dataset):
-    """ """
+    """Testing Transformer pipeline with an added word feature layer"""
     # Changing the pipeline to delete the BERT pooler and add a word feature
     del pipeline_dict["head"]["pooler"]
     pipeline_dict["features"].update({"word": {"embedding_dim": 16, "lowercase_tokens": True}})

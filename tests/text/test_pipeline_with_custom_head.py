@@ -19,11 +19,7 @@ def training_dataset() -> Dataset:
     training_ds = Dataset.from_csv(paths=str(resources_path / "dataset_source.csv"))
 
     # Keeping just 'label' and text 'category'
-    training_ds = training_ds.map(
-        lambda x: {"label": x["job"], "text": x["education"] + " " + x["marital"]}, 
-        remove_columns=["education", "marital"]
-    )
-    training_ds.remove_columns_(list(set(training_ds.column_names) - set(["label", "text"])))
+    training_ds = training_ds.map(lambda x: {"label": x["job"], "text": x["education"] + " " + x["marital"]}, )
 
     return training_ds
 
