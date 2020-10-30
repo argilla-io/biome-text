@@ -44,6 +44,8 @@ class TokenClassification(TaskHead):
 
     __LOGGER = logging.getLogger(__name__)
 
+    task_name = TaskName.token_classification
+
     def __init__(
         self,
         backbone: ModelBackbone,
@@ -188,9 +190,6 @@ class TokenClassification(TaskHead):
                 ),
             )
         return instance
-
-    def task_name(self) -> TaskName:
-        return TaskName.token_classification
 
     def forward(  # type: ignore
         self,
