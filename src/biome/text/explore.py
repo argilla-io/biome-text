@@ -32,15 +32,10 @@ class DataExploration:
     """
 
     name: str
-    datasource_name: str
-    pipeline_name: str
-    pipeline_type: str
-    task_name: str
+    pipeline: Pipeline
     use_prediction: bool
+    datasource_name: str
     datasource_columns: List[str] = field(default_factory=list)
-    pipeline_inputs: List[str] = field(default_factory=list)
-    pipeline_outputs: List[str] = field(default_factory=list)
-    pipeline_labels: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def as_old_format(self) -> Dict[str, Any]:
@@ -50,24 +45,25 @@ class DataExploration:
         -------
 
         """
-        signature = [self.pipeline_inputs + self.pipeline_outputs]
+        signature = [self.pipeline.inputs + self.pipeline.output]
         return {
             **self.metadata,
             "datasource": self.datasource_name,
             # TODO: This should change when ui is normalized (action detail and action link naming)
             "explore_name": self.name,
-            "model": self.pipeline_name,
+            "model": self.pipeline.name,
             "columns": self.datasource_columns,
             "metadata_columns": [
                 c for c in self.datasource_columns if c not in signature
             ],
-            "pipeline": self.pipeline_type,
-            "output": self.pipeline_outputs,
-            "inputs": self.pipeline_inputs,  # backward compatibility
+            "pipeline": self.pipeline.type_name,
+            "pipeline_config": self.pipeline.config.as_dict(),
+            "output": self.pipeline.output,
+            "inputs": self.pipeline.inputs,  # backward compatibility
             "signature": signature,
-            "predict_signature": self.pipeline_inputs,
-            "labels": self.pipeline_labels,
-            "task": self.task_name,
+            "predict_signature": self.pipeline.inputs,
+            "labels": self.pipeline.head.labels,
+            "task": self.pipeline.head.task_name.as_string(),
             "use_prediction": True,  # TODO(frascuchon): flag for ui backward compatibility. Remove in the future
         }
 
@@ -360,12 +356,7 @@ def _explore(
         name=explore_id,
         datasource_name=data_source.source,
         datasource_columns=data_source.to_dataframe().columns.values.tolist(),
-        pipeline_name=pipeline.name,
-        pipeline_type=pipeline.type_name,
-        pipeline_inputs=pipeline.inputs,
-        pipeline_outputs=pipeline.output,
-        pipeline_labels=pipeline.head.labels,  # TODO(dvilasuero,dcfidalgo): Only for text classification ??????
-        task_name=pipeline.head.task_name().as_string(),
+        pipeline=pipeline,
         use_prediction=True,
         metadata=options.metadata or {},
     )
@@ -416,31 +407,23 @@ def _explore_a_dataset(
         col_name for col_name in dataset.column_names if col_name not in input_columns
     ]
 
-    dataset = (dataset
-        .map(
-            lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
-            remove_columns=meta_columns)
-        .map(add_predictions,
-            fn_kwargs={"columns": input_columns},
-            batched=True,
-            batch_size=options.batch_size,
-            num_proc=options.num_proc,
-        )
+    dataset = dataset.map(
+        lambda x: {"metadata": {col_name: x[col_name] for col_name in meta_columns}},
+        remove_columns=meta_columns,
+    ).map(
+        add_predictions,
+        fn_kwargs={"columns": input_columns},
+        batched=True,
+        batch_size=options.batch_size,
+        num_proc=options.num_proc,
     )
 
     data_exploration = DataExploration(
         name=explore_id,
-        datasource_name=list(dataset.info.download_checksums.keys())[
-            0
-        ],  # TODO: find a better way ...
-        datasource_columns=input_columns + meta_columns,
-        pipeline_name=pipeline.name,
-        pipeline_type=pipeline.type_name,
-        pipeline_inputs=pipeline.inputs,
-        pipeline_outputs=pipeline.output,
-        pipeline_labels=pipeline.head.labels,  # TODO(dvilasuero,dcfidalgo): Only for text classification ??????
-        task_name=pipeline.head.task_name().as_string(),
+        pipeline=pipeline,
         use_prediction=True,
+        datasource_name=list(dataset.info.download_checksums.keys())[0],
+        datasource_columns=input_columns + meta_columns,
         metadata=options.metadata or {},
     )
 
