@@ -10,12 +10,13 @@ from biome.text.configuration import (
 )
 
 
-
 @pytest.fixture
 def train_data_source() -> Dataset:
     """Creates the training dataset"""
     resources_path = Path(__file__).parent.parent / "resources" / "data"
-    training_ds = Dataset.from_csv(paths=str(resources_path / "business.cat.2k.train.csv"))
+    training_ds = Dataset.from_csv(
+        paths=str(resources_path / "business.cat.2k.train.csv")
+    )
 
     return training_ds
 
@@ -26,7 +27,11 @@ def pipeline_dict() -> dict:
 
     pipeline_dict = {
         "name": "german_business_names",
-        "features": {"word": {"embedding_dim": 16,},},
+        "features": {
+            "word": {
+                "embedding_dim": 16,
+            },
+        },
         "head": {
             "type": "TextClassification",
             "labels": [

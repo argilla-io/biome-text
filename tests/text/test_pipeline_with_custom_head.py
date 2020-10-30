@@ -5,21 +5,28 @@ from tempfile import mkdtemp
 import pytest
 
 from biome.text import Pipeline, PipelineConfiguration, Dataset
-from biome.text.configuration import FeaturesConfiguration,VocabularyConfiguration
+from biome.text.configuration import FeaturesConfiguration, VocabularyConfiguration
 from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
+
 
 class MyCustomHead(TextClassification):
     """Just a head renaming the original TextClassification head"""
+
     pass
+
 
 @pytest.fixture
 def training_dataset() -> Dataset:
     """Creates the training dataset and gives the structure"""
-    resources_path = Path(__file__).parent.parent.parent / "tests" / "resources" / "data"
+    resources_path = (
+        Path(__file__).parent.parent.parent / "tests" / "resources" / "data"
+    )
     training_ds = Dataset.from_csv(paths=str(resources_path / "dataset_source.csv"))
 
     # Keeping just 'label' and text 'category'
-    training_ds = training_ds.map(lambda x: {"label": x["job"], "text": x["education"] + " " + x["marital"]}, )
+    training_ds = training_ds.map(
+        lambda x: {"label": x["job"], "text": x["education"] + " " + x["marital"]},
+    )
 
     return training_ds
 
@@ -57,5 +64,5 @@ def test_load_pipeline_with_custom_head(training_dataset):
     trained_pl = Pipeline.from_pretrained(os.path.join(output, "model.tar.gz"))
     trained_pl.predict("Oh yeah")
 
-    #Asserting that the pipeline head is still instance after saving and loading
+    # Asserting that the pipeline head is still instance after saving and loading
     assert isinstance(trained_pl.head, MyCustomHead)

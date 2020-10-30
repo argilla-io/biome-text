@@ -6,7 +6,6 @@ from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, 
 from biome.text.features import TransformersFeatures
 
 
-
 @pytest.fixture
 def train_dataset() -> Dataset:
     """Creates the training dataset"""
@@ -17,8 +16,11 @@ def train_dataset() -> Dataset:
         / "emotions_with_transformers.txt"
     )
 
-    train_dataset = Dataset.from_csv(paths=str(source), delimiter=';', column_names=["text", "label"])
+    train_dataset = Dataset.from_csv(
+        paths=str(source), delimiter=";", column_names=["text", "label"]
+    )
     return train_dataset
+
 
 @pytest.fixture
 def pipeline_dict() -> dict:
@@ -26,20 +28,23 @@ def pipeline_dict() -> dict:
 
     pipeline_dict = {
         "name": "emotions_with_transformers",
-        "features": {
-            "transformers": {
-                "model_name": "distilroberta-base"
-                }
-            },
+        "features": {"transformers": {"model_name": "distilroberta-base"}},
         "head": {
             "type": "TextClassification",
-            "labels": ["anger", "fear", "joy", "love", "sadness", "surprise",],
+            "labels": [
+                "anger",
+                "fear",
+                "joy",
+                "love",
+                "sadness",
+                "surprise",
+            ],
             "pooler": {
                 "type": "bert_pooler",
                 "pretrained_model": "distilroberta-base",
                 "requires_grad": True,
                 "dropout": 0.1,
-            }
+            },
         },
     }
 
@@ -53,7 +58,10 @@ def trainer_dict() -> dict:
     return {
         "batch_size": 16,
         "num_epochs": 1,
-        "optimizer": {"type": "adam", "lr": 0.0001,},
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.0001,
+        },
     }
 
 
@@ -82,8 +90,9 @@ def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_data
     """Testing Transformer pipeline with an added word feature layer"""
     # Changing the pipeline to delete the BERT pooler and add a word feature
     del pipeline_dict["head"]["pooler"]
-    pipeline_dict["features"].update({"word": {"embedding_dim": 16, "lowercase_tokens": True}})
-
+    pipeline_dict["features"].update(
+        {"word": {"embedding_dim": 16, "lowercase_tokens": True}}
+    )
 
     pl = Pipeline.from_config(pipeline_dict)
     trainer = TrainerConfiguration(**trainer_dict)
@@ -97,7 +106,7 @@ def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_data
     pl.predict(text="test")
 
     output = tmp_path / "output"
-   
+
     pl.train(output=str(output), trainer=trainer, training=train_dataset)
 
     # Test vocab from a pretrained file
@@ -112,17 +121,17 @@ def test_max_length_not_affecting_shorter_sequences(pipeline_dict):
     """Max length change should not affect at all previous shorter-length models"""
 
     pl = Pipeline.from_config(pipeline_dict)
-    state_dict = pl._model.state_dict()         #dict with the whole state of the module
-    probs = pl.predict("Test this")["probs"]    #probabilities of the test input
+    state_dict = pl._model.state_dict()  # dict with the whole state of the module
+    probs = pl.predict("Test this")["probs"]  # probabilities of the test input
 
-    pipeline_dict["features"]["transformers"]["max_length"] = 100   #changing max length
+    pipeline_dict["features"]["transformers"]["max_length"] = 100  # changing max length
     pl = Pipeline.from_config(pipeline_dict)
-    pl._model.load_state_dict(state_dict)   #loading previous state from dict
+    pl._model.load_state_dict(state_dict)  # loading previous state from dict
     probs_max_length = pl.predict("Test this")["probs"]
 
     assert all([log1 == log2 for log1, log2 in zip(probs, probs_max_length)])
 
-    
+
 def test_serialization(pipeline_dict):
     """Testing object saving. Model from the pipeline must be equal to the model from .json"""
 

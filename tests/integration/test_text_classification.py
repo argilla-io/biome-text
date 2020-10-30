@@ -17,8 +17,12 @@ def train_valid_data_source() -> Tuple[Dataset, Dataset]:
     """Returns both training and validation datasets"""
 
     resources_path = Path(__file__).parent.parent / "resources" / "data"
-    training_ds = Dataset.from_csv(paths=str(resources_path / "business.cat.2k.train.csv"))
-    validation_ds = Dataset.from_csv(paths=str(resources_path / "business.cat.2k.valid.csv"))
+    training_ds = Dataset.from_csv(
+        paths=str(resources_path / "business.cat.2k.train.csv")
+    )
+    validation_ds = Dataset.from_csv(
+        paths=str(resources_path / "business.cat.2k.valid.csv")
+    )
 
     return training_ds, validation_ds
 
@@ -98,7 +102,9 @@ def trainer_dict() -> dict:
     }
 
 
-def test_text_classification(tmp_path, pipeline_dict, trainer_dict, train_valid_data_source):
+def test_text_classification(
+    tmp_path, pipeline_dict, trainer_dict, train_valid_data_source
+):
     """Apart from a well specified training, this also tests the vocab creation!"""
 
     random.seed(42)
