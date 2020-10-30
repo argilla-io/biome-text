@@ -2,14 +2,12 @@ from typing import Dict
 
 import pandas as pd
 import pytest
-import yaml
-from biome.text import TrainerConfiguration, VocabularyConfiguration
-from biome.text import Pipeline
-from biome.text.data import DataSource
+from biome.text import TrainerConfiguration, VocabularyConfiguration, Dataset, Pipeline
 
 
 @pytest.fixture
-def training_data_source(tmp_path) -> DataSource:
+def training_dataset(tmp_path) -> Dataset:
+    """Creating a dataframe, storing and returning with an intermediate load"""
     data_file = tmp_path / "record_pairs.json"
     df = pd.DataFrame(
         {
@@ -28,13 +26,13 @@ def training_data_source(tmp_path) -> DataSource:
     )
     df.to_json(data_file, lines=True, orient="records")
 
-    return DataSource(
-        source=str(data_file), flatten=False, lines=True, orient="records"
-    )
+    return Dataset.from_json(str(data_file))
 
 
 @pytest.fixture
 def pipeline_dict() -> Dict:
+    """Creating the pipeline dictionary"""
+
     pipeline_dict = {
         "name": "biome-bimpm",
         "tokenizer": {"text_cleaning": {"rules": ["strip_spaces"]}},
@@ -147,6 +145,8 @@ def pipeline_dict() -> Dict:
 
 @pytest.fixture
 def trainer_dict() -> Dict:
+    """Creating the trainer dictionary"""
+
     trainer_dict = {
         "num_epochs": 1,
         "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.002},
@@ -156,15 +156,19 @@ def trainer_dict() -> Dict:
 
 
 def test_explain(pipeline_dict):
+    """Checking expected parammeters of two rows of a dataset"""
+
     pipeline = Pipeline.from_config(pipeline_dict)
     explain = pipeline.explain(
-        record1={"first_name": "Hans"}, record2={"first_name": "Hansel"},
+        record1={"first_name": "Hans"},
+        record2={"first_name": "Hansel"},
     )
-
+    # Records 1 and 2 must have the same dictionary length, and must be equal to the string assigned to them
     assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
     assert explain["explain"]["record1"][0]["token"] == "first_name Hans"
     assert explain["explain"]["record2"][0]["token"] == "first_name Hansel"
 
+    # Checking .explain method
     with pytest.raises(RuntimeError):
         pipeline.explain(
             record1={"first_name": "Hans", "last_name": "Zimmermann"},
@@ -172,14 +176,15 @@ def test_explain(pipeline_dict):
         )
 
 
-def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+    """Testing the correct working of prediction, vocab creating and training"""
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
         output=str(tmp_path / "record_bimpm_experiment"),
         trainer=TrainerConfiguration(**trainer_dict),
-        training=training_data_source,
-        validation=training_data_source,
+        training=training_dataset,
+        validation=training_dataset,
     )
