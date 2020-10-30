@@ -13,7 +13,7 @@ from biome.text.configuration import WordFeatures
 
 
 @pytest.fixture
-def train_valid_data_source() -> Tuple[Dataset, Dataset]:
+def train_valid_dataset() -> Tuple[Dataset, Dataset]:
     """Returns both training and validation datasets"""
 
     resources_path = Path(__file__).parent.parent / "resources" / "data"

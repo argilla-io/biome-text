@@ -64,5 +64,5 @@ def test_load_pipeline_with_custom_head(training_dataset):
     trained_pl = Pipeline.from_pretrained(os.path.join(output, "model.tar.gz"))
     trained_pl.predict("Oh yeah")
 
-    # Asserting that the pipeline head is still instance after saving and loading
+    #Asserting that the pipeline head is recognized as `MyCustomHead` instance after loading from a model.tar.gz
     assert isinstance(trained_pl.head, MyCustomHead)
