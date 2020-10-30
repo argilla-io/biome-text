@@ -429,7 +429,7 @@ def _explore_a_dataset(
         pipeline=pipeline,
         use_prediction=True,
         datasource_name=list(dataset.info.download_checksums.keys())[0],
-        datasource_columns=input_columns + meta_columns,
+        datasource_columns=meta_columns,
         metadata=options.metadata or {},
     )
 
