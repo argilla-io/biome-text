@@ -262,15 +262,10 @@ class TokenClassification(TaskHead):
             self._decode_tags(k_tags) for k_tags in output.viterbi_paths
         ]
 
-        # fmt: off
-        output.entities, output.tokens = zip(*[
-            (
-                [self._decode_entities(doc, tags, pre_tokenized) for tags in k_tags],
-                self._decode_tokens(doc) if not pre_tokenized else None
-            )
-            for doc, pre_tokenized, k_tags in zip(*output.tokenization, output.tags)
-        ])
-        # fmt: on
+        output.entities, output.tokens = [], []
+        for doc, pre_tokenized, k_tags in zip(*output.tokenization, output.tags):
+            output.entities.append([self._decode_entities(doc, tags, pre_tokenized) for tags in k_tags])
+            output.tokens.append(self._decode_tokens(doc) if not pre_tokenized else None)
 
         output.tokens = [tokens for tokens in output.tokens if tokens]
         if len(output.tokens) < 1:  # drop tokens field if no data
