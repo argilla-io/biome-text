@@ -2,13 +2,12 @@ from typing import Dict
 
 import pandas as pd
 import pytest
-from biome.text import TrainerConfiguration, VocabularyConfiguration
-from biome.text import Pipeline
-from biome.text.data import DataSource
+from biome.text import TrainerConfiguration, VocabularyConfiguration, Dataset, Pipeline
 
 
 @pytest.fixture
-def training_data_source(tmp_path) -> DataSource:
+def training_dataset(tmp_path) -> Dataset:
+    """Creating a dataframe, storing and returning with an intermediate load"""
     data_file = tmp_path / "relations.json"
     df = pd.DataFrame(
         [
@@ -32,13 +31,13 @@ def training_data_source(tmp_path) -> DataSource:
     )
     df.to_json(data_file, lines=True, orient="records")
 
-    return DataSource(
-        source=str(data_file), flatten=False, lines=True, orient="records"
-    )
+    return Dataset.from_json(str(data_file))
 
 
 @pytest.fixture
 def pipeline_dict() -> Dict:
+    """Creating the pipeline dictionary"""
+
     pipeline_dict = {
         "name": "biome-rele",
         "features": {
@@ -70,6 +69,8 @@ def pipeline_dict() -> Dict:
 
 @pytest.fixture
 def trainer_dict() -> Dict:
+    """Creating the trainer dictionary"""
+
     trainer_dict = {
         "num_epochs": 1,
         "optimizer": {"type": "adamw", "lr": 0.002},
@@ -78,7 +79,9 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+    """Testing a classifier made from scratch"""
+
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(
         text="The most common audits were about waste and recycling",
@@ -87,13 +90,13 @@ def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
             {"start": 16, "end": 22, "label": "SUBJECT", "text": "audits"},
         ],
     )
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
         output=str(tmp_path / "relation_classifier"),
         trainer=TrainerConfiguration(**trainer_dict),
-        training=training_data_source,
-        validation=training_data_source,
+        training=training_dataset,
+        validation=training_dataset,
     )
 
     pl_trained = Pipeline.from_pretrained(str(tmp_path / "relation_classifier"))
