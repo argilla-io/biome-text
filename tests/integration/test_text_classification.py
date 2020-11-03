@@ -103,7 +103,7 @@ def trainer_dict() -> dict:
 
 
 def test_text_classification(
-    tmp_path, pipeline_dict, trainer_dict, train_valid_data_source
+    tmp_path, pipeline_dict, trainer_dict, train_valid_dataset
 ):
     """Apart from a well specified training, this also tests the vocab creation!"""
 
@@ -114,8 +114,8 @@ def test_text_classification(
         torch.cuda.manual_seed_all(4222)
 
     pl = Pipeline.from_config(pipeline_dict)
-    train_ds = train_valid_data_source[0].to_instances(pipeline=pl)
-    valid_ds = train_valid_data_source[1].to_instances(pipeline=pl)
+    train_ds = train_valid_dataset[0].to_instances(pipeline=pl)
+    valid_ds = train_valid_dataset[1].to_instances(pipeline=pl)
     trainer = TrainerConfiguration(**trainer_dict)
     vocab = VocabularyConfiguration(sources=[train_ds], max_vocab_size={"word": 50})
 
