@@ -9,22 +9,21 @@ from biome.text import TrainerConfiguration, VocabularyConfiguration, Dataset, P
 def training_dataset() -> Dataset:
     """Creating the dataframe."""
     data = {
-        {
-            "text": "The most common audits were about waste and recycling.",
-            "entities": [
+        "text": [
+            "The most common audits were about waste and recycling.",
+            "The company fabricates plastic chairs.",
+        ],
+        "entities": [
+            [
                 {"start": 34, "end": 39, "label": "PN", "text": "waste"},
                 {"start": 16, "end": 22, "label": "QTY", "text": "audits"},
             ],
-            "label": "Message-Topic(e1,e2)",
-        },
-        {
-            "text": "The company fabricates plastic chairs.",
-            "entities": [
+            [
                 {"start": 4, "end": 11, "label": "OBJECT", "text": "company"},
                 {"start": 31, "end": 37, "label": "SUBJECT", "text": "chairs"},
             ],
-            "label": "Product-Producer(e2,e1)",
-        },
+        ],
+        "label": ["Message-Topic(e1,e2)", "Product-Producer(e2,e1)"],
     }
 
     return Dataset.from_dict(data)
