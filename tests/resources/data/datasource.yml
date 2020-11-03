@@ -1,7 +1,0 @@
-format: json
-path: dataset_source.jsonl
-forward:
-  tokens: summary
-  label:
-    name: overall
-    metadata_file: overall_classes.txt

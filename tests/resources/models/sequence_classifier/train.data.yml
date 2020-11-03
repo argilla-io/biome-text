@@ -1,8 +1,0 @@
-path: ../../data/dedup_100_de.csv
-format: csv
-mapping:
-  label: target
-  tokens:
-  - record1_firstname
-  - record1_lastname
-
