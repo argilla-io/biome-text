@@ -1,7 +1,0 @@
-trainer:
-  optimizer:
-    type: bert_adam
-    lr: 0.00002
-  validation_metric: +accuracy
-  num_epochs: 10
-  patience: 3
