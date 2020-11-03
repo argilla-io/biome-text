@@ -322,7 +322,10 @@ def tags_from_offsets(
 
 
 def offsets_from_tags(
-    doc: Doc, tags: List[str], label_encoding: Optional[str] = "BIOUL"
+    doc: Doc,
+    tags: List[str],
+    label_encoding: Optional[str] = "BIOUL",
+    only_token_spans: bool = False,
 ) -> List[Dict]:
     """Converts BIOUL or BIO tags to offsets
 
@@ -334,20 +337,34 @@ def offsets_from_tags(
         A list of BIOUL or BIO tags
     label_encoding
         The label encoding to be used: BIOUL or BIO
+    only_token_spans
+        If True, offsets contains only token index references. Default is False
 
     Returns
     -------
     offsets
-        A list of dicts with start and end character index with respect to the doc and the span label:
-        `{"start": int, "end": int, "label": str}`
+        A list of dicts with start and end character/token index with respect to the doc and the span label:
+        `{"start": int, "end": int, "start_token": int, "end_token", "label": str}`
     """
+    # spacy.gold.offsets_from_biluo_tags surprisingly does not check this ...
+    if len(doc) != len(tags):
+        raise ValueError(f"Number of tokens and tags must be the same, "
+                         f"but 'len({list(doc)}) != len({tags})")
+
     if label_encoding == "BIO":
         tags = bioul_tags_to_bio_tags(tags)
-    offsets = [
-        {"start": offset[0], "end": offset[1], "label": offset[2]}
-        for offset in spacy.gold.offsets_from_biluo_tags(doc, tags)
-    ]
 
+    offsets = []
+    for start, end, label in spacy.gold.offsets_from_biluo_tags(doc, tags):
+        span = doc.char_span(start, end)
+        data = {
+            "start_token": span.start,
+            "end_token": span.end,
+            "label": label,
+        }
+        if not only_token_spans:
+            data.update({"start": start, "end": end})
+        offsets.append(data)
     return offsets
 
 
