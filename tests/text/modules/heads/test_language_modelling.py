@@ -2,34 +2,27 @@ from typing import Dict
 
 import pandas as pd
 import pytest
-import yaml
-from biome.text import TrainerConfiguration, VocabularyConfiguration
-from biome.text import Pipeline
-from biome.text.data import DataSource
+from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, Dataset
 
 
 @pytest.fixture
-def training_data_source(tmp_path) -> DataSource:
-    data_file = tmp_path / "record_pairs.json"
-    df = pd.DataFrame(
-        {
-            "text": [
-                "this is a text",
-                "my name is dani",
-                "this is a table",
-                "my name is paco",
-            ],
-        }
-    )
-    df.to_json(data_file, lines=True, orient="records")
-
-    return DataSource(
-        source=str(data_file), flatten=False, lines=True, orient="records"
-    )
+def training_dataset() -> Dataset:
+    """Creating the dataframe."""
+    data = {
+        "text": [
+            "this is a text",
+            "my name is dani",
+            "this is a table",
+            "my name is paco",
+        ],
+    }
+    return Dataset.from_dict(data)
 
 
 @pytest.fixture
 def pipeline_dict() -> Dict:
+    """Creating the pipeline dictionary"""
+
     pipeline_dict = {
         "name": "lm",
         "features": {
@@ -59,6 +52,8 @@ def pipeline_dict() -> Dict:
 
 @pytest.fixture
 def trainer_dict() -> Dict:
+    """Creating the trainer dictionary"""
+
     trainer_dict = {
         "num_epochs": 10,
         "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.002},
@@ -67,14 +62,16 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-def test_train(pipeline_dict, training_data_source, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+    """Testing the correct working of prediction, vocab creating and training"""
+
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(text="my name is juan")
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_data_source]))
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
         output=str(tmp_path / "lm"),
         trainer=TrainerConfiguration(**trainer_dict),
-        training=training_data_source,
-        validation=training_data_source,
+        training=training_dataset,
+        validation=training_dataset,
     )
