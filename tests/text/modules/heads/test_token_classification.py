@@ -84,14 +84,27 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
 
     predictions = pipeline.predict(["test", "this", "pretokenized", "text"])
-    assert "entities" not in predictions
+    assert "entities" in predictions
     assert "tags" in predictions
+    assert "tokens" not in predictions
+
+    for entity in predictions["entities"][0]:
+        assert "start_token" in entity
+        assert "end_token" in entity
+        assert "label" in entity
+        assert "start" not in entity
+        assert "end" not in entity
 
     predictions = pipeline.predict_batch(
         [{"text": "Test this NER system"}, {"text": "and this"}]
     )
     assert "entities" in predictions[0]
     assert "tags" in predictions[0]
+    assert "tokens" in predictions[0]
+
+    for entity in predictions[0]["entities"][0]:
+        assert "start" in entity
+        assert "end" in entity
 
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
@@ -100,3 +113,12 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
         trainer=TrainerConfiguration(**trainer_dict),
         training=training_dataset,
     )
+
+
+def test_preserve_pretokenization(
+    pipeline_dict, training_dataset, trainer_dict, tmp_path
+):
+    pipeline = Pipeline.from_config(pipeline_dict)
+    tokens = ["test", "this", "pre tokenized", "text"]
+    prediction = pipeline.predict(tokens)
+    assert len(prediction["tags"][0]) == len(tokens)

@@ -53,6 +53,9 @@ class TaskName(Enum):
 class TaskHead(torch.nn.Module, Registrable):
     """Base task head class"""
 
+    """The task head name"""
+    task_name: TaskName
+
     def __init__(self, backbone: ModelBackbone):
         super(TaskHead, self).__init__()
         self.backbone = backbone
@@ -84,9 +87,6 @@ class TaskHead(torch.nn.Module, Registrable):
         """Extends the number of labels"""
         vocabulary.extend_labels(self.backbone.vocab, labels)
 
-    def task_name(self) -> TaskName:
-        """The task head name"""
-        raise NotImplementedError
 
     def inputs(self) -> Optional[List[str]]:
         """
