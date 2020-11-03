@@ -6,32 +6,28 @@ from biome.text import TrainerConfiguration, VocabularyConfiguration, Dataset, P
 
 
 @pytest.fixture
-def training_dataset(tmp_path) -> Dataset:
-    """Creating a dataframe, storing and returning with an intermediate load"""
-    data_file = tmp_path / "relations.json"
-    df = pd.DataFrame(
-        [
-            {
-                "text": "The most common audits were about waste and recycling.",
-                "entities": [
-                    {"start": 34, "end": 39, "label": "PN", "text": "waste"},
-                    {"start": 16, "end": 22, "label": "QTY", "text": "audits"},
-                ],
-                "label": "Message-Topic(e1,e2)",
-            },
-            {
-                "text": "The company fabricates plastic chairs.",
-                "entities": [
-                    {"start": 4, "end": 11, "label": "OBJECT", "text": "company"},
-                    {"start": 31, "end": 37, "label": "SUBJECT", "text": "chairs"},
-                ],
-                "label": "Product-Producer(e2,e1)",
-            },
-        ]
-    )
-    df.to_json(data_file, lines=True, orient="records")
+def training_dataset() -> Dataset:
+    """Creating the dataframe."""
+    data = {
+        {
+            "text": "The most common audits were about waste and recycling.",
+            "entities": [
+                {"start": 34, "end": 39, "label": "PN", "text": "waste"},
+                {"start": 16, "end": 22, "label": "QTY", "text": "audits"},
+            ],
+            "label": "Message-Topic(e1,e2)",
+        },
+        {
+            "text": "The company fabricates plastic chairs.",
+            "entities": [
+                {"start": 4, "end": 11, "label": "OBJECT", "text": "company"},
+                {"start": 31, "end": 37, "label": "SUBJECT", "text": "chairs"},
+            ],
+            "label": "Product-Producer(e2,e1)",
+        },
+    }
 
-    return Dataset.from_json(str(data_file))
+    return Dataset.from_dict(data)
 
 
 @pytest.fixture

@@ -6,27 +6,23 @@ from biome.text import TrainerConfiguration, VocabularyConfiguration, Dataset, P
 
 
 @pytest.fixture
-def training_dataset(tmp_path) -> Dataset:
-    """Creating a dataframe, storing and returning with an intermediate load"""
-    data_file = tmp_path / "record_pairs.json"
-    df = pd.DataFrame(
-        {
-            "record1": [
-                {"@fist_name": "Hans", "@last_name": "Peter"},
-                {"@fist_name": "Heinrich", "@last_name": "Meier"},
-                {"@fist_name": "Hans", "@last_name": "Peter"},
-            ],
-            "record2": [
-                {"@fist_name": "Hans", "@last_name": "Petre"},
-                {"@fist_name": "Heinz", "@last_name": "Meier"},
-                {"@fist_name": "Hansel", "@last_name": "Peter"},
-            ],
-            "label": ["duplicate", "not_duplicate", "duplicate"],
-        }
-    )
-    df.to_json(data_file, lines=True, orient="records")
+def training_dataset() -> Dataset:
+    """Creating the dataframe."""
+    data = {
+        "record1": [
+            {"@fist_name": "Hans", "@last_name": "Peter"},
+            {"@fist_name": "Heinrich", "@last_name": "Meier"},
+            {"@fist_name": "Hans", "@last_name": "Peter"},
+        ],
+        "record2": [
+            {"@fist_name": "Hans", "@last_name": "Petre"},
+            {"@fist_name": "Heinz", "@last_name": "Meier"},
+            {"@fist_name": "Hansel", "@last_name": "Peter"},
+        ],
+        "label": ["duplicate", "not_duplicate", "duplicate"],
+    }
 
-    return Dataset.from_json(str(data_file))
+    return Dataset.from_dict(data)
 
 
 @pytest.fixture

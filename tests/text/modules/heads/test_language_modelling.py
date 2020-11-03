@@ -6,23 +6,17 @@ from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, 
 
 
 @pytest.fixture
-def training_dataset(tmp_path) -> Dataset:
-    """Creating a dataframe, storing and returning with an intermediate load"""
-    data_file = tmp_path / "record_pairs.json"
-    df = pd.DataFrame(
-        {
-            "text": [
-                "this is a text",
-                "my name is dani",
-                "this is a table",
-                "my name is paco",
-            ],
-        }
-    )
-
-    df.to_json(data_file, lines=True, orient="records")
-
-    return Dataset.from_json(str(data_file))
+def training_dataset() -> Dataset:
+    """Creating the dataframe."""
+    data = {
+        "text": [
+            "this is a text",
+            "my name is dani",
+            "this is a table",
+            "my name is paco",
+        ],
+    }
+    return Dataset.from_dict(data)
 
 
 @pytest.fixture
