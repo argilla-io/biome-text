@@ -302,7 +302,7 @@ class Dataset:
                 max(1, int(len(self.dataset) / 1000)),
                 int(multiprocessing.cpu_count() / 2),
             ),
-            new_fingerprint=self._create_fingerprint_for_instance_dataset(pipeline)
+            new_fingerprint=self._create_fingerprint_for_instance_dataset(pipeline),
         )
 
         if lazy:
