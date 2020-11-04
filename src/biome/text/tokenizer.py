@@ -216,6 +216,7 @@ class TransformersTokenizer(Tokenizer):
     """
     def __init__(self, config):
         self.pretrained_tokenizer = PretrainedTransformerTokenizer(**config.transformers_kwargs)
+        self._config = config
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
         return list(map(self._tokenize, document))
