@@ -1,9 +1,25 @@
 from typing import Any, Dict, Optional
+from abc import ABC, abstractmethod
 
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
 
-class WordFeatures:
+class Features(ABC):
+    """All features used in the pipeline configuration inherit from this abstract class."""
+    @property
+    @abstractmethod
+    def config(self):
+        pass
+
+    @abstractmethod
+    def to_json(self):
+        pass
+
+    def __eq__(self, other):
+        return all([a == b for a, b in zip(vars(self), vars(other))])
+
+
+class WordFeatures(Features):
     """Feature configuration at word level
 
     Parameters
@@ -70,7 +86,7 @@ class WordFeatures:
         }
 
 
-class CharFeatures:
+class CharFeatures(Features):
     """Feature configuration at character level
 
     Parameters
@@ -145,7 +161,7 @@ class CharFeatures:
         }
 
 
-class TransformersFeatures:
+class TransformersFeatures(Features):
     """Configuration of the feature extracted with the [transformers models](https://huggingface.co/models).
 
     We use AllenNLPs "mismatched" indexer and embedder to get word-level representations.
@@ -215,6 +231,3 @@ class TransformersFeatures:
             "max_length": self.max_length,
             "last_layer_only": self.last_layer_only,
         }
-
-    def __eq__(self, other):
-        return all([a == b for a, b in zip(vars(self), vars(other))])
