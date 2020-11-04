@@ -1,5 +1,3 @@
-from datetime import datetime
-
 __version__ = "1.1.0rc0"
 
 from typing import Optional
@@ -18,8 +16,8 @@ def package_version(version: str) -> str:
     """
 
     def get_commit_hash(repository: git.Git) -> str:
-        """
-        Fetch current commit hash from the configured git repository.
+        """Fetch current commit hash from the configured git repository.
+
         The working directory should already be part of a git repository.
 
         Parameters
@@ -30,7 +28,22 @@ def package_version(version: str) -> str:
         -------
         commit_hash
         """
-        return repository.log("--pretty=format:'%h'", "-n 1").replace("'", "")
+        return repository.log("--pretty=format:%h", "-n 1")
+
+    def get_commit_date(repository: git.Git) -> str:
+        """Fetch current commit date as UNIX timestamp (seconds since 1970) from the configured git repository.
+
+        The working directory should already be part of a git repository.
+
+        Parameters
+        ----------
+        repository
+
+        Returns
+        -------
+        commit_date
+        """
+        return repository.log("--pretty=format:%cd", "--date=format:%Y%m%d%H%M%S", "-n 1")
 
     def get_first_tag_for_commit(repository: git.Git, commit_hash: str) -> str:
         """Return tags related to current commit
@@ -89,14 +102,16 @@ def package_version(version: str) -> str:
     except Exception:  # pylint: disable=broad-except
         return version
 
-    commit = get_commit_hash(repo)
-    repo_tag = get_first_tag_for_commit(repo, commit)
+    commit_hash = get_commit_hash(repo)
+    commit_date = get_commit_date(repo)
+    repo_tag = get_first_tag_for_commit(repo, commit_hash)
     release_version = get_version_from_branch(repo)
     if release_version and not repo_tag:
         assert version_matches(release_version, version)
         return version
 
-    return repo_tag if repo_tag else f"{version}.dev+{commit}"
+    # We add the commit date to make sure dev versions are sorted correctly in the pypi repository
+    return repo_tag if repo_tag else f"{version}.dev{commit_date}+{commit_hash}"
 
 
 try:
