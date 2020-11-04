@@ -2,29 +2,36 @@ from pathlib import Path
 
 import pytest
 
-from biome.text import Pipeline
+from biome.text import Pipeline, Dataset
 from biome.text.configuration import (
     TrainerConfiguration,
     FindLRConfiguration,
     VocabularyConfiguration,
 )
-from biome.text.data import DataSource
 
 
 @pytest.fixture
-def train_data_source() -> DataSource:
+def train_data_source() -> Dataset:
+    """Creates the training dataset"""
     resources_path = Path(__file__).parent.parent / "resources" / "data"
-    training_ds = DataSource(source=str(resources_path / "business.cat.2k.train.csv"))
+    training_ds = Dataset.from_csv(
+        paths=str(resources_path / "business.cat.2k.train.csv")
+    )
 
     return training_ds
 
 
 @pytest.fixture
 def pipeline_dict() -> dict:
-    """Pipeline config dict. You need to update the labels!"""
+    """Pipeline config dict. Updating the labels is needed"""
+
     pipeline_dict = {
         "name": "german_business_names",
-        "features": {"word": {"embedding_dim": 16,},},
+        "features": {
+            "word": {
+                "embedding_dim": 16,
+            },
+        },
         "head": {
             "type": "TextClassification",
             "labels": [
@@ -71,6 +78,7 @@ def pipeline_dict() -> dict:
 
 @pytest.fixture
 def trainer_config() -> TrainerConfiguration:
+    """Returns the trainer configuration"""
     return TrainerConfiguration(
         batch_size=64, num_epochs=5, optimizer={"type": "adam", "lr": 0.01}
     )
@@ -78,16 +86,22 @@ def trainer_config() -> TrainerConfiguration:
 
 @pytest.fixture
 def find_lr_config() -> FindLRConfiguration:
+    """Returns FindLRConfiguration function"""
     return FindLRConfiguration(num_batches=11)
 
 
 def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_config):
+    """Asserting that all metrics of the find_lr method match in a controlled enviroment"""
+
+    # Creation of pipeline and vocabulary
     pl = Pipeline.from_config(pipeline_dict)
     vocab_config = VocabularyConfiguration(sources=[train_data_source])
-
     pl.create_vocabulary(vocab_config)
+
+    # Test prediction
     prev_prediction = pl.predict("test")
 
+    # Find_lr method
     learning_rates, losses = pl.find_lr(
         trainer_config=trainer_config,
         find_lr_config=find_lr_config,

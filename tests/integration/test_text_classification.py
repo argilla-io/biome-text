@@ -7,17 +7,22 @@ import numpy as np
 import pytest
 import torch
 
-from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration
+from biome.text import Pipeline, Dataset, TrainerConfiguration, VocabularyConfiguration
 from biome.text.configuration import CharFeatures
 from biome.text.configuration import WordFeatures
-from biome.text.data import DataSource
 
 
 @pytest.fixture
-def train_valid_data_source() -> Tuple[DataSource, DataSource]:
+def train_valid_dataset() -> Tuple[Dataset, Dataset]:
+    """Returns both training and validation datasets"""
+
     resources_path = Path(__file__).parent.parent / "resources" / "data"
-    training_ds = DataSource(source=str(resources_path / "business.cat.2k.train.csv"))
-    validation_ds = DataSource(source=str(resources_path / "business.cat.2k.valid.csv"))
+    training_ds = Dataset.from_csv(
+        paths=str(resources_path / "business.cat.2k.train.csv")
+    )
+    validation_ds = Dataset.from_csv(
+        paths=str(resources_path / "business.cat.2k.valid.csv")
+    )
 
     return training_ds, validation_ds
 
@@ -25,7 +30,8 @@ def train_valid_data_source() -> Tuple[DataSource, DataSource]:
 @pytest.fixture
 def pipeline_dict() -> dict:
     """Pipeline config dict. You need to update the labels!"""
-    pipeline_dict = {
+
+    pipeline_dictionary = {
         "name": "german_business_names",
         "features": {
             "word": {"embedding_dim": 16, "lowercase_tokens": True},
@@ -81,22 +87,26 @@ def pipeline_dict() -> dict:
         },
     }
 
-    return pipeline_dict
+    return pipeline_dictionary
 
 
 @pytest.fixture
 def trainer_dict() -> dict:
+    """Returns the trainer dictionary"""
+
     return {
         "batch_size": 64,
         "num_epochs": 5,
         "optimizer": {"type": "adam", "lr": 0.01},
+        "cuda_device": -1,
     }
 
 
 def test_text_classification(
-    tmp_path, pipeline_dict, trainer_dict, train_valid_data_source
+    tmp_path, pipeline_dict, trainer_dict, train_valid_dataset
 ):
     """Apart from a well specified training, this also tests the vocab creation!"""
+
     random.seed(42)
     np.random.seed(422)
     torch.manual_seed(4222)
@@ -104,8 +114,8 @@ def test_text_classification(
         torch.cuda.manual_seed_all(4222)
 
     pl = Pipeline.from_config(pipeline_dict)
-    train_ds = pl.create_dataset(train_valid_data_source[0])
-    valid_ds = pl.create_dataset(train_valid_data_source[1])
+    train_ds = train_valid_dataset[0].to_instances(pipeline=pl)
+    valid_ds = train_valid_dataset[1].to_instances(pipeline=pl)
     trainer = TrainerConfiguration(**trainer_dict)
     vocab = VocabularyConfiguration(sources=[train_ds], max_vocab_size={"word": 50})
 
@@ -125,9 +135,10 @@ def test_text_classification(
     with (output / "metrics.json").open() as file:
         metrics = json.load(file)
 
+    # It may fail in some systems
     assert metrics["training_loss"] == pytest.approx(0.670, abs=0.003)
 
-    # test vocab from a pretrained file
+    # Test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
 
     assert pl._model.vocab.get_vocab_size(WordFeatures.namespace) == 52
