@@ -1,8 +1,13 @@
 import logging
 import warnings
 from warnings import warn_explicit
-
 import pkg_resources
+
+try:
+    __version__ = pkg_resources.get_distribution(__name__.replace(".", "-")).version
+except pkg_resources.DistributionNotFound:
+    # package is not installed
+    pass
 
 try:
     import tqdm
@@ -39,9 +44,3 @@ from .configuration import (
 
 warnings.showwarning = warn_explicit
 logging.basicConfig()
-
-try:
-    __version__ = pkg_resources.get_distribution(__name__.replace(".", "-")).version
-except pkg_resources.DistributionNotFound:
-    # package is not installed
-    pass
