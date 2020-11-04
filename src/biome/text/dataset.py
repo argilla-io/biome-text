@@ -9,7 +9,7 @@ from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECK
 import datasets
 from datasets.fingerprint import Hasher
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
-from biome.text.about import __version__ as biome__version__
+from biome.text import __version__ as biome__version__
 from allennlp import __version__ as allennlp__version__
 from spacy import __version__ as spacy__version__
 
