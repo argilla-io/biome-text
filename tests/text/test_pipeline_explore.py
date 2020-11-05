@@ -19,7 +19,7 @@ def test_explore_creation(dataset):
         {"name": "test", "head": {"type": "TextClassification", "labels": ["a"]}}
     )
     explore_id = explore.create(
-        pl, dataset_without_mapping, explore_id="mock", show_explore=False
+        pl, dataset, explore_id="mock", show_explore=False
     )
     elastic = Elasticsearch()
     explore_meta = elastic.get(index=".biome", id=explore_id)["_source"]
