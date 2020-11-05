@@ -60,7 +60,7 @@ class Tokenizer:
             )
 
     @property
-    def config(self) -> TokenizerConfiguration:
+    def config(self) -> "TokenizerConfiguration":
         return self._config
 
     @property
