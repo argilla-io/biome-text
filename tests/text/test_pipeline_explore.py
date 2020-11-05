@@ -13,7 +13,7 @@ def dataset() -> Dataset:
 
 
 def test_explore_creation(dataset):
-    """Test the creation of the ElasticSearch instance"""
+    """Test the creation of an index in elasticsearch"""
 
     pl = Pipeline.from_config(
         {"name": "test", "head": {"type": "TextClassification", "labels": ["a"]}}
