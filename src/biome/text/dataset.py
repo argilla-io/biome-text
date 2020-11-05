@@ -7,10 +7,15 @@ import pickle
 from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECKING
 
 import datasets
+from datasets.fingerprint import Hasher
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
+from biome.text import __version__ as biome__version__
+from allennlp import __version__ as allennlp__version__
+from spacy import __version__ as spacy__version__
 
 if TYPE_CHECKING:
     from biome.text.pipeline import Pipeline
+    from biome.text.features import Features
 
 InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
@@ -297,6 +302,7 @@ class Dataset:
                 max(1, int(len(self.dataset) / 1000)),
                 int(multiprocessing.cpu_count() / 2),
             ),
+            new_fingerprint=self._create_fingerprint_for_instance_dataset(pipeline),
         )
 
         if lazy:
@@ -340,6 +346,33 @@ class Dataset:
                     yield instance
 
         return instance_unpickler
+
+    def _create_fingerprint_for_instance_dataset(self, pipeline: "Pipeline") -> str:
+        """Creates a fingerprint for the instance dataset to take advantage of datasets caching mechanism
+
+        The fingerprint is based on:
+        - the fingerprint of the previous dataset
+        - the tokenizer config
+        - the indexer config of the features
+        - the biome__version__, allennlp__version__ and spaCy__version__ just to be completely sure!
+        """
+        hasher = Hasher()
+        # add the previous fingerprint to the hash
+        hasher.update(self.dataset._fingerprint)  # necessary evil ...
+        # add the tokenizer config to the hash
+        hasher.update(vars(pipeline.backbone.tokenizer.config))
+        # add the indexer config of all features to the hash
+        feature_config = pipeline.config.features
+        for feature_key in feature_config.keys:
+            feature: Features = getattr(feature_config, feature_key)
+            if feature:
+                hasher.update(feature.config["indexer"])
+        # add key software versions to the hash
+        hasher.update(biome__version__)
+        hasher.update(allennlp__version__)
+        hasher.update(spacy__version__)
+
+        return hasher.hexdigest()
 
     def __del__(self):
         self.dataset.__del__()
