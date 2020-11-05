@@ -1,11 +1,37 @@
 import os
 
 import pandas as pd
+from pathlib import Path
 
 from biome.text import Pipeline, Dataset
-from biome.text.configuration import VocabularyConfiguration, TrainerConfiguration
 from tests import RESOURCES_PATH
 import pytest
+
+
+@pytest.fixture(scope="class")
+def dataset(tmp_path_factory, request):
+    cache_path = tmp_path_factory.mktemp("test_instance_caching")
+    data_path = cache_path / "data.csv"
+    data_path.write_text("text,label\ncheck,this\nand,that")
+
+    dataset = Dataset.from_csv(paths=str(data_path), cache_dir=str(cache_path))
+
+    # inject to classes decorated with `pytest.mark.usefixtures`
+    if request.cls:
+        request.cls.dataset = dataset
+
+    return dataset
+
+
+@pytest.fixture
+def default_pipeline_config():
+    return {
+        "name": "datasets_test",
+        "features": {
+            "word": {"embedding_dim": 2},
+        },
+        "head": {"type": "TextClassification", "labels": ["this", "that"]},
+    }
 
 
 def test_load_dataset():
@@ -59,44 +85,25 @@ def test_from_dict():
     assert len(ds) == 3
 
 
-def test_training_with_dataset():
-    # TODO: this test can go away once we replace our DataSource with Dataset
-    ds = Dataset.from_json(
-        paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
-    )
+def test_to_instances(dataset, default_pipeline_config):
+    pl = Pipeline.from_config(default_pipeline_config)
+    instances = dataset.to_instances(pl, lazy=False)
+    assert len(instances) == 2
 
-    labels = list(set(ds["label"]))
+    dataset.rename_column_("text", "not_text")
+    with pytest.raises(KeyError):
+        dataset.to_instances(pl)
 
-    pl = Pipeline.from_config(
-        {
-            "name": "datasets_test",
-            "features": {"word": {"embedding_dim": 2},},
-            "head": {"type": "TextClassification", "labels": labels},
-        }
-    )
-
-    with pytest.raises(Exception):
-        ds.to_instances(pl)
-
-    ds.dataset.rename_column_("hypothesis", "text")
-    # or to keep the 'hypothesis' column and add the new 'text' column:
-    # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
-    instances = ds.to_instances(pl, lazy=False)
-    assert len(instances) == 4
-
-    vocab_config = VocabularyConfiguration(sources=[ds])
-    pl.create_vocabulary(vocab_config)
-
-    trainer_config = TrainerConfiguration(
-        optimizer={"type": "adam", "lr": 0.01,}, num_epochs=1, cuda_device=-1,
-    )
-
-    pl.train(output="output", training=ds, trainer=trainer_config)
+    dataset.rename_column_("not_text", "text")
+    dataset.rename_column_("label", "not_label")
+    # TODO: This should actually raise something ... but not so easy to implement
+    dataset.to_instances(pl)
 
 
-# TODO: this test can go away once we replace our DataSource with Dataset
+# TODO: this test can go away once we replace our DataSource with Dataset in the dedicated explore test
 def test_explore():
     from biome.text import explore
+
     ds = Dataset.from_json(
         paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
     )
@@ -110,10 +117,91 @@ def test_explore():
     pl = Pipeline.from_config(
         {
             "name": "datasets_test",
-            "head": {"type": "TextClassification", "labels": labels, },
+            "head": {
+                "type": "TextClassification",
+                "labels": labels,
+            },
         }
     )
 
     explore.create(pipeline=pl, data_source=ds, batch_size=1, show_explore=False)
 
 
+@pytest.mark.usefixtures("dataset")
+class TestInstanceCaching:
+    def uses_cached_instances(self, pipeline_config) -> bool:
+        """Checks if the `to_instances` method of the provided pipeline_config uses the cached instances"""
+        cache_path = Path(self.dataset.dataset.cache_files[0]["filename"]).parent
+
+        number_of_files_before = len(list(cache_path.iterdir()))
+        pipeline = Pipeline.from_config(pipeline_config)
+        self.dataset.to_instances(pipeline)
+        number_of_files_after = len(list(cache_path.iterdir()))
+
+        return number_of_files_before == number_of_files_after
+
+    def test_same_pipeline(self, default_pipeline_config):
+        self.dataset.dataset.cleanup_cache_files()
+        assert not self.uses_cached_instances(default_pipeline_config)
+
+        if not self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("The same pipelines did not reuse the cached instances!")
+
+    def test_compatible_pipelines(self, default_pipeline_config):
+        self.dataset.dataset.cleanup_cache_files()
+        assert not self.uses_cached_instances(default_pipeline_config)
+
+        default_pipeline_config["features"]["word"]["embedding_dim"] = 4
+        if not self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("Compatible pipelines did not reuse the cached instances!")
+
+    def test_incompatible_pipelines(self, default_pipeline_config):
+        self.dataset.dataset.cleanup_cache_files()
+        assert not self.uses_cached_instances(default_pipeline_config)
+
+        default_pipeline_config["features"]["word"]["lowercase_tokens"] = True
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("Incompatible pipelines did reuse the cached instances!")
+
+        default_pipeline_config["features"]["char"] = {
+            "embedding_dim": 2,
+            "encoder": {"type": "gru", "hidden_size": 2},
+        }
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("Incompatible pipelines did reuse the cached instances!")
+
+        default_pipeline_config["tokenizer"] = {"max_sequence_length": 10}
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("Incompatible pipelines did reuse the cached instances!")
+
+    def test_incompatible_datasets(self, default_pipeline_config):
+        self.dataset.dataset.cleanup_cache_files()
+        assert not self.uses_cached_instances(default_pipeline_config)
+
+        self.dataset = self.dataset.map(
+            lambda x: {}
+        )  # this generates a new fingerprint for the dataset
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("Incompatible datasets did reuse the cached instances!")
+
+    def test_incompatible_versions(self, default_pipeline_config, monkeypatch):
+        from biome.text import dataset
+
+        self.dataset.dataset.cleanup_cache_files()
+        assert not self.uses_cached_instances(default_pipeline_config)
+
+        monkeypatch.setattr(dataset, "biome__version__", "mockversion")
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail(
+                "Incompatible biome.text versions did reuse the cached instances!"
+            )
+
+        monkeypatch.setattr(dataset, "allennlp__version__", "mockversion")
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail(
+                "Incompatible allennlp versions did reuse the cached instances!"
+            )
+
+        monkeypatch.setattr(dataset, "spacy__version__", "mockversion")
+        if self.uses_cached_instances(default_pipeline_config):
+            pytest.fail("Incompatible spacy versions did reuse the cached instances!")
