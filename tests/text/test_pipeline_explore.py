@@ -12,7 +12,7 @@ def dataset() -> Dataset:
     return Dataset.from_dict(data)
 
 
-def test_explore_creation(dataset_without_mapping):
+def test_explore_creation(dataset):
     """Test the creation of the ElasticSearch instance"""
 
     pl = Pipeline.from_config(
