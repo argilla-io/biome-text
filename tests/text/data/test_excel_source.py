@@ -1,17 +1,30 @@
 import os
 
-from biome.text.data import DataSource
-from tests import DaskSupportTest, RESOURCES_PATH
+import pandas as pd
+import pytest
+from biome.text import Dataset
+
+from tests import RESOURCES_PATH
 
 FILES_PATH = os.path.join(RESOURCES_PATH, "data")
 
 
-class ExcelDataSourceTest(DaskSupportTest):
-    def test_read_excel(self):
-        file_path = os.path.join(FILES_PATH, "test.xlsx")
+@pytest.fixture
+def dataset() -> Dataset:
+    """
+    Creation of dataset
+    Excel into dataset via pandas
+    """
 
-        datasource = DataSource(format="xlsx", source=file_path)
-        data_frame = datasource.to_dataframe().compute()
+    file_path = os.path.join(FILES_PATH, "test.xlsx")
+    df = pd.read_excel(file_path)
 
-        assert len(data_frame) > 0
-        self.assertTrue("path" in data_frame.columns)
+    # Dropping problematic columns that has NaN values
+    df = df[["Notification", "Notification type"]]
+    return Dataset.from_pandas(df)
+
+
+def test_read_excel(dataset):
+    """Checking that the excel can be read"""
+
+    assert len(dataset) > 0
