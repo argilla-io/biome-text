@@ -32,6 +32,7 @@ class Tokenizer:
 
     def __init__(self, config: "biome.text.configuration.TokenizerConfiguration"):
         _fetch_spacy_model(config.lang)
+        self._config = config
         self.lang = config.lang
 
         self._keep_spacy_tokens = config.use_spacy_tokens
@@ -58,6 +59,10 @@ class Tokenizer:
             self.text_cleaning = TextCleaning.from_params(
                 Params(copy.deepcopy(config.text_cleaning))
             )
+
+    @property
+    def config(self) -> "biome.text.configuration.TokenizerConfiguration":
+        return self._config
 
     @property
     def nlp(self) -> Language:
@@ -211,6 +216,7 @@ class TransformersTokenizer(Tokenizer):
     """
     def __init__(self, config):
         self.pretrained_tokenizer = PretrainedTransformerTokenizer(**config.transformers_kwargs)
+        self._config = config
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
         return list(map(self._tokenize, document))

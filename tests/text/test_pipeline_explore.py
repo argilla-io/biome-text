@@ -1,48 +1,25 @@
-from elasticsearch import Elasticsearch
-
-from biome.text import explore
-from biome.text.data import DataSource
 import pytest
-import pandas as pd
+from biome.text import Dataset
+from biome.text import explore
 from biome.text import Pipeline
+from elasticsearch import Elasticsearch
 
 
 @pytest.fixture
-def data_source_without_mapping(tmp_path) -> DataSource:
-    data_file = tmp_path / "train.json"
-    df = pd.DataFrame({"text": ["This is a simple test"], "label": ["a"]})
-    df.to_json(data_file, lines=True, orient="records")
-
-    return DataSource(
-        source=str(data_file), flatten=False, lines=True, orient="records"
-    )
+def dataset() -> Dataset:
+    """Creating the dataset"""
+    data = {"text": ["This is a simple test"], "label": ["a"]}
+    return Dataset.from_dict(data)
 
 
-def test_explore_creation(data_source_without_mapping):
+def test_explore_creation(dataset):
+    """Test the creation of an index in elasticsearch"""
+
     pl = Pipeline.from_config(
         {"name": "test", "head": {"type": "TextClassification", "labels": ["a"]}}
     )
-    explore_id = explore.create(
-        pl, data_source_without_mapping, explore_id="mock", show_explore=False
-    )
+    explore_id = explore.create(pl, dataset, explore_id="mock", show_explore=False)
     elastic = Elasticsearch()
     explore_meta = elastic.get(index=".biome", id=explore_id)["_source"]
     assert pl.config.as_dict() == explore_meta["pipeline_config"]
-
-
-def test_explore_with_no_mapping_in_ds(monkeypatch, data_source_without_mapping):
-    def _explore(explore_id, pipeline, data_source, options, es_dao):
-        return data_source.to_mapped_dataframe().compute()
-
-    def _show(explore_id, es_host):
-        return None
-
-    monkeypatch.setattr(explore, "_explore", _explore)
-    monkeypatch.setattr(explore, "show", _show)
-
-    pl = Pipeline.from_config(
-        {"name": "test", "head": {"type": "TextClassification", "labels": ["a"]}}
-    )
-    explore_id = explore.create(pl, data_source_without_mapping)
     assert len(explore_id) > 0
-    assert data_source_without_mapping.mapping == {"label": "label", "text": "text"}

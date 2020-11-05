@@ -2,25 +2,30 @@ import datetime
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
 from threading import Thread
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 from urllib.error import URLError
 from urllib.parse import urlparse
 
 import datasets
-import elasticsearch
 import elasticsearch.helpers
 import pandas as pd
 from allennlp.common.util import sanitize
-from dask import dataframe as dd
-from dask_elk.client import DaskElasticClient
-from elasticsearch import Elasticsearch
-
-from biome.text import Pipeline, constants, helpers
+from biome.text import constants
+from biome.text import helpers
+from biome.text import Pipeline
 from biome.text.data import DataSource
 from biome.text.dataset import Dataset
 from biome.text.ui import launch_ui
+from dask import dataframe as dd
+from dask_elk.client import DaskElasticClient
+from dataclasses import dataclass
+from dataclasses import field
+from elasticsearch import Elasticsearch
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -154,7 +159,8 @@ class _ElasticsearchDAO:
             column_names = ddf_content.column_names
             ddf_content = ddf_content.map(
                 lambda x: {
-                    col_name: helpers.stringify(x[col_name]) for col_name in column_names
+                    col_name: helpers.stringify(x[col_name])
+                    for col_name in column_names
                 }
             )
             self._index_dataset(dataset=ddf_content, index=es_index)
@@ -424,11 +430,18 @@ def _explore_a_dataset(
         num_proc=options.num_proc,
     )
 
+    # Quick fix for in-memory data that are not backed up by a file
+    # TODO: Find a better solution
+    try:
+        dataset_name = list(dataset.info.download_checksums.keys())[0]
+    except AttributeError:
+        dataset_name = "InMemory"
+
     data_exploration = DataExploration(
         name=explore_id,
         pipeline=pipeline,
         use_prediction=True,
-        datasource_name=list(dataset.info.download_checksums.keys())[0],
+        datasource_name=dataset_name,
         datasource_columns=meta_columns,
         metadata=options.metadata or {},
     )
