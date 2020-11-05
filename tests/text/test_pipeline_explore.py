@@ -6,7 +6,7 @@ from elasticsearch import Elasticsearch
 
 
 @pytest.fixture
-def dataset_without_mapping() -> Dataset:
+def dataset() -> Dataset:
     """Creating the dataset"""
     data = {"text": ["This is a simple test"], "label": ["a"]}
     return Dataset.from_dict(data)
