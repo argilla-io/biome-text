@@ -431,7 +431,7 @@ def _explore_a_dataset(
     )
 
     # Quick fix for in-memory data that are not backed up by a file
-    # TODO: Finde a better solution
+    # TODO: Find a better solution
     try:
         dataset_name = list(dataset.info.download_checksums.keys())[0]
     except AttributeError:
