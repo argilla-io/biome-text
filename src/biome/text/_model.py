@@ -52,7 +52,7 @@ class PipelineModel(allennlp.models.Model):
     This class represents pipeline model implementation for connect biome.text concepts with
     allennlp implementation details
 
-    This class manage the head + backbone encoder, keeping the allennlnlp Model lifecycle. This class
+    This class manages the head + backbone encoder, keeping the allennlnlp Model lifecycle. This class
     should be hidden to api users.
 
     Parameters
@@ -68,6 +68,8 @@ class PipelineModel(allennlp.models.Model):
         Name of the pipeline model
     head: TaskHead
         TaskHead of the pipeline model
+    vocab: Vocabulary
+        The vocabulary of the model
     file_path: Optional[str]
         File path to a serialized version of this pipeline model
     inputs: List[str]
@@ -79,7 +81,7 @@ class PipelineModel(allennlp.models.Model):
     PREDICTION_FILE_NAME = "predictions.json"
 
     def __init__(self, name: str, head: TaskHead):
-        allennlp.models.Model.__init__(self, head.backbone.vocab)
+        super().__init__(head.backbone.vocab)
 
         self.name = name
         self._head = None
