@@ -96,7 +96,7 @@ def test_training_from_pretrained_with_head_replace(
     for key, value in copied_model_state.items():
         if "backbone" in key:
             assert torch.all(torch.eq(value, original_model_state[key]))
-    assert copied.backbone.featurizer.tokenizer.max_nr_of_sentences == 3
+    assert copied.backbone.featurizer.tokenizer.config.max_nr_of_sentences == 3
 
 
 def test_training_with_logging(
