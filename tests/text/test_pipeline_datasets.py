@@ -9,11 +9,11 @@ import torch
 
 from biome.text import (
     Pipeline,
+    Dataset,
     PipelineConfiguration,
     TrainerConfiguration,
     VocabularyConfiguration,
 )
-from biome.text.data import DataSource
 from biome.text.modules.heads import TextClassificationConfiguration
 
 from allennlp.data import AllennlpDataset, Instance, AllennlpLazyDataset
@@ -22,35 +22,18 @@ from tests.text.test_pipeline_model import TestHead
 
 
 @pytest.fixture
-def datasource_test(tmp_path) -> DataSource:
-    data_file = tmp_path / "classifier.parquet"
-    df = pd.DataFrame(
-        {
-            "text": ["A common text", "This is why you get", "Seriosly?, I'm not sure"],
-            "label": ["one", "zero", "zero"],
-        }
-    )
-    df.to_parquet(data_file)
+def dataset(tmp_path) -> Dataset:
+    data = {
+        "text": ["A common text", "This is why you get", "Seriosly?, I'm not sure"],
+        "label": ["one", "zero", "zero"],
+    }
+    ds = Dataset.from_dict(data)
 
-    return DataSource(source=str(data_file))
+    # we save and load it here to be able to lazily read from it
+    ds_path = tmp_path / "test_pipeline_datasets" / "dataset"
+    ds.save_to_disk(str(ds_path))
 
-
-@pytest.fixture
-def datasource_with_partial_mapping(tmp_path) -> DataSource:
-    data_file = tmp_path / "classifier.parquet"
-    df = pd.DataFrame(
-        {
-            "another_text": [
-                "A common text",
-                "This is why you get",
-                "Seriosly?, I'm not sure",
-            ],
-            "label": ["one", "zero", "zero"],
-        }
-    )
-    df.to_parquet(data_file)
-
-    return DataSource(source=str(data_file), mapping={"text": "another_text"})
+    return Dataset.load_from_disk(str(ds_path))
 
 
 @pytest.fixture
@@ -62,52 +45,13 @@ def pipeline_test() -> Pipeline:
     return Pipeline.from_config(config)
 
 
-def test_dataset_creation_with_partial_mapping(
-    datasource_with_partial_mapping: DataSource, pipeline_test: Pipeline
-):
-    df = datasource_with_partial_mapping.to_mapped_dataframe()
-    dataset = pipeline_test.create_dataset(datasource_with_partial_mapping)
-    assert isinstance(dataset, AllennlpDataset)
-    assert len(dataset) == len(df.text)
-
-    for instance in dataset:
-        assert isinstance(instance, Instance)
-        assert "text" in instance.fields
-        assert "label" in instance.fields
-
-
-def test_datasets_creation(pipeline_test: Pipeline, datasource_test: DataSource):
-
-    df = datasource_test.to_dataframe()
-    dataset = pipeline_test.create_dataset(datasource_test)
-    assert isinstance(dataset, AllennlpDataset)
-    assert len(dataset) == len(df.text)
-
-    for instance in dataset:
-        assert isinstance(instance, Instance)
-        assert "text" in instance.fields
-        assert "label" in instance.fields
-
-
-def test_lazy_dataset_creation(pipeline_test: Pipeline, datasource_test: DataSource):
-    df = datasource_test.to_dataframe()
-    dataset = pipeline_test.create_dataset(datasource_test, lazy=True)
-    assert isinstance(dataset, AllennlpLazyDataset)
-    assert len([x for x in dataset]) == len(df.text)
-
-    for instance in dataset:
-        assert isinstance(instance, Instance)
-        assert "text" in instance.fields
-        assert "label" in instance.fields
-
-
 def test_training_with_data_bucketing(
-    pipeline_test: Pipeline, datasource_test: DataSource, tmp_path: str
+    pipeline_test: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    lazy_ds = pipeline_test.create_dataset(datasource_test, lazy=True)
-    non_lazy_ds = pipeline_test.create_dataset(datasource_test)
+    lazy_instances = dataset.to_instances(pipeline_test)
+    in_memory_instances = dataset.to_instances(pipeline_test, lazy=False)
 
-    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[lazy_ds]))
+    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[lazy_instances]))
 
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
@@ -115,22 +59,22 @@ def test_training_with_data_bucketing(
     pipeline_test.train(
         output=os.path.join(tmp_path, "output"),
         trainer=configuration,
-        training=lazy_ds,
-        validation=non_lazy_ds,
+        training=lazy_instances,
+        validation=in_memory_instances,
     )
 
     pipeline_test.train(
         output=os.path.join(tmp_path, "output"),
         trainer=configuration,
-        training=non_lazy_ds,
-        validation=lazy_ds,
+        training=in_memory_instances,
+        validation=lazy_instances,
     )
 
 
 def test_training_from_pretrained_with_head_replace(
-    pipeline_test: Pipeline, datasource_test: DataSource, tmp_path: str
+    pipeline_test: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    training = pipeline_test.create_dataset(datasource_test)
+    training = dataset.to_instances(pipeline_test)
     pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[training]))
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
@@ -156,9 +100,9 @@ def test_training_from_pretrained_with_head_replace(
 
 
 def test_training_with_logging(
-    pipeline_test: Pipeline, datasource_test: DataSource, tmp_path: str
+    pipeline_test: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    training = pipeline_test.create_dataset(datasource_test)
+    training = dataset.to_instances(pipeline_test)
     pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[training]))
 
     configuration = TrainerConfiguration(
