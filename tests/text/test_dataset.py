@@ -3,6 +3,8 @@ import os
 import pandas as pd
 from pathlib import Path
 
+from allennlp.data import Instance, AllennlpLazyDataset, AllennlpDataset
+
 from biome.text import Pipeline, Dataset
 from tests import RESOURCES_PATH
 import pytest
@@ -87,17 +89,27 @@ def test_from_dict():
 
 def test_to_instances(dataset, default_pipeline_config):
     pl = Pipeline.from_config(default_pipeline_config)
-    instances = dataset.to_instances(pl, lazy=False)
-    assert len(instances) == 2
 
+    instances = dataset.to_instances(pl)
+    assert isinstance(instances, AllennlpLazyDataset)
+
+    instances = dataset.to_instances(pl, lazy=False)
+    assert isinstance(instances, AllennlpDataset)
+
+    assert len(instances) == len(dataset)
+    for instance in instances:
+        assert isinstance(instance, Instance)
+        assert "text" in instance.fields
+        assert "label" in instance.fields
+
+    # TODO: A missing label column should actually raise something ... but not so easy to implement
+    dataset.rename_column_("label", "not_label")
+    dataset.to_instances(pl)
+
+    # Missing input column should raise a KeyError
     dataset.rename_column_("text", "not_text")
     with pytest.raises(KeyError):
         dataset.to_instances(pl)
-
-    dataset.rename_column_("not_text", "text")
-    dataset.rename_column_("label", "not_label")
-    # TODO: This should actually raise something ... but not so easy to implement
-    dataset.to_instances(pl)
 
 
 # TODO: this test can go away once we replace our DataSource with Dataset in the dedicated explore test

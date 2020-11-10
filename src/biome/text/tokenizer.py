@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, TYPE_CHECKING
 
 import spacy
 from allennlp.common import Params
@@ -10,6 +10,9 @@ from spacy.language import Language
 from spacy.tokens.doc import Doc
 
 from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
+
+if TYPE_CHECKING:
+    from biome.text.configuration import TokenizerConfiguration
 
 
 class Tokenizer:
@@ -30,24 +33,20 @@ class Tokenizer:
 
     __SPACY_SENTENCIZER__ = "sentencizer"
 
-    def __init__(self, config: "biome.text.configuration.TokenizerConfiguration"):
+    def __init__(self, config: "TokenizerConfiguration"):
         _fetch_spacy_model(config.lang)
         self._config = config
-        self.lang = config.lang
 
-        self._keep_spacy_tokens = config.use_spacy_tokens
-        self._remove_spaces = config.remove_space_tokens
         self._end_tokens = config.end_tokens or []
         self._start_tokens = config.start_tokens or []
         # We reverse the tokens here because we're going to insert them with `insert(0)` later;
         # this makes sure they show up in the right order.
         self._start_tokens.reverse()
-        self.max_nr_of_sentences = config.max_nr_of_sentences
-        self.segment_sentences = config.segment_sentences
-        self.max_sequence_length = config.max_sequence_length
 
-        self.__nlp__ = get_spacy_model(self.lang, pos_tags=True, ner=False, parse=False)
-        if self.segment_sentences and not self.__nlp__.has_pipe(
+        self.__nlp__ = get_spacy_model(
+            self.config.lang, pos_tags=True, ner=False, parse=False
+        )
+        if config.segment_sentences and not self.__nlp__.has_pipe(
             self.__SPACY_SENTENCIZER__
         ):
             sentencizer = self.__nlp__.create_pipe(self.__SPACY_SENTENCIZER__)
@@ -61,7 +60,7 @@ class Tokenizer:
             )
 
     @property
-    def config(self) -> "biome.text.configuration.TokenizerConfiguration":
+    def config(self) -> "TokenizerConfiguration":
         return self._config
 
     @property
@@ -103,11 +102,14 @@ class Tokenizer:
         tokens: `List[Token]`
 
         """
-        tokens = self.nlp(text[: self.max_sequence_length])
-        return self._sanitize(_remove_spaces(tokens) if self._remove_spaces else tokens)
+        tokens = self.nlp(text[: self.config.max_sequence_length])
+        if self.config.remove_space_tokens:
+            tokens = [token for token in tokens if not token.is_space]
+
+        return self._sanitize(tokens)
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
-        """ Tokenizes a document-like structure containing lists of text inputs
+        """Tokenizes a document-like structure containing lists of text inputs
 
         Use this to account for hierarchical text structures (e.g., a paragraph)
 
@@ -121,19 +123,19 @@ class Tokenizer:
         tokens: `List[List[Token]]`
         """
         texts = [self.text_cleaning(text) for text in document]
-        if not self.segment_sentences:
-            return list(map(self._tokenize, texts[: self.max_nr_of_sentences]))
+        if not self.config.segment_sentences:
+            return list(map(self._tokenize, texts[: self.config.max_nr_of_sentences]))
         sentences = [
             sentence.string.strip()
             for doc in self.__nlp__.pipe(texts)
             for sentence in doc.sents
         ]
-        return list(map(self._tokenize, sentences[: self.max_nr_of_sentences]))
+        return list(map(self._tokenize, sentences[: self.config.max_nr_of_sentences]))
 
     def tokenize_record(
         self, record: Dict[str, Any], exclude_record_keys: bool
     ) -> List[List[Token]]:
-        """ Tokenizes a record-like structure containing text inputs
+        """Tokenizes a record-like structure containing text inputs
 
         Use this to keep information about the record-like data structure as input features to the model.
 
@@ -183,7 +185,7 @@ class Tokenizer:
         Converts spaCy tokens to allennlp tokens. Is a no-op if
         keep_spacy_tokens is True
         """
-        if not self._keep_spacy_tokens:
+        if not self.config.use_spacy_tokens:
             tokens = [
                 Token(
                     token.text,
@@ -214,8 +216,11 @@ class TransformersTokenizer(Tokenizer):
     config
         A `TokenizerConfiguration` object
     """
+
     def __init__(self, config):
-        self.pretrained_tokenizer = PretrainedTransformerTokenizer(**config.transformers_kwargs)
+        self.pretrained_tokenizer = PretrainedTransformerTokenizer(
+            **config.transformers_kwargs
+        )
         self._config = config
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
@@ -240,7 +245,3 @@ def _fetch_spacy_model(lang: str):
         spacy.load(lang, disable=["vectors", "textcat", "tagger" "parser" "ner"])
     except OSError:
         spacy.cli.download(lang)
-
-
-def _remove_spaces(tokens: List[spacy.tokens.Token]) -> List[spacy.tokens.Token]:
-    return [token for token in tokens if not token.is_space]
