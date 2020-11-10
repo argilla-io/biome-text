@@ -31,8 +31,8 @@ from biome.text.configuration import PipelineConfiguration
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
-from biome.text.dataset import InstancesDataset
 from biome.text.errors import EmptyVocabError
+from biome.text.dataset import InstancesDataset
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
 
@@ -180,6 +180,7 @@ class Pipeline:
         trainer_config: TrainerConfiguration,
         find_lr_config: FindLRConfiguration,
         training_data: Union[Dataset, InstancesDataset],
+        vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
     ):
         """Returns a learning rate scan on the model.
 
@@ -195,6 +196,11 @@ class Pipeline:
             A configuration for finding the learning rate
         training_data
             The training data
+        vocab_config
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary for the the learning rate scan.
+            If 'default', we will use the default configuration
+            `VocabularyConfiguration(sources=[training, validation])`.
+            If None, we will leave the pipeline's vocabulary untouched.
 
         Returns
         -------
@@ -204,10 +210,24 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
+        # Creating/Setting the vocabulary
+        vocab = None
+        if vocab_config == "default":
+            vocab = self._extend_vocabulary(
+                self.backbone.vocab,
+                vocab_config=VocabularyConfiguration(sources=[training_data]),
+            )
+        elif isinstance(vocab_config, VocabularyConfiguration):
+            vocab = self._extend_vocabulary(
+                self.backbone.vocab, vocab_config=vocab_config
+            )
+
+        if vocab is not None:
+            self._set_vocab(vocab)
+
         if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
             raise EmptyVocabError(
-                "Found an empty vocabulary. "
-                "You probably forgot to create a vocabulary with '.create_vocabulary()'."
+                "You need a non-empty vocabulary for the learning rate scan!"
             )
 
         if isinstance(training_data, Dataset):
@@ -249,7 +269,7 @@ class Pipeline:
         trainer: Optional[TrainerConfiguration] = None,
         validation: Optional[Union[Dataset, InstancesDataset]] = None,
         test: Optional[Union[Dataset, InstancesDataset]] = None,
-        extend_vocab: Optional[VocabularyConfiguration] = None,
+        vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
         loggers: List[BaseTrainLogger] = None,
         lazy: bool = False,
         restore: bool = False,
@@ -269,8 +289,11 @@ class Pipeline:
             The validation Dataset (optional)
         test
             The test Dataset (optional)
-        extend_vocab
-            Extends the vocabulary tokens with the provided VocabularyConfiguration
+        vocab_config
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary for the training.
+            If 'default', we will use the default configuration
+            `VocabularyConfiguration(sources=[training, validation])`.
+            If None, we will leave the pipeline's vocabulary untouched.
         loggers
             A list of loggers that execute a callback before the training, after each epoch,
             and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
@@ -295,20 +318,31 @@ class Pipeline:
 
             self.__configure_training_logging(output, quiet)
 
+            # Creating/Setting the vocabulary
             vocab = None
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
-            if extend_vocab is not None and not vocab:
+                if vocab_config is not None:
+                    self.__LOGGER.warning(
+                        "When restoring a training the 'vocab' argument is ignored!"
+                    )
+            elif vocab_config == "default":
+                sources = [training] + ([validation] if validation else [])
                 vocab = self._extend_vocabulary(
-                    self.backbone.vocab, vocab_config=extend_vocab
+                    self.backbone.vocab,
+                    vocab_config=VocabularyConfiguration(sources=sources),
                 )
-            if vocab:
+            elif isinstance(vocab_config, VocabularyConfiguration):
+                vocab = self._extend_vocabulary(
+                    self.backbone.vocab, vocab_config=vocab_config
+                )
+
+            if vocab is not None:
                 self._set_vocab(vocab)
 
             if self.has_empty_vocab():
                 raise EmptyVocabError(
-                    "Found an empty vocabulary. "
-                    "You probably forgot to create a vocabulary with '.create_vocabulary()'."
+                    "You need a non-empty vocabulary for the training!"
                 )
 
             from ._helpers import PipelineTrainer

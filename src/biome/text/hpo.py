@@ -241,16 +241,13 @@ class TuneExperiment(tune.Experiment):
         if is_wandb_installed_and_logged_in():
             train_loggers = [WandBLogger(project_name=config["name"])] + train_loggers
 
-        if pipeline.has_empty_vocab():
-            vocab_config = VocabularyConfiguration(sources=[train_ds, valid_ds])
-            pipeline.create_vocabulary(vocab_config)
-
         pipeline.train(
             output="training",
             training=train_ds,
             validation=valid_ds,
             trainer=trainer_config,
             loggers=train_loggers,
+            vocab_config=None if config["vocab_path"] else "default",
         )
 
     def __del__(self):
