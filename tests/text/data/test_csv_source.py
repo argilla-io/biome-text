@@ -14,7 +14,6 @@ def dataset() -> Dataset:
 
     file_path = os.path.join(FILES_PATH, "trailing_coma_in_headers.csv")
 
-    # TODO: erase download mode once the release which includes not caching the datasets is out
     dataset = Dataset.from_csv(paths=file_path, delimiter=";")
 
     return dataset
