@@ -1,34 +1,59 @@
 import os
 
-from biome.text.data import DataSource
-from tests import DaskSupportTest, RESOURCES_PATH
+import pytest
+from biome.text import Dataset
+
+from tests import RESOURCES_PATH
 
 FILES_PATH = os.path.join(RESOURCES_PATH, "data")
 
 
-class JsonDatasourceTest(DaskSupportTest):
-    def test_read_json(self):
-        file_path = os.path.join(FILES_PATH, "dataset_source.jsonl")
+@pytest.fixture
+def dataset_source() -> Dataset:
+    """Creation of dataset"""
 
-        datasource = DataSource(format="json", source=file_path)
-        data_frame = datasource.to_dataframe().compute()
+    file_path = os.path.join(FILES_PATH, "dataset_source.jsonl")
+    dataset_source = Dataset.from_json(paths=file_path)
 
-        assert len(data_frame) > 0
-        self.assertTrue("path" in data_frame.columns)
+    return dataset_source
 
-    def test_flatten_json(self):
-        file_path = os.path.join(FILES_PATH, "to-be-flattened.jsonl")
-        ds = DataSource(format="json", flatten=True, source=file_path)
-        df = ds.to_dataframe().compute()
 
-        for c in ["persons.*.lastName", "persons.*.name"]:
-            self.assertIn(c, df.columns, f"Expected {c} as column name")
+@pytest.fixture
+def dataset_flatten_source() -> Dataset:
+    """Creation of the flatten dataset"""
 
-    def test_flatten_nested_list(self):
-        file_path = os.path.join(FILES_PATH, "nested-list.jsonl")
+    file_path = os.path.join(FILES_PATH, "to-be-flattened.jsonl")
+    dataset_flatten_source = Dataset.from_json(paths=file_path)
 
-        ds = DataSource(format="json", flatten=True, source=file_path)
-        df = ds.to_dataframe().compute()
+    return dataset_flatten_source
 
-        for c in ["classification.*.origin.*.key", "classification.*.origin.*.source"]:
-            self.assertIn(c, df.columns, f"Expected {c} as data column")
+
+@pytest.fixture
+def dataset_nested_list() -> Dataset:
+    """Creation of the nested-list dataset"""
+
+    file_path = os.path.join(FILES_PATH, "nested-list.jsonl")
+    dataset_nested_list = Dataset.from_json(paths=file_path)
+
+    return dataset_nested_list
+
+
+def test_read_json(dataset_source):
+    """Testing JSON reading"""
+
+    assert len(dataset_source) > 0
+
+
+def test_flatten_json(dataset_flatten_source):
+    """Assert that flatten operation divides correctly"""
+    dataset_flatten_source.flatten_()
+
+    for c in ["complexData.a", "complexData.b"]:
+        assert c in dataset_flatten_source.column_names
+
+
+def test_flatten_nested_list(dataset_nested_list):
+    """Assert that the nested list is processed correctly"""
+    dataset_nested_list.flatten_()
+
+    assert len(dataset_nested_list) > 0
