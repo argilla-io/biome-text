@@ -9,6 +9,8 @@ from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECK
 import datasets
 from datasets.fingerprint import Hasher
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
+from elasticsearch import Elasticsearch
+
 from biome.text import __version__ as biome__version__
 from allennlp import __version__ as allennlp__version__
 from spacy import __version__ as spacy__version__
@@ -59,10 +61,7 @@ class Dataset:
     _LOGGER = logging.getLogger(__name__)
     _PICKLED_INSTANCES_COL_NAME = "PICKLED_INSTANCES_FOR_BIOME_PIPELINE"
 
-    def __init__(
-        self,
-        dataset: datasets.Dataset,
-    ):
+    def __init__(self, dataset: datasets.Dataset):
         self.dataset: datasets.Dataset = dataset
 
     @classmethod
@@ -133,6 +132,39 @@ class Dataset:
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_dict
         """
         return cls(datasets.Dataset.from_dict(*args, **kwargs))
+
+    @classmethod
+    def from_elasticsearch(
+        cls, client: Elasticsearch, index: str, query: Optional[dict] = None
+    ):
+        """
+        Create a Dataset from elasticsearch index
+
+        Parameters
+        ----------
+        client
+        index
+        query
+
+        Returns
+        -------
+        A new Dataset created from scanned query records in elasticsearch index
+
+        """
+
+        from elasticsearch.helpers import scan
+
+        def __clean_document__(document: Dict) -> Dict:
+            source = document.pop("_source")
+            return {**source, **document}
+
+        scan_docs = [
+            __clean_document__(doc)
+            for doc in scan(client=client, query=query or {}, index=index)
+        ]
+
+        data_dict = {k: [doc.get(k) for doc in scan_docs] for k in scan_docs[0]}
+        return cls.from_dict(data_dict)
 
     @classmethod
     @copy_sign_and_docs(datasets.Dataset.load_from_disk)
