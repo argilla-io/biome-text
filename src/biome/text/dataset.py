@@ -158,12 +158,12 @@ class Dataset:
             source = document.pop("_source")
             return {**source, **document}
 
-        scan_docs = [
+        scanned_docs = [
             __clean_document__(doc)
             for doc in scan(client=client, query=query or {}, index=index)
         ]
 
-        data_dict = {k: [doc.get(k) for doc in scan_docs] for k in scan_docs[0]}
+        data_dict = {k: [doc.get(k) for doc in scanned_docs] for k in scanned_docs[0]}
         return cls.from_dict(data_dict)
 
     @classmethod
