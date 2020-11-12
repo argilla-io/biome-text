@@ -269,7 +269,7 @@ class Dataset:
         return self.dataset.num_rows
 
     def to_instances(
-        self, pipeline: "Pipeline", lazy=True, num_proc: Optional[int] = None
+        self, pipeline: "Pipeline", lazy=True, num_proc: int = 1
     ) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
@@ -280,7 +280,7 @@ class Dataset:
         lazy
             If true, instances are lazily read from disk, otherwise they are kept in memory.
         num_proc
-            Number of processes to be spawn. If None, we try to figure out a decent default.
+            Number of processes to be spawn.
         """
         self._LOGGER.info("Creating instances ...")
 
@@ -294,14 +294,7 @@ class Dataset:
                 "featurize": pipeline.head.featurize,
                 "instances_col_name": self._PICKLED_INSTANCES_COL_NAME,
             },
-            # trying to be smart about multiprocessing,
-            # at least 1000 examples per process to avoid overhead,
-            # but 1000 is a pretty random number, can surely be optimized
-            num_proc=num_proc
-            or min(
-                max(1, int(len(self.dataset) / 1000)),
-                int(multiprocessing.cpu_count() / 2),
-            ),
+            num_proc=num_proc,
             new_fingerprint=self._create_fingerprint_for_instance_dataset(pipeline),
         )
 
