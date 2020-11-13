@@ -465,8 +465,8 @@ class Dataset:
                 / f"{fingerprint}.{self._CACHED_INSTANCE_LIST_EXTENSION}"
             )
             with cache_path.open("wb") as file:
+                self._LOGGER.info(f"Caching instances to {cache_path})")
                 pickle.dump(instance_list, file)
-            self._LOGGER.info(f"Cached instances to {cache_path})")
         except (IndexError, KeyError, FileNotFoundError):
             pass
 
