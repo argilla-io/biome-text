@@ -3,17 +3,29 @@ import functools
 import inspect
 import logging
 import pickle
-from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECKING
+from pathlib import Path
+from typing import (
+    Union,
+    Dict,
+    Iterable,
+    List,
+    Any,
+    Tuple,
+    TYPE_CHECKING,
+    Optional,
+    Callable,
+)
 
 import datasets
-from datasets.fingerprint import Hasher
+from allennlp import __version__ as allennlp__version__
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 
 from biome.text import __version__ as biome__version__
-from allennlp import __version__ as allennlp__version__
+from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
+from tqdm.auto import tqdm
 
 if TYPE_CHECKING:
     from biome.text.pipeline import Pipeline
@@ -59,7 +71,7 @@ class Dataset:
     """
 
     _LOGGER = logging.getLogger(__name__)
-    _PICKLED_INSTANCES_COL_NAME = "PICKLED_INSTANCES_FOR_BIOME_PIPELINE"
+    _CACHED_INSTANCE_LIST_EXTENSION = "instance_list"
 
     def __init__(self, dataset: datasets.Dataset):
         self.dataset: datasets.Dataset = dataset
@@ -300,7 +312,7 @@ class Dataset:
         return self.dataset.num_rows
 
     def to_instances(
-        self, pipeline: "Pipeline", lazy=True, num_proc: int = 1
+        self, pipeline: "Pipeline", lazy: bool = False, use_cache: bool = True
     ) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
@@ -309,94 +321,168 @@ class Dataset:
         pipeline
             The pipeline for which to create the instances.
         lazy
-            If true, instances are lazily read from disk, otherwise they are kept in memory.
-        num_proc
-            Number of processes to be spawn.
+            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
+        use_cache
+            If true, we will try to reuse cached instances. Ignored when `lazy=True`.
         """
-        self._LOGGER.info("Creating instances ...")
-
         input_columns = [(col, False) for col in pipeline.inputs if col]
         input_columns.extend([(col, True) for col in pipeline.output if col])
-
-        dataset_with_pickled_instances = self.dataset.map(
-            self._create_and_pickle_instances,
-            fn_kwargs={
-                "input_columns": input_columns,
-                "featurize": pipeline.head.featurize,
-                "instances_col_name": self._PICKLED_INSTANCES_COL_NAME,
-            },
-            num_proc=num_proc,
-            new_fingerprint=self._create_fingerprint_for_instance_dataset(pipeline),
-        )
 
         if lazy:
             return AllennlpLazyDataset(
                 instance_generator=self._build_instance_generator(
-                    dataset_with_pickled_instances
+                    pipeline, self.dataset, input_columns
                 ),
-                file_path=self._PICKLED_INSTANCES_COL_NAME,
+                file_path="dummy",
             )
 
-        return AllennlpDataset(
-            list(
-                self._build_instance_generator(dataset_with_pickled_instances)(
-                    self._PICKLED_INSTANCES_COL_NAME
+        fingerprint = self._create_fingerprint_for_instance_list(pipeline)
+        instance_list = self._load_instance_list(fingerprint) if use_cache else None
+        if instance_list is None:
+            instance_generator = self._build_instance_generator(
+                pipeline, self.dataset, input_columns
+            )("dummy")
+            tqdm_prog = tqdm(
+                instance_generator,
+                desc="Loading instances into memory",
+                total=len(self.dataset),
+            )
+            instance_list = [instance for instance in tqdm_prog]
+            self._cache_instance_list(instance_list, fingerprint)
+
+        return AllennlpDataset(instance_list)
+
+    @staticmethod
+    def _build_instance_generator(
+        pipeline: "Pipeline",
+        dataset: datasets.Dataset,
+        input_columns: List[Tuple[str, bool]],
+    ) -> Callable[[str], Iterable[Instance]]:
+        """Builds the instance generator
+
+        Parameters
+        ----------
+        pipeline
+            The pipeline for which the instances are created for
+        dataset
+            The dataset underlying the instances
+        input_columns
+            The columns in the dataset used for the instances
+
+        Returns
+        -------
+        instance_generator
+        """
+        # we need a dummy str to comply with AllennlpLazyDataset API
+        def instance_generator(dummy: str) -> Iterable[Instance]:
+            for row in dataset:
+                instance = pipeline.head.featurize(
+                    **{
+                        key: row.get(key) if optional else row[key]
+                        for key, optional in input_columns
+                    }
                 )
-            )
-        )
-
-    @staticmethod
-    def _create_and_pickle_instances(row, input_columns, featurize, instances_col_name):
-        """Helper function to be used together with the `datasets.Dataset.map` method"""
-        instance = featurize(
-            **{
-                key: row.get(key) if optional else row[key]
-                for key, optional in input_columns
-            }
-        )
-
-        return {instances_col_name: pickle.dumps(instance)}
-
-    @staticmethod
-    def _build_instance_generator(pickled_instances: datasets.Dataset):
-        """Helper function to be used together with the `allennlp.data.AllennlpLazyDataset`"""
-
-        def instance_unpickler(instances_col_name: str) -> Iterable[Instance]:
-            for row in pickled_instances:
-                instance = pickle.loads(row[instances_col_name])
                 # We skip examples for which the head could not create an instance
                 # We leave it to the head to issue a logging.warning for these examples
                 if instance is not None:
                     yield instance
 
-        return instance_unpickler
+        return instance_generator
 
-    def _create_fingerprint_for_instance_dataset(self, pipeline: "Pipeline") -> str:
-        """Creates a fingerprint for the instance dataset to take advantage of datasets caching mechanism
+    def _create_fingerprint_for_instance_list(self, pipeline: "Pipeline") -> str:
+        """Creates a fingerprint for the instance list
 
         The fingerprint is based on:
         - the fingerprint of the previous dataset
         - the tokenizer config
         - the indexer config of the features
         - the biome__version__, allennlp__version__ and spaCy__version__ just to be completely sure!
+
+        Parameters
+        ----------
+        pipeline
+            Pipeline with the tokenizer and indexer config of the features
+
+        Returns
+        -------
+        fingerprint
+            String of hexadecimal digits
         """
         hasher = Hasher()
-        # add the previous fingerprint to the hash
         hasher.update(self.dataset._fingerprint)  # necessary evil ...
-        # add the tokenizer config to the hash
         hasher.update(vars(pipeline.backbone.tokenizer.config))
-        # add the indexer config of all features to the hash
         feature_config = pipeline.config.features
         for feature_key in feature_config.keys:
             feature: Features = getattr(feature_config, feature_key)
             if feature:
                 hasher.update(feature.config["indexer"])
-        # add key software versions to the hash
         hasher.update(biome__version__)
         hasher.update(allennlp__version__)
         hasher.update(spacy__version__)
 
         return hasher.hexdigest()
+
+    def _load_instance_list(self, fingerprint: str) -> Optional[List[Instance]]:
+        """Loads the cached instance list
+
+        Parameters
+        ----------
+        fingerprint
+            Fingerprint of the instance list
+
+        Returns
+        -------
+        instance_list
+            Returns None, if no cached instances are found
+        """
+        self._LOGGER.info("Looking for cached instances")
+        try:
+            cache_path = (
+                Path(self.dataset.cache_files[0]["filename"]).parent
+                / f"{fingerprint}.{self._CACHED_INSTANCE_LIST_EXTENSION}"
+            )
+            with cache_path.open("rb") as file:
+                self._LOGGER.warning(f"Reusing cached instances ({cache_path})")
+                instance_list = pickle.load(file)
+        except (IndexError, KeyError, FileNotFoundError):
+            return None
+
+        return instance_list
+
+    def _cache_instance_list(self, instance_list: List[Instance], fingerprint: str):
+        """Caches a instance list
+
+        Parameters
+        ----------
+        instance_list
+            List of instances to be cached
+        fingerprint
+            Fingerprint of the instance list
+        """
+        try:
+            cache_path = (
+                Path(self.dataset.cache_files[0]["filename"]).parent
+                / f"{fingerprint}.{self._CACHED_INSTANCE_LIST_EXTENSION}"
+            )
+            with cache_path.open("wb") as file:
+                pickle.dump(instance_list, file)
+            self._LOGGER.info(f"Cached instances to {cache_path})")
+        except (IndexError, KeyError, FileNotFoundError):
+            pass
+
+    @copy_sign_and_docs(datasets.Dataset.cleanup_cache_files)
+    def cleanup_cache_files(self):
+        # Apart from cleaning up datasets cache files, this also checks if there is actually a cache dir
+        nr_of_removed_files = self.dataset.cleanup_cache_files()
+        if nr_of_removed_files is not None:
+            cache_dir_path = Path(self.dataset.cache_files[0]["filename"]).parent
+            # cleaning up the cached instance lists
+            for file_path in cache_dir_path.glob(f"*.{self._CACHED_INSTANCE_LIST_EXTENSION}"):
+                file_path.unlink()
+                self._LOGGER.info(f"Removed {file_path}")
+                nr_of_removed_files += 1
+
+        return nr_of_removed_files
 
     def __del__(self):
         self.dataset.__del__()

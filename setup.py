@@ -97,7 +97,8 @@ if __name__ == "__main__":
             "mlflow~=1.9.0",
             "elasticsearch>=6.8.0,<7.5.0",
             "ray[tune]~=1.0.0",
-            "datasets~=1.1.2"
+            "datasets~=1.1.2",
+            "tqdm>=4.49.0"
         ],
         extras_require={
             "testing": [
