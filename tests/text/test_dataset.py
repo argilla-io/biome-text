@@ -120,10 +120,10 @@ def test_from_elasticsearch(dataset, default_pipeline_config):
 def test_to_instances(dataset, default_pipeline_config):
     pl = Pipeline.from_config(default_pipeline_config)
 
-    instances = dataset.to_instances(pl)
+    instances = dataset.to_instances(pl, lazy=True)
     assert isinstance(instances, AllennlpLazyDataset)
 
-    instances = dataset.to_instances(pl, lazy=False)
+    instances = dataset.to_instances(pl)
     assert isinstance(instances, AllennlpDataset)
 
     assert len(instances) == len(dataset)
@@ -142,28 +142,6 @@ def test_to_instances(dataset, default_pipeline_config):
         dataset.to_instances(pl)
 
 
-# TODO: this test can go away once we replace our DataSource with Dataset in the dedicated explore test
-def test_explore():
-    ds = Dataset.from_json(
-        paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
-    )
-
-    ds.dataset.rename_column_("hypothesis", "text")
-    # or to keep the 'hypothesis' column and add the new 'text' column:
-    # ds.dataset = ds.dataset.map(lambda x: {"text": x["hypothesis"]})
-
-    labels = list(set(ds["label"]))
-
-    pl = Pipeline.from_config(
-        {
-            "name": "datasets_test",
-            "head": {"type": "TextClassification", "labels": labels},
-        }
-    )
-
-    explore.create(pipeline=pl, dataset=ds, batch_size=1, show_explore=False)
-
-
 @pytest.mark.usefixtures("dataset")
 class TestInstanceCaching:
     def uses_cached_instances(self, pipeline_config) -> bool:
@@ -178,14 +156,14 @@ class TestInstanceCaching:
         return number_of_files_before == number_of_files_after
 
     def test_same_pipeline(self, default_pipeline_config):
-        self.dataset.dataset.cleanup_cache_files()
+        self.dataset.cleanup_cache_files()
         assert not self.uses_cached_instances(default_pipeline_config)
 
         if not self.uses_cached_instances(default_pipeline_config):
             pytest.fail("The same pipelines did not reuse the cached instances!")
 
     def test_compatible_pipelines(self, default_pipeline_config):
-        self.dataset.dataset.cleanup_cache_files()
+        self.dataset.cleanup_cache_files()
         assert not self.uses_cached_instances(default_pipeline_config)
 
         default_pipeline_config["features"]["word"]["embedding_dim"] = 4
@@ -193,7 +171,7 @@ class TestInstanceCaching:
             pytest.fail("Compatible pipelines did not reuse the cached instances!")
 
     def test_incompatible_pipelines(self, default_pipeline_config):
-        self.dataset.dataset.cleanup_cache_files()
+        self.dataset.cleanup_cache_files()
         assert not self.uses_cached_instances(default_pipeline_config)
 
         default_pipeline_config["features"]["word"]["lowercase_tokens"] = True
@@ -212,7 +190,7 @@ class TestInstanceCaching:
             pytest.fail("Incompatible pipelines did reuse the cached instances!")
 
     def test_incompatible_datasets(self, default_pipeline_config):
-        self.dataset.dataset.cleanup_cache_files()
+        self.dataset.cleanup_cache_files()
         assert not self.uses_cached_instances(default_pipeline_config)
 
         self.dataset = self.dataset.map(
@@ -224,7 +202,7 @@ class TestInstanceCaching:
     def test_incompatible_versions(self, default_pipeline_config, monkeypatch):
         from biome.text import dataset
 
-        self.dataset.dataset.cleanup_cache_files()
+        self.dataset.cleanup_cache_files()
         assert not self.uses_cached_instances(default_pipeline_config)
 
         monkeypatch.setattr(dataset, "biome__version__", "mockversion")
