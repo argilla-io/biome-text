@@ -10,6 +10,7 @@ import datasets
 from datasets.fingerprint import Hasher
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
 from elasticsearch import Elasticsearch
+from elasticsearch.helpers import scan
 
 from biome.text import __version__ as biome__version__
 from allennlp import __version__ as allennlp__version__
@@ -151,8 +152,6 @@ class Dataset:
         A new Dataset created from scanned query records in elasticsearch index
 
         """
-
-        from elasticsearch.helpers import scan
 
         def __clean_document__(document: Dict) -> Dict:
             source = document.pop("_source")
