@@ -84,7 +84,6 @@ if __name__ == "__main__":
             "uvicorn~=0.11.0",
             "distributed~=2.17.0",
             "cachey~=0.2.0",
-            "pyarrow~=0.17.0",
             "ujson~=2.0.0",
             "pandas~=1.1.0",
             "xlrd~=1.2.0",
