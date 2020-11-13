@@ -812,7 +812,13 @@ class _PreTrainedPipeline(Pipeline):
 
     def __init__(self, pretrained_path: str, **extra_args):
         self._binary = pretrained_path
-        archive = load_archive(self._binary, **extra_args)
+        archive = load_archive(
+            self._binary,
+            # Necessary for AllenNLP>=1.2.0 that requires a dataset_reader config key
+            # We choose the "interleaving" type since it is the most light weight one.
+            overrides={"dataset_reader": {"type": "interleaving", "readers": {}}},
+            **extra_args,
+        )
         self._model = self.__model_from_archive(archive)
         self._config = self.__config_from_archive(archive)
 
