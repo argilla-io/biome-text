@@ -74,7 +74,7 @@ if __name__ == "__main__":
         install_requires=[
             "allennlp~=1.2.0",
             "spacy~=2.3.0",
-            "gevent~=1.4.0",
+            "gevent~=20.9.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
             "click~=7.1.0",
