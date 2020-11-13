@@ -234,7 +234,7 @@ class Pipeline:
         test: Optional[Union[Dataset, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         loggers: List[BaseTrainLogger] = None,
-        lazy: bool = True,
+        lazy: bool = False,
         restore: bool = False,
         quiet: bool = False,
     ) -> TrainingResults:
@@ -258,7 +258,7 @@ class Pipeline:
             A list of loggers that execute a callback before the training, after each epoch,
             and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
         lazy
-            If true, load the data lazily from disk, otherwise load them in memory.
+            If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
         restore
             If enabled, tries to read previous training status from the `output` folder and
             continues the training process
