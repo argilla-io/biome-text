@@ -1,13 +1,14 @@
 import os
-
-import pandas as pd
+import time
 from pathlib import Path
 
-from allennlp.data import Instance, AllennlpLazyDataset, AllennlpDataset
-
-from biome.text import Pipeline, Dataset
-from tests import RESOURCES_PATH
+import pandas as pd
 import pytest
+from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
+from elasticsearch import Elasticsearch
+
+from biome.text import Dataset, Pipeline, explore
+from tests import RESOURCES_PATH
 
 
 @pytest.fixture(scope="class")
@@ -29,9 +30,7 @@ def dataset(tmp_path_factory, request):
 def default_pipeline_config():
     return {
         "name": "datasets_test",
-        "features": {
-            "word": {"embedding_dim": 2},
-        },
+        "features": {"word": {"embedding_dim": 2}},
         "head": {"type": "TextClassification", "labels": ["this", "that"]},
     }
 
@@ -87,6 +86,37 @@ def test_from_dict():
     assert len(ds) == 3
 
 
+def __wait_for_index_creation__(es_client: Elasticsearch, es_index: str):
+    retries = 0
+    max_retries = 3
+
+    while retries < max_retries and not es_client.count(index=es_index)["count"]:
+        retries += 1
+        time.sleep(retries)
+
+    if retries >= max_retries:
+        raise Exception(
+            f"Max retries reached. Index {es_index} could not be properly created"
+        )
+
+
+def test_from_elasticsearch(dataset, default_pipeline_config):
+    pipeline = Pipeline.from_config(default_pipeline_config)
+    es_index = explore.create(
+        pipeline, dataset, explore_id="test_index", show_explore=False
+    )
+    es_client = Elasticsearch()
+    __wait_for_index_creation__(es_client, es_index)
+
+    ds = Dataset.from_elasticsearch(
+        es_client, index=es_index, query={"query": {"match_all": {}}}
+    )
+
+    assert len(ds) == len(dataset)
+    for key in ["_id", "_index", "_type"]:
+        assert key in ds.column_names
+
+
 def test_to_instances(dataset, default_pipeline_config):
     pl = Pipeline.from_config(default_pipeline_config)
 
@@ -114,8 +144,6 @@ def test_to_instances(dataset, default_pipeline_config):
 
 # TODO: this test can go away once we replace our DataSource with Dataset in the dedicated explore test
 def test_explore():
-    from biome.text import explore
-
     ds = Dataset.from_json(
         paths=os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
     )
@@ -129,10 +157,7 @@ def test_explore():
     pl = Pipeline.from_config(
         {
             "name": "datasets_test",
-            "head": {
-                "type": "TextClassification",
-                "labels": labels,
-            },
+            "head": {"type": "TextClassification", "labels": labels},
         }
     )
 

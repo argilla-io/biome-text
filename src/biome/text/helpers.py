@@ -344,7 +344,7 @@ def offsets_from_tags(
     -------
     offsets
         A list of dicts with start and end character/token index with respect to the doc and the span label:
-        `{"start": int, "end": int, "start_token": int, "end_token", "label": str}`
+        `{"start": int, "end": int, "start_token": int, "end_token": int, "label": str}`
     """
     # spacy.gold.offsets_from_biluo_tags surprisingly does not check this ...
     if len(doc) != len(tags):

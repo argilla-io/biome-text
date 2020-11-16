@@ -146,12 +146,9 @@ class TokenClassification(TaskHead):
         tags
             A list of tags in the BIOUL or BIO format.
         """
-
-        pre_tokenized = not isinstance(text, str)
-        if pre_tokenized:  # compose spacy doc from tokens
-            doc = Doc(self.backbone.tokenizer.nlp.vocab, words=text)
-        else:
+        if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
+            tokens = [token.text for token in doc]
             tags = (
                 tags_from_offsets(doc, entities, self._label_encoding)
                 if entities is not None
@@ -163,10 +160,12 @@ class TokenClassification(TaskHead):
                     f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
+        # text is already pre-tokenized
+        else:
+            tokens = text
 
-        instance = self._featurize_tokens([token.text for token in doc], tags)
-        instance.add_field("spacy_doc", MetadataField(doc))
-        instance.add_field("pre_tokenized", MetadataField(pre_tokenized))
+        instance = self._featurize_tokens(tokens, tags)
+        instance.add_field("raw_text", MetadataField(text))
 
         return instance
 
@@ -194,8 +193,7 @@ class TokenClassification(TaskHead):
     def forward(  # type: ignore
         self,
         text: TextFieldTensors,
-        spacy_doc: List[Doc],
-        pre_tokenized: List[bool],
+        raw_text: List[Union[str, List[str]]],
         tags: torch.IntTensor = None,
     ) -> TaskOutput:
 
@@ -223,7 +221,7 @@ class TokenClassification(TaskHead):
             probs=class_probabilities,
             viterbi_paths=viterbi_paths,
             mask=mask,
-            tokenization=(spacy_doc, pre_tokenized),
+            raw_text=raw_text,
         )
 
         if tags is not None:
@@ -256,13 +254,20 @@ class TokenClassification(TaskHead):
         ]
 
     def decode(self, output: TaskOutput) -> TaskOutput:
-        # Te dims are: batch, k_tags, tags
+        # The dims are: batch, k_tags, tags
         output.tags: List[List[List[str]]] = [
             self._decode_tags(k_tags) for k_tags in output.viterbi_paths
         ]
 
         output.entities, output.tokens = [], []
-        for doc, pre_tokenized, k_tags in zip(*output.tokenization, output.tags):
+        for raw_text, k_tags in zip(output.raw_text, output.tags):
+            pre_tokenized = not isinstance(raw_text, str)
+            if pre_tokenized:
+                # compose spacy doc from tokens
+                doc = Doc(self.backbone.tokenizer.nlp.vocab, words=raw_text)
+            else:
+                doc = self.backbone.tokenizer.nlp(raw_text)
+
             output.entities.append([self._decode_entities(doc, tags, pre_tokenized) for tags in k_tags])
             output.tokens.append(self._decode_tokens(doc) if not pre_tokenized else None)
 
@@ -273,7 +278,7 @@ class TokenClassification(TaskHead):
         del output.logits
         del output.mask
         del output.probs
-        del output.tokenization
+        del output.raw_text
         del output.viterbi_paths
 
         return output

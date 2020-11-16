@@ -9,6 +9,9 @@ from typing import Union, Dict, Iterable, List, Any, Tuple, Optional, TYPE_CHECK
 import datasets
 from datasets.fingerprint import Hasher
 from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import scan
+
 from biome.text import __version__ as biome__version__
 from allennlp import __version__ as allennlp__version__
 from spacy import __version__ as spacy__version__
@@ -59,10 +62,7 @@ class Dataset:
     _LOGGER = logging.getLogger(__name__)
     _PICKLED_INSTANCES_COL_NAME = "PICKLED_INSTANCES_FOR_BIOME_PIPELINE"
 
-    def __init__(
-        self,
-        dataset: datasets.Dataset,
-    ):
+    def __init__(self, dataset: datasets.Dataset):
         self.dataset: datasets.Dataset = dataset
 
     @classmethod
@@ -133,6 +133,37 @@ class Dataset:
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_dict
         """
         return cls(datasets.Dataset.from_dict(*args, **kwargs))
+
+    @classmethod
+    def from_elasticsearch(
+        cls, client: Elasticsearch, index: str, query: Optional[dict] = None
+    ):
+        """
+        Create a Dataset from elasticsearch index
+
+        Parameters
+        ----------
+        client
+        index
+        query
+
+        Returns
+        -------
+        A new Dataset created from scanned query records in elasticsearch index
+
+        """
+
+        def __clean_document__(document: Dict) -> Dict:
+            source = document.pop("_source")
+            return {**source, **document}
+
+        scanned_docs = [
+            __clean_document__(doc)
+            for doc in scan(client=client, query=query or {}, index=index)
+        ]
+
+        data_dict = {k: [doc.get(k) for doc in scanned_docs] for k in scanned_docs[0]}
+        return cls.from_dict(data_dict)
 
     @classmethod
     @copy_sign_and_docs(datasets.Dataset.load_from_disk)
@@ -269,7 +300,7 @@ class Dataset:
         return self.dataset.num_rows
 
     def to_instances(
-        self, pipeline: "Pipeline", lazy=True, num_proc: Optional[int] = None
+        self, pipeline: "Pipeline", lazy=True, num_proc: int = 1
     ) -> InstancesDataset:
         """Convert input to instances for the pipeline
 
@@ -280,7 +311,7 @@ class Dataset:
         lazy
             If true, instances are lazily read from disk, otherwise they are kept in memory.
         num_proc
-            Number of processes to be spawn. If None, we try to figure out a decent default.
+            Number of processes to be spawn.
         """
         self._LOGGER.info("Creating instances ...")
 
@@ -294,14 +325,7 @@ class Dataset:
                 "featurize": pipeline.head.featurize,
                 "instances_col_name": self._PICKLED_INSTANCES_COL_NAME,
             },
-            # trying to be smart about multiprocessing,
-            # at least 1000 examples per process to avoid overhead,
-            # but 1000 is a pretty random number, can surely be optimized
-            num_proc=num_proc
-            or min(
-                max(1, int(len(self.dataset) / 1000)),
-                int(multiprocessing.cpu_count() / 2),
-            ),
+            num_proc=num_proc,
             new_fingerprint=self._create_fingerprint_for_instance_dataset(pipeline),
         )
 
