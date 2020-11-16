@@ -7,22 +7,16 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
 from urllib.error import URLError
 from urllib.parse import urlparse
 
-import datasets
 import elasticsearch.helpers
-import pandas as pd
 from allennlp.common.util import sanitize
 from biome.text import constants
 from biome.text import helpers
 from biome.text import Pipeline
-from biome.text.data import DataSource
 from biome.text.dataset import Dataset
 from biome.text.ui import launch_ui
-from dask import dataframe as dd
-from dask_elk.client import DaskElasticClient
 from dataclasses import dataclass
 from dataclasses import field
 from elasticsearch import Elasticsearch
@@ -39,8 +33,8 @@ class DataExploration:
     name: str
     pipeline: Pipeline
     use_prediction: bool
-    datasource_name: str
-    datasource_columns: List[str] = field(default_factory=list)
+    dataset_name: str
+    dataset_columns: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def as_old_format(self) -> Dict[str, Any]:
@@ -53,13 +47,13 @@ class DataExploration:
         signature = [self.pipeline.inputs + self.pipeline.output]
         return {
             **self.metadata,
-            "datasource": self.datasource_name,
+            "datasource": self.dataset_name,
             # TODO: This should change when ui is normalized (action detail and action link naming)
             "explore_name": self.name,
             "model": self.pipeline.name,
-            "columns": self.datasource_columns,
+            "columns": self.dataset_columns,
             "metadata_columns": [
-                c for c in self.datasource_columns if c not in signature
+                c for c in self.dataset_columns if c not in signature
             ],
             "pipeline": self.pipeline.type_name,
             "pipeline_config": self.pipeline.config.as_dict(),
@@ -79,8 +73,7 @@ class _ExploreOptions:
     Parameters
     ----------
     batch_size
-        DataSource: The batch size for indexing predictions (default is `500)
-        Dataset: Batch size for the predictions
+        Batch size for the predictions
     num_proc
         Only for Dataset: Number of processes to run predictions in parallel (default: 1)
     prediction_cache_size
@@ -127,7 +120,7 @@ class _ElasticsearchDAO:
         self,
         es_index: str,
         data_exploration: DataExploration,
-        ddf_content: Union[dd.DataFrame, datasets.Dataset],
+        dataset: Dataset,
         force_delete: bool,
     ) -> None:
         """Creates an exploration data record data exploration"""
@@ -155,28 +148,14 @@ class _ElasticsearchDAO:
             },
         )
 
-        if isinstance(ddf_content, datasets.Dataset):
-            column_names = ddf_content.column_names
-            ddf_content = ddf_content.map(
-                lambda x: {
-                    col_name: helpers.stringify(x[col_name])
-                    for col_name in column_names
-                }
-            )
-            self._index_dataset(dataset=ddf_content, index=es_index)
-        else:
-            # Stringify input data for better elasticsearch index mapping integration,
-            # avoiding properties with multiple value types (string and long,...)
-            for column in ddf_content.columns:
-                ddf_content[column] = ddf_content[column].apply(helpers.stringify)
-
-            (
-                DaskElasticClient(
-                    host=self.es_host, retry_on_timeout=True, http_compress=True
-                )
-                .save(ddf_content, index=es_index, doc_type=self.es_doc)
-                .persist()
-            )
+        column_names = dataset.column_names
+        dataset = dataset.map(
+            lambda x: {
+                col_name: helpers.stringify(x[col_name])
+                for col_name in column_names
+            }
+        )
+        self._index_dataset(dataset=dataset, index=es_index)
 
     def __create_data_index(self, es_index: str, force_delete: bool):
         """Creates an explore data index if not exists or is forced"""
@@ -204,7 +183,7 @@ class _ElasticsearchDAO:
             params={"include_type_name": "true"},
         )
 
-    def _index_dataset(self, dataset: datasets.Dataset, index: str):
+    def _index_dataset(self, dataset: Dataset, index: str):
         number_of_docs = len(dataset)
         successes = 0
 
@@ -226,7 +205,7 @@ class _ElasticsearchDAO:
 
 def create(
     pipeline: Pipeline,
-    data_source: [DataSource, Dataset],
+    dataset: Dataset,
     explore_id: Optional[str] = None,
     es_host: Optional[str] = None,
     batch_size: int = 50,
@@ -247,15 +226,14 @@ def create(
     ----------
     pipeline
         Pipeline used for data exploration
-    data_source
-        The data source/data set
+    dataset
+        The dataset to explore
     explore_id
         A name or id for this explore run, useful for running and keep track of several explorations
     es_host
         The URL to the Elasticsearch host for indexing predictions (default is `localhost:9200`)
     batch_size
-        DataSource: The batch size for indexing predictions (default is `500)
-        Dataset: Batch size for the predictions
+        Batch size for the predictions
     num_proc
         Only for Dataset: Number of processes to run predictions in parallel (default: 1)
     prediction_cache_size
@@ -281,110 +259,23 @@ def create(
 
     es_dao = _ElasticsearchDAO(es_host=es_host)
 
-    if isinstance(data_source, Dataset):
-        _explore_a_dataset(
-            explore_id=explore_id,
-            pipeline=pipeline,
-            dataset=data_source.dataset,
-            options=opts,
-            es_dao=es_dao,
-        )
-    else:
-        data_source.mapping = pipeline._update_ds_mapping_with_pipeline_input_output(
-            data_source
-        )
-
-        _explore(
-            explore_id,
-            pipeline=pipeline,
-            data_source=data_source,
-            options=opts,
-            es_dao=es_dao,
-        )
+    _explore(
+        explore_id=explore_id,
+        pipeline=pipeline,
+        dataset=dataset,
+        options=opts,
+        es_dao=es_dao,
+    )
 
     if show_explore:
         show(explore_id, es_host=es_host)
     return explore_id
 
 
-# TODO (dcfidalgo): Explore operation should be rewrite in terms of predict_batch + evaluate methods when ready
 def _explore(
     explore_id: str,
     pipeline: Pipeline,
-    data_source: DataSource,
-    options: _ExploreOptions,
-    es_dao: _ElasticsearchDAO,
-) -> None:
-    """
-    Executes a pipeline prediction over a datasource and register results int a elasticsearch index
-
-    Parameters
-    ----------
-    pipeline
-    data_source
-    options
-    es_dao
-
-    Returns
-    -------
-
-    """
-    if options.prediction_cache > 0:
-        pipeline.init_prediction_cache(options.prediction_cache)
-
-    ddf_mapped = data_source.to_mapped_dataframe()
-
-    # this only makes really sense when we have a predict_batch_json method implemented ...
-    n_partitions = max(1, round(len(ddf_mapped) / options.batch_size))
-
-    apply_func = pipeline.explain_batch if options.explain else pipeline.predict_batch
-
-    def add_prediction(df: pd.DataFrame) -> pd.Series:
-        """Runs and returns the predictions for a given input dataframe"""
-        input_batch = df.to_dict(orient="records")
-        predictions = apply_func(input_batch)
-        return pd.Series(map(sanitize, predictions), index=df.index)
-
-    # a persist is necessary here, otherwise it fails for n_partitions == 1
-    # the reason is that with only 1 partition we pass on a generator to predict_batch_json
-    ddf_mapped: dd.DataFrame = ddf_mapped.repartition(
-        npartitions=n_partitions
-    ).persist()
-    ddf_mapped["prediction"] = ddf_mapped.map_partitions(
-        add_prediction, meta=(None, object)
-    )
-
-    ddf_source = (
-        data_source.to_dataframe().repartition(npartitions=n_partitions).persist()
-    )
-    # Keep as metadata only non used values/columns
-    ddf_source = ddf_source[
-        [c for c in ddf_source.columns if c not in ddf_mapped.columns]
-    ]
-    ddf_mapped["metadata"] = ddf_source.map_partitions(
-        lambda df: helpers.stringify(sanitize(df.to_dict(orient="records")))
-    )
-
-    data_exploration = DataExploration(
-        name=explore_id,
-        datasource_name=data_source.source,
-        datasource_columns=data_source.to_dataframe().columns.values.tolist(),
-        pipeline=pipeline,
-        use_prediction=True,
-        metadata=options.metadata or {},
-    )
-    es_dao.create_explore_index(
-        es_index=explore_id,
-        data_exploration=data_exploration,
-        ddf_content=ddf_mapped,
-        force_delete=options.force_delete,
-    )
-
-
-def _explore_a_dataset(
-    explore_id: str,
-    pipeline: Pipeline,
-    dataset: datasets.Dataset,
+    dataset: Dataset,
     options: _ExploreOptions,
     es_dao: _ElasticsearchDAO,
 ):
@@ -433,7 +324,7 @@ def _explore_a_dataset(
     # Quick fix for in-memory data that are not backed up by a file
     # TODO: Find a better solution
     try:
-        dataset_name = list(dataset.info.download_checksums.keys())[0]
+        dataset_name = list(dataset.dataset.info.download_checksums.keys())[0]
     except AttributeError:
         dataset_name = "InMemory"
 
@@ -441,15 +332,15 @@ def _explore_a_dataset(
         name=explore_id,
         pipeline=pipeline,
         use_prediction=True,
-        datasource_name=dataset_name,
-        datasource_columns=meta_columns,
+        dataset_name=dataset_name,
+        dataset_columns=meta_columns,
         metadata=options.metadata or {},
     )
 
     es_dao.create_explore_index(
         es_index=explore_id,
         data_exploration=data_exploration,
-        ddf_content=dataset,
+        dataset=dataset,
         force_delete=options.force_delete,
     )
 
