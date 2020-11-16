@@ -1,12 +1,12 @@
 import re
 
 import click
-from click import Path
 
 from biome.text import Pipeline
+from biome.text import explore
 from biome.text.constants import DEFAULT_ES_HOST
-from biome.text.data import DataSource
 from biome.text.environment import ES_HOST
+from .train import dataset_from_path
 
 
 def _sanizite_index(index_name: str) -> str:
@@ -14,15 +14,15 @@ def _sanizite_index(index_name: str) -> str:
 
 
 @click.command(
-    "explore", help="Pipeline predictions over a data source for result exploration"
+    "explore", help="Explore the predictions of a pipeline for a given dataset"
 )
-@click.argument("pipeline_path", type=Path(exists=True))
+@click.argument("pipeline_path", type=click.Path(exists=True))
 @click.option(
-    "-ds", "--data-source", "data_source", type=Path(exists=True), required=True
+    "-ds", "--dataset", "dataset_path", type=click.Path(exists=True), required=True
 )
 @click.option("-e", "--explain", "explain", is_flag=True, default=False)
 @click.option("-es", "--es-host", "es_host", envvar=ES_HOST, default=DEFAULT_ES_HOST)
-def explore(pipeline_path: str, data_source: str, explain: bool, es_host: str) -> None:
-    Pipeline.from_pretrained(pipeline_path).explore(
-        data_source=DataSource.from_yaml(data_source), es_host=es_host, explain=explain
-    )
+def explore(pipeline_path: str, dataset_path: str, explain: bool, es_host: str) -> None:
+    pipeline = Pipeline.from_pretrained(pipeline_path)
+    dataset = dataset_from_path(dataset_path)
+    explore.create(pipeline, dataset, es_host=es_host, explain=explain)
