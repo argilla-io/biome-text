@@ -435,7 +435,6 @@ class Dataset:
         instance_list
             Returns None, if no cached instances are found
         """
-        self._LOGGER.info("Looking for cached instances")
         try:
             cache_path = (
                 Path(self.dataset.cache_files[0]["filename"]).parent
