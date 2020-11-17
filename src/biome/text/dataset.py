@@ -172,6 +172,7 @@ class Dataset:
         """
         return cls(datasets.load_from_disk(*args, **kwargs))
 
+    @copy_sign_and_docs(datasets.Dataset.save_to_disk)
     def save_to_disk(self, dataset_path: str):
         """
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.save_to_disk
