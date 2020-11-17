@@ -214,6 +214,8 @@ class WandBLogger(BaseTrainLogger):
         self.run_name = run_name
         self.tags = tags
 
+        self._run = None
+
     def init_train(
         self,
         pipeline: "Pipeline",
@@ -228,12 +230,16 @@ class WandBLogger(BaseTrainLogger):
         }
         config["pipeline"]["num_parameters"] = pipeline.num_parameters
         config["pipeline"]["num_trainable_parameters"] = pipeline.num_trainable_parameters
-        wandb.init(
+        self._run = wandb.init(
             project=self.project_name, name=self.run_name, tags=self.tags, config=config
         )
 
     def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):
         wandb.log(metrics)
+
+    def end_train(self, results: TrainingResults):
+        if self._run:
+            self._run.finish()
 
 
 def is_wandb_installed_and_logged_in() -> bool:
