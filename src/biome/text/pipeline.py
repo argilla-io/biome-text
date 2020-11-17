@@ -195,7 +195,8 @@ class Pipeline:
 
         if isinstance(training_data, Dataset):
             training_data: AllennlpLazyDataset = training_data.to_instances(
-                pipeline=self
+                pipeline=self, 
+                lazy=True,
             )
         training_data.index_with(self._model.vocab)
 
