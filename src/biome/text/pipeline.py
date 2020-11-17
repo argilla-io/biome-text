@@ -30,7 +30,6 @@ import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
-from allennlp.data import AllennlpDataset
 from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Instance
 from allennlp.data import Vocabulary
