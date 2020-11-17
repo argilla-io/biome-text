@@ -4,41 +4,53 @@ import logging
 import os
 import shutil
 import tempfile
+from biome.text import vocabulary
+from biome.text.configuration import FindLRConfiguration
+from biome.text.configuration import PipelineConfiguration
+from biome.text.configuration import TrainerConfiguration
+from biome.text.configuration import VocabularyConfiguration
+from biome.text.data import InstancesDataset
+from biome.text.dataset import Dataset
+from biome.text.errors import ActionNotSupportedError
+from biome.text.errors import EmptyVocabError
+from biome.text.features import TransformersFeatures
+from biome.text.helpers import update_method_signature
 from inspect import Parameter
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import Any
+from typing import cast
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Type
+from typing import Union
 
 import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
-from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance, Vocabulary
+from allennlp.data import AllennlpDataset
+from allennlp.data import AllennlpLazyDataset
+from allennlp.data import Instance
+from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from dask.dataframe import DataFrame
 
-from biome.text import vocabulary
-from biome.text.configuration import (
-    PipelineConfiguration,
-    TrainerConfiguration,
-    VocabularyConfiguration,
-    FindLRConfiguration,
-)
-from biome.text.data import DataSource, InstancesDataset
-from biome.text.dataset import Dataset
-from biome.text.errors import ActionNotSupportedError, EmptyVocabError
-from biome.text.features import TransformersFeatures
-from biome.text.helpers import update_method_signature
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .loggers import BaseTrainLogger, add_default_wandb_logger_if_needed
-from .modules.heads import TaskHead, TaskHeadConfiguration
+from .loggers import add_default_wandb_logger_if_needed
+from .loggers import BaseTrainLogger
+from .modules.heads import TaskHead
+from .modules.heads import TaskHeadConfiguration
 from .training_results import TrainingResults
 
 try:
     import ujson as json
 except ModuleNotFoundError:
     import json
+
 
 logging.getLogger("allennlp").setLevel(logging.ERROR)
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
@@ -53,9 +65,6 @@ class Pipeline:
     """
 
     __LOGGER = logging.getLogger(__name__)
-    __TRAINING_CACHE_DATA = ".instances_data"
-    __DATASOURCE_YAML_FOLDER = ".datasources"
-
     _model: PipelineModel = None
     _config: PipelineConfiguration = None
 
@@ -154,7 +163,7 @@ class Pipeline:
         self,
         trainer_config: TrainerConfiguration,
         find_lr_config: FindLRConfiguration,
-        training_data: Union[DataSource, Dataset, InstancesDataset],
+        training_data: Union[Dataset, InstancesDataset],
     ):
         """Returns a learning rate scan on the model.
 
@@ -179,18 +188,16 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
-        if vocabulary.is_empty(
-            self._model.vocab, self.config.features.keys
-        ):
+        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
             raise EmptyVocabError(
                 "Found an empty vocabulary. "
                 "You probably forgot to create a vocabulary with '.create_vocabulary()'."
             )
 
-        if isinstance(training_data, DataSource):
-            training_data = self.create_dataset(training_data)
-        elif isinstance(training_data, Dataset):
-            training_data: AllennlpLazyDataset = training_data.to_instances(pipeline=self)
+        if isinstance(training_data, Dataset):
+            training_data: AllennlpLazyDataset = training_data.to_instances(
+                pipeline=self
+            )
         training_data.index_with(self._model.vocab)
 
         trainer = create_trainer_for_finding_lr(
@@ -200,7 +207,9 @@ class Pipeline:
         )
 
         # restore the state after the lr search is done
-        tmp_state_path = Path(tempfile.gettempdir()) / f"model_state_before_findlr_{id(self)}.pth"
+        tmp_state_path = (
+            Path(tempfile.gettempdir()) / f"model_state_before_findlr_{id(self)}.pth"
+        )
         torch.save(self._model.state_dict(), tmp_state_path)
         try:
             learning_rates, losses = search_learning_rate(
@@ -219,10 +228,10 @@ class Pipeline:
     def train(
         self,
         output: str,
-        training: Union[DataSource, Dataset, InstancesDataset],
+        training: Union[Dataset, InstancesDataset],
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[Union[DataSource, Dataset, InstancesDataset]] = None,
-        test: Optional[Union[DataSource, Dataset, InstancesDataset]] = None,
+        validation: Optional[Union[Dataset, InstancesDataset]] = None,
+        test: Optional[Union[Dataset, InstancesDataset]] = None,
         extend_vocab: Optional[VocabularyConfiguration] = None,
         loggers: List[BaseTrainLogger] = None,
         lazy: bool = True,
@@ -236,13 +245,13 @@ class Pipeline:
         output
             The experiment output path
         training
-            The training DataSource
+            The training Dataset
         trainer
             The trainer file path
         validation
-            The validation DataSource (optional)
+            The validation Dataset (optional)
         test
-            The test DataSource (optional)
+            The test Dataset (optional)
         extend_vocab
             Extends the vocabulary tokens with the provided VocabularyConfiguration
         loggers
@@ -297,10 +306,10 @@ class Pipeline:
 
             datasets = {"training": training, "validation": validation, "test": test}
             for name, dataset in datasets.items():
-                if isinstance(dataset, DataSource):
-                    datasets[name] = train_pipeline.create_dataset(dataset)
-                elif isinstance(dataset, Dataset):
-                    datasets[name] = dataset.to_instances(pipeline=train_pipeline, lazy=lazy)
+                if isinstance(dataset, Dataset):
+                    datasets[name] = dataset.to_instances(
+                        pipeline=train_pipeline, lazy=lazy
+                    )
 
             loggers = loggers or []
             loggers = add_default_wandb_logger_if_needed(loggers)
@@ -410,69 +419,6 @@ class Pipeline:
             logger.setLevel(logging.INFO)
             logger.addHandler(file_handler)
             logger.addHandler(console_handler)
-
-    def create_dataset(
-        self, datasource: DataSource, lazy: bool = False
-    ) -> InstancesDataset:
-        """
-        Creates an instances torch Dataset from an data source
-
-        Parameters
-        ----------
-        datasource:
-            The source of data
-        lazy:
-            If enabled, the returned dataset is a subclass of `torch.data.utils.IterableDataset`
-
-        Returns
-        -------
-
-        A torch Dataset containing the instances collection
-
-        """
-        datasource.mapping = self._update_ds_mapping_with_pipeline_input_output(
-            datasource
-        )
-        ddf = datasource.to_mapped_dataframe()
-        instances_series: "dask.dataframe.core.Series" = ddf.map_partitions(
-            lambda df: df.apply(
-                lambda row: self.head.featurize(**row.to_dict()), axis=1
-            ),
-            meta=object,
-        ).persist()
-        # We remove the not featurizable examples from the data set. The head should log a warning for them though!
-        instances_series = instances_series.dropna()
-
-        def build_instance_generator(instances: DataFrame):
-            """Configures an instance generator from DataFrame"""
-
-            def instance_generator(path: str) -> Iterable[Instance]:
-                yield from instances
-
-            return instance_generator
-
-        return (
-            AllennlpLazyDataset(
-                instance_generator=build_instance_generator(instances_series),
-                file_path="dummy",
-            )
-            if lazy
-            else AllennlpDataset(list(instances_series.compute()))
-        )
-
-    # TODO: Move to DataSource as method or helper
-    def _update_ds_mapping_with_pipeline_input_output(
-        self, datasource: DataSource
-    ) -> Dict:
-        output_keys = [
-            output_key
-            for output_key in self._model.output
-            if output_key in datasource.to_dataframe().columns
-        ]
-        mapping = {k: k for k in self.inputs + output_keys if k}
-        mapping.update(datasource.mapping)
-
-        return mapping
 
     def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
         """Returns a prediction given some input data based on the current state of the model
@@ -713,9 +659,7 @@ class Pipeline:
         """
         datasets = []
         for source in vocab_config.sources:
-            if isinstance(source, DataSource):
-                datasets.append(self.create_dataset(source))
-            elif isinstance(source, Dataset):
+            if isinstance(source, Dataset):
                 datasets.append(source.to_instances(pipeline=self))
             else:
                 datasets.append(source)
@@ -797,7 +741,9 @@ class _BlankPipeline(Pipeline):
             try:
                 transformers_indexer._add_encoding_to_vocabulary_if_needed(vocab)
             except AttributeError:
-                transformers_indexer._matched_indexer._add_encoding_to_vocabulary_if_needed(vocab)
+                transformers_indexer._matched_indexer._add_encoding_to_vocabulary_if_needed(
+                    vocab
+                )
 
 
 class _PreTrainedPipeline(Pipeline):
