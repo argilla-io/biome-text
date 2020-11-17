@@ -1,43 +1,54 @@
 import copy
-import dataclasses
 import logging
-from typing import Any, Dict, List, Optional, Type, Union
+from biome.text.data import InstancesDataset
+from biome.text.dataset import Dataset
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Type
+from typing import Union
 
+import dataclasses
 import yaml
-from allennlp.common import FromParams, Params
+from allennlp.common import FromParams
+from allennlp.common import Params
 from allennlp.common.checks import ConfigurationError
-from allennlp.data import TokenIndexer, Vocabulary
+from allennlp.data import TokenIndexer
+from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
-from biome.text.dataset import Dataset
-from biome.text.data import DataSource, InstancesDataset
 from . import vocabulary
-from .features import CharFeatures, TransformersFeatures, WordFeatures
+from .features import CharFeatures
+from .features import TransformersFeatures
+from .features import WordFeatures
 from .featurizer import InputFeaturizer
-from .helpers import sanitize_for_params, save_dict_as_yaml
+from .helpers import sanitize_for_params
+from .helpers import save_dict_as_yaml
 from .modules.encoders import Encoder
 from .modules.heads.task_head import TaskHeadConfiguration
-from .tokenizer import Tokenizer, TransformersTokenizer
+from .tokenizer import Tokenizer
+from .tokenizer import TransformersTokenizer
 
 
 class FeaturesConfiguration(FromParams):
     """Configures the input features of the `Pipeline`
 
     Use this for defining the features to be used by the model, namely word and character embeddings.
-    
+
     :::tip
     If you do not pass in either of the parameters (`word` or `char`),
     your pipeline will be setup with a default word feature (embedding_dim=50).
     :::
-    
+
     Example:
-    
+
     ```python
     word = WordFeatures(embedding_dim=100)
     char = CharFeatures(embedding_dim=16, encoder={'type': 'gru'})
     config = FeaturesConfiguration(word, char)
     ```
-    
+
     Parameters
     ----------
     word
@@ -264,7 +275,9 @@ class PipelineConfiguration(FromParams):
         if self.tokenizer_config.transformers_kwargs:
             self.features.transformers.is_mismatched = False
             if self.tokenizer_config.transformers_kwargs.get("model_name") is None:
-                self.tokenizer_config.transformers_kwargs["model_name"] = self.features.transformers.model_name
+                self.tokenizer_config.transformers_kwargs[
+                    "model_name"
+                ] = self.features.transformers.model_name
 
         self._check_for_incompatible_configurations()
 
@@ -298,7 +311,10 @@ class PipelineConfiguration(FromParams):
                     "but the 'TokenClassification' head is still not capable of dealing with subword/special tokens."
                 )
 
-            if self.tokenizer_config.transformers_kwargs["model_name"] != self.features.transformers.model_name:
+            if (
+                self.tokenizer_config.transformers_kwargs["model_name"]
+                != self.features.transformers.model_name
+            ):
                 raise ConfigurationError(
                     f"The model_name of the TransformerTokenizer "
                     f"({self.tokenizer_config.transformers_kwargs['model_name']}) does not match the model_name of "
@@ -523,8 +539,8 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    sources: 
-        List of DataSource or InstancesDataset objects to be used for data creation
+    sources:
+        List of InstancesDataset objects to be used for data creation
     min_count: `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature
@@ -549,7 +565,7 @@ class VocabularyConfiguration:
 
     def __init__(
         self,
-        sources: Union[List[DataSource], List[Dataset], List[InstancesDataset]],
+        sources: Union[List[Dataset], List[InstancesDataset]],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,
