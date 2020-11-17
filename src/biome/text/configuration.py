@@ -540,7 +540,7 @@ class VocabularyConfiguration:
     Parameters
     ----------
     sources:
-        List of InstancesDataset objects to be used for data creation
+        List of datasets from which to create the vocabulary
     min_count: `Dict[str, int]`, optional (default=None)
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature
