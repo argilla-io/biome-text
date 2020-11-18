@@ -10,6 +10,7 @@ import spacy
 import spacy.gold
 import yaml
 from allennlp.common import util
+from allennlp.data.dataset_readers.dataset_utils import to_bioul
 from elasticsearch import Elasticsearch
 from spacy.tokens.doc import Doc
 
@@ -336,7 +337,7 @@ def offsets_from_tags(
     tags
         A list of BIOUL or BIO tags
     label_encoding
-        The label encoding to be used: BIOUL or BIO
+        The label encoding of the tags: BIOUL or BIO
     only_token_spans
         If True, offsets contains only token index references. Default is False
 
@@ -352,7 +353,7 @@ def offsets_from_tags(
                          f"but 'len({list(doc)}) != len({tags})")
 
     if label_encoding == "BIO":
-        tags = bioul_tags_to_bio_tags(tags)
+        tags = to_bioul(tags, encoding="BIO")
 
     offsets = []
     for start, end, label in spacy.gold.offsets_from_biluo_tags(doc, tags):
