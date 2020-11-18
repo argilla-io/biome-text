@@ -161,7 +161,7 @@ def test_explore():
         }
     )
 
-    explore.create(pipeline=pl, data_source=ds, batch_size=1, show_explore=False)
+    explore.create(pipeline=pl, dataset=ds, batch_size=1, show_explore=False)
 
 
 @pytest.mark.usefixtures("dataset")
