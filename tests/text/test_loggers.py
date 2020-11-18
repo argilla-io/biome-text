@@ -53,6 +53,7 @@ def test_mlflow_logger():
         "trainer.optimizer.type": "adam",
         "trainer.patience": "2",
         "trainer.num_epochs": "20",
+        "trainer.num_serialized_models_to_keep": "1",
         "pipeline.tokenizer.remove_space_tokens": "True",
     }
     assert expected_parmams == run.data.params
