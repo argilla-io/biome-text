@@ -1,6 +1,6 @@
 import copy
 import logging
-from biome.text.data import InstancesDataset
+from biome.text.dataset import InstancesDataset
 from biome.text.dataset import Dataset
 from typing import Any
 from typing import Dict
