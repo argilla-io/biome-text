@@ -1,6 +1,4 @@
 import contextlib
-import functools
-import inspect
 import logging
 import pickle
 from pathlib import Path
@@ -32,22 +30,6 @@ if TYPE_CHECKING:
     from biome.text.features import Features
 
 InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
-
-
-def copy_sign_and_docs(org_func):
-    """Copy the signature and the docstring from the org_func"""
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        wrapper.__signature__ = inspect.signature(org_func)
-        wrapper.__doc__ = org_func.__doc__
-
-        return wrapper
-
-    return decorator
 
 
 class Dataset:

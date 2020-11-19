@@ -1,4 +1,5 @@
 import copy
+import functools
 import inspect
 import os
 import os.path
@@ -349,8 +350,10 @@ def offsets_from_tags(
     """
     # spacy.gold.offsets_from_biluo_tags surprisingly does not check this ...
     if len(doc) != len(tags):
-        raise ValueError(f"Number of tokens and tags must be the same, "
-                         f"but 'len({list(doc)}) != len({tags})")
+        raise ValueError(
+            f"Number of tokens and tags must be the same, "
+            f"but 'len({list(doc)}) != len({tags})"
+        )
 
     if label_encoding == "BIO":
         tags = to_bioul(tags, encoding="BIO")
@@ -391,3 +394,19 @@ def merge_dicts(source: Dict[str, Any], destination: Dict[str, Any]) -> Dict[str
         result[key] = value
 
     return result
+
+
+def copy_sign_and_docs(org_func):
+    """Copy the signature and the docstring from the org_func"""
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        wrapper.__signature__ = inspect.signature(org_func)
+        wrapper.__doc__ = org_func.__doc__
+
+        return wrapper
+
+    return decorator
