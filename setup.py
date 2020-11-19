@@ -82,13 +82,11 @@ if __name__ == "__main__":
             "lxml~=4.5.0",
             "fastapi~=0.55.0",
             "uvicorn~=0.11.0",
-            "dask[complete]~=2.17.0",
             "distributed~=2.17.0",
             "cachey~=0.2.0",
             "pyarrow~=0.17.0",
             "ujson~=2.0.0",
             "pandas~=1.1.0",
-            "dask-elk~=0.4.0",
             "xlrd~=1.2.0",
             "flatdict~=4.0.0",
             "s3fs~=0.4.0",
@@ -108,7 +106,6 @@ if __name__ == "__main__":
                 "black",
                 "GitPython",
                 "pdoc3~=0.8.1",
-                "aiohttp", # Problems with new version of fsspec
                 "pytest-notebook~=0.6.0",
             ]
         },
