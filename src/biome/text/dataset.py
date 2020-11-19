@@ -1,6 +1,4 @@
 import contextlib
-import functools
-import inspect
 import logging
 import pickle
 from pathlib import Path
@@ -14,6 +12,7 @@ from typing import (
     TYPE_CHECKING,
     Optional,
     Callable,
+    cast,
 )
 
 import datasets
@@ -23,6 +22,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 
 from biome.text import __version__ as biome__version__
+from biome.text.helpers import copy_sign_and_docs
 from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
 from tqdm.auto import tqdm
@@ -30,24 +30,9 @@ from tqdm.auto import tqdm
 if TYPE_CHECKING:
     from biome.text.pipeline import Pipeline
     from biome.text.features import Features
+    import pandas
 
 InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
-
-
-def copy_sign_and_docs(org_func):
-    """Copy the signature and the docstring from the org_func"""
-
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        wrapper.__signature__ = inspect.signature(org_func)
-        wrapper.__doc__ = org_func.__doc__
-
-        return wrapper
-
-    return decorator
 
 
 class Dataset:
@@ -311,6 +296,10 @@ class Dataset:
         """Number of rows in the dataset (same as `len(dataset)`)"""
         return self.dataset.num_rows
 
+    @property
+    def format(self) -> dict:
+        return self.dataset.format
+
     def to_instances(
         self, pipeline: "Pipeline", lazy: bool = False, use_cache: bool = True
     ) -> InstancesDataset:
@@ -476,12 +465,29 @@ class Dataset:
         if nr_of_removed_files is not None:
             cache_dir_path = Path(self.dataset.cache_files[0]["filename"]).parent
             # cleaning up the cached instance lists
-            for file_path in cache_dir_path.glob(f"*.{self._CACHED_INSTANCE_LIST_EXTENSION}"):
+            for file_path in cache_dir_path.glob(
+                f"*.{self._CACHED_INSTANCE_LIST_EXTENSION}"
+            ):
                 file_path.unlink()
                 self._LOGGER.info(f"Removed {file_path}")
                 nr_of_removed_files += 1
 
         return nr_of_removed_files
+
+    def head(self, n: Optional[int] = 10) -> "pandas.DataFrame":
+        """Returns the first n rows of the dataset as a pandas.DataFrame
+
+        Parameters
+        ----------
+        n
+            Number of rows. If None, return the whole dataset as a pandas DataFrame
+
+        Returns
+        -------
+        dataframe
+        """
+        with self.dataset.formatted_as("pandas"):
+            return cast("pandas.DataFrame", self.dataset[:n])
 
     def __del__(self):
         self.dataset.__del__()
