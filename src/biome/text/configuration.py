@@ -472,16 +472,16 @@ class TrainerConfiguration:
         If this is `None`, then an epoch is set to be one full pass through your training data.
         This is useful if you want to evaluate your data more frequently on your validation data set during training.
 
-    no_grad
-        Freeze a list of parameters.
-        The parameter names have to match those of the `Pipeline.trainable_parameter_names`.
-
     random_seed
         Seed for the underlying random number generator.
         If None, we take the random seeds provided by AllenNLP's `prepare_environment` method.
 
     use_amp
         If `True`, we'll train using [Automatic Mixed Precision](https://pytorch.org/docs/stable/amp.html).
+
+    num_serialized_models_to_keep
+        Number of previous model checkpoints to retain.  Default is to keep 1 checkpoint.
+        A value of None or -1 means all checkpoints will be kept.
     """
 
     optimizer: Dict[str, Any] = dataclasses.field(
@@ -497,11 +497,12 @@ class TrainerConfiguration:
     momentum_scheduler: Optional[Dict[str, Any]] = None
     moving_average: Optional[Dict[str, Any]] = None
     use_amp: bool = False
+    num_serialized_models_to_keep: int = 1
     # Data loader parameters
     batch_size: Optional[int] = 16
     data_bucketing: bool = False
     batches_per_epoch: Optional[int] = None
-    no_grad: List[str] = None
+    # prepare_environment
     random_seed: Optional[int] = None
 
     def to_allennlp_trainer(self) -> Dict[str, Any]:
@@ -511,23 +512,23 @@ class TrainerConfiguration:
         -------
         allennlp_trainer_config
         """
-        # Data loader and prepare_env attributes
-        __excluded_keys = [
-            "data_bucketing",
-            "batch_size",
-            "batches_per_epoch",
-            "random_seed",
-        ]
-        trainer_config = {
-            k: v for k, v in vars(self).items() if k not in __excluded_keys
+        # config for AllenNLP's GradientDescentTrainer
+        allennlp_trainer_config = {
+            "optimizer": self.optimizer,
+            "patience": self.patience,
+            "validation_metric": self.validation_metric,
+            "num_epochs": self.num_epochs,
+            "checkpointer": {"num_serialized_models_to_keep": self.num_serialized_models_to_keep},
+            "cuda_device": self.cuda_device,
+            "grad_norm": self.grad_norm,
+            "grad_clipping": self.grad_clipping,
+            "learning_rate_scheduler": self.learning_rate_scheduler,
+            "tensorboard_writer": {"should_log_learning_rate": True},
+            "moving_average": self.moving_average,
+            "use_amp": self.use_amp,
         }
-        trainer_config.update(
-            {
-                "checkpointer": {"num_serialized_models_to_keep": 1},
-                "tensorboard_writer": {"should_log_learning_rate": True},
-            }
-        )
-        return trainer_config
+
+        return allennlp_trainer_config
 
 
 class VocabularyConfiguration:
