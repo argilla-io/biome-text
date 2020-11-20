@@ -294,8 +294,7 @@ class TokenClassification(TaskHead):
                 self._decode_tokens(doc) if not pre_tokenized else None
             )
 
-        output.tokens = [tokens for tokens in output.tokens if tokens]
-        if len(output.tokens) < 1:  # drop tokens field if no data
+        if not any(output.tokens):  # drop tokens field if no data
             del output.tokens
 
         del output.logits
