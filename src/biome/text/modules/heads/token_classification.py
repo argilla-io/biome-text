@@ -233,34 +233,26 @@ class TokenClassification(TaskHead):
 
     def _decode_tags(
         self, viterbi_paths: List[Tuple[List[int], float]]
-    ) -> List[Tuple[List[str], float]]:
+    ) -> List[List[str]]:
         """Decode predicted tags"""
-        tags_with_score = [
-            (
-                [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags],
-                score,
-            )
+        return [
+            [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
             for tags, score in viterbi_paths
         ]
-        return tags_with_score
 
     def _decode_entities(
         self,
         doc: Doc,
-        tags_with_scores: List[Tuple[List[str], float]],
+        k_tags: List[List[str]],
         pre_tokenized: bool,
-    ) -> List[Tuple[List[Dict], float]]:
+    ) -> List[List[Dict]]:
         """Decode predicted entities from tags"""
-        entities_with_score = [
-            (
-                offsets_from_tags(
-                    doc, tags, self._label_encoding, only_token_spans=pre_tokenized
-                ),
-                score,
+        return [
+            offsets_from_tags(
+                doc, tags, self._label_encoding, only_token_spans=pre_tokenized
             )
-            for tags, score in tags_with_scores
+            for tags in k_tags
         ]
-        return entities_with_score
 
     def _decode_tokens(self, doc: Doc) -> List[Dict]:
         """Decode tokens"""
@@ -270,16 +262,18 @@ class TokenClassification(TaskHead):
         ]
 
     def decode(self, output: TaskOutput) -> TaskOutput:
-        # The dims are: batch, top_k, (tags/entities, score)
-        output.tags: List[List[Tuple[List[str], float]]] = []
-        output.entities: List[List[Tuple[List[Dict], float]]] = []
+        # The dims are: batch, top_k, tags
+        output.tags: List[List[List[str]]] = [
+            self._decode_tags(paths) for paths in output.viterbi_paths
+        ]
+        output.scores: List[List[float]] = [
+            [score for tags, score in paths] for paths in output.viterbi_paths
+        ]
 
+        output.entities: List[List[List[Dict]]] = []
         output.tokens: List[List[Dict]] = []
-
         # iterate over batch
-        for raw_text, viterbi_paths in zip(output.raw_text, output.viterbi_paths):
-            output.tags.append(self._decode_tags(viterbi_paths))
-
+        for raw_text, k_tags in zip(output.raw_text, output.tags):
             pre_tokenized = not isinstance(raw_text, str)
             if pre_tokenized:
                 # compose spacy doc from tokens
@@ -287,9 +281,7 @@ class TokenClassification(TaskHead):
             else:
                 doc = self.backbone.tokenizer.nlp(raw_text)
 
-            output.entities.append(
-                self._decode_entities(doc, output.tags[-1], pre_tokenized)
-            )
+            output.entities.append(self._decode_entities(doc, k_tags, pre_tokenized))
             output.tokens.append(
                 self._decode_tokens(doc) if not pre_tokenized else None
             )

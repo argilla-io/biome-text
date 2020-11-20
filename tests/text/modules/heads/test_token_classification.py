@@ -1,8 +1,11 @@
 from typing import Dict
 
-import pytest
-from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration, Dataset
 import pandas as pd
+import pytest
+import spacy
+
+from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration, Dataset
+from biome.text.helpers import offsets_from_tags
 
 
 @pytest.fixture
@@ -76,6 +79,8 @@ def test_default_explain(pipeline_dict):
 
 
 def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+    # TODO: Some of the asserts are useless because a predict normally does not return any entities!
+    #  We should test directly the decode method with a custom TaskOutput!
     pipeline = Pipeline.from_config(pipeline_dict)
 
     assert pipeline.output == ["entities", "tags"]
@@ -84,27 +89,17 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
 
     predictions = pipeline.predict(["test", "this", "pretokenized", "text"])
-    assert "entities" in predictions and isinstance(predictions["entities"][0], tuple)
-    assert "tags" in predictions and isinstance(predictions["tags"][0], tuple)
-    assert "tokens" not in predictions
+    assert predictions.keys() == dict(entities=None, tags=None, scores=None).keys()
 
-    for entity in predictions["entities"][0][0]:
-        assert "start_token" in entity
-        assert "end_token" in entity
-        assert "label" in entity
-        assert "start" not in entity
-        assert "end" not in entity
+    assert isinstance(predictions["entities"], list) and isinstance(predictions["entities"][0], list)
+    assert all([isinstance(entity, dict) for entity in predictions["entities"][0]])
 
-    predictions = pipeline.predict_batch(
+    assert isinstance(predictions["tags"], list) and isinstance(predictions["tags"][0], list)
+    assert all([isinstance(tag, str) for tag in predictions["tags"][0]])
+
+    pipeline.predict_batch(
         [{"text": "Test this NER system"}, {"text": "and this"}]
     )
-    assert "entities" in predictions[0]
-    assert "tags" in predictions[0]
-    assert "tokens" in predictions[0]
-
-    for entity in predictions[0]["entities"][0][0]:
-        assert "start" in entity
-        assert "end" in entity
 
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
@@ -113,6 +108,23 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
         trainer=TrainerConfiguration(**trainer_dict),
         training=training_dataset,
     )
+
+
+def test_offset_from_tags():
+    # TODO: Can be removed when we test the decode method with a custom TaskOutput above!
+    nlp = spacy.load("en_core_web_sm")
+
+    doc = nlp("Test this sheight")
+    entities = offsets_from_tags(doc, tags=["O", "B-AIGHT", "L-AIGHT"])
+    assert entities[0].keys() == dict(start=None, end=None, label=None, start_token=None, end_token=None).keys()
+    assert entities[0]["label"] == "AIGHT"
+    assert entities[0]["start"] == 5
+    assert entities[0]["end"] == 17
+
+    entities = offsets_from_tags(doc, tags=["O", "B-AIGHT", "L-AIGHT"], only_token_spans=True)
+    assert entities[0].keys() == dict(label=None, start_token=None, end_token=None).keys()
+    assert entities[0]["start_token"] == 1
+    assert entities[0]["end_token"] == 3
 
 
 def test_preserve_pretokenization(
