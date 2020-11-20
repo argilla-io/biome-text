@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from numpy.testing import assert_allclose
 
 from biome.text import Pipeline, Dataset
 from biome.text.configuration import (
@@ -109,7 +110,4 @@ def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_confi
     )
 
     assert len(learning_rates) == len(losses) == 12
-    assert all(
-        a == pytest.approx(b, rel=0.0001)
-        for a, b in zip(prev_prediction["logits"], pl.predict("test")["logits"])
-    )
+    assert_allclose(prev_prediction["probabilities"], pl.predict("test")["probabilities"])

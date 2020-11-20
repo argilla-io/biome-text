@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from numpy.testing import assert_allclose
 
 from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, Dataset
 from biome.text.features import TransformersFeatures
@@ -122,14 +123,14 @@ def test_max_length_not_affecting_shorter_sequences(pipeline_dict):
 
     pl = Pipeline.from_config(pipeline_dict)
     state_dict = pl._model.state_dict()  # dict with the whole state of the module
-    probs = pl.predict("Test this")["probs"]  # probabilities of the test input
+    probs = pl.predict("Test this")["probabilities"]  # probabilities of the test input
 
     pipeline_dict["features"]["transformers"]["max_length"] = 100  # changing max length
     pl = Pipeline.from_config(pipeline_dict)
     pl._model.load_state_dict(state_dict)  # loading previous state from dict
-    probs_max_length = pl.predict("Test this")["probs"]
+    probs_max_length = pl.predict("Test this")["probabilities"]
 
-    assert all([log1 == log2 for log1, log2 in zip(probs, probs_max_length)])
+    assert_allclose(probs, probs_max_length)
 
 
 def test_serialization(pipeline_dict):

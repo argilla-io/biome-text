@@ -97,27 +97,38 @@ class ClassificationHead(TaskHead):
         else:
             probabilities_batch = torch.nn.functional.softmax(output.logits, dim=-1)
 
-        output.labels = (
-            [
-                self._get_labels_with_probabilities(probs)
-                for probs in probabilities_batch
-            ]
-            if self.num_labels > 0
-            else []
-        )
+        output.labels, output.probabilities = [], []
+        if self.num_labels > 0:
+            output.labels, output.probabilities = zip(
+                *[
+                    self._get_labels_and_probabilities(probs)
+                    for probs in probabilities_batch
+                ]
+            )
+
         del output.logits
 
         return output
 
-    def _get_labels_with_probabilities(
+    def _get_labels_and_probabilities(
         self, probabilities: torch.Tensor
-    ) -> List[Tuple[str, float]]:
-        """
-        Calculates the descendant sorted label + probs dictionary
-        using all output classes (not only predicted)
+    ) -> Tuple[List[str], List[float]]:
+        """Returns the labels and probabilities sorted by the probability (descending)
+
+        The list of the returned probabilities can be larger than the input probabilities,
+        since we add all defined labels in the head.
+
+        Parameters
+        ----------
+        probabilities
+            Probabilities of the model's prediction for one instance
+
+        Returns
+        -------
+        labels, probabilities
         """
         all_classes_probs = torch.zeros(
-            self.num_labels,
+            self.num_labels,  # this can be >= probabilities.size()[0]
             device=probabilities.get_device()
             if probabilities.get_device() > -1
             else None,
@@ -127,13 +138,17 @@ class ClassificationHead(TaskHead):
             all_classes_probs, descending=True
         ).tolist()
 
-        return [
-            (
-                vocabulary.label_for_index(self.backbone.vocab, idx),
-                float(all_classes_probs[idx]),
-            )
-            for idx in sorted_indexes_by_prob
-        ]
+        labels, probabilities = zip(
+            *[
+                (
+                    vocabulary.label_for_index(self.backbone.vocab, idx),
+                    float(all_classes_probs[idx]),
+                )
+                for idx in sorted_indexes_by_prob
+            ]
+        )
+
+        return labels, probabilities
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Get the metrics of our classifier, see :func:`~allennlp_2.models.Model.get_metrics`.
