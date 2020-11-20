@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 import numpy
 import torch
@@ -93,37 +93,25 @@ class ClassificationHead(TaskHead):
         completed_output
         """
         if self._multilabel:
-            probabilities = output.logits.sigmoid()
+            probabilities_batch = output.logits.sigmoid()
         else:
-            probabilities = torch.nn.functional.softmax(output.logits, dim=-1)
-        output.probs = probabilities
+            probabilities_batch = torch.nn.functional.softmax(output.logits, dim=-1)
 
-        output_map_probs = []
-        max_classes = []
-        max_classes_prob = []
-        if self.num_labels > 0:
-            for probs in probabilities:
-                labels_with_prob = self._labels_with_probabilities(probs)
-                output_map_probs.append(labels_with_prob)
-
-                label, prob = list(labels_with_prob.items())[0]
-                max_classes.append(label)
-                max_classes_prob.append(prob)
-
-        output.classes = output_map_probs
-
-        if not self._multilabel:
-            output.max_class = max_classes  # deprecated
-            output.max_class_prob = max_classes_prob  # deprecated
-
-            output.label = max_classes
-            output.prob = max_classes_prob
+        output.labels = (
+            [
+                self._get_labels_with_probabilities(probs)
+                for probs in probabilities_batch
+            ]
+            if self.num_labels > 0
+            else []
+        )
+        del output.logits
 
         return output
 
-    def _labels_with_probabilities(
+    def _get_labels_with_probabilities(
         self, probabilities: torch.Tensor
-    ) -> Dict[str, float]:
+    ) -> List[Tuple[str, float]]:
         """
         Calculates the descendant sorted label + probs dictionary
         using all output classes (not only predicted)
@@ -139,10 +127,13 @@ class ClassificationHead(TaskHead):
             all_classes_probs, descending=True
         ).tolist()
 
-        return {
-            vocabulary.label_for_index(self.backbone.vocab, idx): all_classes_probs[idx]
+        return [
+            (
+                vocabulary.label_for_index(self.backbone.vocab, idx),
+                float(all_classes_probs[idx]),
+            )
             for idx in sorted_indexes_by_prob
-        }
+        ]
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Get the metrics of our classifier, see :func:`~allennlp_2.models.Model.get_metrics`.
