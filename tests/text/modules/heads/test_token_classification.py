@@ -2,10 +2,15 @@ from typing import Dict
 
 import pandas as pd
 import pytest
-import spacy
 
-from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration, Dataset
-from biome.text.helpers import offsets_from_tags
+from biome.text import (
+    Pipeline,
+    VocabularyConfiguration,
+    TrainerConfiguration,
+    Dataset,
+    vocabulary,
+)
+from biome.text.modules.heads import TaskOutput
 
 
 @pytest.fixture
@@ -79,27 +84,12 @@ def test_default_explain(pipeline_dict):
 
 
 def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
-    # TODO: Some of the asserts are useless because a predict normally does not return any entities!
-    #  We should test directly the decode method with a custom TaskOutput!
     pipeline = Pipeline.from_config(pipeline_dict)
 
     assert pipeline.output == ["entities", "tags"]
 
     assert pipeline.head.span_labels == ["NER"]
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
-
-    predictions = pipeline.predict(["test", "this", "pretokenized", "text"])
-    assert predictions.keys() == dict(entities=None, tags=None, scores=None).keys()
-
-    assert isinstance(predictions["entities"], list) and isinstance(predictions["entities"][0], list)
-    assert all([isinstance(entity, dict) for entity in predictions["entities"][0]])
-
-    assert isinstance(predictions["tags"], list) and isinstance(predictions["tags"][0], list)
-    assert all([isinstance(tag, str) for tag in predictions["tags"][0]])
-
-    pipeline.predict_batch(
-        [{"text": "Test this NER system"}, {"text": "and this"}]
-    )
 
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
@@ -110,21 +100,103 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     )
 
 
-def test_offset_from_tags():
-    # TODO: Can be removed when we test the decode method with a custom TaskOutput above!
-    nlp = spacy.load("en_core_web_sm")
+class TestDecode:
+    def test_pretokenized_decode(self, pipeline_dict):
+        pipeline = Pipeline.from_config(pipeline_dict)
+        output = self._input_top_k2(pipeline)
 
-    doc = nlp("Test this sheight")
-    entities = offsets_from_tags(doc, tags=["O", "B-AIGHT", "L-AIGHT"])
-    assert entities[0].keys() == dict(start=None, end=None, label=None, start_token=None, end_token=None).keys()
-    assert entities[0]["label"] == "AIGHT"
-    assert entities[0]["start"] == 5
-    assert entities[0]["end"] == 17
+        assert output.keys() == dict(entities=None, tags=None, scores=None).keys()
+        assert output["entities"] == [
+            [
+                [dict(start_token=3, end_token=4, label="NER")],
+                [dict(start_token=1, end_token=4, label="NER")],
+            ]
+        ]
+        assert output["tags"] == [
+            [["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]]
+        ]
+        assert output["scores"] == [[2, 1]]
 
-    entities = offsets_from_tags(doc, tags=["O", "B-AIGHT", "L-AIGHT"], only_token_spans=True)
-    assert entities[0].keys() == dict(label=None, start_token=None, end_token=None).keys()
-    assert entities[0]["start_token"] == 1
-    assert entities[0]["end_token"] == 3
+    def test_untokenized_decode(self, pipeline_dict):
+        pipeline = Pipeline.from_config(pipeline_dict)
+        output = self._input_top_k2(pipeline, pretokenized=False)
+
+        assert (
+            output.keys()
+            == dict(entities=None, tags=None, scores=None, tokens=None).keys()
+        )
+        assert output["entities"] == [
+            [
+                [dict(start_token=3, end_token=4, label="NER", start=10, end=14)],
+                [dict(start_token=1, end_token=4, label="NER", start=5, end=14)],
+            ]
+        ]
+        assert output["tags"] == [
+            [["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]]
+        ]
+        assert output["scores"] == [[2, 1]]
+        assert output["tokens"] == [
+            [
+                {"end": 4, "start": 0, "text": "this"},
+                {"end": 7, "start": 5, "text": "is"},
+                {"end": 9, "start": 8, "text": "a"},
+                {"end": 14, "start": 10, "text": "test"},
+            ]
+        ]
+
+    @staticmethod
+    def _input_top_k2(pipeline, pretokenized=True):
+        raw_text = [["this", "is", "a", "test"]] if pretokenized else ["this is a test"]
+        tag_idx_sequence = [
+            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
+            for tag in ["O", "O", "O", "U-NER"]
+        ]
+        tag_idx_sequence2 = [
+            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
+            for tag in ["O", "B-NER", "I-NER", "L-NER"]
+        ]
+        viterbi_paths = [[(tag_idx_sequence, 2), (tag_idx_sequence2, 1)]]
+        task_output = TaskOutput(
+            viterbi_paths=viterbi_paths, raw_text=raw_text, mask=None, probs=None
+        )
+
+        return pipeline.head.decode(task_output).as_dict()
+
+    def test_mixed_decode(self, pipeline_dict):
+        pipeline = Pipeline.from_config(pipeline_dict)
+        output = self._mixed_input_top_k1(pipeline)
+
+        assert (
+            output.keys()
+            == dict(entities=None, tags=None, scores=None, tokens=None).keys()
+        )
+        assert output["entities"] == [
+            [[dict(start_token=3, end_token=4, label="NER")]],
+            [[dict(start_token=3, end_token=4, label="NER", start=10, end=14)]],
+        ]
+        assert output["tokens"] == [
+            None,
+            [
+                {"end": 4, "start": 0, "text": "this"},
+                {"end": 7, "start": 5, "text": "is"},
+                {"end": 9, "start": 8, "text": "a"},
+                {"end": 14, "start": 10, "text": "test"},
+            ],
+        ]
+
+    @staticmethod
+    def _mixed_input_top_k1(pipeline):
+        raw_text = [["this", "is", "a", "test"], "this is a test"]
+        tag_idx_sequence = [
+            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
+            for tag in ["O", "O", "O", "U-NER"]
+        ]
+        viterbi_paths = [[(tag_idx_sequence, 1)]] * 2
+        task_output = TaskOutput(
+            viterbi_paths=viterbi_paths, raw_text=raw_text, mask=None, probs=None
+        )
+
+        return pipeline.head.decode(task_output).as_dict()
 
 
 def test_preserve_pretokenization(
