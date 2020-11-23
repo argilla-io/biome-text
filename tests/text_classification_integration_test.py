@@ -134,7 +134,7 @@ def test_text_classification(
         metrics = json.load(file)
 
     # It may fail in some systems
-    assert metrics["training_loss"] == pytest.approx(0.705, abs=0.003)
+    assert metrics["training_loss"] == pytest.approx(0.665, abs=0.003)
 
     # Test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
