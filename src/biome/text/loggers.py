@@ -4,11 +4,10 @@ from typing import Any, Dict, Optional, List
 
 from allennlp.training import EpochCallback, GradientDescentTrainer
 from mlflow.entities import Experiment
-from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 from mlflow.utils import mlflow_tags
 
-from biome.text.data import InstancesDataset
+from biome.text.dataset import InstancesDataset
 from biome.text.training_results import TrainingResults
 
 # We do not require wandb

@@ -18,7 +18,7 @@ from torch.utils.data import IterableDataset
 
 from biome.text import Pipeline, TrainerConfiguration, helpers
 from biome.text._model import PipelineModel
-from biome.text.data import InstancesDataset
+from biome.text.dataset import InstancesDataset
 from biome.text.errors import http_error_handling
 
 _LOGGER = logging.getLogger(__name__)
