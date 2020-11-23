@@ -37,7 +37,7 @@ def dataset(tmp_path) -> Dataset:
 
 
 @pytest.fixture
-def pipeline_test() -> Pipeline:
+def pipeline() -> Pipeline:
     config = PipelineConfiguration(
         name="test-classifier",
         head=TextClassificationConfiguration(labels=["one", "zero"]),
@@ -46,24 +46,24 @@ def pipeline_test() -> Pipeline:
 
 
 def test_training_with_data_bucketing(
-    pipeline_test: Pipeline, dataset: Dataset, tmp_path: str
+    pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    lazy_instances = dataset.to_instances(pipeline_test)
-    in_memory_instances = dataset.to_instances(pipeline_test, lazy=False)
+    lazy_instances = dataset.to_instances(pipeline)
+    in_memory_instances = dataset.to_instances(pipeline, lazy=False)
 
-    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[lazy_instances]))
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[lazy_instances]))
 
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
     )
-    pipeline_test.train(
+    pipeline.train(
         output=os.path.join(tmp_path, "output"),
         trainer=configuration,
         training=lazy_instances,
         validation=in_memory_instances,
     )
 
-    pipeline_test.train(
+    pipeline.train(
         output=os.path.join(tmp_path, "output"),
         trainer=configuration,
         training=in_memory_instances,
@@ -72,27 +72,26 @@ def test_training_with_data_bucketing(
 
 
 def test_training_from_pretrained_with_head_replace(
-    pipeline_test: Pipeline, dataset: Dataset, tmp_path: str
+    pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    training = dataset.to_instances(pipeline_test)
-    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[training]))
+    training = dataset.to_instances(pipeline)
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training]))
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
     )
     output_dir = os.path.join(tmp_path, "output")
-    results = pipeline_test.train(
+    pipeline.train(
         output=output_dir, trainer=configuration, training=training, quiet=True
     )
 
-    trained = Pipeline.from_pretrained(results.model_path)
-    trained.set_head(TestHead)
-    trained.config.tokenizer_config.max_nr_of_sentences = 3
-    copied = trained.copy()
+    pipeline.set_head(TestHead)
+    pipeline.config.tokenizer_config.max_nr_of_sentences = 3
+    copied = pipeline.copy()
     assert isinstance(copied.head, TestHead)
-    assert copied.num_parameters == trained.num_parameters
-    assert copied.num_trainable_parameters == trained.num_trainable_parameters
+    assert copied.num_parameters == pipeline.num_parameters
+    assert copied.num_trainable_parameters == pipeline.num_trainable_parameters
     copied_model_state = copied._model.state_dict()
-    original_model_state = trained._model.state_dict()
+    original_model_state = pipeline._model.state_dict()
     for key, value in copied_model_state.items():
         if "backbone" in key:
             assert torch.all(torch.eq(value, original_model_state[key]))
@@ -100,16 +99,16 @@ def test_training_from_pretrained_with_head_replace(
 
 
 def test_training_with_logging(
-    pipeline_test: Pipeline, dataset: Dataset, tmp_path: str
+    pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    training = dataset.to_instances(pipeline_test)
-    pipeline_test.create_vocabulary(VocabularyConfiguration(sources=[training]))
+    training = dataset.to_instances(pipeline)
+    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training]))
 
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
     )
     output_dir = os.path.join(tmp_path, "output")
-    pipeline_test.train(
+    pipeline.train(
         output=output_dir, trainer=configuration, training=training, quiet=True
     )
 
