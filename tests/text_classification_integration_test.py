@@ -1,6 +1,5 @@
 import json
 import random
-from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -13,15 +12,14 @@ from biome.text.configuration import WordFeatures
 
 
 @pytest.fixture
-def train_valid_dataset() -> Tuple[Dataset, Dataset]:
+def train_valid_dataset(resources_data_path) -> Tuple[Dataset, Dataset]:
     """Returns both training and validation datasets"""
 
-    resources_path = Path(__file__).parent.parent / "resources" / "data"
     training_ds = Dataset.from_csv(
-        paths=str(resources_path / "business.cat.2k.train.csv")
+        paths=str(resources_data_path / "business.cat.2k.train.csv")
     )
     validation_ds = Dataset.from_csv(
-        paths=str(resources_path / "business.cat.2k.valid.csv")
+        paths=str(resources_data_path / "business.cat.2k.valid.csv")
     )
 
     return training_ds, validation_ds

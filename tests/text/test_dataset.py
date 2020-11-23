@@ -8,7 +8,8 @@ from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
 from elasticsearch import Elasticsearch
 
 from biome.text import Dataset, Pipeline, explore
-from tests import RESOURCES_PATH
+from datasets.features import Features
+from datasets.features import Value
 
 
 @pytest.fixture(scope="class")
@@ -35,8 +36,8 @@ def default_pipeline_config():
     }
 
 
-def test_load_dataset():
-    json_path = os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
+def test_load_dataset(resources_data_path):
+    json_path = str(resources_data_path / "dataset_sequence.jsonl")
 
     with pytest.raises(TypeError):
         Dataset.load_dataset("json", data_files=[json_path])
@@ -45,22 +46,39 @@ def test_load_dataset():
     assert len(ds) == 4
 
 
-def test_from_json():
-    json_path = os.path.join(RESOURCES_PATH, "data", "dataset_sequence.jsonl")
+def test_from_json(resources_data_path):
+    json_path = str(resources_data_path / "dataset_sequence.jsonl")
     ds = Dataset.from_json(paths=json_path)
     ds2 = Dataset.from_json(paths=[json_path, json_path])
 
     assert len(ds) == 4
     assert len(ds2) == 8
 
-    json_path = os.path.join(RESOURCES_PATH, "data", "dataset_sequence.json")
+    json_path = str(resources_data_path / "dataset_sequence.json")
     ds = Dataset.from_json(paths=json_path, field="data")
 
     assert len(ds) == 4
 
 
-def test_from_csv():
-    csv_path = os.path.join(RESOURCES_PATH, "data", "business.cat.2k.valid.csv")
+def test_flatten_json(resources_data_path):
+    """Showcases the behavior of Dataset.flatten_"""
+    file_path = str(resources_data_path / "to-be-flattened.jsonl")
+    dataset_flatten_source = Dataset.from_json(paths=file_path)
+    dataset_flatten_source.flatten_()
+
+    for c in ["complexData.a", "complexData.b"]:
+        assert c in dataset_flatten_source.column_names
+
+    file_path = str(resources_data_path / "nested-list.jsonl")
+    dataset_nested_list = Dataset.from_json(paths=file_path)
+    dataset_nested_list.flatten_()
+
+    assert len(dataset_nested_list) == 1
+    assert dataset_nested_list.column_names == ["classification"]
+
+
+def test_from_csv(resources_data_path):
+    csv_path = str(resources_data_path / "business.cat.2k.valid.csv")
     ds = Dataset.from_csv(paths=csv_path)
     ds2 = Dataset.from_csv(paths=[csv_path, csv_path])
 
@@ -84,6 +102,31 @@ def test_from_dict():
     assert ds.dataset.column_names == ["a", "b"]
     assert ds["a"] == [1, 2, 3]
     assert len(ds) == 3
+
+
+def test_from_excel_file(resources_data_path):
+    """This only shows an example of how one could read in an excel file"""
+    str_value = Value("string")
+    int_value = Value("int64")
+    features = Features(
+        Notification=int_value, Type=str_value, Plant=int_value, Serial=str_value
+    )
+
+    file_path = resources_data_path / "test.xlsx"
+    df = pd.read_excel(file_path)
+
+    dataset = Dataset.from_pandas(df, features=features)
+
+    assert len(dataset) > 0
+
+
+def test_from_parquet_file(resources_data_path):
+    """This only shows an example of how one could read in a parquet file"""
+    file_path = resources_data_path / "test.parquet"
+    df = pd.read_parquet(file_path)
+    dataset = Dataset.from_pandas(df)
+
+    assert "reviewerID" in dataset.column_names
 
 
 def __wait_for_index_creation__(es_client: Elasticsearch, es_index: str):
