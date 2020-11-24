@@ -2,6 +2,9 @@ import datetime
 import logging
 import time
 import uuid
+from cmath import isclose
+from dataclasses import dataclass
+from dataclasses import field
 from threading import Thread
 from typing import Any
 from typing import Dict
@@ -12,15 +15,14 @@ from urllib.parse import urlparse
 
 import elasticsearch.helpers
 from allennlp.common.util import sanitize
+from elasticsearch import Elasticsearch
+
+from biome.text import Pipeline
 from biome.text import constants
 from biome.text import helpers
-from biome.text import Pipeline
 from biome.text.dataset import Dataset
 from biome.text.modules.heads import TaskName
 from biome.text.ui import launch_ui
-from dataclasses import dataclass
-from dataclasses import field
-from elasticsearch import Elasticsearch
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -297,7 +299,10 @@ def _explore(
             for i in range(batch_size)
         ]
         predictions = apply_func(input_dicts)
-        return {"prediction": sanitize(predictions)}
+
+        return {
+            "prediction": sanitize(_make_prediction_backward_compatible(predictions))
+        }
 
     # we include the pipeline.output as input columns so we do not use it for the metadata
     meta_columns = [
@@ -321,7 +326,7 @@ def _explore(
     )
 
     # Quick fix for in-memory data that are not backed up by a file
-    # TODO: Find a better solution
+    # TODO: Find a better solution, maybe introduce a Dataset.name attribute
     try:
         dataset_name = list(dataset.dataset.info.download_checksums.keys())[0]
     except AttributeError:
@@ -369,7 +374,8 @@ def show(explore_id: str, es_host: Optional[str] = None) -> None:
 
     def show_notebook_explore(url: str):
         """Shows explore ui in a notebook cell"""
-        from IPython.core.display import HTML, display
+        from IPython.core.display import HTML
+        from IPython.core.display import display
 
         iframe = f"<iframe src={url} width=100% height=840></iframe>"
         display(HTML(iframe))
@@ -402,3 +408,31 @@ def show(explore_id: str, es_host: Optional[str] = None) -> None:
         else show_browser_explore
     )
     show_func(url)
+
+
+def _make_prediction_backward_compatible(predictions: List[Dict]):
+    """Makes the Classification prediction output backward compatible with the UI"""
+    # check if predictions are from a Classification TaskHead
+    if not all([key in predictions[0].keys() for key in ["labels", "probabilities"]]):
+        return predictions
+
+    # a little trick to know if this is a multilable classification ...
+    is_multilabel = isclose(sum(predictions[0]["probabilities"]), 1.0)
+
+    for prediction in predictions:
+        prediction["classes"] = {
+            label: prob
+            for label, prob in zip(prediction["labels"], prediction["probabilities"])
+        }
+        prediction["probs"] = prediction["probabilities"]
+        # we don't have the logits anymore, so just duplicate the probs ...
+        prediction["logits"] = prediction["probabilities"]
+
+        if not is_multilabel:
+            prediction["label"] = prediction["labels"][0]
+            prediction["prob"] = prediction["probabilities"][0]
+            # deprecated
+            # prediction["max_class"] = prediction["labels"][0]
+            # prediction["max_class_prob"] = prediction["probabilities"][0]
+
+    return predictions
