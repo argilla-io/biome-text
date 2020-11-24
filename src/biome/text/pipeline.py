@@ -4,26 +4,6 @@ import logging
 import os
 import shutil
 import tempfile
-from inspect import Parameter
-from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Type
-from typing import Union
-from typing import cast
-
-import numpy
-import torch
-from allennlp.commands.find_learning_rate import search_learning_rate
-from allennlp.common import Params
-from allennlp.data import AllennlpLazyDataset
-from allennlp.data import Vocabulary
-from allennlp.models import load_archive
-from allennlp.models.archival import Archive
-
 from biome.text import vocabulary
 from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
@@ -34,10 +14,30 @@ from biome.text.dataset import Dataset
 from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
+from inspect import Parameter
+from pathlib import Path
+from typing import Any
+from typing import cast
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Type
+from typing import Union
+
+import numpy
+import torch
+from allennlp.commands.find_learning_rate import search_learning_rate
+from allennlp.common import Params
+from allennlp.data import AllennlpLazyDataset
+from allennlp.data import Vocabulary
+from allennlp.models import load_archive
+from allennlp.models.archival import Archive
+
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .loggers import BaseTrainLogger
 from .loggers import add_default_wandb_logger_if_needed
+from .loggers import BaseTrainLogger
 from .modules.heads import TaskHead
 from .modules.heads import TaskHeadConfiguration
 from .training_results import TrainingResults
