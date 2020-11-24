@@ -85,7 +85,7 @@ def test_tune_exp_save_dataset_and_vocab(
 
 
 def test_tune_exp_custom_trainable(
-    dataset, pipeline_config, trainer_config, monkeypatch
+    dataset, pipeline_config, trainer_config,
 ):
     def my_trainable(config):
         pass

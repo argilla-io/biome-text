@@ -2,7 +2,6 @@ import inspect
 import json
 import logging
 import os
-import pathlib
 import pickle
 import warnings
 from functools import lru_cache
@@ -55,6 +54,26 @@ class PipelineModel(allennlp.models.Model):
 
     This class manage the head + backbone encoder, keeping the allennlnlp Model lifecycle. This class
     should be hidden to api users.
+
+    Parameters
+    ----------
+    name
+        Name of the pipeline model
+    head
+        TaskHead of the pipeline model
+
+    Attributes
+    ----------
+    name: str
+        Name of the pipeline model
+    head: TaskHead
+        TaskHead of the pipeline model
+    file_path: Optional[str]
+        File path to a serialized version of this pipeline model
+    inputs: List[str]
+        The model inputs
+    output: List[str]
+        The model output
     """
 
     PREDICTION_FILE_NAME = "predictions.json"
@@ -62,9 +81,11 @@ class PipelineModel(allennlp.models.Model):
     def __init__(self, name: str, head: TaskHead):
         allennlp.models.Model.__init__(self, head.backbone.vocab)
 
-        self._head = None
         self.name = name
+        self._head = None
         self.set_head(head)
+
+        self.file_path: Optional[str] = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -119,11 +140,6 @@ class PipelineModel(allennlp.models.Model):
         """Set a head and update related model attributes"""
         self._head = head
         self._update_head_related_attributes()
-
-    def cache_data(self, cache_directory: str) -> None:
-        """Sets the cache data directory"""
-        self._cache_directory = pathlib.Path(cache_directory)
-        os.makedirs(self._cache_directory, exist_ok=True)
 
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""

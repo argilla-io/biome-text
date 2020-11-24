@@ -4,43 +4,41 @@ import logging
 import os
 import shutil
 import tempfile
-from biome.text import vocabulary
-from biome.text.configuration import FindLRConfiguration
-from biome.text.configuration import PipelineConfiguration
-from biome.text.configuration import TrainerConfiguration
-from biome.text.configuration import VocabularyConfiguration
-from biome.text.dataset import InstancesDataset
-from biome.text.dataset import Dataset
-from biome.text.errors import ActionNotSupportedError
-from biome.text.errors import EmptyVocabError
-from biome.text.features import TransformersFeatures
-from biome.text.helpers import update_method_signature
 from inspect import Parameter
 from pathlib import Path
 from typing import Any
-from typing import cast
 from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
 from typing import Union
+from typing import cast
 
 import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
 from allennlp.data import AllennlpLazyDataset
-from allennlp.data import Instance
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
-from dask.dataframe import DataFrame
+
+from biome.text import vocabulary
+from biome.text.configuration import FindLRConfiguration
+from biome.text.configuration import PipelineConfiguration
+from biome.text.configuration import TrainerConfiguration
+from biome.text.configuration import VocabularyConfiguration
+from biome.text.dataset import Dataset
+from biome.text.dataset import InstancesDataset
+from biome.text.errors import EmptyVocabError
+from biome.text.features import TransformersFeatures
+from biome.text.helpers import update_method_signature
 
 from ._model import PipelineModel
 from .backbone import ModelBackbone
-from .loggers import add_default_wandb_logger_if_needed
 from .loggers import BaseTrainLogger
+from .loggers import add_default_wandb_logger_if_needed
 from .modules.heads import TaskHead
 from .modules.heads import TaskHeadConfiguration
 from .training_results import TrainingResults
@@ -58,14 +56,18 @@ logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 class Pipeline:
     """Manages NLP models configuration and actions.
 
-    Use `Pipeline` for creating new models from a configuration or loading a pre-trained model.
+    Use `Pipeline` for creating new models from a configuration or loading a pretrained model.
 
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
     """
 
     __LOGGER = logging.getLogger(__name__)
-    _model: PipelineModel = None
-    _config: PipelineConfiguration = None
+
+    def __init__(self, model: PipelineModel, config: PipelineConfiguration):
+        self._model = model
+        self._config = config
+
+        self._update_prediction_signatures()
 
     @classmethod
     def from_yaml(cls, path: str, vocab_path: Optional[str] = None) -> "Pipeline":
@@ -92,7 +94,7 @@ class Pipeline:
         cls,
         config: Union[PipelineConfiguration, dict],
         vocab_path: Optional[str] = None,
-    ) -> "_BlankPipeline":
+    ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object or a configuration dictionary
 
         Parameters
@@ -109,25 +111,43 @@ class Pipeline:
         """
         if isinstance(config, dict):
             config = PipelineConfiguration.from_dict(config)
-        return _BlankPipeline(
-            config=config, vocab=vocabulary.load_vocabulary(vocab_path)
-        )
+        model = cls._model_from_config(config, vocab=vocabulary.load_vocabulary(vocab_path))
+
+        if not isinstance(model, PipelineModel):
+            raise TypeError(f"Cannot load model. Wrong format of {model}")
+
+        cls._add_transformers_vocab_if_needed(model)
+
+        return cls(model, config)
 
     @classmethod
-    def from_pretrained(cls, path: str, **kwargs) -> "_PreTrainedPipeline":
-        """Loads a pipeline from a pre-trained pipeline providing a *model.tar.gz* file path
+    def from_pretrained(cls, path: str) -> "Pipeline":
+        """Loads a pretrained pipeline providing a *model.tar.gz* file path
 
         Parameters
         ----------
         path: `str`
-            The path to the *model.tar.gz* file of a pre-trained `Pipeline`
+            The path to the *model.tar.gz* file of a pretrained `Pipeline`
 
         Returns
         -------
         pipeline: `Pipeline`
-            A configured pipeline
+            A pretrained pipeline
         """
-        return _PreTrainedPipeline(pretrained_path=path, **kwargs)
+        archive = load_archive(
+            path,
+            # Necessary for AllenNLP>=1.2.0 that requires a dataset_reader config key
+            # We choose the "interleaving" type since it is the most light weight one.
+            overrides={"dataset_reader": {"type": "interleaving", "readers": {}}}
+        )
+        model = cls._model_from_archive(archive)
+        model.file_path = path
+        config = cls._config_from_archive(archive)
+
+        if not isinstance(model, PipelineModel):
+            raise TypeError(f"Cannot load model. Wrong format of {model}")
+
+        return cls(model, config)
 
     def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
         """Initializes the prediction logging.
@@ -271,11 +291,6 @@ class Pipeline:
         training_results
             Training results including the generated model path and the related metrics
         """
-        if extend_vocab is not None and isinstance(self, _BlankPipeline):
-            raise ActionNotSupportedError(
-                "If you want to customize pipeline vocab, please use the `create_vocabulary()` method instead"
-            )
-
         trainer = trainer or TrainerConfiguration()
         try:
             if not restore and os.path.isdir(output):
@@ -283,20 +298,17 @@ class Pipeline:
 
             self.__configure_training_logging(output, quiet)
 
-            # The original pipeline keeps unchanged
-            train_pipeline = self._make_copy()
             vocab = None
-
             if restore:
                 vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
             if extend_vocab is not None and not vocab:
-                vocab = train_pipeline._extend_vocabulary(
-                    train_pipeline.backbone.vocab, vocab_config=extend_vocab
+                vocab = self._extend_vocabulary(
+                    self.backbone.vocab, vocab_config=extend_vocab
                 )
             if vocab:
-                train_pipeline._set_vocab(vocab)
+                self._set_vocab(vocab)
 
-            if train_pipeline.has_empty_vocab():
+            if self.has_empty_vocab():
                 raise EmptyVocabError(
                     "Found an empty vocabulary. "
                     "You probably forgot to create a vocabulary with '.create_vocabulary()'."
@@ -308,14 +320,14 @@ class Pipeline:
             for name, dataset in datasets.items():
                 if isinstance(dataset, Dataset):
                     datasets[name] = dataset.to_instances(
-                        pipeline=train_pipeline, lazy=lazy
+                        pipeline=self, lazy=lazy
                     )
 
             loggers = loggers or []
             loggers = add_default_wandb_logger_if_needed(loggers)
 
             pipeline_trainer = PipelineTrainer(
-                train_pipeline,
+                self,
                 trainer_config=trainer,
                 output_dir=output,
                 epoch_callbacks=loggers,
@@ -325,7 +337,7 @@ class Pipeline:
             for logger in loggers:
                 try:
                     logger.init_train(
-                        pipeline=train_pipeline,
+                        pipeline=self,
                         trainer_configuration=trainer,
                         **datasets,
                     )
@@ -334,8 +346,8 @@ class Pipeline:
                         "Logger %s failed on init_train: %s", logger, e
                     )
 
-            model_path, metrics = pipeline_trainer.train()
-            train_results = TrainingResults(model_path, metrics)
+            self._model.file_path, metrics = pipeline_trainer.train()
+            train_results = TrainingResults(self.model_path, metrics)
 
             for logger in loggers:
                 try:
@@ -362,11 +374,17 @@ class Pipeline:
         """
         self._model.set_vocab(vocab)
 
-    def _make_copy(self) -> "Pipeline":
-        """
-        Creates a copy of current pipeline instance
-        """
-        return _PipelineCopy(self)
+    def copy(self) -> "Pipeline":
+        """Returns a copy of the pipeline"""
+        model = self._model_from_config(
+            self._config, vocab=self.backbone.vocab
+        )
+        config = copy.deepcopy(self._config)
+
+        pipeline_copy = Pipeline(model, config)
+        pipeline_copy._model.load_state_dict(self._model.state_dict())
+
+        return pipeline_copy
 
     @staticmethod
     def __restore_training_logging():
@@ -598,6 +616,11 @@ class Pipeline:
         """Returns the names of the trainable parameters in the pipeline"""
         return [name for name, p in self._model.named_parameters() if p.requires_grad]
 
+    @property
+    def model_path(self) -> str:
+        """Returns the file path to the serialized version of the last trained model"""
+        return self._model.file_path
+
     def _update_prediction_signatures(self):
         """Fixes the `self.predict` signature to match the model inputs for interactive work-flows"""
         new_signature = inspect.Signature(
@@ -681,32 +704,40 @@ class Pipeline:
         """Determines if a pipeline has an empty vocab under configured features"""
         return vocabulary.is_empty(self.backbone.vocab, self.config.features.keys)
 
+    @staticmethod
+    def _add_transformers_vocab_if_needed(model: PipelineModel):
+        """Adds the transformers vocabulary to the `vocab`
 
-class _BlankPipeline(Pipeline):
-    """A blank pipeline initialized via a configuration
+        Parameters
+        ----------
+        vocab
+            The transformers vocabulary will be added to this vocab
+        """
+        # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
+        # when the first `tokens_to_index()` is called via the private _add_encoding_to_vocabulary_if_needed method.
+        # We trigger this here manually in a super ugly way ...
+        # Actually i am not sure why they add it to their vocab in the first place ...
+        transformers_indexer = model.head.backbone.featurizer.indexer.get(
+            TransformersFeatures.namespace
+        )
+        if transformers_indexer is not None:
+            try:
+                transformers_indexer._add_encoding_to_vocabulary_if_needed(model.vocab)
+            except AttributeError:
+                transformers_indexer._matched_indexer._add_encoding_to_vocabulary_if_needed(
+                    model.vocab
+                )
 
-    Parameters
-    ----------
-    config: `Optional[PipelineConfiguration]`
-        A `PipelineConfiguration` object defining the configuration of the fresh `Pipeline`.
-    vocab
-        The vocabulary for the pipeline
-    """
+    @staticmethod
+    def _model_from_archive(archive: Archive) -> PipelineModel:
+        if not isinstance(archive.model, PipelineModel):
+            raise ValueError(f"Wrong pipeline model: {archive.model}")
+        return cast(PipelineModel, archive.model)
 
-    def __init__(
-        self,
-        config: PipelineConfiguration,
-        vocab: Optional[Vocabulary] = None,
-        **extra_args,
-    ):
-        self._config = config
-        self._model = self._model_from_config(self._config, vocab=vocab, **extra_args)
-
-        if not isinstance(self._model, PipelineModel):
-            raise TypeError(f"Cannot load model. Wrong format of {self._model}")
-
-        self._add_transformers_vocab_if_necessary(self._model.vocab)
-        self._update_prediction_signatures()
+    @staticmethod
+    def _config_from_archive(archive: Archive) -> PipelineConfiguration:
+        config = archive.config["model"]["config"]
+        return PipelineConfiguration.from_params(config)
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         """Creates the vocabulary for the pipeline from scratch
@@ -720,83 +751,4 @@ class _BlankPipeline(Pipeline):
         # TODO (dcfidalgo): This can maybe optimized, do we really need to create a new PipelineModel
         #  and add again the transformers vocab?
         self._model = self._model_from_config(self.config, vocab=vocab)
-        self._add_transformers_vocab_if_necessary(self._model.vocab)
-
-    def _add_transformers_vocab_if_necessary(self, vocab):
-        """Adds the transformers vocabulary to the `vocab`
-
-        Parameters
-        ----------
-        vocab
-            The transformers vocabulary will be added to this vocab
-        """
-        # The AllenNLP`s PretrainedTransformerIndexer adds its specific vocabulary to the Model's vocab
-        # when the first `tokens_to_index()` is called via the private _add_encoding_to_vocabulary_if_needed method.
-        # We trigger this here manually in a super ugly way ...
-        # Actually i am not sure why they add it to their vocab in the first place ...
-        transformers_indexer = self.backbone.featurizer.indexer.get(
-            TransformersFeatures.namespace
-        )
-        if transformers_indexer is not None:
-            try:
-                transformers_indexer._add_encoding_to_vocabulary_if_needed(vocab)
-            except AttributeError:
-                transformers_indexer._matched_indexer._add_encoding_to_vocabulary_if_needed(
-                    vocab
-                )
-
-
-class _PreTrainedPipeline(Pipeline):
-    """
-
-    Arguments
-    ---------
-    pretrained_path: `Optional[str]`
-        The path to the model.tar.gz of a pre-trained `Pipeline`
-
-    """
-
-    def __init__(self, pretrained_path: str, **extra_args):
-        self._binary = pretrained_path
-        archive = load_archive(
-            self._binary,
-            # Necessary for AllenNLP>=1.2.0 that requires a dataset_reader config key
-            # We choose the "interleaving" type since it is the most light weight one.
-            overrides={"dataset_reader": {"type": "interleaving", "readers": {}}},
-            **extra_args,
-        )
-        self._model = self.__model_from_archive(archive)
-        self._config = self.__config_from_archive(archive)
-
-        if not isinstance(self._model, PipelineModel):
-            raise TypeError(f"Cannot load model. Wrong format of {self._model}")
-        self._update_prediction_signatures()
-
-    @staticmethod
-    def __model_from_archive(archive: Archive) -> PipelineModel:
-        if not isinstance(archive.model, PipelineModel):
-            raise ValueError(f"Wrong pipeline model: {archive.model}")
-        return cast(PipelineModel, archive.model)
-
-    @staticmethod
-    def __config_from_archive(archive: Archive) -> PipelineConfiguration:
-        config = archive.config["model"]["config"]
-        return PipelineConfiguration.from_params(config)
-
-    @property
-    def trained_path(self) -> str:
-        """Gets the path to the pretrained binary file"""
-        return self._binary
-
-
-class _PipelineCopy(Pipeline):
-    """A copy of a pipeline ready for training."""
-
-    def __init__(self, from_pipeline: Pipeline):
-        self._model = self._model_from_config(
-            from_pipeline.config, vocab=from_pipeline.backbone.vocab
-        )
-        if isinstance(from_pipeline, _PreTrainedPipeline):
-            self._model.load_state_dict(from_pipeline._model.state_dict())
-
-        self._config = copy.deepcopy(from_pipeline.config)
+        self._add_transformers_vocab_if_needed(self._model)
