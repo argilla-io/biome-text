@@ -62,10 +62,9 @@ class Pipeline:
 
     __LOGGER = logging.getLogger(__name__)
 
-    def __init__(self, model: PipelineModel, config: PipelineConfiguration, model_path: str = None):
+    def __init__(self, model: PipelineModel, config: PipelineConfiguration):
         self._model = model
         self._config = config
-        self._model_path = model_path
 
         self._update_prediction_signatures()
 
@@ -141,12 +140,13 @@ class Pipeline:
             overrides={"dataset_reader": {"type": "interleaving", "readers": {}}}
         )
         model = cls._model_from_archive(archive)
+        model.file_path = path
         config = cls._config_from_archive(archive)
 
         if not isinstance(model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {model}")
 
-        return cls(model, config, path)
+        return cls(model, config)
 
     def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
         """Initializes the prediction logging.
@@ -345,8 +345,8 @@ class Pipeline:
                         "Logger %s failed on init_train: %s", logger, e
                     )
 
-            self._model_path, metrics = pipeline_trainer.train()
-            train_results = TrainingResults(self._model_path, metrics)
+            self._model.file_path, metrics = pipeline_trainer.train()
+            train_results = TrainingResults(self.model_path, metrics)
 
             for logger in loggers:
                 try:
@@ -380,7 +380,7 @@ class Pipeline:
         )
         config = copy.deepcopy(self._config)
 
-        pipeline_copy = Pipeline(model, config, self._model_path)
+        pipeline_copy = Pipeline(model, config)
         pipeline_copy._model.load_state_dict(self._model.state_dict())
 
         return pipeline_copy
@@ -617,8 +617,8 @@ class Pipeline:
 
     @property
     def model_path(self) -> str:
-        """Returns the binary file path of the last trained model"""
-        return self._model_path
+        """Returns the file path to the serialized version of the last trained model"""
+        return self._model.file_path
 
     def _update_prediction_signatures(self):
         """Fixes the `self.predict` signature to match the model inputs for interactive work-flows"""
