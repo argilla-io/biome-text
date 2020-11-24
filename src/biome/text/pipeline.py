@@ -9,7 +9,7 @@ from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
-from biome.text.data import InstancesDataset
+from biome.text.dataset import InstancesDataset
 from biome.text.dataset import Dataset
 from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
