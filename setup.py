@@ -6,7 +6,8 @@ import sys
 from typing import Tuple
 
 try:
-    from setuptools import setup, find_namespace_packages
+    from setuptools import find_namespace_packages
+    from setuptools import setup
 except ImportError as error:
     raise ImportError("Make sure you have setuptools >= 40.1.0 installed!") from error
 
@@ -96,14 +97,14 @@ if __name__ == "__main__":
             "elasticsearch>=6.8.0,<7.5.0",
             "ray[tune]~=1.0.0",
             "datasets~=1.1.2",
-            "tqdm>=4.49.0"
+            "tqdm>=4.49.0",
         ],
         extras_require={
             "testing": [
                 "pytest~=5.4.3",
                 "pytest-cov~=2.10.0",
                 "pytest-pylint~=0.14.0",
-                "black",
+                "pre-commit~=2.9.0",
                 "GitPython",
                 "pdoc3~=0.8.1",
                 "pytest-notebook~=0.6.0",
