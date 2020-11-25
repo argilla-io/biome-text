@@ -16,20 +16,13 @@ install: ## install package
 
 dev: ## install package in development mode
 	@pip install --use-feature=2020-resolver --upgrade -e .[testing]
+	@pre-commit install
 
 ui: ## build the ui pages
 	@cd ui && npm install && npm run build
 
 docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
-
-# TODO: remove it
-upgrade-classifier-ui: ## updates the biome-classifier-ui interface artifact
-	@curl \
-    --output src/biome/text/commands/ui/classifier.tar.gz \
-    -L \
-    --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
-    ${GITLAB_BIOME_CLASSIFIER_UI_ARTIFACT_URL}
 
 .PHONY: help
 help:
