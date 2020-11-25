@@ -21,7 +21,7 @@ from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
 
-from biome.text import __version__ as biome__version__
+from biome.text import __version__ as biome__version__, helpers
 from biome.text.helpers import copy_sign_and_docs
 from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
@@ -151,12 +151,14 @@ class Dataset:
 
         def __clean_document__(document: Dict) -> Dict:
             source = document.pop("_source")
-            return {**source, **document}
+            return helpers.stringify({**source, **document})
 
         scanned_docs = [
             __clean_document__(doc)
             for doc in scan(client=client, query=query or {}, index=index)
         ]
+        if len(scanned_docs) <= 0:  # prevent empty results
+            return cls.from_dict({})
 
         data_dict = {k: [doc.get(k) for doc in scanned_docs] for k in scanned_docs[0]}
         return cls.from_dict(data_dict)
