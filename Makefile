@@ -2,7 +2,7 @@
 default: help
 
 check: ## applies a code pylint with autopep8 reformating
-	@black .
+	@pre-commit run --all-files
 	@pylint --exit-zero --rcfile=setup.cfg --unsafe-load-any-extension=y src
 
 test: check ## launch package tests
