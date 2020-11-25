@@ -16,6 +16,7 @@ from biome.text import constants
 from biome.text import helpers
 from biome.text import Pipeline
 from biome.text.dataset import Dataset
+from biome.text.modules.heads import TaskName
 from biome.text.ui import launch_ui
 from dataclasses import dataclass
 from dataclasses import field
@@ -52,9 +53,7 @@ class DataExploration:
             "explore_name": self.name,
             "model": self.pipeline.name,
             "columns": self.dataset_columns,
-            "metadata_columns": [
-                c for c in self.dataset_columns if c not in signature
-            ],
+            "metadata_columns": [c for c in self.dataset_columns if c not in signature],
             "pipeline": self.pipeline.type_name,
             "pipeline_config": self.pipeline.config.as_dict(),
             "output": self.pipeline.output,
@@ -148,11 +147,11 @@ class _ElasticsearchDAO:
             },
         )
 
-        column_names = dataset.column_names
+        # we have total control over `prediction` field, so we don't need normalize it
+        column_names = [c for c in dataset.column_names if c != "prediction"]
         dataset = dataset.map(
             lambda x: {
-                col_name: helpers.stringify(x[col_name])
-                for col_name in column_names
+                col_name: helpers.stringify(x[col_name]) for col_name in column_names
             }
         )
         self._index_dataset(dataset=dataset, index=es_index)
