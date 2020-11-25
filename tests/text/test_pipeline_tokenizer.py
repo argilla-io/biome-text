@@ -30,7 +30,7 @@ def test_pipeline_transformers_tokenizer(pipeline_dict):
     assert pl.config.tokenizer_config.transformers_kwargs == {
         "model_name": "sshleifer/tiny-distilroberta-base"
     }
-    assert not pl.config.features.transformers.is_mismatched
+    assert pl.config.features.transformers.mismatched is False
     assert (
         type(pl.backbone.featurizer.indexer["transformers"])
         is PretrainedTransformerIndexer
@@ -45,7 +45,7 @@ def test_pipeline_default_tokenizer(pipeline_dict):
     pl = Pipeline.from_config(pipeline_dict)
 
     assert pl.config.tokenizer_config == TokenizerConfiguration()
-    assert pl.config.features.transformers.is_mismatched
+    assert pl.config.features.transformers.mismatched is True
     assert (
         type(pl.backbone.featurizer.indexer["transformers"])
         is PretrainedTransformerMismatchedIndexer

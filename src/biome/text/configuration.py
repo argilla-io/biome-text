@@ -291,11 +291,15 @@ class PipelineConfiguration(FromParams):
 
         # make sure we use the right tokenizer/indexer/embedder for the transformers feature
         if self.tokenizer_config.transformers_kwargs:
-            self.features.transformers.is_mismatched = False
+            if self.features.transformers.mismatched is None:
+                self.features.transformers.mismatched = False
             if self.tokenizer_config.transformers_kwargs.get("model_name") is None:
                 self.tokenizer_config.transformers_kwargs[
                     "model_name"
                 ] = self.features.transformers.model_name
+        else:
+            if self.features.transformers.mismatched is None:
+                self.features.transformers.mismatched = True
 
         self._check_for_incompatible_configurations()
 
