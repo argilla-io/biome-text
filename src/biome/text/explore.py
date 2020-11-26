@@ -301,7 +301,7 @@ def _explore(
         predictions = apply_func(input_dicts)
 
         return {
-            "prediction": sanitize(_make_prediction_backward_compatible(predictions))
+            "prediction": _make_prediction_backward_compatible(sanitize(predictions))
         }
 
     # we include the pipeline.output as input columns so we do not use it for the metadata
@@ -431,8 +431,7 @@ def _make_prediction_backward_compatible(predictions: List[Dict]):
         if not is_multilabel:
             prediction["label"] = prediction["labels"][0]
             prediction["prob"] = prediction["probabilities"][0]
-            # deprecated
-            # prediction["max_class"] = prediction["labels"][0]
-            # prediction["max_class_prob"] = prediction["probabilities"][0]
+            prediction["max_class"] = prediction["labels"][0]  # deprecated
+            prediction["max_class_prob"] = prediction["probabilities"][0]  # deprecated
 
     return predictions
