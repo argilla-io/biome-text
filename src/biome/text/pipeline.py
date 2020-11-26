@@ -23,6 +23,7 @@ from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
 from biome.text.configuration import FindLRConfiguration
@@ -111,7 +112,9 @@ class Pipeline:
         """
         if isinstance(config, dict):
             config = PipelineConfiguration.from_dict(config)
-        model = cls._model_from_config(config, vocab=vocabulary.load_vocabulary(vocab_path))
+        model = cls._model_from_config(
+            config, vocab=vocabulary.load_vocabulary(vocab_path)
+        )
 
         if not isinstance(model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {model}")
@@ -138,7 +141,7 @@ class Pipeline:
             path,
             # Necessary for AllenNLP>=1.2.0 that requires a dataset_reader config key
             # We choose the "interleaving" type since it is the most light weight one.
-            overrides={"dataset_reader": {"type": "interleaving", "readers": {}}}
+            overrides={"dataset_reader": {"type": "interleaving", "readers": {}}},
         )
         model = cls._model_from_archive(archive)
         model.file_path = path
@@ -215,7 +218,7 @@ class Pipeline:
 
         if isinstance(training_data, Dataset):
             training_data: AllennlpLazyDataset = training_data.to_instances(
-                pipeline=self, 
+                pipeline=self,
                 lazy=True,
             )
         training_data.index_with(self._model.vocab)
@@ -319,9 +322,7 @@ class Pipeline:
             datasets = {"training": training, "validation": validation, "test": test}
             for name, dataset in datasets.items():
                 if isinstance(dataset, Dataset):
-                    datasets[name] = dataset.to_instances(
-                        pipeline=self, lazy=lazy
-                    )
+                    datasets[name] = dataset.to_instances(pipeline=self, lazy=lazy)
 
             loggers = loggers or []
             loggers = add_default_wandb_logger_if_needed(loggers)
@@ -376,9 +377,7 @@ class Pipeline:
 
     def copy(self) -> "Pipeline":
         """Returns a copy of the pipeline"""
-        model = self._model_from_config(
-            self._config, vocab=self.backbone.vocab
-        )
+        model = self._model_from_config(self._config, vocab=self.backbone.vocab)
         config = copy.deepcopy(self._config)
 
         pipeline_copy = Pipeline(model, config)
@@ -514,6 +513,53 @@ class Pipeline:
             A list of dictionaries containing the predictions and attributions
         """
         return self._model.explain_batch(input_dicts, n_steps=n_steps)
+
+    def evaluate(
+        self,
+        dataset: Dataset,
+        batch_size: int = 16,
+        lazy: bool = False,
+        predictions_output_file: Optional[str] = None,
+    ):
+        """Evaluates the pipeline on a given dataset
+
+        Parameters
+        ----------
+        dataset
+            The dataset to use for the evaluation
+        batch_size
+            Batch size used during the evaluation
+        lazy
+            If true, instances from the dataset are lazily loaded from disk, otherwise they are loaded into memory.
+        predictions_output_file
+            Optional path to write the predictions to.
+
+        Returns
+        -------
+        metrics
+            Metrics defined in the TaskHead
+        """
+        from biome.text._helpers import create_dataloader
+
+        if not any(
+            label_column in dataset.column_names for label_column in self.output
+        ):
+            raise ValueError(
+                f"Your dataset needs one of the label columns for an evaluation: {self.output}"
+            )
+
+        # We assume the model lives on ONE device only!
+        model_device = next(self._model.parameters()).get_device()
+        instances = dataset.to_instances(self, lazy=lazy)
+        instances.index_with(self.backbone.vocab)
+        data_loader = create_dataloader(instances, batch_size=batch_size)
+
+        return evaluate(
+            self._model,
+            data_loader,
+            cuda_device=model_device,
+            predictions_output_file=predictions_output_file,
+        )
 
     def save_vocabulary(self, directory: str) -> None:
         """Saves the pipeline's vocabulary in a directory
