@@ -1,8 +1,16 @@
 from typing import Dict
 
-import pytest
-from biome.text import Pipeline, VocabularyConfiguration, TrainerConfiguration, Dataset
 import pandas as pd
+import pytest
+
+from biome.text import (
+    Pipeline,
+    VocabularyConfiguration,
+    TrainerConfiguration,
+    Dataset,
+    vocabulary,
+)
+from biome.text.modules.heads import TaskOutput
 
 
 @pytest.fixture
@@ -63,7 +71,7 @@ def test_default_explain(pipeline_dict):
 
     prediction = pipeline.explain("This is a simple text")
     assert prediction["explain"]
-    assert len(prediction["explain"]["text"]) == len(prediction["tags"][0])
+    assert len(prediction["explain"]["text"]) == len(prediction["tags"][0][0])
     # enable training mode for generate instances with tags
     pipeline.head.train()
 
@@ -83,29 +91,6 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     assert pipeline.head.span_labels == ["NER"]
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
 
-    predictions = pipeline.predict(["test", "this", "pretokenized", "text"])
-    assert "entities" in predictions
-    assert "tags" in predictions
-    assert "tokens" not in predictions
-
-    for entity in predictions["entities"][0]:
-        assert "start_token" in entity
-        assert "end_token" in entity
-        assert "label" in entity
-        assert "start" not in entity
-        assert "end" not in entity
-
-    predictions = pipeline.predict_batch(
-        [{"text": "Test this NER system"}, {"text": "and this"}]
-    )
-    assert "entities" in predictions[0]
-    assert "tags" in predictions[0]
-    assert "tokens" in predictions[0]
-
-    for entity in predictions[0]["entities"][0]:
-        assert "start" in entity
-        assert "end" in entity
-
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
@@ -113,6 +98,105 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
         trainer=TrainerConfiguration(**trainer_dict),
         training=training_dataset,
     )
+
+
+class TestDecode:
+    def test_pretokenized_decode(self, pipeline_dict):
+        pipeline = Pipeline.from_config(pipeline_dict)
+        output = self._input_top_k2(pipeline)
+
+        assert output.keys() == dict(entities=None, tags=None, scores=None).keys()
+        assert output["entities"] == [
+            [
+                [dict(start_token=3, end_token=4, label="NER")],
+                [dict(start_token=1, end_token=4, label="NER")],
+            ]
+        ]
+        assert output["tags"] == [
+            [["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]]
+        ]
+        assert output["scores"] == [[2, 1]]
+
+    def test_untokenized_decode(self, pipeline_dict):
+        pipeline = Pipeline.from_config(pipeline_dict)
+        output = self._input_top_k2(pipeline, pretokenized=False)
+
+        assert (
+            output.keys()
+            == dict(entities=None, tags=None, scores=None, tokens=None).keys()
+        )
+        assert output["entities"] == [
+            [
+                [dict(start_token=3, end_token=4, label="NER", start=10, end=14)],
+                [dict(start_token=1, end_token=4, label="NER", start=5, end=14)],
+            ]
+        ]
+        assert output["tags"] == [
+            [["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]]
+        ]
+        assert output["scores"] == [[2, 1]]
+        assert output["tokens"] == [
+            [
+                {"end": 4, "start": 0, "text": "this"},
+                {"end": 7, "start": 5, "text": "is"},
+                {"end": 9, "start": 8, "text": "a"},
+                {"end": 14, "start": 10, "text": "test"},
+            ]
+        ]
+
+    @staticmethod
+    def _input_top_k2(pipeline, pretokenized=True):
+        raw_text = [["this", "is", "a", "test"]] if pretokenized else ["this is a test"]
+        tag_idx_sequence = [
+            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
+            for tag in ["O", "O", "O", "U-NER"]
+        ]
+        tag_idx_sequence2 = [
+            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
+            for tag in ["O", "B-NER", "I-NER", "L-NER"]
+        ]
+        viterbi_paths = [[(tag_idx_sequence, 2), (tag_idx_sequence2, 1)]]
+        task_output = TaskOutput(
+            viterbi_paths=viterbi_paths, raw_text=raw_text, mask=None, probs=None
+        )
+
+        return pipeline.head.decode(task_output).as_dict()
+
+    def test_mixed_decode(self, pipeline_dict):
+        pipeline = Pipeline.from_config(pipeline_dict)
+        output = self._mixed_input_top_k1(pipeline)
+
+        assert (
+            output.keys()
+            == dict(entities=None, tags=None, scores=None, tokens=None).keys()
+        )
+        assert output["entities"] == [
+            [[dict(start_token=3, end_token=4, label="NER")]],
+            [[dict(start_token=3, end_token=4, label="NER", start=10, end=14)]],
+        ]
+        assert output["tokens"] == [
+            None,
+            [
+                {"end": 4, "start": 0, "text": "this"},
+                {"end": 7, "start": 5, "text": "is"},
+                {"end": 9, "start": 8, "text": "a"},
+                {"end": 14, "start": 10, "text": "test"},
+            ],
+        ]
+
+    @staticmethod
+    def _mixed_input_top_k1(pipeline):
+        raw_text = [["this", "is", "a", "test"], "this is a test"]
+        tag_idx_sequence = [
+            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
+            for tag in ["O", "O", "O", "U-NER"]
+        ]
+        viterbi_paths = [[(tag_idx_sequence, 1)]] * 2
+        task_output = TaskOutput(
+            viterbi_paths=viterbi_paths, raw_text=raw_text, mask=None, probs=None
+        )
+
+        return pipeline.head.decode(task_output).as_dict()
 
 
 def test_preserve_pretokenization(
