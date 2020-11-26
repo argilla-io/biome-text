@@ -2,35 +2,36 @@ import contextlib
 import logging
 import pickle
 from pathlib import Path
-from typing import (
-    Union,
-    Dict,
-    Iterable,
-    List,
-    Any,
-    Tuple,
-    TYPE_CHECKING,
-    Optional,
-    Callable,
-    cast,
-)
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+from typing import cast
 
 import datasets
 from allennlp import __version__ as allennlp__version__
-from allennlp.data import AllennlpDataset, AllennlpLazyDataset, Instance
+from allennlp.data import AllennlpDataset
+from allennlp.data import AllennlpLazyDataset
+from allennlp.data import Instance
+from datasets.fingerprint import Hasher
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import scan
-
-from biome.text import __version__ as biome__version__
-from biome.text.helpers import copy_sign_and_docs
-from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
 from tqdm.auto import tqdm
 
+from biome.text import __version__ as biome__version__
+from biome.text.helpers import copy_sign_and_docs
+
 if TYPE_CHECKING:
-    from biome.text.pipeline import Pipeline
-    from biome.text.features import Features
     import pandas
+
+    from biome.text.features import Features
+    from biome.text.pipeline import Pipeline
 
 InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
@@ -82,7 +83,7 @@ class Dataset:
 
     @classmethod
     def from_json(cls, paths: Union[str, List[str]], **kwargs) -> "Dataset":
-        """Convenient method to create a Dataset from a json file
+        """Create a Dataset from a json file
 
         Parameters
         ----------
@@ -99,7 +100,7 @@ class Dataset:
 
     @classmethod
     def from_csv(cls, paths: Union[str, List[str]], **kwargs) -> "Dataset":
-        """Convenient method to create a Dataset from a csv file
+        """Create a Dataset from a csv file
 
         Parameters
         ----------
@@ -134,8 +135,7 @@ class Dataset:
     def from_elasticsearch(
         cls, client: Elasticsearch, index: str, query: Optional[dict] = None
     ):
-        """
-        Create a Dataset from elasticsearch index
+        """Create a Dataset from scanned query records in an elasticsearch index
 
         Parameters
         ----------
@@ -145,8 +145,7 @@ class Dataset:
 
         Returns
         -------
-        A new Dataset created from scanned query records in elasticsearch index
-
+        dataset
         """
 
         def __clean_document__(document: Dict) -> Dict:
@@ -160,6 +159,21 @@ class Dataset:
 
         data_dict = {k: [doc.get(k) for doc in scanned_docs] for k in scanned_docs[0]}
         return cls.from_dict(data_dict)
+
+    @classmethod
+    def from_datasets(cls, dataset_list: List["Dataset"]) -> "Dataset":
+        """Create a single Dataset by concatenating a list of datasets
+
+        Parameters
+        ----------
+        dataset_list
+            Datasets to be concatenated. They must have the same column types.
+
+        Returns
+        -------
+        dataset
+        """
+        return cls(datasets.concatenate_datasets([ds.dataset for ds in dataset_list]))
 
     @classmethod
     @copy_sign_and_docs(datasets.Dataset.load_from_disk)
@@ -313,6 +327,10 @@ class Dataset:
             If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
         use_cache
             If true, we will try to reuse cached instances. Ignored when `lazy=True`.
+
+        Returns
+        -------
+        instance_dataset
         """
         input_columns = [(col, False) for col in pipeline.inputs if col]
         input_columns.extend([(col, True) for col in pipeline.output if col])
@@ -347,7 +365,7 @@ class Dataset:
         dataset: datasets.Dataset,
         input_columns: List[Tuple[str, bool]],
     ) -> Callable[[str], Iterable[Instance]]:
-        """Builds the instance generator
+        """Build the instance generator
 
         Parameters
         ----------
@@ -379,7 +397,7 @@ class Dataset:
         return instance_generator
 
     def _create_fingerprint_for_instance_list(self, pipeline: "Pipeline") -> str:
-        """Creates a fingerprint for the instance list
+        """Create a fingerprint for the instance list
 
         The fingerprint is based on:
         - the fingerprint of the previous dataset
@@ -412,7 +430,7 @@ class Dataset:
         return hasher.hexdigest()
 
     def _load_instance_list(self, fingerprint: str) -> Optional[List[Instance]]:
-        """Loads the cached instance list
+        """Load the cached instance list
 
         Parameters
         ----------
@@ -438,7 +456,7 @@ class Dataset:
         return instance_list
 
     def _cache_instance_list(self, instance_list: List[Instance], fingerprint: str):
-        """Caches a instance list
+        """Cache an instance list
 
         Parameters
         ----------
@@ -475,7 +493,7 @@ class Dataset:
         return nr_of_removed_files
 
     def head(self, n: Optional[int] = 10) -> "pandas.DataFrame":
-        """Returns the first n rows of the dataset as a pandas.DataFrame
+        """Return the first n rows of the dataset as a pandas.DataFrame
 
         Parameters
         ----------
