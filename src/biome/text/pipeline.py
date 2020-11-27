@@ -520,7 +520,8 @@ class Pipeline:
         batch_size: int = 16,
         lazy: bool = False,
         predictions_output_file: Optional[str] = None,
-    ):
+        metrics_output_file: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Evaluates the pipeline on a given dataset
 
         Parameters
@@ -533,6 +534,8 @@ class Pipeline:
             If true, instances from the dataset are lazily loaded from disk, otherwise they are loaded into memory.
         predictions_output_file
             Optional path to write the predictions to.
+        metrics_output_file
+            Optional path to write the final metrics to.
 
         Returns
         -------
@@ -559,6 +562,7 @@ class Pipeline:
             data_loader,
             cuda_device=model_device,
             predictions_output_file=predictions_output_file,
+            output_file=metrics_output_file,
         )
 
     def save_vocabulary(self, directory: str) -> None:
