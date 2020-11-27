@@ -242,4 +242,5 @@ class TransformersFeatures(Features):
             "trainable": self.trainable,
             "max_length": self.max_length,
             "last_layer_only": self.last_layer_only,
+            "mismatched": self.mismatched,
         }
