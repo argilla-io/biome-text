@@ -4,10 +4,11 @@ import sys
 import click
 from click import Group
 
+from .evaluate import evaluate
 from .serve import serve
 from .train import train
 
-SUPPORTED_COMMANDS = [serve, train]
+SUPPORTED_COMMANDS = [train, evaluate, serve]
 
 
 def main():
