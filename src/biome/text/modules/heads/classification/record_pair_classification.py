@@ -12,6 +12,7 @@ from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.nn import InitializerApplicator, util
 from captum.attr import IntegratedGradients
 
+from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.configuration import (
@@ -213,7 +214,8 @@ class RecordPairClassification(ClassificationHead):
         return output
 
     def _field_encoding(
-        self, record: TextFieldTensors,
+        self,
+        record: TextFieldTensors,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Embeds and encodes the records in a field context.
 
@@ -404,7 +406,9 @@ class RecordPairClassification(ClassificationHead):
         # 2. Get attributes
         ig = IntegratedGradients(self._bimpm_forward)
 
-        prediction_target = int(np.argmax(prediction["probs"]))
+        prediction_target = int(
+            vocabulary.index_for_label(self.backbone.vocab, prediction["labels"][0])
+        )
         ig_attribute_record1 = ig.attribute(
             inputs=(field_encoded_record1, field_encoded_record2),
             baselines=(field_encoded_record2, field_encoded_record2),

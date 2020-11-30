@@ -5,19 +5,50 @@ from typing import Optional
 import click
 from elasticsearch import Elasticsearch
 
-from biome.text import Pipeline, Dataset, TrainerConfiguration, VocabularyConfiguration
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 from biome.text.helpers import yaml_to_dict
 
 
-@click.command("train", help="Train a pipeline")
-@click.argument("pipeline_path", type=click.Path(exists=True))
-@click.option("-o", "--output", "output", type=click.Path(), required=True)
-@click.option("--trainer", "trainer", type=click.Path(exists=True), required=True)
-@click.option("--training", "training", type=click.Path(exists=True), required=True)
-@click.option(
-    "--validation", "validation", type=click.Path(exists=True), required=False
+@click.command()
+@click.argument(
+    "pipeline_path",
+    type=click.Path(exists=True),
+    required=True,
 )
-@click.option("--test", "test", type=click.Path(exists=True), required=False)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    required=True,
+    help="Path of the training output.",
+)
+@click.option(
+    "--trainer",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to the trainer configuration YAML file.",
+)
+@click.option(
+    "--training",
+    type=click.Path(exists=True),
+    required=True,
+    help="Path to the training data.",
+)
+@click.option(
+    "--validation",
+    type=click.Path(exists=True),
+    required=False,
+    help="Path to the validation data.",
+)
+@click.option(
+    "--test",
+    type=click.Path(exists=True),
+    required=False,
+    help="Path to the test data.",
+)
 def train(
     pipeline_path: str,
     output: str,
@@ -26,6 +57,11 @@ def train(
     validation: Optional[str] = None,
     test: Optional[str] = None,
 ) -> None:
+    """Train a pipeline.
+
+    PIPELINE_PATH is either the path to a pretrained pipeline (model.tar.gz file),
+    or the path to a pipeline configuration (YAML file).
+    """
     _, extension = os.path.splitext(pipeline_path)
     extension = extension[1:].lower()
     pipeline = (

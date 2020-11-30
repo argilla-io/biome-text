@@ -1,6 +1,10 @@
-from biome.text import Pipeline, Dataset, TrainerConfiguration, VocabularyConfiguration
 import pytest
 from numpy.testing import assert_allclose
+
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 
 
 @pytest.fixture
@@ -31,7 +35,7 @@ def test_copy(pipeline):
     pipeline_copy = pipeline.copy()
     prediction_copy = pipeline_copy.predict("check this")
 
-    assert_allclose(prediction["probs"], prediction_copy["probs"])
+    assert_allclose(prediction["probabilities"], prediction_copy["probabilities"])
 
 
 def test_train_from_pretrained(pipeline, dataset, tmp_path):
@@ -44,4 +48,4 @@ def test_train_from_pretrained(pipeline, dataset, tmp_path):
     pipeline_loaded = Pipeline.from_pretrained(str(output_path))
     prediction_loaded = pipeline_loaded.predict("a test")
 
-    assert_allclose(prediction["probs"], prediction_loaded["probs"])
+    assert_allclose(prediction["probabilities"], prediction_loaded["probabilities"])
