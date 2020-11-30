@@ -162,6 +162,14 @@ def test_from_elasticsearch(dataset, default_pipeline_config):
     ds = Dataset.from_elasticsearch(es_client, index=es_index, query={"query": query})
     assert len(ds) == 0
 
+    ds = Dataset.from_elasticsearch(
+        es_client, index=es_index, source_fields=["label", "text"]
+    )
+    assert len(ds) == len(dataset)
+    assert "label" in ds.column_names
+    assert "text" in ds.column_names
+    assert "prediction" not in ds.column_names
+
 
 def test_to_instances(dataset, default_pipeline_config):
     pl = Pipeline.from_config(default_pipeline_config)
