@@ -519,6 +519,7 @@ class Pipeline:
         dataset: Dataset,
         batch_size: int = 16,
         lazy: bool = False,
+        cuda_device: int = None,
         predictions_output_file: Optional[str] = None,
         metrics_output_file: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -532,6 +533,9 @@ class Pipeline:
             Batch size used during the evaluation
         lazy
             If true, instances from the dataset are lazily loaded from disk, otherwise they are loaded into memory.
+        cuda_device
+            If you want to use a specific CUDA device for the evaluation, specify it here. Pass on -1 for the CPU.
+            By default we will use a CUDA device if one is available.
         predictions_output_file
             Optional path to write the predictions to.
         metrics_output_file
@@ -544,6 +548,17 @@ class Pipeline:
         """
         from biome.text._helpers import create_dataloader
 
+        # move model to cuda device
+        if cuda_device is None:
+            from torch import cuda
+
+            if cuda.device_count() > 0:
+                cuda_device = 0
+            else:
+                cuda_device = -1
+        prior_device = next(self._model.parameters()).get_device()
+        self._model.to(cuda_device if cuda_device >= 0 else "cpu")
+
         if not any(
             label_column in dataset.column_names for label_column in self.output
         ):
@@ -551,19 +566,20 @@ class Pipeline:
                 f"Your dataset needs one of the label columns for an evaluation: {self.output}"
             )
 
-        # We assume the model lives on ONE device only!
-        model_device = next(self._model.parameters()).get_device()
         instances = dataset.to_instances(self, lazy=lazy)
         instances.index_with(self.backbone.vocab)
         data_loader = create_dataloader(instances, batch_size=batch_size)
 
-        return evaluate(
-            self._model,
-            data_loader,
-            cuda_device=model_device,
-            predictions_output_file=predictions_output_file,
-            output_file=metrics_output_file,
-        )
+        try:
+            return evaluate(
+                self._model,
+                data_loader,
+                cuda_device=cuda_device,
+                predictions_output_file=predictions_output_file,
+                output_file=metrics_output_file,
+            )
+        finally:
+            self._model.to(prior_device if prior_device >= 0 else "cpu")
 
     def save_vocabulary(self, directory: str) -> None:
         """Saves the pipeline's vocabulary in a directory
