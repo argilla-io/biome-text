@@ -31,8 +31,8 @@ from biome.text.configuration import PipelineConfiguration
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
-from biome.text.errors import EmptyVocabError
 from biome.text.dataset import InstancesDataset
+from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.helpers import update_method_signature
 
@@ -107,7 +107,10 @@ class Pipeline:
         if isinstance(config, dict):
             config = PipelineConfiguration.from_dict(config)
         model = cls._model_from_config(
-            config, vocab=vocabulary.load_vocabulary(vocab_path)
+            config,
+            vocab=vocabulary.load_vocabulary(vocab_path)
+            if vocab_path is not None
+            else None,
         )
 
         if not isinstance(model, PipelineModel):
