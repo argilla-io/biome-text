@@ -7,23 +7,39 @@ import warnings
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import Any
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Type
+from typing import Union
+from typing import cast
 
 import allennlp
 import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import Field, Instance, Token, Vocabulary
-from allennlp.data.fields import ListField, MetadataField, SequenceLabelField, TextField
+from allennlp.data import Field
+from allennlp.data import Instance
+from allennlp.data import Token
+from allennlp.data import Vocabulary
+from allennlp.data.fields import ListField
+from allennlp.data.fields import MetadataField
+from allennlp.data.fields import SequenceLabelField
+from allennlp.data.fields import TextField
 from allennlp.models.archival import CONFIG_NAME
 
 from . import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
-from .errors import MissingArgumentError, WrongValueError
+from .errors import MissingArgumentError
+from .errors import WrongValueError
 from .helpers import split_signature_params_by_predicate
-from .modules.heads import TaskHead, TaskOutput
+from .modules.heads import TaskHead
+from .modules.heads import TaskOutput
 
 
 class _HashDict(dict):
@@ -95,9 +111,9 @@ class PipelineModel(allennlp.models.Model):
             self._head.featurize, lambda p: p.default == inspect.Parameter.empty
         )
         self._inputs = self._head.inputs() or [p.name for p in required]
-        self._output = (
-            [p.name for p in optional if p.name not in self._inputs] or [None]
-        )
+        self._output = [p.name for p in optional if p.name not in self._inputs] or [
+            None
+        ]
 
     @classmethod
     def from_params(
@@ -110,6 +126,19 @@ class PipelineModel(allennlp.models.Model):
         Load the model implementation from params. We build manually each component from config sections.
 
         The param keys matches exactly with keys in yaml configuration files
+
+        Parameters
+        ----------
+        params
+            The config key in these params is used to build the model components
+        vocab
+            The vocabulary for the model
+        **extras
+            Necessary for AllenNLP from_params machinery
+
+        Returns
+        -------
+        pipeline_model
         """
 
         config = params.pop("config")
@@ -457,7 +486,9 @@ class PipelineModel(allennlp.models.Model):
             if isinstance(field, SequenceLabelField):
                 return [
                     {"label": label, "token": token["token"]}
-                    for label, token in zip(field.labels, extract_field_tokens(field.sequence_field))
+                    for label, token in zip(
+                        field.labels, extract_field_tokens(field.sequence_field)
+                    )
                 ]
             if isinstance(field, MetadataField):
                 return []
