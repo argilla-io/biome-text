@@ -6,12 +6,15 @@
     Provides management actions such as extending the labels, setting new labels or creating an "empty" vocab.
 """
 import logging
-from typing import Dict, List, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
 
 from allennlp.data import Vocabulary
 from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
 
 from biome.text.features import TransformersFeatures
+from biome.text.features import WordFeatures
 
 LABELS_NAMESPACE = "gold_labels"
 
@@ -94,8 +97,6 @@ def words_vocab_size(vocab: Vocabulary) -> int:
     size: `int`
         The vocabulary size for the words namespace
     """
-    from biome.text.features import WordFeatures
-
     return vocab.get_vocab_size(WordFeatures.namespace)
 
 
@@ -169,21 +170,20 @@ def is_empty(vocab: Vocabulary, namespaces: List[str]) -> bool:
 def load_vocabulary(vocab_path: str) -> Optional[Vocabulary]:
     """
     Loads a vocabulary from a path
+
     Parameters
     ----------
-    vocab_path: str
+    vocab_path
         The vocab folder path
 
     Returns
     -------
-    An operative `allennlp.data.Vocabulary`
+    vocabulary
     """
     try:
-        if not vocab_path:
-            return None
         return Vocabulary.from_files(vocab_path)
     except TypeError:
         return None
     except FileNotFoundError:
-        _LOGGER.warning("%s folder not found", vocab_path)
+        _LOGGER.warning(f"{vocab_path} folder not found")
         return None
