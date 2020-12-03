@@ -1,8 +1,11 @@
 from typing import Dict
 
-import pandas as pd
 import pytest
-from biome.text import TrainerConfiguration, VocabularyConfiguration, Dataset, Pipeline
+
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 
 
 @pytest.fixture

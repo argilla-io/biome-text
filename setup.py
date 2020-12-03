@@ -75,7 +75,7 @@ if __name__ == "__main__":
         install_requires=[
             "allennlp~=1.2.0",
             "spacy~=2.3.0",
-            "gevent~=1.4.0",
+            "gevent~=20.9.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
             "click~=7.1.0",
@@ -85,8 +85,6 @@ if __name__ == "__main__":
             "uvicorn~=0.11.0",
             "distributed~=2.17.0",
             "cachey~=0.2.0",
-            "pyarrow~=0.17.0",
-            "ujson~=2.0.0",
             "pandas~=1.1.0",
             "xlrd~=1.2.0",
             "flatdict~=4.0.0",

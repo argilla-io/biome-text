@@ -1,23 +1,15 @@
 import logging
 import os
 
-import pandas as pd
 import pytest
-
-# fmt: off
 import torch
 
-from biome.text import (
-    Pipeline,
-    Dataset,
-    PipelineConfiguration,
-    TrainerConfiguration,
-    VocabularyConfiguration,
-)
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import PipelineConfiguration
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 from biome.text.modules.heads import TextClassificationConfiguration
-
-from allennlp.data import AllennlpDataset, Instance, AllennlpLazyDataset
-# fmt: on
 from tests.text.test_pipeline_model import TestHead
 
 
@@ -98,9 +90,7 @@ def test_training_from_pretrained_with_head_replace(
     assert copied.backbone.featurizer.tokenizer.config.max_nr_of_sentences == 3
 
 
-def test_training_with_logging(
-    pipeline: Pipeline, dataset: Dataset, tmp_path: str
-):
+def test_training_with_logging(pipeline: Pipeline, dataset: Dataset, tmp_path: str):
     training = dataset.to_instances(pipeline)
     pipeline.create_vocabulary(VocabularyConfiguration(sources=[training]))
 
