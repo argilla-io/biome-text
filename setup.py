@@ -6,7 +6,8 @@ import sys
 from typing import Tuple
 
 try:
-    from setuptools import setup, find_namespace_packages
+    from setuptools import find_namespace_packages
+    from setuptools import setup
 except ImportError as error:
     raise ImportError("Make sure you have setuptools >= 40.1.0 installed!") from error
 
@@ -74,7 +75,7 @@ if __name__ == "__main__":
         install_requires=[
             "allennlp~=1.2.0",
             "spacy~=2.3.0",
-            "gevent~=1.4.0",
+            "gevent~=20.9.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
             "click~=7.1.0",
@@ -84,8 +85,6 @@ if __name__ == "__main__":
             "uvicorn~=0.11.0",
             "distributed~=2.17.0",
             "cachey~=0.2.0",
-            "pyarrow~=0.17.0",
-            "ujson~=2.0.0",
             "pandas~=1.1.0",
             "xlrd~=1.2.0",
             "flatdict~=4.0.0",
@@ -96,7 +95,7 @@ if __name__ == "__main__":
             "elasticsearch>=6.8.0,<7.5.0",
             "ray[tune]~=1.0.0",
             "datasets~=1.1.2",
-            "tqdm>=4.49.0"
+            "tqdm>=4.49.0",
         ],
         extras_require={
             "testing": [

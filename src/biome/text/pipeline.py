@@ -44,12 +44,6 @@ from .modules.heads import TaskHead
 from .modules.heads import TaskHeadConfiguration
 from .training_results import TrainingResults
 
-try:
-    import ujson as json
-except ModuleNotFoundError:
-    import json
-
-
 logging.getLogger("allennlp").setLevel(logging.ERROR)
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
