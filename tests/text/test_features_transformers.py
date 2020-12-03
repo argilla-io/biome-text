@@ -3,7 +3,10 @@ from pathlib import Path
 import pytest
 from numpy.testing import assert_allclose
 
-from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, Dataset
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 from biome.text.features import TransformersFeatures
 
 
@@ -29,7 +32,9 @@ def pipeline_dict() -> dict:
 
     pipeline_dict = {
         "name": "emotions_with_transformers",
-        "features": {"transformers": {"model_name": "sshleifer/tiny-distilbert-base-cased"}},
+        "features": {
+            "transformers": {"model_name": "sshleifer/tiny-distilbert-base-cased"}
+        },
         "head": {
             "type": "TextClassification",
             "labels": [
@@ -66,31 +71,6 @@ def trainer_dict() -> dict:
     }
 
 
-def test_transformers_vocab(train_dataset, pipeline_dict):
-    del pipeline_dict["head"]["pooler"]
-    pipeline_dict["features"].update(
-        {"word": {"embedding_dim": 16, "lowercase_tokens": True}}
-    )
-
-    pl = Pipeline.from_config(pipeline_dict)
-    vocab_config = VocabularyConfiguration(sources=[train_dataset])
-
-    print(pl.backbone.vocab)
-    # ds = Dataset.from_dict({"text": ["check this shit out"], "label": ["whatthefuck"]})
-    # pl.backbone.vocab.extend_from_instances(ds.to_instances(pl))
-    # print(pl.backbone.vocab)
-    # assert False
-    # vocab = pl._extend_vocabulary(pl.backbone.vocab, vocab_config)
-    # print(vocab)
-    # vocab = pl._extend_vocabulary(vocab, vocab_config)
-    # print(vocab)
-    ds = Dataset.from_dict({"text": ["check this shit out"], "label": ["whatthefuck"]})
-    vocab_config = VocabularyConfiguration(sources=[ds])
-    vocab = pl._extend_vocabulary(pl.backbone.vocab, vocab_config)
-    print(vocab)
-    assert False
-
-
 def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset):
     """Testing a Transformer training process and a model load"""
 
@@ -121,19 +101,15 @@ def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_data
     )
 
     pl = Pipeline.from_config(pipeline_dict)
+    pl.predict(text="test")
+
+    output = tmp_path / "output"
     trainer = TrainerConfiguration(**trainer_dict)
-    vocab = VocabularyConfiguration(sources=[train_dataset])
-    pl.create_vocabulary(vocab)
+    pl.train(output=str(output), trainer=trainer, training=train_dataset)
 
     # Check a fixed vocabulary size for the transformer and the word feature
     assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
     assert pl.backbone.vocab.get_vocab_size("word") == 273
-
-    pl.predict(text="test")
-
-    output = tmp_path / "output"
-
-    pl.train(output=str(output), trainer=trainer, training=train_dataset)
 
     # Test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))

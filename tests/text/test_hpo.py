@@ -2,7 +2,8 @@ import mlflow
 import pytest
 from ray import tune
 
-from biome.text import Pipeline, VocabularyConfiguration
+from biome.text import Pipeline
+from biome.text import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.hpo import TuneExperiment
 
@@ -64,14 +65,15 @@ def test_tune_exp_save_dataset_and_vocab(
     dataset, pipeline_config, trainer_config, monkeypatch
 ):
     pl = Pipeline.from_config(pipeline_config)
-    pl.create_vocabulary(VocabularyConfiguration(sources=[dataset]))
+    vocab = VocabularyConfiguration(datasets=[dataset]).build_vocab(pipeline=pl)
+    pl._model.extend_vocabulary(vocab)
 
     my_exp = TuneExperiment(
         pipeline_config=pipeline_config,
         trainer_config=trainer_config,
         train_dataset=dataset,
         valid_dataset=dataset,
-        vocab=pl.backbone.vocab,
+        vocab=vocab,
     )
 
     config = my_exp.config
@@ -85,7 +87,9 @@ def test_tune_exp_save_dataset_and_vocab(
 
 
 def test_tune_exp_custom_trainable(
-    dataset, pipeline_config, trainer_config,
+    dataset,
+    pipeline_config,
+    trainer_config,
 ):
     def my_trainable(config):
         pass

@@ -41,7 +41,6 @@ def test_copy(pipeline):
 def test_train_from_pretrained(pipeline, dataset, tmp_path):
     output_path = tmp_path / "test_train_from_pretrained_output"
     trainer_config = TrainerConfiguration(num_epochs=1, batch_size=2, cuda_device=-1)
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[dataset]))
     pipeline.train(output=str(output_path), training=dataset, trainer=trainer_config)
 
     prediction = pipeline.predict("a test")
