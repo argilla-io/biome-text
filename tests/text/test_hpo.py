@@ -66,7 +66,6 @@ def test_tune_exp_save_dataset_and_vocab(
 ):
     pl = Pipeline.from_config(pipeline_config)
     vocab = VocabularyConfiguration(datasets=[dataset]).build_vocab(pipeline=pl)
-    pl._model.extend_vocabulary(vocab)
 
     my_exp = TuneExperiment(
         pipeline_config=pipeline_config,
@@ -79,6 +78,7 @@ def test_tune_exp_save_dataset_and_vocab(
     config = my_exp.config
     pl2 = Pipeline.from_config(config["pipeline_config"], config["vocab_path"])
 
+    pl._model.extend_vocabulary(vocab)
     assert pl.backbone.vocab._index_to_token == pl2.backbone.vocab._index_to_token
     assert pl.backbone.vocab._token_to_index == pl2.backbone.vocab._token_to_index
 
