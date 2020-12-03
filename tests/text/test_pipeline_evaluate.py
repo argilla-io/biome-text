@@ -32,7 +32,9 @@ def pipeline(dataset):
 def test_pipeline_evaluate(pipeline, dataset, tmp_path):
     prediction_output_file = tmp_path / "prediction_output_file.json"
     metrics = pipeline.evaluate(
-        dataset, predictions_output_file=str(prediction_output_file), batch_size=1
+        dataset,
+        predictions_output_file=str(prediction_output_file),
+        batch_size=1,
     )
 
     assert "loss" in metrics
