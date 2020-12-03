@@ -8,7 +8,6 @@
 import logging
 from typing import Dict
 from typing import List
-from typing import Optional
 
 from allennlp.data import Vocabulary
 from allennlp.data.vocabulary import DEFAULT_NON_PADDED_NAMESPACES
@@ -155,35 +154,19 @@ def create_empty_vocabulary() -> Vocabulary:
 
 
 def is_empty(vocab: Vocabulary, namespaces: List[str]) -> bool:
-    """
-    Checks if a vocab is empty respect to given namespaces
-
-    Returns True vocab size is 0 for all given namespaces
-    """
-    for namespaces in namespaces:
-        # We must drop the padding and out of vocab tokens = 2 tokens
-        if vocab.get_vocab_size(namespaces) > 2:
-            return False
-    return True
-
-
-def load_vocabulary(vocab_path: str) -> Optional[Vocabulary]:
-    """
-    Loads a vocabulary from a path
+    """Checks if at least one of the given namespaces has an empty vocab.
 
     Parameters
     ----------
-    vocab_path
-        The vocab folder path
+    vocab
+        The vocabulary
+    namespaces
+        Namespaces to check in the vocabulary
 
     Returns
     -------
-    vocabulary
+    True if one or more namespaces have an empty vocab
     """
-    try:
-        return Vocabulary.from_files(vocab_path)
-    except TypeError:
-        return None
-    except FileNotFoundError:
-        _LOGGER.warning(f"{vocab_path} folder not found")
-        return None
+    # If a namespace does not exist in the vocab, a default one is created on the fly with a padding and oov token
+    # We must drop the padding and out of vocab (oov) tokens -> 2 tokens
+    return any([vocab.get_vocab_size(namespace) < 3 for namespace in namespaces])
