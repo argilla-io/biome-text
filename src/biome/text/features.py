@@ -1,11 +1,15 @@
-from typing import Any, Dict, Optional
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
+from typing import Any
+from typing import Dict
+from typing import Optional
 
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
 
 class Features(ABC):
     """All features used in the pipeline configuration inherit from this abstract class."""
+
     @property
     @abstractmethod
     def config(self):
@@ -66,7 +70,7 @@ class WordFeatures(Features):
                 "embedding_dim": self.embedding_dim,
                 "vocab_namespace": self.namespace,
                 "trainable": self.trainable,
-                **({"pretrained_file": self.weights_file} if self.weights_file else {}),
+                "pretrained_file": self.weights_file,
             },
         }
 
