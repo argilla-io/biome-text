@@ -8,7 +8,6 @@ from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import PipelineConfiguration
 from biome.text import TrainerConfiguration
-from biome.text import VocabularyConfiguration
 from biome.text.modules.heads import TextClassificationConfiguration
 from tests.text.test_pipeline_model import TestHead
 
@@ -40,40 +39,36 @@ def pipeline() -> Pipeline:
 def test_training_with_data_bucketing(
     pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    lazy_instances = dataset.to_instances(pipeline)
-    in_memory_instances = dataset.to_instances(pipeline, lazy=False)
-
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[lazy_instances]))
-
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
     )
-    pipeline.train(
+
+    pipeline.copy().train(
         output=os.path.join(tmp_path, "output"),
         trainer=configuration,
-        training=lazy_instances,
-        validation=in_memory_instances,
+        training=dataset,
+        validation=dataset,
+        lazy=False,
     )
 
-    pipeline.train(
+    pipeline.copy().train(
         output=os.path.join(tmp_path, "output"),
         trainer=configuration,
-        training=in_memory_instances,
-        validation=lazy_instances,
+        training=dataset,
+        validation=dataset,
+        lazy=True,
     )
 
 
 def test_training_from_pretrained_with_head_replace(
     pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    training = dataset.to_instances(pipeline)
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training]))
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
     )
     output_dir = os.path.join(tmp_path, "output")
     pipeline.train(
-        output=output_dir, trainer=configuration, training=training, quiet=True
+        output=output_dir, trainer=configuration, training=dataset, quiet=True
     )
 
     pipeline.set_head(TestHead)
@@ -91,20 +86,17 @@ def test_training_from_pretrained_with_head_replace(
 
 
 def test_training_with_logging(pipeline: Pipeline, dataset: Dataset, tmp_path: str):
-    training = dataset.to_instances(pipeline)
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training]))
-
     configuration = TrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5
     )
     output_dir = os.path.join(tmp_path, "output")
     pipeline.train(
-        output=output_dir, trainer=configuration, training=training, quiet=True
+        output=output_dir, trainer=configuration, training=dataset, quiet=True
     )
 
     assert os.path.exists(os.path.join(output_dir, "train.log"))
     with open(os.path.join(output_dir, "train.log")) as train_log:
-        for line in train_log.readlines():
+        for line in train_log.readlines()[3:]:
             assert "allennlp" in line
 
     assert logging.getLogger("allennlp").level == logging.ERROR

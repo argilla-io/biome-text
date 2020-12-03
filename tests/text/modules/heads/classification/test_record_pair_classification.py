@@ -179,7 +179,6 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     """Testing the correct working of prediction, vocab creating and training"""
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
         output=str(tmp_path / "record_bimpm_experiment"),
