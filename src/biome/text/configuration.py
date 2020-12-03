@@ -1,7 +1,7 @@
 import copy
+import dataclasses
 import logging
-from biome.text.dataset import InstancesDataset
-from biome.text.dataset import Dataset
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import List
@@ -9,7 +9,6 @@ from typing import Optional
 from typing import Type
 from typing import Union
 
-import dataclasses
 import yaml
 from allennlp.common import FromParams
 from allennlp.common import Params
@@ -18,7 +17,8 @@ from allennlp.data import TokenIndexer
 from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
-from . import vocabulary
+from biome.text.dataset import Dataset
+
 from .features import CharFeatures
 from .features import TransformersFeatures
 from .features import WordFeatures
@@ -29,6 +29,9 @@ from .modules.encoders import Encoder
 from .modules.heads.task_head import TaskHeadConfiguration
 from .tokenizer import Tokenizer
 from .tokenizer import TransformersTokenizer
+
+if TYPE_CHECKING:
+    from .pipeline import Pipeline
 
 
 class FeaturesConfiguration(FromParams):
@@ -69,9 +72,9 @@ class FeaturesConfiguration(FromParams):
         char: Optional[CharFeatures] = None,
         transformers: Optional[TransformersFeatures] = None,
     ):
-        self.word = word or None
-        self.char = char or None
-        self.transformers = transformers or None
+        self.word = word
+        self.char = char
+        self.transformers = transformers
 
         if not (word or char or transformers):
             self.word = self.__DEFAULT_CONFIG
@@ -98,9 +101,9 @@ class FeaturesConfiguration(FromParams):
         return cls(word=word, char=char, transformers=transformers)
 
     @property
-    def keys(self) -> List[str]:
-        """Gets the keys of the features"""
-        return [key for key in vars(self)]
+    def configured_namespaces(self) -> List[str]:
+        """Return the namespaces of the features that are configured"""
+        return [feature.namespace for feature in self]
 
     def compile_embedder(self, vocab: Vocabulary) -> TextFieldEmbedder:
         """Creates the embedder based on the configured input features
@@ -115,25 +118,39 @@ class FeaturesConfiguration(FromParams):
         embedder
         """
         configuration = self._make_allennlp_config()
-        if vocabulary.is_empty(vocab, namespaces=self.keys) and configuration.get(
-            "word"
-        ):
-            # We simplify embedder configuration for better load an blank pipeline which create the vocab
-            embedder_cfg = configuration["word"]["embedder"]
-            if "pretrained_file" in embedder_cfg:
-                embedder_cfg["pretrained_file"] = None
 
-        return TextFieldEmbedder.from_params(
+        # We have to set the weights_file / pretrained_file (pretrained word vectors) to None for two reasons:
+        # - compiling the embedder with a weights file and an empty vocab will fail,
+        #   this is the case for untrained pipelines
+        # - compiling the embedder with a non existent weights file will fail,
+        #   but for pretrained pipelines it should be optional
+        # We will "reactivate" it after the embedder is initialized for extending the vocab with it.
+        try:
+            configuration["word"]["embedder"]["pretrained_file"] = None
+        except KeyError:
+            pass
+
+        text_field_embedder = TextFieldEmbedder.from_params(
             Params(
                 {
                     "token_embedders": {
-                        feature: config["embedder"]
-                        for feature, config in configuration.items()
+                        feature_namespace: config["embedder"]
+                        for feature_namespace, config in configuration.items()
                     }
                 }
             ),
             vocab=vocab,
         )
+
+        # It is save to reactivate it, since extending the vocab will only throw a warning if the file does not exist.
+        if self.word is not None:
+            setattr(
+                getattr(text_field_embedder, f"token_embedder_{self.word.namespace}"),
+                "_pretrained_file",
+                self.word.weights_file,
+            )
+
+        return text_field_embedder
 
     def compile_featurizer(self, tokenizer: Tokenizer) -> InputFeaturizer:
         """Creates the featurizer based on the configured input features
@@ -156,8 +173,8 @@ class FeaturesConfiguration(FromParams):
         configuration = self._make_allennlp_config()
 
         indexer = {
-            feature: TokenIndexer.from_params(Params(config["indexer"]))
-            for feature, config in configuration.items()
+            feature_namespace: TokenIndexer.from_params(Params(config["indexer"]))
+            for feature_namespace, config in configuration.items()
         }
 
         return InputFeaturizer(tokenizer, indexer=indexer)
@@ -169,13 +186,14 @@ class FeaturesConfiguration(FromParams):
         -------
         config_dict
         """
-        configuration = {
-            spec.namespace: spec.config
-            for spec in [self.word, self.char, self.transformers]
-            if spec
-        }
+        configuration = {feature.namespace: feature.config for feature in self}
 
         return copy.deepcopy(configuration)
+
+    def __iter__(self):
+        for feature in [self.word, self.char, self.transformers]:
+            if feature is not None:
+                yield feature
 
 
 class TokenizerConfiguration(FromParams):
@@ -518,7 +536,9 @@ class TrainerConfiguration:
             "patience": self.patience,
             "validation_metric": self.validation_metric,
             "num_epochs": self.num_epochs,
-            "checkpointer": {"num_serialized_models_to_keep": self.num_serialized_models_to_keep},
+            "checkpointer": {
+                "num_serialized_models_to_keep": self.num_serialized_models_to_keep
+            },
             "cuda_device": self.cuda_device,
             "grad_norm": self.grad_norm,
             "grad_clipping": self.grad_clipping,
@@ -540,33 +560,36 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    sources:
+    datasets
         List of datasets from which to create the vocabulary
-    min_count: `Dict[str, int]`, optional (default=None)
+    min_count
         Minimum number of appearances of a token to be included in the vocabulary.
         The key in the dictionary refers to the namespace of the input feature
-
-    max_vocab_size: `Dict[str, int]` or `int`, optional (default=None)
-        Maximum number of tokens in the vocabulary
-
-    pretrained_files: `Optional[Dict[str, str]]`, optional
+    max_vocab_size
+        If you want to cap the number of tokens in your vocabulary, you can do so with this
+        parameter.  If you specify a single integer, every namespace will have its vocabulary fixed
+        to be no larger than this.  If you specify a dictionary, then each namespace in the
+        `counter` can have a separate maximum vocabulary size. Any missing key will have a value
+        of `None`, which means no cap on the vocabulary size.
+    pretrained_files
         If provided, this map specifies the path to optional pretrained embedding files for each
         namespace. This can be used to either restrict the vocabulary to only words which appear
         in this file, or to ensure that any words in this file are included in the vocabulary
         regardless of their count, depending on the value of `only_include_pretrained_words`.
         Words which appear in the pretrained embedding file but not in the data are NOT included
         in the Vocabulary.
-    only_include_pretrained_words: `bool`, optional (default=False)
+    only_include_pretrained_words
         Only include tokens present in pretrained_files
-    tokens_to_add: `Dict[str, int]`, optional
-        A list of tokens to add to the vocabulary, even if they are not present in the ``sources``
-    min_pretrained_embeddings: ``Dict[str, int]``, optional
+    tokens_to_add
+        A list of tokens to add to the corresponding namespace of the vocabulary,
+        even if they are not present in the `datasets`
+    min_pretrained_embeddings
         Minimum number of lines to keep from pretrained_files, even for tokens not appearing in the sources.
     """
 
     def __init__(
         self,
-        sources: Union[List[Dataset], List[InstancesDataset]],
+        datasets: List[Dataset],
         min_count: Dict[str, int] = None,
         max_vocab_size: Union[int, Dict[str, int]] = None,
         pretrained_files: Optional[Dict[str, str]] = None,
@@ -574,13 +597,43 @@ class VocabularyConfiguration:
         tokens_to_add: Dict[str, List[str]] = None,
         min_pretrained_embeddings: Dict[str, int] = None,
     ):
-        self.sources = sources
+        self.datasets = datasets
         self.pretrained_files = pretrained_files
         self.min_count = min_count
         self.max_vocab_size = max_vocab_size
         self.only_include_pretrained_words = only_include_pretrained_words
         self.tokens_to_add = tokens_to_add
         self.min_pretrained_embeddings = min_pretrained_embeddings
+
+    def build_vocab(self, pipeline: "Pipeline", lazy: bool = False) -> Vocabulary:
+        """Build the configured vocabulary
+
+        Parameters
+        ----------
+        pipeline
+            The pipeline used to create the instances from which the vocabulary is built.
+        lazy
+            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
+
+        Returns
+        -------
+        vocab
+        """
+        vocab = Vocabulary.from_instances(
+            instances=(
+                instance
+                for dataset in self.datasets
+                for instance in dataset.to_instances(pipeline, lazy=lazy)
+            ),
+            max_vocab_size=self.max_vocab_size,
+            min_count=self.min_count,
+            pretrained_files=self.pretrained_files,
+            only_include_pretrained_words=self.only_include_pretrained_words,
+            min_pretrained_embeddings=self.min_pretrained_embeddings,
+            tokens_to_add=self.tokens_to_add,
+        )
+
+        return vocab
 
 
 @dataclasses.dataclass

@@ -85,7 +85,7 @@ class PipelineModel(allennlp.models.Model):
     head: TaskHead
         TaskHead of the pipeline model
     vocab: Vocabulary
-        The vocabulary of the model
+        The vocabulary of the model, comes from allennlp.models.Model
     file_path: Optional[str]
         File path to a serialized version of this pipeline model
     inputs: List[str]
@@ -97,7 +97,7 @@ class PipelineModel(allennlp.models.Model):
     PREDICTION_FILE_NAME = "predictions.json"
 
     def __init__(self, name: str, head: TaskHead):
-        super().__init__(head.backbone.vocab)
+        super().__init__(vocab=head.backbone.vocab)
 
         self.name = name
         self._head = None
@@ -210,11 +210,20 @@ class PipelineModel(allennlp.models.Model):
             # missing inputs
             raise MissingArgumentError(arg_name=error.args[0])
 
-    def set_vocab(self, vocab: Vocabulary):
-        """Replace the current vocab and reload all model layer"""
-        self.vocab = vocab
-        self._head.backbone.vocab = vocab
+    def extend_vocabulary(self, vocab: Vocabulary):
+        """Extend the model's vocabulary with `vocab`
+
+        Parameters
+        ----------
+        vocab
+            The model's vocabulary will be extended with this one.
+        """
+        self.vocab.extend_from_vocab(vocab)
+        self._head.backbone.vocab = self.vocab
+
+        # updates the embedding matrices
         self._head.backbone.on_vocab_update()
+        # updates head specific things
         self._head.on_vocab_update()
 
     @property
