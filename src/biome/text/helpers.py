@@ -200,7 +200,7 @@ def stringify(value: Any) -> Any:
     -------
     stringified_value
     """
-    if isinstance(value, str):
+    if value is None or isinstance(value, str):
         return value
     if isinstance(value, dict):
         return {key: stringify(value) for key, value in value.items()}
