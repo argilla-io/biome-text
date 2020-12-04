@@ -133,7 +133,11 @@ class Dataset:
 
     @classmethod
     def from_elasticsearch(
-        cls, client: Elasticsearch, index: str, query: Optional[dict] = None
+        cls,
+        client: Elasticsearch,
+        index: str,
+        query: Optional[dict] = None,
+        source_fields: List[str] = None,
     ):
         """Create a Dataset from scanned query records in an elasticsearch index
 
@@ -142,19 +146,25 @@ class Dataset:
         client
         index
         query
+        source_fields
 
         Returns
         -------
         dataset
         """
 
-        def __clean_document__(document: Dict) -> Dict:
+        def __clean_document__(document: Dict, fields: List[str] = None) -> Dict:
             source = document.pop("_source")
+            if fields:
+                source = {k: source.get(k) for k in fields}
+
             return helpers.stringify({**source, **document})
 
+        es_query = query or {}
+
         scanned_docs = [
-            __clean_document__(doc)
-            for doc in scan(client=client, query=query or {}, index=index)
+            __clean_document__(doc, source_fields)
+            for doc in scan(client=client, query=es_query, index=index)
         ]
         if len(scanned_docs) <= 0:  # prevent empty results
             return cls.from_dict({})
