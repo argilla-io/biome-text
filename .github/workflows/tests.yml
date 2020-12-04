@@ -38,6 +38,6 @@ jobs:
           # the discovery.type envionment
           discovery type: single-node # optional, default is single-node
       - name: install
-        run: pip install -U pip & make dev
+        run: make dev
       - name: pytest
         run: pytest
