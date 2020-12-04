@@ -1,7 +1,8 @@
 from typing import Optional
 
 import torch
-from allennlp.data import TextFieldTensors, Vocabulary
+from allennlp.data import TextFieldTensors
+from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
 from allennlp.modules.seq2seq_encoders import PassThroughEncoder
 
@@ -71,10 +72,3 @@ class ModelBackbone(torch.nn.Module):
         """
         embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
         return self.encoder(embeddings, mask=mask)
-
-    def on_vocab_update(self):
-        """This method is called when a base model updates the vocabulary"""
-        # This loop applies only for embedding layer.
-        for model_path, module in self.named_modules():
-            if hasattr(module, "extend_vocab"):
-                module.extend_vocab(self.vocab)

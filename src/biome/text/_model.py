@@ -218,11 +218,11 @@ class PipelineModel(allennlp.models.Model):
         vocab
             The model's vocabulary will be extended with this one.
         """
+        # self.vocab and self._head.backbone.vocab point to the same vocab!
         self.vocab.extend_from_vocab(vocab)
-        self._head.backbone.vocab = self.vocab
 
         # updates the embedding matrices
-        self._head.backbone.on_vocab_update()
+        self.extend_embedder_vocab()
         # updates head specific things
         self._head.on_vocab_update()
 
