@@ -5,13 +5,6 @@ on:
     branches:
       - master
   pull_request:
-    
-jobs:
-  job1:
-  job2:
-    needs: job1
-  job3:
-    needs: [job1, job2]
 
 
 jobs:
@@ -47,8 +40,7 @@ jobs:
           discovery type: single-node # optional, default is single-node
       - name: install
         run: make dev
-      - name: pytest
-        run: pytest
+      
 
 
 
