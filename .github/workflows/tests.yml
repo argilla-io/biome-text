@@ -8,7 +8,7 @@ on:
 
 
 jobs:
-  tests & doc:
+  tests_&_doc:
     name: Run pytest
     runs-on: ubuntu-latest
 
