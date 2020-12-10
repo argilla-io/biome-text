@@ -8,7 +8,7 @@ on:
 
 
 jobs:
-  tests:
+  tests & doc:
     name: Run pytest
     runs-on: ubuntu-latest
 
@@ -41,28 +41,25 @@ jobs:
       - name: install
         run: make dev
 
+      - name: Changing from tests to documentation build
+        run: echo Changing from tests to documentation build
 
-
-
-
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    needs: tests
-    if: ${{ github.event_name == 'push' }}
-
-    steps:
       - name: Checkout 🛎️
+        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2.3.1 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
         with:
           persist-credentials: false
 
       - name: Install and Build 🔧 # This example project is built using npm and outputs the result to the 'build' folder. Replace with the commands required to build your project, or remove this step entirely if your site is pre-built.
+        if: ${{ github.event_name == 'push' }}
         run: cd docs &&  npm install && npm run build:site
 
       - name: Deploy 🚀
+        if: ${{ github.event_name == 'push' }}
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: docs # The folder the action should deploy.
           CLEAN: true # Automatically remove deleted files from the deploy branch
+      
