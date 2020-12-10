@@ -40,7 +40,6 @@ jobs:
           discovery type: single-node # optional, default is single-node
       - name: install
         run: make dev
-      
 
 
 
@@ -48,6 +47,7 @@ jobs:
 
   build-and-deploy:
     runs-on: ubuntu-latest
+    needs: tests
     if: ${{ github.event_name == 'push' }}
 
     steps:
