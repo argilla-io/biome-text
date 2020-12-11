@@ -45,9 +45,8 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v2
         with:
-          persist-credentials: false
+          persistent-credentials: false
       - name: setup python
-        needs: checkout code
         if: ${{ github.event_name == 'push' }}
         uses: actions/setup-python@v2.1.4
         with:
@@ -56,16 +55,13 @@ jobs:
          # The target architecture (x86, x64) of the Python interpreter.
          #architecture: # optional
       - name: setup nodejs
-        needs: setup python
         if: ${{ github.event_name == 'push' }}
         uses: actions/setup-node@v1
         with:
           node-version: '14'
       - name: install pdoc3
-        needs: setup nodejs
         if: ${{ github.event_name == 'push' }}
         run: pip install pdoc3
       - name: build docs
-        needs: install pdoc3
         if: ${{ github.event_name == 'push' }}
         run: make docs
