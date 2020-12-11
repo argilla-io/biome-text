@@ -12,16 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code 🛎
         uses: actions/checkout@v2
-      - name: Setup Python
+      - name: Setup Python 🐍
         uses: actions/setup-python@v2.1.4
         with:
           # Version range or exact version of a Python version to use, using SemVer's version range syntax.
           python-version: 3.8.6
           # The target architecture (x86, x64) of the Python interpreter.
           #architecture: # optional
-      - name: Setup ElasticSearch
+      - name: Setup ElasticSearch 🔎
        # You may pin to the exact commit or the version.
         uses: getong/elasticsearch-action@v1.2
         with:
@@ -37,17 +37,16 @@ jobs:
           node port: 9300 # optional, default is 9300
           # the discovery.type envionment
           discovery type: single-node # optional, default is single-node
-      - name: install
+      - name: Make Dev to Install Biome 🌿
         run: make dev
-      - name: pytest
+      - name: Tests 📈
         run: pytest
-
-      - name: setup nodejs
+      - name: Setup NodeJS 💾
         if: ${{ github.event_name == 'push' }}
         uses: actions/setup-node@v1
         with:
           node-version: '14'
-      - name: build docs
+      - name: Build Documentation 📘
         if: ${{ github.event_name == 'push' }}
         run: make docs
       - name: Deploy 🚀
