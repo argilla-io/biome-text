@@ -1,0 +1,75 @@
+name: Tests/Docs
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests:
+    name: Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2.1.4
+        with:
+          # Version range or exact version of a Python version to use, using SemVer's version range syntax.
+          python-version: 3.8.6
+          # The target architecture (x86, x64) of the Python interpreter.
+          #architecture: # optional
+      - name: Setup ElasticSearch
+       # You may pin to the exact commit or the version.
+        uses: getong/elasticsearch-action@v1.2
+        with:
+          # Version of elasticsearch to use
+          elasticsearch version: 7.4.2
+          # The port of host
+          host port: 9200 # optional, default is 9200
+          # The port of container
+          container port: 9200 # optional, default is 9200
+          # The port of host elasticsearch node port
+          host node port: 9300 # optional, default is 9300
+          # The port of elasticsearch node port
+          node port: 9300 # optional, default is 9300
+          # the discovery.type envionment
+          discovery type: single-node # optional, default is single-node
+      - name: install
+        run: make dev
+      - name: pytest
+        run: pytest
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      - name: build docs
+        run: make docs
+
+  docs:
+    name: Build docs
+    needs: tests
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+        with:
+          persistent-credentials: false
+      - name: setup python
+        uses: actions/setup-python@v2.1.4
+        with:
+         # Version range or exact version of a Python version to use, using SemVer's version range syntax.
+          python-version: 3.8.6
+         # The target architecture (x86, x64) of the Python interpreter.
+         #architecture: # optional
+      - name: setup nodejs
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      - name: install pdoc3
+        run: pip install pdoc3
+      - name: build docs
+        run: make docs
