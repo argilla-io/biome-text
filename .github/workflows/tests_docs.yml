@@ -8,7 +8,7 @@ on:
 
 jobs:
   tests:
-    name: Testing
+    name: Testing & Docs
     runs-on: ubuntu-latest
 
     steps:
@@ -42,18 +42,12 @@ jobs:
       - name: pytest
         run: pytest
 
-  docs:
-    name: Build docs
-    needs: tests
-    if: ${{ github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-
-    steps:
       - name: checkout code
         uses: actions/checkout@v2
         with:
           persistent-credentials: false
       - name: setup python
+        if: ${{ github.event_name == 'push' }}
         uses: actions/setup-python@v2.1.4
         with:
          # Version range or exact version of a Python version to use, using SemVer's version range syntax.
@@ -61,10 +55,13 @@ jobs:
          # The target architecture (x86, x64) of the Python interpreter.
          #architecture: # optional
       - name: setup nodejs
+        if: ${{ github.event_name == 'push' }}
         uses: actions/setup-node@v1
         with:
           node-version: '14'
       - name: install pdoc3
+        if: ${{ github.event_name == 'push' }}
         run: pip install pdoc3
       - name: build docs
+        if: ${{ github.event_name == 'push' }}
         run: make docs
