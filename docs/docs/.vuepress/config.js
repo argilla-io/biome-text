@@ -21,7 +21,7 @@ module.exports = {
     ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
     ['meta', { property: 'og:image', content: 'https://www.recogn.ai/images/biome_og.png' }],
   ],
-  base: `/${baseContext}`,
+  base: '/biome-text/',
   plugins: [
     '@goy/svg-icons',
     '@vuepress/back-to-top'
@@ -48,19 +48,19 @@ module.exports = {
           children: ['', 'basics.md'],
           collapsable: false
       },
-      { 
-          title: 'Tutorials', 
+      {
+          title: 'Tutorials',
           children:getSidebarChildren('docs/documentation/tutorials', 'docs/documentation'),
           collapsable: false
       },
       {
           title: 'User Guides',
-          children:getSidebarChildren('docs/documentation/user-guides', 'docs/documentation'), 
+          children:getSidebarChildren('docs/documentation/user-guides', 'docs/documentation'),
           collapsable: false
       },
       {
-          title: 'Community', 
-          children:getSidebarChildren('docs/documentation/community', 'docs/documentation'), 
+          title: 'Community',
+          children:getSidebarChildren('docs/documentation/community', 'docs/documentation'),
           collapsable: false
       }]
     },
