@@ -175,7 +175,7 @@ def test_from_elasticsearch(dataset, default_pipeline_config):
 
 
 def test_fail_using_reserved_words():
-    # This issue was reported here and maybe gets resolved: https://github.com/huggingface/datasets/issues/1110
+    # This issue was reported and maybe gets resolved: https://github.com/huggingface/datasets/issues/1110
     
     ds = Dataset.from_dict({
         "a": [{"a": 1, "b": "two"} for _ in range(0, 100)],
