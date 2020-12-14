@@ -48,7 +48,7 @@ jobs:
           node-version: '14'
       - name: Build Documentation 📘
         if: ${{ github.event_name == 'push' }}
-        run: make docs
+        run: make build_docs
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         if: ${{ github.event_name == 'push' }}

@@ -1,24 +1,21 @@
-.PHONY: default test dist install dev ui docs build_docs
+.PHONY: default dev check test ui build_ui docs build_docs dist
 default: help
-
-check: ## applies a code pylint with autopep8 reformating
-	@pre-commit run --all-files
-	@pylint --exit-zero --rcfile=setup.cfg --unsafe-load-any-extension=y src
-
-test: check ## launch package tests
-	@pytest
-
-dist: test ui ## run tests and build a package distribution
-	@python setup.py sdist bdist_wheel
-
-install: ## install package
-	@pip install .
 
 dev: ## install package in development mode
 	@pip install --upgrade -e .[dev]
 	@pre-commit install
 
-ui: ## build the ui pages
+check: ## applies a code pylint with autopep8 reformating
+	@pre-commit run --all-files
+	@pylint --exit-zero --rcfile=setup.cfg --unsafe-load-any-extension=y src
+
+test: ## launch package tests
+	@pytest
+
+ui: ## serve the UI for development
+	@cd ui && npm install && npm run serve
+
+build_ui: ## build the ui pages
 	@cd ui && npm install && npm run build
 
 docs: ## serve the documentation for development
@@ -26,6 +23,10 @@ docs: ## serve the documentation for development
 
 build_docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
+
+dist: check test build_ui ## run tests and build a package distribution
+	@python setup.py sdist bdist_wheel
+
 
 .PHONY: help
 help:
