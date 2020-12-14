@@ -18,9 +18,11 @@ jobs:
         uses: actions/setup-python@v2.1.4
         with:
           # Version range or exact version of a Python version to use, using SemVer's version range syntax.
-          python-version: 3.8.6
+          python-version: 3.7.9
           # The target architecture (x86, x64) of the Python interpreter.
           #architecture: # optional
+      - name: Update Pip
+        run: pip install -U pip
       - name: Setup ElasticSearch 🔎
        # You may pin to the exact commit or the version.
         uses: getong/elasticsearch-action@v1.2
