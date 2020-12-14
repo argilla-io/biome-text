@@ -88,7 +88,6 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
             {"start": 16, "end": 22, "label": "SUBJECT", "text": "audits"},
         ],
     )
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
         output=str(tmp_path / "relation_classifier"),

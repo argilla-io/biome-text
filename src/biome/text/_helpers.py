@@ -2,21 +2,30 @@ import copy
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import cast
 
 import uvicorn
 from allennlp.common import Params
-from allennlp.common.util import prepare_environment, sanitize
+from allennlp.common.util import prepare_environment
+from allennlp.common.util import sanitize
 from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.models import archive_model
 from allennlp.models.archival import CONFIG_NAME
-from allennlp.training import Trainer, GradientDescentTrainer
+from allennlp.training import GradientDescentTrainer
+from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from fastapi import FastAPI
 from torch.utils.data import IterableDataset
 
-from biome.text import Pipeline, TrainerConfiguration, helpers
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import helpers
 from biome.text._model import PipelineModel
 from biome.text.dataset import InstancesDataset
 from biome.text.errors import http_error_handling
@@ -61,24 +70,21 @@ class PipelineTrainer:
 
     Parameters
     ----------
-    pipeline:
+    pipeline
         The trainable pipeline
-    trainer_config:
+    trainer_config
         The trainer configuration
-    output_dir:
+    output_dir
         The used training folder
-    training:
+    training
         The training instances dataset
-    validation:
+    validation
         The validation instances dataset. Optional
-    test:
+    test
         The test instances dataset. Optional
-    batch_weight_key:
+    batch_weight_key
         If non-empty, name of metric used to weight the loss on a per-batch basis.
-    embedding_sources_mapping:
-        mapping from model paths to the pretrained embedding filepaths
-        used during fine-tuning.
-    epoch_callbacks:
+    epoch_callbacks
         A list of callbacks that will be called at the end of every epoch, and at the start of
         training (with epoch = -1).
     """
@@ -94,14 +100,12 @@ class PipelineTrainer:
         validation: Optional[InstancesDataset] = None,
         test: Optional[InstancesDataset] = None,
         batch_weight_key: str = "",
-        embedding_sources_mapping: Dict[str, str] = None,
         epoch_callbacks: List["allennlp.training.EpochCallback"] = None,
     ):
         self._pipeline = pipeline
         self._trainer_config = copy.deepcopy(trainer_config)
         self._output_dir = output_dir
         self._batch_weight_key = batch_weight_key
-        self._embedding_sources_mapping = embedding_sources_mapping
         self._training = training
         self._validation = validation
         self._test = test
@@ -124,15 +128,11 @@ class PipelineTrainer:
         )
         os.makedirs(self._output_dir, exist_ok=True)
 
-        # We don't need to load pretrained weights from saved models
-        if self._pipeline.config.features.word:
-            self._pipeline.config.features.word.weights_file = None
-
         serialization_params = sanitize(self._allennlp_configuration())
         with open(os.path.join(self._output_dir, CONFIG_NAME), "w") as param_file:
             json.dump(serialization_params, param_file, indent=4)
 
-        self._pipeline.save_vocabulary(os.path.join(self._output_dir, "vocabulary"))
+        self._pipeline.vocab.save_to_files(os.path.join(self._output_dir, "vocabulary"))
 
         for dataset in [self._training, self._validation, self._test]:
             if dataset is not None:
@@ -311,9 +311,12 @@ def create_trainer_for_finding_lr(
         training_data, trainer_config.batch_size, trainer_config.data_bucketing
     )
 
-    return cast("GradientDescentTrainer", Trainer.from_params(
-        model=model,
-        data_loader=training_data_loader,
-        params=trainer_params,
-        serialization_dir=None,
-    ))
+    return cast(
+        "GradientDescentTrainer",
+        Trainer.from_params(
+            model=model,
+            data_loader=training_data_loader,
+            params=trainer_params,
+            serialization_dir=None,
+        ),
+    )

@@ -6,7 +6,10 @@ import numpy as np
 import pytest
 import torch
 
-from biome.text import Pipeline, Dataset, TrainerConfiguration, VocabularyConfiguration
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 from biome.text.configuration import CharFeatures
 from biome.text.configuration import WordFeatures
 
@@ -112,21 +115,24 @@ def test_text_classification(
         torch.cuda.manual_seed_all(4222)
 
     pl = Pipeline.from_config(pipeline_dict)
-    train_ds = train_valid_dataset[0].to_instances(pipeline=pl)
-    valid_ds = train_valid_dataset[1].to_instances(pipeline=pl)
+    train_ds = train_valid_dataset[0]
+    valid_ds = train_valid_dataset[1]
     trainer = TrainerConfiguration(**trainer_dict)
-    vocab = VocabularyConfiguration(sources=[train_ds], max_vocab_size={"word": 50})
-
-    pl.create_vocabulary(vocab)
-
-    assert pl._model.vocab.get_vocab_size(WordFeatures.namespace) == 52
-    assert pl._model.vocab.get_vocab_size(CharFeatures.namespace) == 83
+    vocab_config = VocabularyConfiguration(
+        datasets=[train_ds], max_vocab_size={"word": 50}
+    )
 
     output = tmp_path / "output"
 
     pl.train(
-        output=str(output), trainer=trainer, training=train_ds, validation=valid_ds
+        output=str(output),
+        trainer=trainer,
+        training=train_ds,
+        validation=valid_ds,
+        vocab_config=vocab_config,
     )
+    assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
+    assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
 
     assert pl.num_trainable_parameters == 22070
 
@@ -134,10 +140,10 @@ def test_text_classification(
         metrics = json.load(file)
 
     # It may fail in some systems
-    assert metrics["training_loss"] == pytest.approx(0.665, abs=0.003)
+    assert metrics["training_loss"] == pytest.approx(0.684, abs=0.003)
 
     # Test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
 
-    assert pl._model.vocab.get_vocab_size(WordFeatures.namespace) == 52
-    assert pl._model.vocab.get_vocab_size(CharFeatures.namespace) == 83
+    assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
+    assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83

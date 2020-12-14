@@ -3,7 +3,10 @@ from pathlib import Path
 import pytest
 from numpy.testing import assert_allclose
 
-from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, Dataset
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 from biome.text.features import TransformersFeatures
 
 
@@ -29,7 +32,9 @@ def pipeline_dict() -> dict:
 
     pipeline_dict = {
         "name": "emotions_with_transformers",
-        "features": {"transformers": {"model_name": "distilroberta-base"}},
+        "features": {
+            "transformers": {"model_name": "sshleifer/tiny-distilbert-base-cased"}
+        },
         "head": {
             "type": "TextClassification",
             "labels": [
@@ -42,7 +47,7 @@ def pipeline_dict() -> dict:
             ],
             "pooler": {
                 "type": "bert_pooler",
-                "pretrained_model": "distilroberta-base",
+                "pretrained_model": "sshleifer/tiny-distilbert-base-cased",
                 "requires_grad": True,
                 "dropout": 0.1,
             },
@@ -73,7 +78,7 @@ def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset)
     trainer = TrainerConfiguration(**trainer_dict)
 
     # Check a fixed vocabulary size for the model
-    assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
+    assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
 
     pl.predict(text="test")
 
@@ -84,7 +89,7 @@ def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset)
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
 
     # Check a fixed vocabulary size for the model after loading
-    assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
+    assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
 
 
 def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_dataset):
@@ -96,25 +101,21 @@ def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_data
     )
 
     pl = Pipeline.from_config(pipeline_dict)
-    trainer = TrainerConfiguration(**trainer_dict)
-    vocab = VocabularyConfiguration(sources=[train_dataset])
-    pl.create_vocabulary(vocab)
-
-    # Check a fixed vocabulary size for the transformer and the word feature
-    assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
-    assert pl.backbone.vocab.get_vocab_size("word") == 273
-
     pl.predict(text="test")
 
     output = tmp_path / "output"
-
+    trainer = TrainerConfiguration(**trainer_dict)
     pl.train(output=str(output), trainer=trainer, training=train_dataset)
+
+    # Check a fixed vocabulary size for the transformer and the word feature
+    assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
+    assert pl.backbone.vocab.get_vocab_size("word") == 273
 
     # Test vocab from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
 
     # Check a fixed vocabulary size for the transformer and the word feature after loading
-    assert pl.backbone.vocab.get_vocab_size("transformers") == 50265
+    assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
     assert pl.backbone.vocab.get_vocab_size("word") == 273
 
 

@@ -19,6 +19,7 @@ import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
+from allennlp.common.file_utils import is_url_or_existing_file
 from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
@@ -34,6 +35,7 @@ from biome.text.dataset import Dataset
 from biome.text.dataset import InstancesDataset
 from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
+from biome.text.features import WordFeatures
 from biome.text.helpers import update_method_signature
 
 from ._model import PipelineModel
@@ -106,10 +108,11 @@ class Pipeline:
         """
         if isinstance(config, dict):
             config = PipelineConfiguration.from_dict(config)
-        model = cls._model_from_config(
-            config, vocab=vocabulary.load_vocabulary(vocab_path)
-        )
 
+        model = PipelineModel.from_params(
+            Params({"config": config}),
+            vocab=Vocabulary.from_files(vocab_path) if vocab_path is not None else None,
+        )
         if not isinstance(model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {model}")
 
@@ -180,6 +183,8 @@ class Pipeline:
         trainer_config: TrainerConfiguration,
         find_lr_config: FindLRConfiguration,
         training_data: Union[Dataset, InstancesDataset],
+        vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
+        lazy: bool = False,
     ):
         """Returns a learning rate scan on the model.
 
@@ -195,6 +200,13 @@ class Pipeline:
             A configuration for finding the learning rate
         training_data
             The training data
+        vocab_config
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
+            If 'default' (str), we will use the default configuration
+            `VocabularyConfiguration(datasets=[training_data])`.
+            If None, we will leave the pipeline's vocabulary untouched.
+        lazy
+            If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
 
         Returns
         -------
@@ -204,16 +216,14 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
-        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
-            raise EmptyVocabError(
-                "Found an empty vocabulary. "
-                "You probably forgot to create a vocabulary with '.create_vocabulary()'."
-            )
+        self._prepare_vocab(
+            vocab_config=vocab_config, training_data=training_data, lazy=lazy
+        )
 
         if isinstance(training_data, Dataset):
             training_data: AllennlpLazyDataset = training_data.to_instances(
                 pipeline=self,
-                lazy=True,
+                lazy=lazy,
             )
         training_data.index_with(self._model.vocab)
 
@@ -249,7 +259,7 @@ class Pipeline:
         trainer: Optional[TrainerConfiguration] = None,
         validation: Optional[Union[Dataset, InstancesDataset]] = None,
         test: Optional[Union[Dataset, InstancesDataset]] = None,
-        extend_vocab: Optional[VocabularyConfiguration] = None,
+        vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
         loggers: List[BaseTrainLogger] = None,
         lazy: bool = False,
         restore: bool = False,
@@ -269,8 +279,10 @@ class Pipeline:
             The validation Dataset (optional)
         test
             The test Dataset (optional)
-        extend_vocab
-            Extends the vocabulary tokens with the provided VocabularyConfiguration
+        vocab_config
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
+            If 'default' (str), we will use the default configuration `VocabularyConfiguration(sources=[training])`.
+            If None, we will leave the pipeline's vocabulary untouched.
         loggers
             A list of loggers that execute a callback before the training, after each epoch,
             and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
@@ -295,21 +307,14 @@ class Pipeline:
 
             self.__configure_training_logging(output, quiet)
 
-            vocab = None
-            if restore:
-                vocab = vocabulary.load_vocabulary(os.path.join(output, "vocabulary"))
-            if extend_vocab is not None and not vocab:
-                vocab = self._extend_vocabulary(
-                    self.backbone.vocab, vocab_config=extend_vocab
-                )
-            if vocab:
-                self._set_vocab(vocab)
-
-            if self.has_empty_vocab():
-                raise EmptyVocabError(
-                    "Found an empty vocabulary. "
-                    "You probably forgot to create a vocabulary with '.create_vocabulary()'."
-                )
+            self._prepare_vocab(
+                vocabulary_folder=os.path.join(output, "vocabulary")
+                if restore
+                else None,
+                vocab_config=vocab_config,
+                training_data=training,
+                lazy=lazy,
+            )
 
             from ._helpers import PipelineTrainer
 
@@ -357,21 +362,72 @@ class Pipeline:
         finally:
             self.__restore_training_logging()
 
-    def _set_vocab(self, vocab: Vocabulary):
-        """
-        Updates pipeline vocabulary with passed one. This method will overwrite the current vocab.
+    def _prepare_vocab(
+        self,
+        vocabulary_folder: Optional[str] = None,
+        vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
+        training_data: Optional[Dataset] = None,
+        lazy: bool = False,
+    ):
+        """Prepare and set the vocab for a training or learning rate scan.
 
         Parameters
         ----------
-        vocab:
-            The vocabulary to set
-
+        vocabulary_folder
+            If specified, load the vocab from this folder
+        vocab_config
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
+            If 'default' (str), we will use the default configuration
+            `VocabularyConfiguration(sources=[training_data])`.
+            If None, we will leave the pipeline's vocabulary untouched.
+        training_data
+            The training data in case we need to construct the default config
+        lazy
+            If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
         """
-        self._model.set_vocab(vocab)
+        # The transformers feature comes with its own vocab, no need to prepare anything if it is the only feature
+        if self.config.features.configured_namespaces == [
+            TransformersFeatures.namespace
+        ]:
+            return
+
+        # If the vocab is empty, we assume this is an untrained pipeline
+        # and we want to raise an error if the weights file is not found.
+        # Extending the vocab with a non-existent weights file only throws a warning.
+        try:
+            assert is_url_or_existing_file(Path(self.config.features.word.weights_file))
+        except AssertionError:
+            if vocabulary.is_empty(self.vocab, [WordFeatures.namespace]):
+                raise FileNotFoundError(
+                    f"Cannot find the weights file {self.config.features.word.weights_file}"
+                )
+        # no word feature, or weights_file is None
+        except (AttributeError, TypeError):
+            pass
+
+        if vocabulary_folder is not None:
+            self._model.extend_vocabulary(Vocabulary.from_files(vocabulary_folder))
+            vocab_config = None
+
+        vocab_config = (
+            VocabularyConfiguration(datasets=[training_data])
+            if vocab_config == "default"
+            else vocab_config
+        )
+        if vocab_config is not None:
+            vocab = vocab_config.build_vocab(pipeline=self, lazy=lazy)
+            self._model.extend_vocabulary(vocab)
+
+        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
+            raise EmptyVocabError(
+                "All your features need a non-empty vocabulary for a training!"
+            )
 
     def copy(self) -> "Pipeline":
         """Returns a copy of the pipeline"""
-        model = self._model_from_config(self._config, vocab=self.backbone.vocab)
+        model = PipelineModel.from_params(
+            Params({"config": self.config}), vocab=copy.deepcopy(self.vocab)
+        )
         config = copy.deepcopy(self._config)
 
         pipeline_copy = Pipeline(model, config)
@@ -575,15 +631,6 @@ class Pipeline:
         finally:
             self._model.to(prior_device if prior_device >= 0 else "cpu")
 
-    def save_vocabulary(self, directory: str) -> None:
-        """Saves the pipeline's vocabulary in a directory
-
-        Parameters
-        ----------
-        directory: str
-        """
-        self._model.vocab.save_to_files(directory)
-
     def serve(self, port: int = 9998):
         """Launches a REST prediction service with the current model
 
@@ -639,6 +686,11 @@ class Pipeline:
         return self._model.head
 
     @property
+    def vocab(self) -> Vocabulary:
+        """Gets the pipeline vocabulary"""
+        return self._model.vocab
+
+    @property
     def config(self) -> PipelineConfiguration:
         """Gets the pipeline configuration"""
         return self._config
@@ -654,20 +706,20 @@ class Pipeline:
 
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
-        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
+        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
             self.__LOGGER.warning(
-                "Your vocabulary is still empty! "
-                "The number of trainable parameters usually depend on the size of your vocabulary."
+                "At least one vocabulary of your features is still empty! "
+                "The number of trainable parameters usually depends on the size of your vocabulary."
             )
         return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
 
     @property
     def num_parameters(self) -> int:
         """Number of parameters present in the model."""
-        if vocabulary.is_empty(self._model.vocab, self.config.features.keys):
+        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
             self.__LOGGER.warning(
-                "Your vocabulary is still empty! "
-                "The number of trainable parameters usually depend on the size of your vocabulary."
+                "At least one vocabulary of your features is still empty! "
+                "The number of trainable parameters usually depends on the size of your vocabulary."
             )
         return sum(p.numel() for p in self._model.parameters())
 
@@ -694,75 +746,6 @@ class Pipeline:
             self.__setattr__(
                 method.__name__, update_method_signature(new_signature, method)
             )
-
-    @staticmethod
-    def _model_from_config(
-        config: PipelineConfiguration,
-        vocab: Optional[Vocabulary] = None,
-        **extra_params,
-    ) -> PipelineModel:
-        """Creates a internal base model from a pipeline configuration
-
-        Parameters
-        ----------
-        config
-            Configuration of the pipeline
-        vocab
-            Vocabulary for the pipeline
-        **extra_params
-
-        Returns
-        -------
-        pipeline_model
-        """
-        return PipelineModel.from_params(
-            Params({"config": config}), vocab=vocab, **extra_params
-        )
-
-    def _extend_vocabulary(
-        self, vocab: Vocabulary, vocab_config: VocabularyConfiguration
-    ) -> Vocabulary:
-        """
-        Extends a data vocabulary from a given configuration.
-
-        The source vocabulary `vocab` won't be changed, instead a new vocabulary is created
-        that includes the source vocabulary `vocab` and a vocabulary created from `vocab_config`
-
-        Parameters
-        ----------
-        vocab
-            The source vocabulary
-        vocab_config
-            The vocab extension configuration
-
-        Returns
-        -------
-        extended_vocab
-            An extended `Vocabulary` using the provided configuration
-        """
-        datasets = []
-        for source in vocab_config.sources:
-            if isinstance(source, Dataset):
-                datasets.append(source.to_instances(pipeline=self))
-            else:
-                datasets.append(source)
-
-        instances_vocab = Vocabulary.from_instances(
-            instances=(instance for dataset in datasets for instance in dataset),
-            max_vocab_size=vocab_config.max_vocab_size,
-            min_count=vocab_config.min_count,
-            pretrained_files=vocab_config.pretrained_files,
-            only_include_pretrained_words=vocab_config.only_include_pretrained_words,
-            min_pretrained_embeddings=vocab_config.min_pretrained_embeddings,
-            tokens_to_add=vocab_config.tokens_to_add,
-        )
-        instances_vocab.extend_from_vocab(vocab)
-
-        return instances_vocab
-
-    def has_empty_vocab(self) -> bool:
-        """Determines if a pipeline has an empty vocab under configured features"""
-        return vocabulary.is_empty(self.backbone.vocab, self.config.features.keys)
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
@@ -800,15 +783,14 @@ class Pipeline:
         return PipelineConfiguration.from_params(config)
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        """Creates the vocabulary for the pipeline from scratch
+        """(DEPRECATED) Creates the vocabulary for the pipeline from scratch
 
         Parameters
         ----------
         config
             Specifies the sources of the vocabulary and how to extract it
         """
-        vocab = self._extend_vocabulary(vocabulary.create_empty_vocabulary(), config)
-        # TODO (dcfidalgo): This can maybe optimized, do we really need to create a new PipelineModel
-        #  and add again the transformers vocab?
-        self._model = self._model_from_config(self.config, vocab=vocab)
-        self._add_transformers_vocab_if_needed(self._model)
+        raise DeprecationWarning(
+            "The vocabulary is now created automatically and this method will be removed in a coming release. "
+            "You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default."
+        )

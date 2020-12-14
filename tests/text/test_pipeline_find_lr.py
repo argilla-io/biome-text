@@ -3,12 +3,11 @@ from pathlib import Path
 import pytest
 from numpy.testing import assert_allclose
 
-from biome.text import Pipeline, Dataset
-from biome.text.configuration import (
-    TrainerConfiguration,
-    FindLRConfiguration,
-    VocabularyConfiguration,
-)
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text.configuration import FindLRConfiguration
+from biome.text.configuration import TrainerConfiguration
+from biome.text.configuration import VocabularyConfiguration
 
 
 @pytest.fixture
@@ -96,8 +95,6 @@ def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_confi
 
     # Creation of pipeline and vocabulary
     pl = Pipeline.from_config(pipeline_dict)
-    vocab_config = VocabularyConfiguration(sources=[train_data_source])
-    pl.create_vocabulary(vocab_config)
 
     # Test prediction
     prev_prediction = pl.predict("test")
@@ -110,4 +107,6 @@ def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_confi
     )
 
     assert len(learning_rates) == len(losses) == 12
-    assert_allclose(prev_prediction["probabilities"], pl.predict("test")["probabilities"])
+    assert_allclose(
+        prev_prediction["probabilities"], pl.predict("test")["probabilities"]
+    )
