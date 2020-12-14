@@ -6,7 +6,5 @@ channels:
 dependencies:
 - python~=3.7.0
 - pip>=20.3.0
-# for building the docs
-#- nodejs==14.15.1
-- nodejs==10.22.0
-- yarn==1.22.10
+# for building the ui and the docs
+- nodejs==14.15.1
