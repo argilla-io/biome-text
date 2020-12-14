@@ -23,7 +23,7 @@ git clone https://github.com/recognai/biome-text.git
 cd biome-text
 ````
 
-and install the library in editable mode together with the test dependencies: 
+and install the library in editable mode together with the test dependencies:
 
 ```shell script
 pip install --upgrade -e .[testing]
@@ -37,12 +37,12 @@ make dev
 
 For the UI to work you need to build the static web resources:
 ````shell script
-cd ui 
-npm install 
+cd ui
+npm install
 npm run build
 ````
 
-*Note: node>=12 is required in your machine. 
+*Note: node>=12 is required in your machine.
 You can follow installation instructions [here](https://nodejs.org/en/download/)*
 
 Again, you can also use the `make ui` directive if the `make` command is enabled in your system:
@@ -70,3 +70,8 @@ To run the tests, make sure you installed *biome.text* together with its test de
 cd biome-text
 pytest
 ````
+
+## Docs
+
+To build the documentation locally you need to first install *biome.text* together with `pdoc3~=0.8.1`.
+pdoc3~=0.8.1

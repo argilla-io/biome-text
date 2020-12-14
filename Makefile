@@ -1,4 +1,4 @@
-.PHONY: default test dist install dev pip-install-dev docs ui
+.PHONY: default test dist install dev ui docs build_docs
 default: help
 
 check: ## applies a code pylint with autopep8 reformating
@@ -15,13 +15,16 @@ install: ## install package
 	@pip install .
 
 dev: ## install package in development mode
-	@pip install --use-feature=2020-resolver --upgrade -e .[testing]
+	@pip install --upgrade -e .[dev]
 	@pre-commit install
 
 ui: ## build the ui pages
 	@cd ui && npm install && npm run build
 
-docs: ## build the documentation site
+docs: ## serve the documentation for development
+	@cd docs && npm install && npm run dev:site
+
+build_docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
 
 .PHONY: help
