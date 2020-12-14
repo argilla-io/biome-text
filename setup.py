@@ -16,11 +16,11 @@ REQUIRED_PIP_VERSION = "20.3.0"
 
 
 def check_pip_version():
-    def version_2_int(version: str) -> int:
+    def version2int(version: str) -> int:
         version_fractions = [f"{int(n):02d}" for n in version.split(".")]
         return int("".join(version_fractions))
 
-    if version_2_int(pip_version) < version_2_int(REQUIRED_PIP_VERSION):
+    if version2int(pip_version) < version2int(REQUIRED_PIP_VERSION):
         raise OSError(
             f"Minimal required pip version is {REQUIRED_PIP_VERSION}, found: {pip_version}\n"
             "Please upgrade pip: pip install --upgrade pip"
