@@ -1,26 +1,28 @@
-name: tests
+name: Tests/Docs
 
-on: 
+on:
   push:
+    branches:
+      - master
   pull_request:
-    
+
 jobs:
   tests:
-    name: Run pytest
+    name: Testing & Docs
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code 🛎
         uses: actions/checkout@v2
-      - name: Setup Python
+      - name: Setup Python 🐍
         uses: actions/setup-python@v2.1.4
         with:
           # Version range or exact version of a Python version to use, using SemVer's version range syntax.
           python-version: 3.8.6
           # The target architecture (x86, x64) of the Python interpreter.
           #architecture: # optional
-      - name: Setup ElasticSearch
-        # You may pin to the exact commit or the version.
+      - name: Setup ElasticSearch 🔎
+       # You may pin to the exact commit or the version.
         uses: getong/elasticsearch-action@v1.2
         with:
           # Version of elasticsearch to use
@@ -35,7 +37,23 @@ jobs:
           node port: 9300 # optional, default is 9300
           # the discovery.type envionment
           discovery type: single-node # optional, default is single-node
-      - name: install
-        run: pip install -U pip & make dev
-      - name: pytest
+      - name: Make Dev to Install Biome 🌿
+        run: make dev
+      - name: Tests 📈
         run: pytest
+      - name: Setup NodeJS 💾
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      - name: Build Documentation 📘
+        if: ${{ github.event_name == 'push' }}
+        run: make docs
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        if: ${{ github.event_name == 'push' }}
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: docs/site # The folder the action should deploy.
+          CLEAN: true # Automatically remove deleted files from the deploy branch

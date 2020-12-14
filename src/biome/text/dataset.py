@@ -24,7 +24,8 @@ from elasticsearch.helpers import scan
 from spacy import __version__ as spacy__version__
 from tqdm.auto import tqdm
 
-from biome.text import __version__ as biome__version__, helpers
+from biome.text import __version__ as biome__version__
+from biome.text import helpers
 from biome.text.helpers import copy_sign_and_docs
 
 if TYPE_CHECKING:
@@ -430,11 +431,8 @@ class Dataset:
         hasher = Hasher()
         hasher.update(self.dataset._fingerprint)  # necessary evil ...
         hasher.update(vars(pipeline.backbone.tokenizer.config))
-        feature_config = pipeline.config.features
-        for feature_key in feature_config.keys:
-            feature: Features = getattr(feature_config, feature_key)
-            if feature:
-                hasher.update(feature.config["indexer"])
+        for feature in pipeline.config.features:
+            hasher.update(feature.config["indexer"])
         hasher.update(biome__version__)
         hasher.update(allennlp__version__)
         hasher.update(spacy__version__)

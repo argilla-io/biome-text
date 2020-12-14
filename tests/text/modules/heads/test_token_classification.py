@@ -3,13 +3,11 @@ from typing import Dict
 import pandas as pd
 import pytest
 
-from biome.text import (
-    Pipeline,
-    VocabularyConfiguration,
-    TrainerConfiguration,
-    Dataset,
-    vocabulary,
-)
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
+from biome.text import vocabulary
 from biome.text.modules.heads import TaskOutput
 
 
@@ -90,8 +88,6 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
 
     assert pipeline.head.span_labels == ["NER"]
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
-
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
 
     pipeline.train(
         output=str(tmp_path / "ner_experiment"),

@@ -4,9 +4,13 @@ from tempfile import mkdtemp
 
 import pytest
 
-from biome.text import Pipeline, PipelineConfiguration, Dataset
-from biome.text.configuration import FeaturesConfiguration, VocabularyConfiguration
-from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import PipelineConfiguration
+from biome.text.configuration import FeaturesConfiguration
+from biome.text.configuration import VocabularyConfiguration
+from biome.text.modules.heads import TaskHeadConfiguration
+from biome.text.modules.heads import TextClassification
 
 
 class MyCustomHead(TextClassification):
@@ -57,12 +61,11 @@ def test_load_pipeline_with_custom_head(training_dataset):
 
     # Training the model and saving it to output
     output = mkdtemp()
-    pipeline.create_vocabulary(VocabularyConfiguration(sources=[training_dataset]))
     pipeline.train(output=output, training=training_dataset)
 
     # Loading model from output
     trained_pl = Pipeline.from_pretrained(os.path.join(output, "model.tar.gz"))
     trained_pl.predict("Oh yeah")
 
-    #Asserting that the pipeline head is recognized as `MyCustomHead` instance after loading from a model.tar.gz
+    # Asserting that the pipeline head is recognized as `MyCustomHead` instance after loading from a model.tar.gz
     assert isinstance(trained_pl.head, MyCustomHead)

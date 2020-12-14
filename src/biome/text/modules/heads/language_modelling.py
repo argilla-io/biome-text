@@ -1,16 +1,23 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict
+from typing import Optional
+from typing import Tuple
 
 import torch
 from allennlp.common.checks import ConfigurationError
-from allennlp.data import Instance, TextFieldTensors
+from allennlp.data import Instance
+from allennlp.data import TextFieldTensors
 from allennlp.modules import SoftmaxLoss
-from allennlp.nn.util import get_text_field_mask, get_token_ids_from_text_field_tensors
+from allennlp.nn.util import get_text_field_mask
+from allennlp.nn.util import get_token_ids_from_text_field_tensors
 from allennlp.training.metrics import Perplexity
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
-from .task_head import TaskHead, TaskName, TaskOutput
+
+from .task_head import TaskHead
+from .task_head import TaskName
+from .task_head import TaskOutput
 
 
 class LanguageModelling(TaskHead):
@@ -63,17 +70,17 @@ class LanguageModelling(TaskHead):
         )
 
     def on_vocab_update(self):
-        self._loss = SoftmaxLoss(
-            num_words=vocabulary.words_vocab_size(self.backbone.vocab),
-            embedding_dim=self._forward_dim,
-        )
+        num_words = vocabulary.words_vocab_size(self.backbone.vocab)
+        if len(self._loss.softmax_b) != num_words:
+            self._loss = SoftmaxLoss(
+                num_words=num_words,
+                embedding_dim=self._forward_dim,
+            )
 
     def featurize(self, text: str) -> Optional[Instance]:
         return self.backbone.featurizer(text, to_field="text", aggregate=True)
 
-    def forward(  # type: ignore
-        self, text: TextFieldTensors
-    ) -> TaskOutput:
+    def forward(self, text: TextFieldTensors) -> TaskOutput:  # type: ignore
 
         mask = get_text_field_mask(text)
         contextual_embeddings = self.backbone.forward(text, mask)
@@ -156,7 +163,9 @@ class LanguageModelling(TaskHead):
         return forward_loss, backward_loss
 
     def _loss_helper(
-        self, direction_embeddings: torch.Tensor, direction_targets: torch.Tensor,
+        self,
+        direction_embeddings: torch.Tensor,
+        direction_targets: torch.Tensor,
     ) -> torch.Tensor:
         mask = direction_targets > 0
         # we need to subtract 1 to undo the padding id since the softmax
