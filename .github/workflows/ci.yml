@@ -34,6 +34,7 @@ jobs:
         with:
           environment-file: environment_dev.yml
           activate-environment: biome
+          use-only-tar-bz2: true
       - name: Cache pip 👜
         uses: actions/cache@v2
         env:
