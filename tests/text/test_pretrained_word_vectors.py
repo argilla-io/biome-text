@@ -53,13 +53,13 @@ def test_create_pipeline_with_weights_file(pipeline_config, dataset, tmp_path):
     pipeline.train(
         output=str(output),
         training=dataset,
-        trainer=TrainerConfiguration(num_epochs=1),
+        trainer=TrainerConfiguration(num_epochs=1, cuda_device=-1),
     )
     instance = pipeline.head.featurize("test")
     instance.index_fields(pipeline.vocab)
 
     assert_allclose(
-        pipeline.backbone.embedder(instance.as_tensor_dict()["text"]),
+        pipeline.backbone.embedder(instance.as_tensor_dict()["text"], 0),
         torch.tensor([[0.66, 0.33]]),
     )
 
