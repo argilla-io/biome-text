@@ -40,7 +40,3 @@ pip install -U git+https://github.com/recognai/biome-text.git
 
 Be aware that the UI components will not work when installing the development version this way.
 Check out the [Contributing](community/contributing.md#setting-up-for-development) section for a guide on how to build the UI components manually.
-
-# Get started
-
-The best way to see how *biome.text* works is to go through our [first tutorial](tutorials/1-Training_a_text_classifier.html).
