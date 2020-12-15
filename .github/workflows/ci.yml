@@ -10,8 +10,6 @@ jobs:
   run_tests:
     name: Run Tests
     runs-on: ubuntu-latest
-    env:
-      PYTEST_ADDOPTS: --color=yes
     # make sure commands run in a bash shell
     defaults:
       run:
