@@ -7,9 +7,8 @@ on:
   pull_request:
 
 jobs:
-  run_tests:
-    name: Run Tests
-    needs: deploy_docs
+  tests_docs:
+    name: Run Tests & Deploy Docs
     runs-on: ubuntu-latest
     # make sure commands run in a bash shell
     defaults:
@@ -18,45 +17,25 @@ jobs:
     steps:
       - name: Checkout Code 🛎
         uses: actions/checkout@v2
+      - name: Setup ElasticSearch 🔎
+        uses: getong/elasticsearch-action@v1.2
+        with:
+          elasticsearch version: 7.3.2
       - name: Setup Conda Env 🐍
         uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: environment_dev.yml
           activate-environment: biome
-      - name: Setup ElasticSearch 🔎
-        uses: getong/elasticsearch-action@v1.2
-        with:
-          elasticsearch version: 7.3.2
       - name: Install Biome 🌿
         run: make dev
       - name: Run Tests 📈
         run: make test
 
-  deploy_docs:
-    name: Deploy Docs
-#    needs: run_tests
-#    if: ${{ github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    # make sure commands run in a bash shell
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      - name: Checkout Code 🛎
-        uses: actions/checkout@v2
-      - name: Setup Conda Env 🐍
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          environment-file: environment_dev.yml
-          activate-environment: biome
-      - name: Install pdoc3 🌿
-        run: pip install pdoc3~=0.8.1
-      # Only necessary because we do not want to install biome.text with all its dependencies
-      - name: Expose biome.text to pdoc 🌿
-        run: cd docs && ln -s ../src/biome .
-      - name: Build Documentation 📘
+      - name: Build Docs 📘
+        if: ${{ github.event_name == 'push' }}
         run: make build_docs
-      - name: Deploy 🚀
+      - name: Deploy Docs 🚀
+        if: ${{ github.event_name == 'push' }}
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
