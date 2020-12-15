@@ -108,5 +108,5 @@ def test_find_lr(train_data_source, pipeline_dict, trainer_config, find_lr_confi
 
     assert len(learning_rates) == len(losses) == 12
     assert_allclose(
-        prev_prediction["probabilities"], pl.predict("test")["probabilities"]
+        prev_prediction["probabilities"], pl.predict("test")["probabilities"], rtol=1e-6
     )

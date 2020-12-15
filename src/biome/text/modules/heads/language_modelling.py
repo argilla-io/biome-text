@@ -124,10 +124,11 @@ class LanguageModelling(TaskHead):
             else:
                 average_loss = forward_loss / num_targets.float()
         else:
-            average_loss = torch.tensor(0.0).to(forward_targets.device)
+            average_loss = torch.tensor(0.0)
 
         for metric in self.metrics.values():
-            metric(average_loss)
+            # Perplexity needs the value to be on the cpu
+            metric(average_loss.to("cpu"))
 
         return TaskOutput(
             logits=None,

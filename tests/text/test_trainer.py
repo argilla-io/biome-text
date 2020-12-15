@@ -22,7 +22,6 @@ def pipeline(dataset) -> Pipeline:
         "head": {"type": "TextClassification", "labels": list(set(dataset["label"]))},
     }
     pl = Pipeline.from_config(config)
-    pl.create_vocabulary(VocabularyConfiguration(datasets=[dataset]))
 
     return pl
 
