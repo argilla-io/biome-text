@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 import glob
 import os
-import sys
-from typing import Tuple
 
 try:
     from setuptools import find_namespace_packages
@@ -13,32 +11,20 @@ except ImportError as error:
 
 from pip import __version__ as pip_version
 
-PIP_VERSION_REQUIRED = "20.2.0"
+# We require a fairly new version to make use of the new dependency resolver!
+REQUIRED_PIP_VERSION = "20.3.0"
 
 
-def check_pip_version(required_version: str, version: str) -> bool:
-    def version_str_2_numbers(version: str) -> Tuple[int, int, int]:
-        version_fractions = [int(n) for n in version.split(".")]
-        return tuple(
-            [
-                version_fractions[i] if i < len(version_fractions) else 0
-                for i in range(0, 3)
-            ]
+def check_pip_version():
+    def version2int(version: str) -> int:
+        version_fractions = [f"{int(n):02d}" for n in version.split(".")]
+        return int("".join(version_fractions))
+
+    if version2int(pip_version) < version2int(REQUIRED_PIP_VERSION):
+        raise OSError(
+            f"Minimal required pip version is {REQUIRED_PIP_VERSION}, found: {pip_version}\n"
+            "Please upgrade pip: pip install --upgrade pip"
         )
-
-    mayor, minor, fixes = version_str_2_numbers(version)
-    req_mayor, req_minor, req_fixes = version_str_2_numbers(required_version)
-
-    if (
-        mayor > req_mayor
-        or (mayor == req_mayor and minor > req_minor)
-        or (mayor == req_mayor and minor == req_minor and fixes >= fixes)
-    ):
-        return True
-
-    print(f"Minimal pip version should be {required_version}, found: {version}")
-    print(f"Please upgrade pip: pip install --upgrade pip")
-    return False
 
 
 def about_info(package: str):
@@ -54,8 +40,7 @@ def about_info(package: str):
 
 
 if __name__ == "__main__":
-    if not check_pip_version(PIP_VERSION_REQUIRED, pip_version):
-        sys.exit(1)
+    check_pip_version()
 
     package_name = "biome-text"
     about = about_info(package_name)
@@ -98,15 +83,18 @@ if __name__ == "__main__":
             "tqdm>=4.49.0",
         ],
         extras_require={
-            "testing": [
+            "dev": [
+                # testing
                 "pytest~=5.4.3",
                 "pytest-cov~=2.10.0",
                 "pytest-pylint~=0.14.0",
+                "pytest-notebook~=0.6.0",
+                # documentation
+                "pdoc3~=0.8.1",
+                # development
                 "pre-commit~=2.9.0",
                 "GitPython",
-                "pdoc3~=0.8.1",
-                "pytest-notebook~=0.6.0",
-            ]
+            ],
         },
         package_data={
             "biome": [
