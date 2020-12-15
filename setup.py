@@ -85,9 +85,9 @@ if __name__ == "__main__":
         extras_require={
             "dev": [
                 # testing
-                "pytest~=5.4.3",
-                "pytest-cov~=2.10.0",
-                "pytest-pylint~=0.14.0",
+                "pytest>=6.2.0",
+                "pytest-cov>=2.10.0",
+                "pytest-pylint>=0.14.0",
                 "pytest-notebook~=0.6.0",
                 # documentation
                 "pdoc3~=0.8.1",
