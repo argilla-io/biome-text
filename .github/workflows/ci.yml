@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests_docs:
+    name: Run Tests & Deploy Docs
+    runs-on: ubuntu-latest
+    # make sure commands run in a bash shell
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Checkout Code 🛎
+        uses: actions/checkout@v2
+      - name: Setup ElasticSearch 🔎
+        uses: getong/elasticsearch-action@v1.2
+        with:
+          elasticsearch version: 7.3.2
+      - name: Setup Conda Env 🐍
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          environment-file: environment_dev.yml
+          activate-environment: biome
+      - name: Install Biome 🌿
+        run: make dev
+      - name: Run Tests 📈
+        run: make test
+
+      - name: Build Docs 📘
+        if: ${{ github.event_name == 'push' }}
+        run: make build_docs
+      - name: Deploy Docs 🚀
+        if: ${{ github.event_name == 'push' }}
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: docs/site # The folder the action should deploy.
+          CLEAN: true # Automatically remove deleted files from the deploy branch
