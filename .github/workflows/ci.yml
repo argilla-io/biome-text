@@ -9,6 +9,7 @@ on:
 jobs:
   run_tests:
     name: Run Tests
+    needs: deploy_docs
     runs-on: ubuntu-latest
     # make sure commands run in a bash shell
     defaults:
@@ -33,8 +34,8 @@ jobs:
 
   deploy_docs:
     name: Deploy Docs
-    needs: run_tests
-    if: ${{ github.event_name == 'push' }}
+#    needs: run_tests
+#    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     # make sure commands run in a bash shell
     defaults:
@@ -48,6 +49,11 @@ jobs:
         with:
           environment-file: environment_dev.yml
           activate-environment: biome
+      - name: Install pdoc3 🌿
+        run: pip install pdoc3~=0.8.1
+      # Only necessary because we do not want to install biome.text with all its dependencies
+      - name: Expose biome.text to pdoc 🌿
+        run: cd docs && ln -s ../src/biome .
       - name: Build Documentation 📘
         run: make build_docs
       - name: Deploy 🚀
