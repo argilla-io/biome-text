@@ -1,28 +1,32 @@
-.PHONY: default test dist install dev pip-install-dev docs ui
+.PHONY: default dev check test ui build_ui docs build_docs dist
 default: help
+
+dev: ## install package in development mode
+	@pip install --upgrade -e .[dev]
+	@pre-commit install
 
 check: ## applies a code pylint with autopep8 reformating
 	@pre-commit run --all-files
 	@pylint --exit-zero --rcfile=setup.cfg --unsafe-load-any-extension=y src
 
-test: check ## launch package tests
+test: ## launch package tests
 	@pytest
 
-dist: test ui ## run tests and build a package distribution
-	@python setup.py sdist bdist_wheel
+ui: ## serve the UI for development
+	@cd ui && npm install && npm run serve
 
-install: ## install package
-	@pip install .
-
-dev: ## install package in development mode
-	@pip install --use-feature=2020-resolver --upgrade -e .[testing]
-	@pre-commit install
-
-ui: ## build the ui pages
+build_ui: ## build the ui pages
 	@cd ui && npm install && npm run build
 
-docs: ## build the documentation site
+docs: ## serve the documentation for development
+	@cd docs && npm install && npm run dev:site
+
+build_docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
+
+dist: check test build_ui ## run tests and build a package distribution
+	@python setup.py sdist bdist_wheel
+
 
 .PHONY: help
 help:

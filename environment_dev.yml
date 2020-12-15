@@ -1,0 +1,10 @@
+name: biome
+
+channels:
+- conda-forge
+
+dependencies:
+- python~=3.7.0
+- pip>=20.3.0
+# for building the ui and the docs
+- nodejs==14.15.1

@@ -1,59 +1,20 @@
 # Installation
-You can install *biome.text* with pip or from source.
-For the installation we recommend setting up a fresh [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html):
 
-```shell
-conda create -n biome python==3.7.1
+For the installation we recommend setting up a fresh [conda](https://docs.conda.io/en/latest/miniconda.html) environment:
+
+```shell script
+conda create -n biome python~=3.7.0 pip>=20.3.0
 conda activate biome
 ```
 
-## Pip
-The recommended way for installing the library is using pip. You can install everything required for the library as follows:
+Once the conda environment is activated, you can install the latest release or the development version via pip.
 
-```shell script
-pip install biome-text
-```
+## Latest release (recommended)
 
-## From Source
-If you want to contribute to *biome.text* you have to install the library from source.
-Clone the repository from github:
+To install the latest release of *biome.text* type in:
 
 ````shell script
-git clone https://github.com/recognai/biome-text.git
-cd biome-text
-````
-
-and install the library in editable mode together with the test dependencies: 
-
-```shell script
-pip install --upgrade -e .[testing]
-```
-
-If the `make` command is enabled in your system, you can also use the `make dev` directive:
-
-````shell script
-make dev
-````
-
-For the UI to work you need to build the static web resources:
-````shell script
-cd ui 
-npm install 
-npm run build
-````
-
-*Note: node>=12 is required in your machine. 
-You can follow installation instructions [here](https://nodejs.org/en/download/)*
-
-Again, you can also use the `make ui` directive if the `make` command is enabled in your system:
-
-````shell script
-make ui
-````
-
-You can see all defined directives with:
-````shell script
-make help
+pip install -U biome-text
 ````
 
 After installing *biome.text*, the best way to test your installation is by running the *biome.text* cli command:
@@ -62,11 +23,24 @@ After installing *biome.text*, the best way to test your installation is by runn
 biome --help
 ```
 
-## Tests
-*Biome.text* uses [pytest](https://docs.pytest.org/en/latest/) for its unit and integration tests.
-To run the tests, make sure you installed *biome.text* together with its test dependencies and simply execute pytest from within the `biome-text` directory:
+For the UI component to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance.
+We recommend running [Elasticsearch via docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode):
 
 ````shell script
-cd biome-text
-pytest
+docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.3.2
 ````
+
+## Development version
+
+If you want to install the development version (our master branch) you can do so with:
+
+````shell script
+pip install -U git+https://github.com/recognai/biome-text.git
+````
+
+Be aware that the UI components will not work when installing the development version this way.
+Check out the [Contributing](community/contributing.md#setting-up-for-development) section for a guide on how to build the UI components manually.
+
+# Get started
+
+The best way to see how *biome.text* works is to go through our [first tutorial](tutorials/1-Training_a_text_classifier.html).

@@ -40,25 +40,38 @@
 * **Compatible with AllenNLP**
 
 ## Installation
-For the installation we recommend setting up a fresh [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html):
+
+For the installation we recommend setting up a fresh [conda](https://docs.conda.io/en/latest/miniconda.html) environment:
 
 ```shell script
-conda create -n biome python==3.7.1
+conda create -n biome python~=3.7.0 pip>=20.3.0
 conda activate biome
 ```
 
-The recommended way to install *biome.text* is via `pip`:
+Once the conda environment is activated, you can install the latest release via pip:
 
-```shell script
-pip install biome-text
-```
+````shell script
+pip install -U biome-text
+````
 
 After installing *biome.text*, the best way to test your installation is by running the *biome.text* cli command:
+
 ```shell script
 biome --help
 ```
 
-Please refer to our [documentation](https://www.recogn.ai/biome-text) if you want to [contribute](https://www.recogn.ai/biome-text/documentation/community/contributing.html) to *biome.text* or install the library [from source](https://www.recogn.ai/biome-text/documentation/).
+For the UI component to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance.
+We recommend running [Elasticsearch via docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode):
+
+````shell script
+docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.3.2
+````
+
+## Get started
+
+The best way to see how *biome.text* works is to go through our [first tutorial](https://www.recogn.ai/biome-text/documentation/tutorials/1-Training_a_text_classifier.html).
+
+Please refer to our [documentation](https://www.recogn.ai/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://www.recogn.ai/biome-text/documentation/community/contributing.html) to *biome.text*.
 
 ## Licensing
 
