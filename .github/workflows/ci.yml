@@ -18,77 +18,77 @@ jobs:
     steps:
       - name: Checkout Code 🛎
         uses: actions/checkout@v2
-      - name: Setup ElasticSearch 🔎
-        uses: getong/elasticsearch-action@v1.2
-        with:
-          elasticsearch version: 7.3.2
-      - name: Cache conda 👜
-        uses: actions/cache@v2
-        env:
-          # Increase this value to reset cache if environment_dev.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment_dev.yml') }}
-      - name: Setup Conda Env 🐍
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          environment-file: environment_dev.yml
-          activate-environment: biome
-          use-only-tar-bz2: true
-      - name: Cache pip 👜
-        uses: actions/cache@v2
-        env:
-          # Increase this value to reset cache if setup.py has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles('setup.py') }}
-      - name: Install Biome 🌿
-        run: make dev
-#      - name: Linting 🍩
-#        run: make check
-      - name: Run Tests 📈
-        run: make test
-      - name: Build Docs 📘
-        # build and zip the docs
-        run: |
-          make build_docs
-          tar -czf docs_build_output.tar.gz docs/site
-      - name: Upload Build Output 🍕
-        uses: actions/upload-artifact@v2
-        with:
-          name: docs_build_output
-          path: docs_build_output.tar.gz
-
-  deploy_docs:
-    name: Deploy Docs
-    runs-on: ubuntu-latest
-    needs: tests_docs
-    if: ${{ github.event_name != 'pull_request' }}
-    # make sure commands run in a bash shell
-    defaults:
-      run:
-        shell: bash -l {0}
-    steps:
-      - name: Download Build Output 🧀
-        uses: actions/download-artifact@v2
-        with:
-          name: docs_build_output
-      - name: Extract Build Output 🍗
-        run: tar -xzf docs_build_output.tar.gz
-      - name: Deploy Docs 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: docs/site # The folder the action should deploy.
-          CLEAN: true # Automatically remove deleted files from the deploy branch
+#      - name: Setup ElasticSearch 🔎
+#        uses: getong/elasticsearch-action@v1.2
+#        with:
+#          elasticsearch version: 7.3.2
+#      - name: Cache conda 👜
+#        uses: actions/cache@v2
+#        env:
+#          # Increase this value to reset cache if environment_dev.yml has not changed
+#          CACHE_NUMBER: 0
+#        with:
+#          path: ~/conda_pkgs_dir
+#          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment_dev.yml') }}
+#      - name: Setup Conda Env 🐍
+#        uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          environment-file: environment_dev.yml
+#          activate-environment: biome
+#          use-only-tar-bz2: true
+#      - name: Cache pip 👜
+#        uses: actions/cache@v2
+#        env:
+#          # Increase this value to reset cache if setup.py has not changed
+#          CACHE_NUMBER: 0
+#        with:
+#          path: ~/.cache/pip
+#          key: ${{ runner.os }}-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles('setup.py') }}
+#      - name: Install Biome 🌿
+#        run: make dev
+##      - name: Linting 🍩
+##        run: make check
+#      - name: Run Tests 📈
+#        run: make test
+#      - name: Build Docs 📘
+#        # build and zip the docs
+#        run: |
+#          make build_docs
+#          tar -czf docs_build_output.tar.gz docs/site
+#      - name: Upload Build Output 🍕
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: docs_build_output
+#          path: docs_build_output.tar.gz
+#
+#  deploy_docs:
+#    name: Deploy Docs
+#    runs-on: ubuntu-latest
+#    needs: tests_docs
+#    if: ${{ github.event_name != 'pull_request' }}
+#    # make sure commands run in a bash shell
+#    defaults:
+#      run:
+#        shell: bash -l {0}
+#    steps:
+#      - name: Download Build Output 🧀
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: docs_build_output
+#      - name: Extract Build Output 🍗
+#        run: tar -xzf docs_build_output.tar.gz
+#      - name: Deploy Docs 🚀
+#        uses: JamesIves/github-pages-deploy-action@3.7.1
+#        with:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          BRANCH: gh-pages # The branch the action should deploy to.
+#          FOLDER: docs/site # The folder the action should deploy.
+#          CLEAN: true # Automatically remove deleted files from the deploy branch
 
   deploy_release:
     name: Deploy Release
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' }}
+#    if: ${{ github.event_name == 'release' }}
     needs: tests_docs
     steps:
       - name: Checkout Code 🛎
@@ -107,5 +107,7 @@ jobs:
           environment-file: environment_dev.yml
           activate-environment: biome
           use-only-tar-bz2: true
+      - name: list
+        run: conda list
       - name: Build Package 🍟
         run: make dist
