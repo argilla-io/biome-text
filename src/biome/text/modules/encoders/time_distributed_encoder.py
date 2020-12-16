@@ -1,4 +1,5 @@
-from allennlp.modules import Seq2SeqEncoder, TimeDistributed
+from allennlp.modules import Seq2SeqEncoder
+from allennlp.modules import TimeDistributed
 
 
 class TimeDistributedEncoder(Seq2SeqEncoder):

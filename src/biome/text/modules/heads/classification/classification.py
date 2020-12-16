@@ -1,15 +1,26 @@
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
 import numpy
 import torch
 from allennlp.data import Instance
-from allennlp.data.fields import LabelField, MultiLabelField
-from allennlp.training.metrics import CategoricalAccuracy, FBetaMeasure
+from allennlp.data.fields import LabelField
+from allennlp.data.fields import MultiLabelField
+from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import FBetaMeasure
 
-from biome.text import helpers, vocabulary
+from biome.text import helpers
+from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.metrics import MultiLabelF1Measure
-from ..task_head import TaskHead, TaskName, TaskOutput
+
+from ..task_head import TaskHead
+from ..task_head import TaskName
+from ..task_head import TaskOutput
 
 
 class ClassificationHead(TaskHead):

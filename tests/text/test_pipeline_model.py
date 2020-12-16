@@ -1,13 +1,16 @@
-from typing import Any, Dict
+from typing import Any
+from typing import Dict
 
 import numpy
 import pytest
 from allennlp.data import Instance
 
-from biome.text import Pipeline, PipelineConfiguration
+from biome.text import Pipeline
+from biome.text import PipelineConfiguration
 from biome.text.backbone import ModelBackbone
 from biome.text.configuration import FeaturesConfiguration
-from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
+from biome.text.modules.heads import TaskHeadConfiguration
+from biome.text.modules.heads import TextClassification
 
 
 class TestHead(TextClassification):

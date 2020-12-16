@@ -4,6 +4,7 @@ import os
 from gevent.pywsgi import WSGIServer
 
 from biome.text.environment import ES_HOST
+
 from .app import make_app
 
 __LOGGER = logging.getLogger(__name__)

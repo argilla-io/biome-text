@@ -169,6 +169,6 @@ export default {
       display flex
       align-items center
       width 160px
-    img 
+    img
      margin-left 1em
 </style>

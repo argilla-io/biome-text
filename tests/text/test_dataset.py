@@ -176,22 +176,23 @@ def test_from_elasticsearch(dataset, default_pipeline_config):
 
 def test_fail_using_reserved_words():
     # This issue was reported and maybe gets resolved: https://github.com/huggingface/datasets/issues/1110
-    
-    ds = Dataset.from_dict({
-        "a": [{"a": 1, "b": "two"} for _ in range(0, 100)],
-        "_type": ["whatever" for _ in range(0, 100)],
-    })
+
+    ds = Dataset.from_dict(
+        {
+            "a": [{"a": 1, "b": "two"} for _ in range(0, 100)],
+            "_type": ["whatever" for _ in range(0, 100)],
+        }
+    )
     split = ds.train_test_split()
     new_ds = Dataset.from_datasets(split.values())
 
     assert len(new_ds) == len(ds)
 
-    ds = ds.map(lambda example: {
-        "new_field": {
-            "c": str(example["a"]["a"]),
-            "d": f"this {example['a']['b']}"
+    ds = ds.map(
+        lambda example: {
+            "new_field": {"c": str(example["a"]["a"]), "d": f"this {example['a']['b']}"}
         }
-    })
+    )
     split = ds.train_test_split()
     with pytest.raises(TypeError):
         Dataset.from_datasets(split.values())

@@ -1,10 +1,8 @@
-from allennlp.modules import (
-    BiMpmMatching,
-    FeedForward,
-    Seq2SeqEncoder,
-    Seq2VecEncoder,
-    Embedding,
-)
+from allennlp.modules import BiMpmMatching
+from allennlp.modules import Embedding
+from allennlp.modules import FeedForward
+from allennlp.modules import Seq2SeqEncoder
+from allennlp.modules import Seq2VecEncoder
 
 from .defs import ComponentConfiguration
 

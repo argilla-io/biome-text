@@ -21,9 +21,9 @@
       class="footer"
     >
       <div>
-        Maintained by 
+        Maintained by
         <a href="https://recogn.ai" target="_blank"><img width="70px" :src="$withBase('/assets/img/recognai.png')" /></a>
-      </div>  
+      </div>
     </div>
     <div
       class="error--bg"
@@ -78,11 +78,11 @@ export default {
   min-height 120vh
   background-size 100%
   &--bg
-    position absolute 
+    position absolute
     width 100%
     bottom 0
     pointer-events none
-    svg 
+    svg
       width 100%
       height auto
       display block
@@ -107,7 +107,7 @@ export default {
     margin-top 0.5em !important
     margin-bottom 0.5em
 .footer
-  position absolute 
+  position absolute
   bottom 2em
   padding 2.5rem 2.5em 0
   text-align center
@@ -121,7 +121,7 @@ export default {
     display flex
     align-items center
     width 160px
-  img 
+  img
     margin-left 1em
 @media (max-width: $MQMobile)
   .error
@@ -131,7 +131,7 @@ export default {
       font-size 1.3em
       display block
     &__text
-      font-size 3em 
+      font-size 3em
 
 #eye-1
   animation animateEye-1 3s infinite 3s

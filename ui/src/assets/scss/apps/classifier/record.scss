@@ -20,10 +20,10 @@
     margin-right: 0.5em;
     &--explain {
       font-weight: lighter;
-      margin: 0.5em 0.5em 0.5em 0;  
+      margin: 0.5em 0.5em 0.5em 0;
       text-transform: uppercase;
-      display: block;  
-      @include font-size(12px)  
+      display: block;
+      @include font-size(12px)
     }
   }
   &__scroll {
