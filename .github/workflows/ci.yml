@@ -90,6 +90,9 @@ jobs:
     runs-on: ubuntu-latest
 #    if: ${{ github.event_name == 'release' }}
     needs: tests_docs
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - name: Checkout Code 🛎
         uses: actions/checkout@v2
