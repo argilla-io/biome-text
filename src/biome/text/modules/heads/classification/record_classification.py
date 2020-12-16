@@ -1,14 +1,15 @@
-from typing import List, Optional, Union
+from typing import List
+from typing import Optional
+from typing import Union
 
 from allennlp.data import Instance
 
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.configuration import (
-    ComponentConfiguration,
-    FeedForwardConfiguration,
-    Seq2SeqEncoderConfiguration,
-    Seq2VecEncoderConfiguration,
-)
+from biome.text.modules.configuration import ComponentConfiguration
+from biome.text.modules.configuration import FeedForwardConfiguration
+from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
+from biome.text.modules.configuration import Seq2VecEncoderConfiguration
+
 from .doc_classification import DocumentClassification
 
 
@@ -28,7 +29,7 @@ class RecordClassification(DocumentClassification):
         tokens_pooler: Optional[Seq2VecEncoderConfiguration] = None,
         fields_encoder: Optional[Seq2SeqEncoderConfiguration] = None,
         fields_pooler: Optional[Seq2VecEncoderConfiguration] = None,
-        feedforward: Optional[Seq2SeqEncoderConfiguration] = None,
+        feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: Optional[bool] = False,
     ) -> None:
 

@@ -43,7 +43,9 @@ def package_version(version: str) -> str:
         -------
         commit_date
         """
-        return repository.log("--pretty=format:%cd", "--date=format:%Y%m%d%H%M%S", "-n 1")
+        return repository.log(
+            "--pretty=format:%cd", "--date=format:%Y%m%d%H%M%S", "-n 1"
+        )
 
     def get_first_tag_for_commit(repository: git.Git, commit_hash: str) -> str:
         """Return tags related to current commit

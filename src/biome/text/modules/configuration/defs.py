@@ -1,8 +1,15 @@
 import copy
 import inspect
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
+from typing import Any
+from typing import Dict
+from typing import Generic
+from typing import Optional
+from typing import Type
+from typing import TypeVar
+from typing import Union
 
-from allennlp.common import FromParams, Params
+from allennlp.common import FromParams
+from allennlp.common import Params
 from allennlp.modules.bimpm_matching import BiMpmMatching
 from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
 from allennlp.modules.seq2vec_encoders import PytorchSeq2VecWrapper

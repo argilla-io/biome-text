@@ -1,18 +1,17 @@
 import pytest
 import yaml
 from allennlp.common.checks import ConfigurationError
-from allennlp.data.fields import ListField, TextField
+from allennlp.data.fields import ListField
+from allennlp.data.fields import TextField
 from spacy.tokens.token import Token
 
 from biome.text import Pipeline
-from biome.text.configuration import (
-    CharFeatures,
-    FeaturesConfiguration,
-    PipelineConfiguration,
-    TaskHeadConfiguration,
-    TokenizerConfiguration,
-    WordFeatures,
-)
+from biome.text.configuration import CharFeatures
+from biome.text.configuration import FeaturesConfiguration
+from biome.text.configuration import PipelineConfiguration
+from biome.text.configuration import TaskHeadConfiguration
+from biome.text.configuration import TokenizerConfiguration
+from biome.text.configuration import WordFeatures
 from biome.text.modules.configuration.allennlp_configuration import (
     Seq2SeqEncoderConfiguration,
 )

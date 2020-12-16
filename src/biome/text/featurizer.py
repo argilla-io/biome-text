@@ -1,9 +1,16 @@
-from typing import Any, Dict, List, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Union
 
-from allennlp.data import Instance, Token, TokenIndexer
-from allennlp.data.fields import ListField, TextField
-from biome.text.tokenizer import Tokenizer
+from allennlp.data import Instance
+from allennlp.data import Token
+from allennlp.data import TokenIndexer
+from allennlp.data.fields import ListField
+from allennlp.data.fields import TextField
+
 from biome.text.features import WordFeatures
+from biome.text.tokenizer import Tokenizer
 
 
 class InputFeaturizer:
@@ -23,7 +30,9 @@ class InputFeaturizer:
     """
 
     def __init__(
-        self, tokenizer: Tokenizer, indexer: Dict[str, TokenIndexer],
+        self,
+        tokenizer: Tokenizer,
+        indexer: Dict[str, TokenIndexer],
     ):
         self.tokenizer = tokenizer
         self.indexer = indexer

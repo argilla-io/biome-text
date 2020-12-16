@@ -1,10 +1,15 @@
-from typing import Any, List, Optional, Union
+from typing import Any
+from typing import List
+from typing import Optional
+from typing import Union
 
 from astroid import Instance
 
-from biome.text import Pipeline, PipelineConfiguration
+from biome.text import Pipeline
+from biome.text import PipelineConfiguration
 from biome.text.configuration import FeaturesConfiguration
-from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
+from biome.text.modules.heads import TaskHeadConfiguration
+from biome.text.modules.heads import TextClassification
 
 
 class MyCustomHead(TextClassification):

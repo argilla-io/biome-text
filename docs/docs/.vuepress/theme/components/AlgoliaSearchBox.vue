@@ -75,9 +75,9 @@ export default {
 </script>
 
 <style lang="stylus">
-input 
+input
   background-image url('search.svg') !important
-input:focus 
+input:focus
   background-image url('search-orange.svg') !important
 .algolia-search-wrapper
   & > span
@@ -132,7 +132,7 @@ input:focus
         &:after
           content ""
           border-bottom 1px solid $accentColor
-          position absolute 
+          position absolute
           left 1em
           right 1em
           bottom 0

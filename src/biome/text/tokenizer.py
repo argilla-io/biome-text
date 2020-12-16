@@ -1,5 +1,9 @@
 import copy
-from typing import Any, Dict, Iterable, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Dict
+from typing import Iterable
+from typing import List
 
 import spacy
 from allennlp.common import Params
@@ -9,7 +13,8 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 
-from biome.text.text_cleaning import DefaultTextCleaning, TextCleaning
+from biome.text.text_cleaning import DefaultTextCleaning
+from biome.text.text_cleaning import TextCleaning
 
 if TYPE_CHECKING:
     from biome.text.configuration import TokenizerConfiguration
