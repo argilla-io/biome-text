@@ -7,6 +7,3 @@ COPY ./dist/*.whl /dist/
 
 RUN pip install --upgrade pip \
 && pip install /dist/*.whl
-
-
-

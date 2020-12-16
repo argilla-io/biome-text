@@ -1,6 +1,8 @@
 import copy
 import re
-from typing import Callable, Dict, List
+from typing import Callable
+from typing import Dict
+from typing import List
 
 from allennlp.common import Registrable
 from bs4 import BeautifulSoup
@@ -18,17 +20,17 @@ class TextCleaning(Registrable):
 
 class TextCleaningRule:
     """Registers a function as a rule for the default text cleaning implementation
-    
+
     Use the decorator `@TextCleaningRule` for creating custom text cleaning and pre-processing rules.
-    
+
     An example function to strip spaces (already included in the default `TextCleaning` processor):
-    
+
     ```python
     @TextCleaningRule
     def strip_spaces(text: str) -> str:
         return text.strip()
     ```
-    
+
     Parameters
     ----------
     func: `Callable[[str]`
@@ -56,7 +58,7 @@ class DefaultTextCleaning(TextCleaning):
     """Defines rules that can be applied to the text before it gets tokenized.
 
     Each rule is a simple python function that receives and returns a `str`.
-    
+
     Parameters
     ----------
     rules: `List[str]`

@@ -2,7 +2,8 @@ import re
 
 import pytest
 from pytest_notebook.nb_regression import NBRegressionFixture
-from pytest_notebook.notebook import load_notebook, dump_notebook
+from pytest_notebook.notebook import dump_notebook
+from pytest_notebook.notebook import load_notebook
 
 pytestmark = pytest.mark.skip(
     reason="The pytest-notebook package is not actively maintained and "

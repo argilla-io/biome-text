@@ -1,8 +1,9 @@
 import pytest
-from biome.text import Dataset
-from biome.text import explore
-from biome.text import Pipeline
 from elasticsearch import Elasticsearch
+
+from biome.text import Dataset
+from biome.text import Pipeline
+from biome.text import explore
 
 
 @pytest.fixture

@@ -16,8 +16,8 @@ from biome.text import Pipeline
 pl = Pipeline.from_yaml("path/to/pipeline.yml")
 ```
 
-The content of the yaml file is embedded in an `allennlp.common.Params` 
-and passed on to  
+The content of the yaml file is embedded in an `allennlp.common.Params`
+and passed on to
 ```python
 from biome.text.configuration import PipelineConfiguration
 class PipelineConfiguration(FromParams):
@@ -33,7 +33,7 @@ class PipelineConfiguration(FromParams):
 via the `PipelineConfiguration.from_params()` method. This means the init
 arguments get instantiated (see `allennlp.common.FromParams`).
 
-The `PipelineConfiguration.__init__()` gives us the list of possible 
+The `PipelineConfiguration.__init__()` gives us the list of possible
 first level sections in the `pipeline.yml`:
  - name
  - features
@@ -43,7 +43,7 @@ first level sections in the `pipeline.yml`:
 
 ## features
 
-This section of the `pipeline.yml` file is passed on to the 
+This section of the `pipeline.yml` file is passed on to the
 ```python
 class biome.text.api_new.configuration.FeaturesConfiguration(FromParams):
     """Features configuration spec"""
@@ -56,7 +56,7 @@ class biome.text.api_new.configuration.FeaturesConfiguration(FromParams):
     )
 ```
 
-**All** `__init__` arguments are converted to attributes and are passed on to 
+**All** `__init__` arguments are converted to attributes and are passed on to
 `biome.text.featurizer.InputFeaturizer` in the `FeaturesConfiguration.compile()` method.
 
 ```python
@@ -97,7 +97,7 @@ class _WordFeaturesSpecs:
 The `extra_params` must follow the AllenNLP format, that is:
 ```python
 {"indexer": {...}, "embedder": {...}}
-``` 
+```
 
 ### chars
 
@@ -135,16 +135,16 @@ another_feature:
     ...
 ```
 
-where the `indexer` and `embedder` options (both names are defined in the attributes 
+where the `indexer` and `embedder` options (both names are defined in the attributes
 `InputFeaturizer.__INDEXER_KEYNAME` and `InputFeaturizer.__EMBEDDER_KEYNAME`)
-can be looked up in the 
-`allennlp.data.token_indexers` and the 
-`allennlp.modules.token_embedders.TokenEmbedder` classes, respectively 
+can be looked up in the
+`allennlp.data.token_indexers` and the
+`allennlp.modules.token_embedders.TokenEmbedder` classes, respectively
 (depending on the specified `type`).
 
 ## head
 
-Via the `biome.text.modules.heads.defs.TaskHeadSpec` this section is first passed on to the class: 
+Via the `biome.text.modules.heads.defs.TaskHeadSpec` this section is first passed on to the class:
 ```python
 from biome.text.modules.specs import ComponentConfiguration
 class ComponentSpec(Generic[T], FromParams):
@@ -157,10 +157,10 @@ class ComponentSpec(Generic[T], FromParams):
         return cls(**params.as_dict())
 
 ```
-Here it uses the `type` key of the section to figure out, which of the Child or Grandchild classes of 
-`biome.text.modules.heads.defs.TaskHead` to pass on the rest of the section. 
-The `type` value has to be the name of the corresponding Child/Grandchild class of `TaskHead` 
-and the class has to be _registered_. 
+Here it uses the `type` key of the section to figure out, which of the Child or Grandchild classes of
+`biome.text.modules.heads.defs.TaskHead` to pass on the rest of the section.
+The `type` value has to be the name of the corresponding Child/Grandchild class of `TaskHead`
+and the class has to be _registered_.
 The registering is done in the `biome.text.modules.heads.__init__.py`.
 
 Side note: The Child/Grandchild class has a `model` argument in its `__init__` that you do not have to specify
@@ -174,7 +174,7 @@ the input dimension and add it on the fly.
 
 ## tokenizer
 
-This section is used to init a 
+This section is used to init a
 ```python
 from biome.text.configuration import TokenizerConfiguration
 class TokenizerConfiguration(FromParams):
@@ -188,21 +188,21 @@ class TokenizerConfiguration(FromParams):
         segment_sentences: Union[bool, Dict[str, Any]] = False,
 ```
 
-The arguments are transformed to 
+The arguments are transformed to
 When calling `TokenizerConfiguration.compile` the arguments of the init are embedded in an `allennlp.common.Params`
 and passed on to the `biome.text.tokenizer.Tokenizer`.
 
-The `text_cleaning` section is passed on to the 
-`biome.text.text_cleaning.DefaultTextCleaning` class. 
+The `text_cleaning` section is passed on to the
+`biome.text.text_cleaning.DefaultTextCleaning` class.
 Its `rules` argument can be a list containing the names of the `TextCleaningRule`s in
 `biome.text.text_cleaning.py`.
 
 ## encoder
 
-This is passed on to a `biome.text.modules.encoders.__init__.Encoder`, which is a 
+This is passed on to a `biome.text.modules.encoders.__init__.Encoder`, which is a
 `biome.text.modules.specs.allennlp_specs.Seq2SeqEncoderSpec`.
 
-The options for this section follow _almost_ the standard AllenNLP way for a 
+The options for this section follow _almost_ the standard AllenNLP way for a
 `allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder`: the `type` option specifies the Child class
 and the rest of the options are passed on to its init signature, except the "input dimension".
 In `biome.text.modules.specs.defs._find_input_attribute` we try to figure out the argument name for
@@ -259,6 +259,3 @@ TODO
 ```yaml
 
 ```
-
-
-

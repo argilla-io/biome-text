@@ -1,5 +1,8 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import numpy
 import torch
@@ -19,7 +22,10 @@ class TaskOutput:
     """
 
     def __init__(
-        self, logits: torch.Tensor = None, loss: Optional[torch.Tensor] = None, **extra_data
+        self,
+        logits: torch.Tensor = None,
+        loss: Optional[torch.Tensor] = None,
+        **extra_data
     ):
         self.logits = logits
         self.loss = loss
@@ -86,7 +92,6 @@ class TaskHead(torch.nn.Module, Registrable):
     def extend_labels(self, labels: List[str]):
         """Extends the number of labels"""
         vocabulary.extend_labels(self.backbone.vocab, labels)
-
 
     def inputs(self) -> Optional[List[str]]:
         """

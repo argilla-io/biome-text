@@ -12,7 +12,7 @@
   <main
     class="home"
     aria-labelledby="main-title"
-  > 
+  >
     <header class="hero">
       <img
         v-if="data.heroImage"
@@ -79,9 +79,9 @@
       class="footer"
     >
       <div>
-        {{ data.footer }}  
+        {{ data.footer }}
         <a href="https://recogn.ai" target="_blank"><img width="70px" :src="$withBase('/assets/img/recognai.png')" /></a>
-      </div>  
+      </div>
     </div>
   </main>
 
@@ -142,10 +142,10 @@ export default {
   &__bg
     width 500px
     height 536px
-    position absolute 
+    position absolute
     right 0
     top 0
-    path 
+    path
       transform rotateY(0) translateY(0)
       transform-origin center
       animation animate 10s infinite
@@ -162,7 +162,7 @@ export default {
 
 
     // for num in (1..5)
-    //   path:nth-child({num}) 
+    //   path:nth-child({num})
     //     animation animate 8s infinite
     //     stroke red
     //     animation-delay "calc(0.5 * %s)" % num
@@ -185,7 +185,7 @@ export default {
     h1
       font-size 3rem
       font-family $primaryFontFamily
-      span 
+      span
         font-weight lighter
         font-family 'Basis Grotesque Pro Light'
     h1, .description, .action
@@ -246,7 +246,7 @@ export default {
       display flex
       align-items center
       width 160px
-    img 
+    img
      margin-left 1em
 
 @media (max-width: $MQMobile)

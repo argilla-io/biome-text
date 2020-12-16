@@ -1,6 +1,7 @@
 import os
 
-from .environment import BIOME_EXPLORE_ENDPOINT, ES_HOST
+from .environment import BIOME_EXPLORE_ENDPOINT
+from .environment import ES_HOST
 
 BIOME_METADATA_INDEX = ".biome"
 BIOME_METADATA_INDEX_DOC = "_doc"

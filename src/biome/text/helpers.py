@@ -5,7 +5,14 @@ import os
 import os.path
 import re
 from inspect import Parameter
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Type, Optional
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterable
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Type
 
 import spacy
 import spacy.gold

@@ -15,7 +15,9 @@ def test_classification_output():
 
     assert prediction.keys() == dict(labels=None, probabilities=None).keys()
     assert len(prediction["labels"]) == len(prediction["probabilities"]) == 6
-    assert_allclose(sorted(prediction["probabilities"], reverse=True), prediction["probabilities"])
+    assert_allclose(
+        sorted(prediction["probabilities"], reverse=True), prediction["probabilities"]
+    )
     assert all([isinstance(label, str) for label in prediction["labels"]])
     assert set(labels) == set(prediction["labels"])
     assert all([isinstance(prob, float) for prob in prediction["probabilities"]])
