@@ -24,7 +24,7 @@ docs: ## serve the documentation for development
 build_docs: ## build the documentation site
 	@cd docs && npm install && npm run build:site
 
-dist: check test build_ui ## run tests and build a package distribution
+dist: build_ui ## run tests and build a package distribution
 	@python setup.py sdist bdist_wheel
 
 

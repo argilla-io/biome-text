@@ -46,6 +46,8 @@ jobs:
           key: ${{ runner.os }}-pip-${{ env.CACHE_NUMBER }}-${{ hashFiles('setup.py') }}
       - name: Install Biome 🌿
         run: make dev
+#      - name: Linting 🍩
+#        run: make check
       - name: Run Tests 📈
         run: make test
       - name: Build Docs 📘
@@ -105,4 +107,5 @@ jobs:
           environment-file: environment_dev.yml
           activate-environment: biome
           use-only-tar-bz2: true
-      - name:
+      - name: Build Package 🍟
+        run: make dist
