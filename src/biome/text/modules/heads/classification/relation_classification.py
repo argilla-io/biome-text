@@ -1,26 +1,30 @@
 import logging
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
+from typing import cast
 
 import torch
-from allennlp.data import Instance, TextFieldTensors
-from allennlp.data.fields import TextField, SequenceLabelField
+from allennlp.data import Instance
+from allennlp.data import TextFieldTensors
+from allennlp.data.fields import SequenceLabelField
+from allennlp.data.fields import TextField
 from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 
 from biome.text.backbone import ModelBackbone
 from biome.text.helpers import tags_from_offsets
-from biome.text.modules.configuration import (
-    ComponentConfiguration,
-    FeedForwardConfiguration,
-    Seq2VecEncoderConfiguration,
-    EmbeddingConfiguration,
-)
-
-# from biome.text.modules.encoders.multi_head_self_attention_encoder import MultiheadSelfAttentionEncoder
-
-from .text_classification import TextClassification
+from biome.text.modules.configuration import ComponentConfiguration
+from biome.text.modules.configuration import EmbeddingConfiguration
+from biome.text.modules.configuration import FeedForwardConfiguration
+from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
 from ..task_head import TaskOutput
+from .text_classification import TextClassification
+
+# from biome.text.modules.encoders.multi_head_self_attention_encoder import MultiheadSelfAttentionEncoder
 
 
 class RelationClassification(TextClassification):

@@ -5,9 +5,12 @@ from urllib.parse import urlparse
 import mlflow
 from mlflow.utils import mlflow_tags
 
-from biome.text import Pipeline, PipelineConfiguration, TrainerConfiguration
+from biome.text import Pipeline
+from biome.text import PipelineConfiguration
+from biome.text import TrainerConfiguration
 from biome.text.loggers import MlflowLogger
-from biome.text.modules.heads import TaskHeadConfiguration, TextClassification
+from biome.text.modules.heads import TaskHeadConfiguration
+from biome.text.modules.heads import TextClassification
 from biome.text.training_results import TrainingResults
 
 

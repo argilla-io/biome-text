@@ -1,28 +1,38 @@
 import logging
-from typing import Dict, List, Optional, Union, cast, Tuple
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
+from typing import cast
 
 import torch
-from allennlp.data import Instance, TextFieldTensors
-from allennlp.data.fields import SequenceLabelField, TextField, MetadataField
-from allennlp.modules import ConditionalRandomField, FeedForward, TimeDistributed
+from allennlp.data import Instance
+from allennlp.data import TextFieldTensors
+from allennlp.data.fields import MetadataField
+from allennlp.data.fields import SequenceLabelField
+from allennlp.data.fields import TextField
+from allennlp.modules import ConditionalRandomField
+from allennlp.modules import FeedForward
+from allennlp.modules import TimeDistributed
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy, SpanBasedF1Measure
+from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import SpanBasedF1Measure
 from spacy.tokens.doc import Doc
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.modules.configuration import (
-    ComponentConfiguration,
-    FeedForwardConfiguration,
-)
-from biome.text.helpers import (
-    span_labels_to_tag_labels,
-    tags_from_offsets,
-    offsets_from_tags,
-)
-from .task_head import TaskHead, TaskName, TaskOutput
+from biome.text.helpers import offsets_from_tags
+from biome.text.helpers import span_labels_to_tag_labels
+from biome.text.helpers import tags_from_offsets
+from biome.text.modules.configuration import ComponentConfiguration
+from biome.text.modules.configuration import FeedForwardConfiguration
+
 from ...errors import WrongValueError
+from .task_head import TaskHead
+from .task_head import TaskName
+from .task_head import TaskOutput
 
 
 class TokenClassification(TaskHead):

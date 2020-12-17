@@ -1,8 +1,12 @@
 import dataclasses
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 
-from allennlp.training import EpochCallback, GradientDescentTrainer
+from allennlp.training import EpochCallback
+from allennlp.training import GradientDescentTrainer
 from mlflow.entities import Experiment
 from mlflow.tracking import MlflowClient
 from mlflow.utils import mlflow_tags
@@ -228,7 +232,9 @@ class WandBLogger(BaseTrainLogger):
             "trainer": dataclasses.asdict(trainer_configuration),
         }
         config["pipeline"]["num_parameters"] = pipeline.num_parameters
-        config["pipeline"]["num_trainable_parameters"] = pipeline.num_trainable_parameters
+        config["pipeline"][
+            "num_trainable_parameters"
+        ] = pipeline.num_trainable_parameters
         self._run = wandb.init(
             project=self.project_name, name=self.run_name, tags=self.tags, config=config
         )
@@ -260,7 +266,9 @@ def is_wandb_installed_and_logged_in() -> bool:
     return True
 
 
-def add_default_wandb_logger_if_needed(loggers: List[BaseTrainLogger]) -> List[BaseTrainLogger]:
+def add_default_wandb_logger_if_needed(
+    loggers: List[BaseTrainLogger],
+) -> List[BaseTrainLogger]:
     """Adds the default WandBLogger if a WandB login is detected and no WandBLogger is found in `loggers`.
 
     Parameters

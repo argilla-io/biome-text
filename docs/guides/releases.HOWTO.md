@@ -4,7 +4,7 @@ Here the instructions for create a new package distribution Release.
 
 ## Release of a new major/minor version
 
-Create a new branch called releases/<X>.<Y>.x where <X>.<Y> is the corresponding release version. 
+Create a new branch called releases/<X>.<Y>.x where <X>.<Y> is the corresponding release version.
 For example, for a new release 1.3, you must create a branch called `releases/1.3.x
 
 ```shell
@@ -46,8 +46,8 @@ Create a bugfix/hotfix branch from here:
 git checkout -b bugfix/#<id_of_related_issue>
 ```
 
-Follow common dev process (PR + approvals ...) and squash fix into release branch, then check all 
-release stuff (version, documentation, pypi-test, tests,...) 
+Follow common dev process (PR + approvals ...) and squash fix into release branch, then check all
+release stuff (version, documentation, pypi-test, tests,...)
 
 Finally, create fix tag if everything is fine
 

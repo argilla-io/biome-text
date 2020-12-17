@@ -1,29 +1,34 @@
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import cast
 
 import numpy as np
 import torch
-from allennlp.data import Batch, Instance, TextFieldTensors
-from allennlp.modules import (
-    FeedForward,
-    Seq2SeqEncoder,
-    Seq2VecEncoder,
-)
+from allennlp.data import Batch
+from allennlp.data import Instance
+from allennlp.data import TextFieldTensors
+from allennlp.modules import FeedForward
+from allennlp.modules import Seq2SeqEncoder
+from allennlp.modules import Seq2VecEncoder
 from allennlp.modules.bimpm_matching import BiMpmMatching
-from allennlp.nn import InitializerApplicator, util
+from allennlp.nn import InitializerApplicator
+from allennlp.nn import util
 from captum.attr import IntegratedGradients
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.modules.configuration import BiMpmMatchingConfiguration
+from biome.text.modules.configuration import ComponentConfiguration
+from biome.text.modules.configuration import FeedForwardConfiguration
+from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
+from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.encoders import TimeDistributedEncoder
-from biome.text.modules.configuration import (
-    BiMpmMatchingConfiguration,
-    FeedForwardConfiguration,
-    Seq2SeqEncoderConfiguration,
-    Seq2VecEncoderConfiguration,
-    ComponentConfiguration,
-)
-from .classification import ClassificationHead
+
 from ..task_head import TaskOutput
+from .classification import ClassificationHead
 
 
 class RecordPairClassification(ClassificationHead):

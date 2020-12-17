@@ -5,21 +5,23 @@ It tries to allow for a simple integration with HPO libraries like Ray Tune.
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable
+from typing import List
+from typing import Optional
 
 import mlflow
 from allennlp.data import Vocabulary
 from ray import tune
 
-from biome.text import Pipeline, TrainerConfiguration, VocabularyConfiguration, helpers
+from biome.text import Pipeline
+from biome.text import TrainerConfiguration
+from biome.text import helpers
 from biome.text.dataset import Dataset
 from biome.text.errors import ValidationError
-from biome.text.loggers import (
-    BaseTrainLogger,
-    MlflowLogger,
-    WandBLogger,
-    is_wandb_installed_and_logged_in,
-)
+from biome.text.loggers import BaseTrainLogger
+from biome.text.loggers import MlflowLogger
+from biome.text.loggers import WandBLogger
+from biome.text.loggers import is_wandb_installed_and_logged_in
 
 
 class TuneMetricsLogger(BaseTrainLogger):

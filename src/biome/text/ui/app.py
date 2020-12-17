@@ -3,7 +3,12 @@ import os
 from logging import Logger
 
 import requests
-from flask import Flask, Response, jsonify, request, send_file, send_from_directory
+from flask import Flask
+from flask import Response
+from flask import jsonify
+from flask import request
+from flask import send_file
+from flask import send_from_directory
 from flask_cors import CORS
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.proxy_fix import ProxyFix
