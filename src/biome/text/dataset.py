@@ -31,7 +31,6 @@ from biome.text.helpers import copy_sign_and_docs
 if TYPE_CHECKING:
     import pandas
 
-    from biome.text.features import Features
     from biome.text.pipeline import Pipeline
 
 InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
