@@ -27,26 +27,11 @@ def check_pip_version():
         )
 
 
-def about_info(package: str):
-    """Fetch about info """
-    root = os.path.abspath(os.path.dirname(__file__))
-    with open(
-        os.path.join(root, "src", package.replace("-", "/"), "about.py"),
-        encoding="utf8",
-    ) as f:
-        about = {}
-        exec(f.read(), about)
-        return about
-
-
 if __name__ == "__main__":
     check_pip_version()
 
-    package_name = "biome-text"
-    about = about_info(package_name)
-
     setup(
-        name=package_name,
+        name="biome-text",
         use_scm_version=True,
         setup_requires=["setuptools_scm"],
         description="Biome-text is a light-weight open source Natural Language Processing toolbox"
