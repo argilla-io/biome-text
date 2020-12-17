@@ -10,7 +10,7 @@ check: ## applies a code pylint with autopep8 reformating
 	@pylint --exit-zero --rcfile=setup.cfg --unsafe-load-any-extension=y src
 
 test: ## launch package tests
-	@pytest
+	@python -m pytest
 
 ui: ## serve the UI for development
 	@cd ui && npm install && npm run serve
