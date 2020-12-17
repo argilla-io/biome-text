@@ -110,11 +110,11 @@ jobs:
           environment-file: environment_dev.yml
           activate-environment: biome
           use-only-tar-bz2: true
-      - name: test env
-        env:
-          VERSION: $GITHUB_REF
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Test
         run: |
-          echo $GITHUB_REF
-          echo $VERSION
-      - name: Build Package 🍟
-        run: make dist
+          echo $RELEASE_VERSION
+          echo ${{ env.RELEASE_VERSION }}
+#      - name: Build Package 🍟
+#        run: make dist
