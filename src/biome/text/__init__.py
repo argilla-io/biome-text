@@ -1,10 +1,11 @@
 import logging
 import warnings
 from warnings import warn_explicit
+
 import pkg_resources
 
 try:
-    __version__ = pkg_resources.get_distribution(__name__.replace(".", "-")).version
+    __version__ = pkg_resources.get_distribution("biome-text").version
 except pkg_resources.DistributionNotFound:
     # package is not installed
     pass
@@ -34,13 +35,11 @@ try:
 except ModuleNotFoundError:
     pass
 
+from .configuration import PipelineConfiguration
+from .configuration import TrainerConfiguration
+from .configuration import VocabularyConfiguration
 from .dataset import Dataset
 from .pipeline import Pipeline
-from .configuration import (
-    PipelineConfiguration,
-    TrainerConfiguration,
-    VocabularyConfiguration,
-)
 
 warnings.showwarning = warn_explicit
 logging.basicConfig()

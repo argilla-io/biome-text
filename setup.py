@@ -47,7 +47,8 @@ if __name__ == "__main__":
 
     setup(
         name=package_name,
-        version=about["__version__"],
+        use_scm_version=True,
+        setup_requires=["setuptools_scm"],
         description="Biome-text is a light-weight open source Natural Language Processing toolbox"
         " built with AllenNLP",
         author="Recognai",

@@ -88,7 +88,7 @@ jobs:
   deploy_release:
     name: Deploy Release
     runs-on: ubuntu-latest
-#    if: ${{ github.event_name == 'release' }}
+    if: ${{ github.event_name == 'release' }}
     needs: tests_docs
     defaults:
       run:
@@ -110,11 +110,13 @@ jobs:
           environment-file: environment_dev.yml
           activate-environment: biome
           use-only-tar-bz2: true
-      - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: Test
-        run: |
-          echo $RELEASE_VERSION
-          echo ${{ env.RELEASE_VERSION }}
-#      - name: Build Package 🍟
-#        run: make dist
+      - name: Build Package 🍟
+        run: make dist
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+      - name: Test Installing uploaded package
+        run: pip install --index-url https://test.pypi.org/simple --no-deps biome-text==${GITHUB_REF#refs/*/v}"
