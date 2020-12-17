@@ -38,7 +38,8 @@ jobs:
       - name: Install Biome 🌿
         run: make dev
       - name: Linting 🍩
-        run: make check
+        # TODO: there is an issue with pylint and our CI, for now we only run our precommit hooks
+        run: pre-commit run --all-files
       - name: Run Tests 📈
         run: make test
       - name: Build Docs 📘
@@ -94,15 +95,15 @@ jobs:
           activate-environment: biome
       - name: Build Package 🍟
         run: make dist
-      - name: Publish package to TestPyPI
+      - name: Publish Package to TestPyPI 🥪
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
-      - name: Test Installing uploaded package
+      - name: Test Installing 🍿
         run: pip install --index-url https://test.pypi.org/simple --no-deps biome-text==${GITHUB_REF#refs/*/v}
-      - name: Publish package to PyPI
+      - name: Publish Package to PyPI 🥩
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
