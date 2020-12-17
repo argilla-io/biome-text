@@ -118,4 +118,3 @@ jobs:
           echo $VERSION
       - name: Build Package 🍟
         run: make dist
-      -
