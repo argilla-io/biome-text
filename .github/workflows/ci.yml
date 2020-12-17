@@ -119,4 +119,4 @@ jobs:
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
       - name: Test Installing uploaded package
-        run: pip install --index-url https://test.pypi.org/simple --no-deps biome-text==${GITHUB_REF#refs/*/v}"
+        run: pip install --index-url https://test.pypi.org/simple --no-deps biome-text==${GITHUB_REF#refs/*/v}
