@@ -65,7 +65,7 @@ jobs:
 #    name: Deploy Docs
 #    runs-on: ubuntu-latest
 #    needs: tests_docs
-#    if: ${{ github.event_name != 'pull_request' }}
+#    if: ${{ github.event_name == 'push' }}
 #    # make sure commands run in a bash shell
 #    defaults:
 #      run:
@@ -110,7 +110,12 @@ jobs:
           environment-file: environment_dev.yml
           activate-environment: biome
           use-only-tar-bz2: true
-      - name: list
-        run: conda list
+      - name: test env
+        env:
+          VERSION: $GITHUB_REF
+        run: |
+          echo $GITHUB_REF
+          echo $VERSION
       - name: Build Package 🍟
         run: make dist
+      -
