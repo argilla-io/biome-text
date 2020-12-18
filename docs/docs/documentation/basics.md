@@ -5,16 +5,14 @@ The library is built around a few simple concepts. This section explains everyth
 
 Before going into details, let's see a simple example:
 ``` python
-from biome.text import Pipeline, VocabularyConfiguration
-from biome.text.data import DataSource
+from biome.text import Pipeline, Dataset
 
 pipeline = Pipeline.from_config({
     "name": "my-first-classifier",
     "head": {"type": "TextClassification", "labels": ["positive", "negative"]}
 })
 
-train_ds = DataSource(source='training_data.csv')
-pipeline.create_vocabulary(VocabularyConfiguration(sources=[train_ds]))
+train_ds = Dataset.from_csv('training_data.csv')
 
 training_results = pipeline.train(
     output="path_to_store_training_run_output",
@@ -22,7 +20,7 @@ training_results = pipeline.train(
 )
 ```
 
-The above example trains a text classifier from scratch by configuring a ``Pipeline``, making a ``Datasource`` from a csv file, and creating a `Vocabulary` with this data. Let's dive into the details.
+The above example trains a text classifier from scratch by configuring a ``Pipeline`` and making a ``Dataset`` from a csv file. Let's dive into the details.
 
 ## Pipeline
 
@@ -32,17 +30,15 @@ Pipelines encompass tokenization, feature processing, model configuration and ac
 
 Let's continue with our example:
 
-``` python{4-7}
-from biome.text import Pipeline, VocabularyConfiguration
-from biome.text.data import DataSource
+``` python{3-6}
+from biome.text import Pipeline, Dataset
 
 pipeline = Pipeline.from_config({
     "name": "my-first-classifier",
     "head": {"type": "TextClassification", "labels": ["positive", "negative"]}
 })
 
-train_ds = DataSource(source='training_data.csv')
-pipeline.create_vocabulary(VocabularyConfiguration(sources=[train_ds]))
+train_ds = Dataset.from_csv('training_data.csv')
 
 training_results = pipeline.train(
     output="path_to_store_training_run_output",
@@ -90,31 +86,30 @@ Task heads are the other key component to support flexible transfer learning. A 
 You can check available heads in the [API documentation](../api/biome/text/modules/heads/).
 
 
-## Datasource
-Data sources provide an easy way to load data for training, evaluation and inference coming from different sources: [csv, parquet, json, or Excel spreadsheets among others](../api/biome/text/data/readers.md#biome-text-data-readers).
+## Dataset
+The `Dataset` class provides an easy way to load data for training, evaluation and inference coming from different sources: [csv, json or from pandas DataFrames among others](../api/biome/text/dataset.md#dataset).
 
-Data sources map data into a lazy [Dask DataFrame](https://docs.dask.org/en/latest/dataframe.html), so you can easily inspect them and manipulate them using familiar Pandas DataFrame operations.
+It is a very thin wrapper around HuggingFace's awesome [datasets.Dataset](https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset).
+Most of HuggingFace's `Dataset` API is exposed, and you can check out their nice [documentation](https://huggingface.co/docs/datasets/master/processing.html) on how to work with data in a `Dataset`.
 
 Coming back to our example:
 
-``` python{9}
-from biome.text import Pipeline, VocabularyConfiguration
-from biome.text.data import DataSource
+``` python{8}
+from biome.text import Pipeline, VocabularyConfiguration, Dataset
 
 pipeline = Pipeline.from_config({
     "name": "my-first-classifier",
     "head": {"type": "TextClassification", "labels": ["positive", "negative"]}
 })
 
-train_ds = DataSource(source='training_data.csv')
-pipeline.create_vocabulary(VocabularyConfiguration(sources=[train_ds]))
+train_ds = Dataset.from_csv('training_data.csv')
 
 training_results = pipeline.train(
     output="path_to_store_training_run_output",
     training=train_ds
 )
 ```
-Here we instantiate a ``DataSource`` from a csv file that looks like this:
+Here we instantiate a ``Dataset`` from a csv file that looks like this:
 
 | text        | label           |
 | ------------- |:-------------:|
@@ -122,9 +117,8 @@ Here we instantiate a ``DataSource`` from a csv file that looks like this:
 | Phil the Alien is one of those quirky films where the humour is based around the oddness of ...     | negative      |
 | ... | positive      |
 
-Data sources can also be created from [YAML configuration files](../api/biome/text/data/datasource.md#from-yaml), which might be handy for automating training and evaluation pipelines.
-
-Columns in data sources are intimately related to what the pipeline expects as input and output features. In our example, we are defining a text classification model which expects a ``text`` and a ``label`` column. In cases where users don't have the option to align the columns of the data with the features of the model, the ``DataSource`` class provides a `mapping` parameter. Imagine our data set looked like this:
+Columns in data sets are intimately related to what the pipeline expects as input and output features. In our example, we are defining a text classification model which expects a ``text`` and a ``label`` column.
+In cases where users don't have the option to align the columns of the data with the features of the model, the ``Dataset`` class provides a `rename_column_()` and a `map()` method. Imagine our data set looked like this:
 
 | title     | review        | label         |
 |-----------| ------------- |:-------------:|
@@ -132,26 +126,18 @@ Columns in data sources are intimately related to what the pipeline expects as i
 |          Horrible horror movie | Phil the Alien is one of those quirky films where the humour is based around the oddness of ...     | negative      |
 |           | ...            | positive      |
 
-Using the ``mapping`` functionality we could not only work with this data set schema by setting a mapping:
+Using the ``rename_column_()`` method we could not only work with this data set schema by renaming one column:
 
-```python{3}
-train_ds = DataSource(
-    source='training_data.csv',
-    mapping={'text': 'review'}
-)
+```python
+train_ds.rename_column_('review', 'text')
 ```
 
-but we could also combine both *title* and *review* to feed them as input features:
+but we could also combine both *title* and *review* to feed them as input features using the `map()` method:
 
-```python{3}
-train_ds = DataSource(
-    source='training_data.csv',
-    mapping={'text': ['title', 'review']}
-)
+```python
+train_ds = train_ds.map(lambda row: {"text": row["titile"] + row["review"]})
 ```
 biome.text was created with semi-structured data problems in mind, so it provides specialized models for learning from structured records such as the [RecordClassification](../api/biome/text/modules/heads/classification/record_classification.md#recordclassification) head, which lets you define mappings to arbitrary input fields and combine their vector representations in a hierarchical way (e.g., combining encoders at field and record level)
-
-You can find more info about data sources and mappings in the [API documents](../api/biome/text/datasource.md#datasource).
 
 ## Vocabulary
 For doing NLP with neural networks, your NLP pipeline needs to turn words, subwords and/or characters into numbers. A typical process consists of tokenizing the text, and mapping word (or sub-word) tokens and maybe characters into integers or indexes. This process is often referred to as "indexing".
@@ -160,42 +146,36 @@ In order to support this you need a ``Vocabulary``, which holds a mapping from t
 
 A more classical approach is to build or extend an existing vocabulary from training and validation data sets. For certain use cases, in highly specialized domains, this is sometimes the best way to proceed.
 
-Coming back to our example:
+Biome.text takes care of building your vocabulary automatically if necessary.
+By default, it will build the vocab based on the training data set, but if you want more control over this step you can pass a `VocabularyConfiguration` instance to the `Pipeline.train()` method:
 
-``` python{10}
-from biome.text import Pipeline, VocabularyConfiguration
-from biome.text.data import DataSource
+```python
+from biome.text.configuration import VocabularyConfiguration
 
-pipeline = Pipeline.from_config({
-    "name": "my-first-classifier",
-    "head": {"type": "TextClassification", "labels": ["positive", "negative"]}
-})
-
-train_ds = DataSource(source='training_data.csv')
-pipeline.create_vocabulary(VocabularyConfiguration(sources=[train_ds]))
-
+vocab_config = VocabularyConfiguration(datasets=[train_ds, validation_ds], max_vocab_size=1000)
 training_results = pipeline.train(
     output="path_to_store_training_run_output",
-    training=train_ds
+    training=train_ds,
+    vocab_config=vocab_config,
 )
 ```
-Here we create our vocabulary from scratch using the training data source. AllenNLP provides neat abstractions for dealing with multi-feature vocabularies (e.g., chars, words, etc.) and biome.text builds on top of those abstractions to make it easy to create, reuse and extend vocabularies.
+
+Here we create our vocabulary using the training and validation data set and limit it to 1000 entries.
+AllenNLP provides neat abstractions for dealing with multi-feature vocabularies (e.g., chars, words, etc.) and biome.text builds on top of those abstractions to make it easy to create, reuse and extend vocabularies.
 
 To learn more about how to configure and use the `Vocabulary`, see the [VocabularyConfiguration API docs](../api/biome/text/configuration.md#vocabularyconfiguration)
 
 ## Train
 Once we have everything ready, we can use the Pipeline to train our model using the [Pipeline.train()](../api/biome/text/pipeline.md#pipeline) method. Going back to our example:
-``` python{13}
-from biome.text import Pipeline, VocabularyConfiguration
-from biome.text.data import DataSource
+``` python{10-13}
+from biome.text import Pipeline, VocabularyConfiguration, Dataset
 
 pipeline = Pipeline.from_config({
     "name": "my-first-classifier",
     "head": {"type": "TextClassification", "labels": ["positive", "negative"]}
 })
 
-train_ds = DataSource(source='training_data.csv')
-pipeline.create_vocabulary(VocabularyConfiguration(sources=[train_ds]))
+train_ds = Dataset.from_csv('training_data.csv')
 
 training_results = pipeline.train(
     output="path_to_store_training_run_output",
@@ -206,7 +186,7 @@ Here the training output will be saved in a folder. It will contain the trained 
 
 The most relevant file in this folder will be the ``model.tar.gz`` file, which bundles everything we need to explore, serve or fine-tune the trained model.
 
-In the example, we only provide a ``training_ds`` which is of course not recommended for most use cases, where you need at least a validation set and desirably a test set. We also do not set anything related to the training process, such as optimizer, learning rate, epochs and so on. The library provides basic defaults for this just to get started. When further experimenting, you will probably need to use a trainer, configured with a [TrainerConfiguration](../api/biome/text/configuration.md#trainerconfiguration) object.
+In the example, we only provide a ``train_ds`` which is of course not recommended for most use cases, where you need at least a validation set and desirably a test set. We also do not set anything related to the training process, such as optimizer, learning rate, epochs and so on. The library provides basic defaults for this just to get started. When further experimenting, you will probably need to use a trainer, configured with a [TrainerConfiguration](../api/biome/text/configuration.md#trainerconfiguration) object.
 
 ## Using pre-trained pipelines
 
@@ -244,13 +224,12 @@ pipeline.serve(port=9090)
 ```
 
 ### Explore
-In order to support users with fine-grained error analysis and empower them to improve their models with informed decisions, the [Pipeline.explore()](../api/biome/text/pipeline.md#explore) method launches an UI (inside your notebook if you are using Jupyter).
+In order to support users with fine-grained error analysis and empower them to improve their models with informed decisions, the [biome.text.explore](../api/biome/text/explore.md) methods can launch an UI (inside your notebook if you are using Jupyter).
 
 ```python
-pipeline.explore(
-    train_ds,
-    explain=True
-)
+from biome.text import explore
+
+explore.create(pipeline, train_ds, explain=True)
 ```
 
 This search-based UI can help:
@@ -274,9 +253,6 @@ training_results = pipeline.train(
     training=new_training_ds
 )
 ```
-:::tip Tip
-For further training, you can use the [extend_vocab](../api/biome/text/pipeline.md#pipeline) parameter to extend the vocabulary with the new data sets.
-:::
 
 Another thing you can do is to use this pre-trained pipeline for related task, for example another classifier with different labels but a similar domain:
 ```python{3-6}
