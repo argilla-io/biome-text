@@ -30,13 +30,14 @@ We recommend running [Elasticsearch via docker](https://www.elastic.co/guide/en/
 docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.3.2
 ````
 
-## Development version
+## Master branch
 
-If you want to install the development version (our master branch) you can do so with:
+The *master branch* contains the latest features, but is less well tested.
+If you are looking for a specific feature that has not been released yet, you can install the package from our master branch with:
 
 ````shell script
 pip install -U git+https://github.com/recognai/biome-text.git
 ````
 
-Be aware that the UI components will not work when installing the development version this way.
+Be aware that the UI components will not work when installing the package this way.
 Check out the [Contributing](community/contributing.md#setting-up-for-development) section for a guide on how to build the UI components manually.

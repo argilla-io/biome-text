@@ -106,7 +106,7 @@ class TextClassification(ClassificationHead):
         )
 
         label_id = vocabulary.index_for_label(
-            self.backbone.vocab, prediction.get(self.label_name)
+            self.backbone.vocab, prediction["labels"][0]
         )
         attributions, delta = ig.attribute(
             text_embeddings,

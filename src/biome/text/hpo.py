@@ -33,12 +33,13 @@ class TuneMetricsLogger(BaseTrainLogger):
     @staticmethod
     def _metric_should_be_reported(metric_name: str) -> bool:
         """Determines if a metric should be reported"""
-        # fmt:off
         return (
             not metric_name.startswith("validation__")
             and metric_name.startswith("validation_")
+        ) or (
+            not metric_name.startswith("best_validation__")
+            and metric_name.startswith("best_validation_")
         )
-        # fmt: on
 
     def log_epoch_metrics(self, epoch, metrics):
         # fmt: off
