@@ -5,7 +5,7 @@
 [[toc]]
 
 This section describes the possible options you can specify in
-configuration files for biome text. For now we just point to the
+configuration files for *biome.text*. For now we just point to the
 responsible parts in the code.
 
 # Pipeline configuration
@@ -243,14 +243,6 @@ head:
         - not_duplicate
     pooler:
         type: boe
-```
-
-# Datasources
-
-TODO
-```yaml
-path: ../data/business.cat.10K.csv
-format: csv
 ```
 
 # Training

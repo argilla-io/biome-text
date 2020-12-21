@@ -40,4 +40,4 @@ pip install -U git+https://github.com/recognai/biome-text.git
 ````
 
 Be aware that the UI components will not work when installing the package this way.
-Check out the [Contributing](community/contributing.md#setting-up-for-development) section for a guide on how to build the UI components manually.
+Check out the [developer guides](community/3-developer_guides.md#setting-up-for-development) on how to build the UI components manually.
