@@ -1,15 +1,4 @@
-# Contributing
-
-We are open and very happy to receive contributions to make *biome.text* more useful for you and others.
-
-If you want to start contributing to *biome.text* there are three things you need to do.
-
-1. Create an issue describing the feature you want to work on
-2. Setup for development and do the code changes
-3. Create a pull request describing your changes
-
-## Creating an issue
-You can create a feature request or describe a bug on [Github](https://github.com/recognai/biome-text/issues/new/choose).
+# Developer guides
 
 ## Setting up for development
 To set up your system for *biome.text* development, you first of all have to [fork](https://guides.github.com/activities/forking/)
@@ -94,10 +83,19 @@ If for some reason you want to build them locally, you can do so with:
 make build_docs
 ````
 
-## Submitting a Pull Request
+## Make a release
 
-For example, a new issue, #13, describing an error found in documentation, and labelled as documentation, you will created an new related branch called documentation/#13
+To make a release you simply have to create a new [GitHub release](https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
+The version tags should be `v1.1.0` or for release candidates `v1.1.0rc1`.
+Major and minor releases should always be made against the master branch, bugfix releases against the corresponding minor release tag.
 
-Work on this branch make necessary changes, testing them and then push the new branch and create an new PR.
+After publishing the release, the CI is triggered and if everything goes well the release gets published on PyPi.
+The CI does:
+- run tests & build docs
+- build package
+- upload to testpypi
+- install from testpypi
+- upload to pypi
 
-This new PR will include the text "Closes #13" at the end of the description
+Under the hood the versioning of our package is managed by [`setuptools_scm`](https://github.com/pypa/setuptools_scm),
+that basically works with the git tags in a repo.
