@@ -5,7 +5,7 @@ from warnings import warn_explicit
 import pkg_resources
 
 try:
-    __version__ = pkg_resources.get_distribution(__name__.replace(".", "-")).version
+    __version__ = pkg_resources.get_distribution("biome-text").version
 except pkg_resources.DistributionNotFound:
     # package is not installed
     pass
