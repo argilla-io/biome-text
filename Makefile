@@ -21,10 +21,10 @@ build_ui: ## build the ui pages
 docs: ## serve the documentation for development
 	@cd docs && npm install && npm run dev:site
 
-build_docs: ## build the documentation site
+build_docs: ## build the documentation
 	@cd docs && npm install && npm run build:site
 
-dist: build_ui ## run tests and build a package distribution
+dist: build_ui ## build a package distribution
 	@python setup.py sdist bdist_wheel
 
 
