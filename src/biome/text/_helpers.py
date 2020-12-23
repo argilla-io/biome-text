@@ -234,6 +234,7 @@ class PipelineTrainer:
     def _allennlp_configuration(self) -> Dict[str, Any]:
         """Creates an allennlp configuration for pipeline train experiment configuration"""
         allennlp_config = {
+            # TODO: this does not make much sense, we should save our trainer configuration format!
             "trainer": self._trainer_config.to_allennlp_trainer(),
             "model": {
                 "config": self._pipeline.config.as_dict(),
