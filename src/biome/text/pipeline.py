@@ -281,7 +281,7 @@ class Pipeline:
             The test Dataset (optional)
         vocab_config
             A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
-            If 'default' (str), we will use the default configuration `VocabularyConfiguration(sources=[training])`.
+            If 'default' (str), we will use the default configuration `VocabularyConfiguration(datasets=[training])`.
             If None, we will leave the pipeline's vocabulary untouched.
         loggers
             A list of loggers that execute a callback before the training, after each epoch,
@@ -378,7 +378,7 @@ class Pipeline:
         vocab_config
             A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
             If 'default' (str), we will use the default configuration
-            `VocabularyConfiguration(sources=[training_data])`.
+            `VocabularyConfiguration(datasets=[training_data])`.
             If None, we will leave the pipeline's vocabulary untouched.
         training_data
             The training data in case we need to construct the default config
