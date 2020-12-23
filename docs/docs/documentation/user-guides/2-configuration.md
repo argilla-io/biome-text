@@ -1,253 +1,142 @@
-# Configuration
+# Configurations
+
+This section provides some example configurations for common use cases.
+
+In general, we try to configure all our user exposed elements with `Configuration` classes whose parameters you can look up in the [configuration API](../../api/biome/text/configuration.md).
 
 <h2>Table of contents</h2>
 
 [[toc]]
 
-This section describes the possible options you can specify in
-configuration files for *biome.text*. For now we just point to the
-responsible parts in the code.
+## Pipeline
 
-# Pipeline configuration
+The pipeline is the [main entry point](../basics.md#pipeline) to the library and is therefore highly configurable.
+Its configuration is a composition of many lower-level `Configuration` classes, each one taking care of configuring a specific task in the pipeline.
+For a list of the main pipeline components see the [introduction to the `Pipeline` class](../basics.md#pipeline).
 
-```python
-from biome.text import Pipeline
+Let us have a more detailed look at the pipeline configuration with the help of examples.
 
-pl = Pipeline.from_yaml("path/to/pipeline.yml")
-```
-
-The content of the yaml file is embedded in an `allennlp.common.Params`
-and passed on to
-```python
-from biome.text.configuration import PipelineConfiguration
-class PipelineConfiguration(FromParams):
-    def __init__(
-        self,
-        name: str,
-        features: FeaturesConfiguration,
-        head: TaskHeadSpec,
-        tokenizer: Optional[TokenizerConfiguration] = None,
-        encoder: Optional[Encoder] = None,
-    )
-```
-via the `PipelineConfiguration.from_params()` method. This means the init
-arguments get instantiated (see `allennlp.common.FromParams`).
-
-The `PipelineConfiguration.__init__()` gives us the list of possible
-first level sections in the `pipeline.yml`:
- - name
- - features
- - head
- - tokenizer
- - encoder
-
-## features
-
-This section of the `pipeline.yml` file is passed on to the
-```python
-class biome.text.api_new.configuration.FeaturesConfiguration(FromParams):
-    """Features configuration spec"""
-
-    def __init__(
-        self,
-        words: Optional[Dict[str, Any]] = None,
-        chars: Optional[Dict[str, Any]] = None,
-        **extra_params
-    )
-```
-
-**All** `__init__` arguments are converted to attributes and are passed on to
-`biome.text.featurizer.InputFeaturizer` in the `FeaturesConfiguration.compile()` method.
+### Text classification with word features
 
 ```python
-class InputFeaturizer:
-    __DEFAULT_CONFIG = {"embedding_dim": 8, "lowercase_tokens": True}
-    __INDEXER_KEYNAME = "indexer"
-    __EMBEDDER_KEYNAME = "embedder"
-
-    WORDS = _WordFeaturesSpecs.namespace
-    CHARS = _CharacterFeaturesSpec.namespace
-
-    def __init__(
-        self,
-        words: Optional[Dict[str, Any]] = None,
-        chars: Optional[Dict[str, Any]] = None,
-        **kwargs: Dict[str, Dict[str, Any]]
-    ):
+pipeline_config = {
+    "name": "text_classification",
+    "features": {
+        "word": {
+            "embedding_dim": 300,
+            "lowercase_tokens": True,
+        },
+    },
+    "head": {
+        "type": "TextClassification",
+        "labels": ["positive", "negative"],
+        "pooler": {
+            "type": "gru",
+            "num_layers": 1,
+            "hidden_size": 32,
+            "bidirectional": True,
+        },
+    },
+}
 ```
 
-The `__DEFAULT_CONFIG` is the default configuration for the `words` section.
+The first configuration key should always be the name of your pipeline. Choose something descriptive and short.
 
-### words
+We then tell the pipeline to extract only the [word feature](../../api/biome/text/features.md#wordfeatures) from our input.
+For now biome.text allows you to extract 3 features from your input: `word`, `char` and `transforrmers`.
+You can use only one or combine all three of them.
 
-The `words` section is passed on to: (__TODO__: align names of `words` and `_WordsFeaturesSpec`)
+The type of the head is provided in the `type` key. In this case we will use a [*TextClassification*](../../api/biome/text/modules/heads/classification/text_classification.md) head and provide the labels it should predict in the `labels` key.
+For a list of available `head` types, check out the [NLP tasks](1-nlp-tasks.md) section.
+The `pooler` of our *TextClassification* head must be one of AllenNLP's [`Seq2VecEncoder`](https://docs.allennlp.org/master/api/modules/seq2vec_encoders/seq2vec_encoder/).
+This abstract class encompasses their custom modules and native Pytorch modules, that take as input a sequence of vectors and output a single vector.
+Here we choose the *gru* type whose parameters you can look up in their extensive [documentation](https://docs.allennlp.org/master/api/modules/seq2vec_encoders/pytorch_seq2vec_wrapper/#gruseq2vecencoder).
+
+### RecordPairClassification with char features
+
 ```python
-from biome.text.featurizer import _WordFeaturesSpecs
-class _WordFeaturesSpecs:
-    def __init__(
-        self,
-        embedding_dim: int,
-        lowercase_tokens: bool = False,
-        trainable: bool = True,
-        weights_file: Optional[str] = None,
-        **extra_params
-    ):
+pipeline_config = {
+    "name": "my_record_pair_classifier",
+    "tokenizer": {"text_cleaning": {"rules": ["strip_spaces"]}},
+    "features": {
+        "char": {
+            "embedding_dim": 64,
+            "lowercase_characters": True,
+            "encoder": {
+                "type": "gru",
+                "hidden_size": 128,
+                "num_layers": 1,
+                "bidirectional": True,
+            },
+            "dropout": 0.1,
+        },
+    },
+    "head": {
+        "type": "RecordPairClassification",
+        "labels": ["duplicate", "not_duplicate"],
+        "dropout": 0.1,
+        "field_encoder": {
+            "type": "gru",
+            "bidirectional": False,
+            "hidden_size": 128,
+            "num_layers": 1,
+        },
+        "record_encoder": {
+            "type": "gru",
+            "bidirectional": True,
+            "hidden_size": 64,
+            "num_layers": 1,
+        },
+        "matcher_forward": {
+            "is_forward": True,
+            "num_perspectives": 10,
+            "with_full_match": False,
+        },
+        "matcher_backward": {
+            "is_forward": False,
+            "num_perspectives": 10,
+        },
+        "aggregator": {
+            "type": "gru",
+            "bidirectional": True,
+            "hidden_size": 64,
+            "num_layers": 1,
+        },
+        "classifier_feedforward": {
+            "num_layers": 1,
+            "hidden_dims": [32],
+            "activations": ["relu"],
+            "dropout": [0.1],
+        },
+        "initializer": {
+            "regexes": [
+                ["_output_layer.weight", {"type": "xavier_normal"}],
+                ["_output_layer.bias", {"type": "constant", "val": 0}],
+                [".*linear_layers.*weight", {"type": "xavier_normal"}],
+                [".*linear_layers.*bias", {"type": "constant", "val": 0}],
+                [".*weight_ih.*", {"type": "xavier_normal"}],
+                [".*weight_hh.*", {"type": "orthogonal"}],
+                [".*bias.*", {"type": "constant", "val": 0}],
+                [".*matcher.*match_weights.*", {"type": "kaiming_normal"}],
+            ]
+        },
+    },
+}
 ```
 
-The `extra_params` must follow the AllenNLP format, that is:
-```python
-{"indexer": {...}, "embedder": {...}}
-```
+In this example we show a more complex configuration, mainly due to the chosen [*RecordPairClassification*](../../api/biome/text/modules/heads/classification/record_pair_classification.html#recordpairclassification) head.
 
-### chars
+We will start with the `tokenizer` part, where, apart from tokenization parameters, you can also specify some `text_cleaning` rules that will be applied to the input before the tokenization happens.
 
-The `chars` section is passed on to: (__TODO__: align names of `chars` and `_CharsFeaturesSpec`)
-```python
-class _CharacterFeaturesSpec:
-    def __init__(
-        self,
-        embedding_dim: int,
-        encoder: Dict[str, Any],
-        dropout: int = 0.0,
-        **extra_params
-    ):
+As input feature we choose the [`char` feature](../../api/biome/text/features.md#charfeatures) that uses character embeddings and a `Seq2VecEncoder` to encode the tokens.
+Here we choose a *gru* encoder and apply a little dropout afterwards.
 
-```
+The ...
 
-The `extra_params` must follow the AllenNLP format, that is:
-```python
-{"indexer": {...}, "embedder": {...}}
-```
+### TokenClassification with transformers and char features
 
-### kwargs
+...
 
-These must be provided in the following format:
-```yaml
-name_of_the_feature:
-  indexer:  # this is the value of InputFeaturizer.__INDEXER_KEYNAME
-    ...
-  embedder:  # this is the value of InputFeaturizer.__EMBEDDER_KEYNAME
-    ...
-another_feature:
-  indexer:
-    ...
-  embedder:
-    ...
-```
+## Trainer
 
-where the `indexer` and `embedder` options (both names are defined in the attributes
-`InputFeaturizer.__INDEXER_KEYNAME` and `InputFeaturizer.__EMBEDDER_KEYNAME`)
-can be looked up in the
-`allennlp.data.token_indexers` and the
-`allennlp.modules.token_embedders.TokenEmbedder` classes, respectively
-(depending on the specified `type`).
-
-## head
-
-Via the `biome.text.modules.heads.defs.TaskHeadSpec` this section is first passed on to the class:
-```python
-from biome.text.modules.specs import ComponentConfiguration
-class ComponentSpec(Generic[T], FromParams):
-    def __init__(self, **config):
-        self._config = config or {}
-        self._layer_class = self.__resolve_layer_class(self._config.get("type"))
-
-    @classmethod
-    def from_params(cls: Type[T], params: Params, **extras) -> T:
-        return cls(**params.as_dict())
-
-```
-Here it uses the `type` key of the section to figure out, which of the Child or Grandchild classes of
-`biome.text.modules.heads.defs.TaskHead` to pass on the rest of the section.
-The `type` value has to be the name of the corresponding Child/Grandchild class of `TaskHead`
-and the class has to be _registered_.
-The registering is done in the `biome.text.modules.heads.__init__.py`.
-
-Side note: The Child/Grandchild class has a `model` argument in its `__init__` that you do not have to specify
-in the `head` section of the your yaml config.
-
-The arguments for the TaskHead Child/Grandchild class are usually basic python types or AllenNLP classes.
-The instantiation of these classes follow _almost_ the standard AllenNLP way: the `type` option specifies the Child class
-and the rest of the options are passed on to its init signature, except the "input dimension".
-In `biome.text.modules.specs.defs._find_input_attribute` we try to figure out the argument name for
-the input dimension and add it on the fly.
-
-## tokenizer
-
-This section is used to init a
-```python
-from biome.text.configuration import TokenizerConfiguration
-class TokenizerConfiguration(FromParams):
-    def __init__(
-        self,
-        lang: str = "en",
-        skip_empty_tokens: bool = False,
-        max_sequence_length: int = None,
-        max_nr_of_sentences: int = None,
-        text_cleaning: Optional[Dict[str, Any]] = None,
-        segment_sentences: Union[bool, Dict[str, Any]] = False,
-```
-
-The arguments are transformed to
-When calling `TokenizerConfiguration.compile` the arguments of the init are embedded in an `allennlp.common.Params`
-and passed on to the `biome.text.tokenizer.Tokenizer`.
-
-The `text_cleaning` section is passed on to the
-`biome.text.text_cleaning.DefaultTextCleaning` class.
-Its `rules` argument can be a list containing the names of the `TextCleaningRule`s in
-`biome.text.text_cleaning.py`.
-
-## encoder
-
-This is passed on to a `biome.text.modules.encoders.__init__.Encoder`, which is a
-`biome.text.modules.specs.allennlp_specs.Seq2SeqEncoderSpec`.
-
-The options for this section follow _almost_ the standard AllenNLP way for a
-`allennlp.modules.seq2seq_encoders.seq2seq_encoder.Seq2SeqEncoder`: the `type` option specifies the Child class
-and the rest of the options are passed on to its init signature, except the "input dimension".
-In `biome.text.modules.specs.defs._find_input_attribute` we try to figure out the argument name for
-the input dimension and add it on the fly.
-
-
-## Example
-
-This would be an example of a `pipeline.yml`
-```yaml
-tokenizer:
-    text_cleaning:
-        rules:
-            - strip_spaces
-
-features:
-    words:
-        embedding_dim: 100
-        lowercase_tokens: true
-    chars:
-        embedding_dim: 8
-        encoder:
-            type: cnn
-            num_filters: 50
-            ngram_filter_sizes: [ 4 ]
-        dropout: 0.2
-
-encoder:
-    hidden_size: 10
-    num_layers: 2
-    dropout: 0.5
-    type: rnn
-
-head:
-    type: TextClassification
-    labels:
-        - duplicate
-        - not_duplicate
-    pooler:
-        type: boe
-```
-
-# Training
-
-TODO
-```yaml
-
-```
+## Vocabulary
