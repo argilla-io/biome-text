@@ -135,8 +135,25 @@ The ...
 
 ### TokenClassification with transformers and char features
 
-...
+```python
+
+```
+
+Here we combine two input features and ...
 
 ## Trainer
 
+The training in *biome.text* is configured via the [`TrainerConfiguration`](../../api/biome/text/configuration.md#trainerconfiguration) class.
+It is directly consumed by the `Pipeline.train` method
+
+### AdamW optimizer with linear warm-up and decay
+
+...
+
 ## Vocabulary
+
+By default, the vocabulary creation is
+
+### Limit vocab to pretrained word vectors
+
+...
