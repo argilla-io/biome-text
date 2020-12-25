@@ -206,7 +206,7 @@ class TransformersFeatures(Features):
         self.trainable = trainable
         self.max_length = max_length
         self.last_layer_only = last_layer_only
-        self.mismatched = False
+        self.mismatched = True
 
     @property
     def config(self) -> Dict:

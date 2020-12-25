@@ -225,7 +225,7 @@ class TokenizerConfiguration(FromParams):
     use_transformers
         If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above.
         If you specify any of the above parameters you want to set this to false.
-        If None, we automatically choose a sensible value based on your feature and head configuration.
+        If None, we automatically choose the right value based on your feature and head configuration.
     transformers_kwargs
         This dict is passed on to AllenNLP's `PretrainedTransformerTokenizer`.
         If no `model_name` key is provided, we will infer one from the features configuration.
@@ -256,7 +256,7 @@ class TokenizerConfiguration(FromParams):
         self.use_spacy_tokens = use_spacy_tokens
         self.remove_space_tokens = remove_space_tokens
         self.use_transformers = use_transformers
-        self.transformers_kwargs = transformers_kwargs
+        self.transformers_kwargs = transformers_kwargs or {}
 
     def __eq__(self, other):
         return all(a == b for a, b in zip(vars(self), vars(other)))
