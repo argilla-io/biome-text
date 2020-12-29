@@ -791,6 +791,6 @@ class Pipeline:
             Specifies the sources of the vocabulary and how to extract it
         """
         raise DeprecationWarning(
-            "The vocabulary is now created automatically and this method will be removed in a coming release. "
+            "The vocabulary is now created automatically and this method will be removed in the future. "
             "You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default."
         )
