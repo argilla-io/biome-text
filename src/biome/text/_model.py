@@ -49,14 +49,13 @@ class _HashDict(dict):
     """
 
     def __hash__(self):
-        # user a better way
         return pickle.dumps(self).__hash__()
 
 
 class _HashList(list):
     """
     Hashable list implementation.
-    BE AWARE! Since dicts are mutable, the hash can change!
+    BE AWARE! Since lists are mutable, the hash can change!
     """
 
     def __hash__(self):
@@ -518,13 +517,4 @@ class PipelineModel(allennlp.models.Model):
         return inputs
 
 
-def __register(impl_class, overrides: bool = False):
-    """Register the impl. class in allennlp components registry"""
-
-    allennlp.models.Model.register(impl_class.__name__, exist_ok=overrides)(impl_class)
-    allennlp.data.DatasetReader.register(impl_class.__name__, exist_ok=overrides)(
-        impl_class
-    )
-
-
-__register(PipelineModel, overrides=True)
+allennlp.models.Model.register(PipelineModel.__name__, exist_ok=True)(PipelineModel)

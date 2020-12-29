@@ -27,7 +27,7 @@ See [TextClassification API](../../api/biome/text/modules/heads/classification/t
 
 **Input**: `document`: a list of fields.
 
-**Output**: `label` by default, a probability distribution over labels except if `multilabel` is enabled for multi-label classification problems.
+**Output**: `labels` by default, a probability distribution over labels except if `multilabel` is enabled for multi-label classification problems.
 
 **Main parameters**:
 
@@ -41,8 +41,27 @@ See [TextClassification API](../../api/biome/text/modules/heads/classification/t
 
 See [RecordClassification API](../../api/biome/text/modules/heads/classification/record_classification.md#recordclassification) for more details.
 
-##  TokenClassification
+## RecordPairClassification
 
+**NLP tasks**: Classify the relation between a pair of structured data. For example, do two sets of customer data belong to the same customer or not.
+
+**Input**: `record1`, `record2`. Two dictionaries that should share the same keys, preferably in the same order.
+
+**Output**: `labels`. By default, a probability distribution over labels except if `multilabel` is enabled for multi-label classification problems.
+
+**Main parameters**:
+
+`field_encoder`: A `Seq2VecEncoder` to encode and pool the single dictionary items of both inputs. It takes both, the key and the value, into account.
+
+`record_encoder`: A `Seq2SeqEncoder` to contextualize the encoded dictionary items within its record.
+
+`matcher_forward`: A `BiMPMMatching` layer for the (optionally only forward) record encoder layer.
+
+`aggregator`: A `Seq2VecEncoder` to pool the output of the matching layers.
+
+See the [RecordPairClassification API](../../api/biome/text/modules/heads/classification/record_pair_classification.md) for more details.
+
+##  TokenClassification
 
 **Tutorials**: [Training a sequence tagger for Slot Filling](../tutorials/Training_a_sequence_tagger_for_Slot_Filling.md)
 

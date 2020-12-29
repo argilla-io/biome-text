@@ -9,27 +9,50 @@ from bs4 import BeautifulSoup
 
 
 class TextCleaning(Registrable):
-    """Base class for text cleaning processors"""
+    """Defines rules that can be applied to the text before it gets tokenized.
+
+    Each rule is a simple python function that receives and returns a `str`.
+
+    Parameters
+    ----------
+    rules: `List[str]`
+        A list of registered rule method names to be applied to text inputs
+    """
 
     default_implementation = "default"
 
+    def __init__(self, rules: List[str] = None):
+        self.rules = rules or []
+        for rule in self.rules:
+            if rule not in TextCleaningRule.registered_rules():
+                raise AttributeError(
+                    f"No rule '{rule}' registered"
+                    f"Available rules are [{[k for k in TextCleaningRule.registered_rules().keys()]}]"
+                )
+
     def __call__(self, text: str) -> str:
-        """Apply the text transformation"""
-        raise NotImplementedError
+        for rule in self.rules:
+            text = TextCleaningRule.registered_rules()[rule](text)
+        return text
+
+
+TextCleaning.register(TextCleaning.default_implementation)(TextCleaning)
 
 
 class TextCleaningRule:
-    """Registers a function as a rule for the default text cleaning implementation
+    """Registers a function as a rule for the text cleaning implementation
 
     Use the decorator `@TextCleaningRule` for creating custom text cleaning and pre-processing rules.
 
-    An example function to strip spaces (already included in the default `TextCleaning` processor):
+    An example function to strip spaces would be:
 
     ```python
     @TextCleaningRule
     def strip_spaces(text: str) -> str:
         return text.strip()
     ```
+
+    You can query available rules via `TextCleaningRule.registered_rules()`.
 
     Parameters
     ----------
@@ -51,33 +74,6 @@ class TextCleaningRule:
     def __call__(self, *args, **kwargs) -> str:
         """Enables call single rule"""
         return self.__callable__(*args, **kwargs)
-
-
-@TextCleaning.register(TextCleaning.default_implementation)
-class DefaultTextCleaning(TextCleaning):
-    """Defines rules that can be applied to the text before it gets tokenized.
-
-    Each rule is a simple python function that receives and returns a `str`.
-
-    Parameters
-    ----------
-    rules: `List[str]`
-        A list of registered rule method names to be applied to text inputs
-    """
-
-    def __init__(self, rules: List[str] = None):
-        self.rules = rules or []
-        for rule in self.rules:
-            if rule not in TextCleaningRule.registered_rules():
-                raise AttributeError(
-                    f"No rule '{rule}' registered"
-                    f"Available rules are [{[k for k in TextCleaningRule.registered_rules().keys()]}]"
-                )
-
-    def __call__(self, text: str) -> str:
-        for rule in self.rules:
-            text = TextCleaningRule.registered_rules()[rule](text)
-        return text
 
 
 @TextCleaningRule

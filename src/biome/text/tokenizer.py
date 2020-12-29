@@ -13,7 +13,6 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 
-from biome.text.text_cleaning import DefaultTextCleaning
 from biome.text.text_cleaning import TextCleaning
 
 if TYPE_CHECKING:
@@ -58,7 +57,7 @@ class Tokenizer:
             self.__nlp__.add_pipe(sentencizer)
 
         if config.text_cleaning is None:
-            self.text_cleaning = DefaultTextCleaning()
+            self.text_cleaning = TextCleaning()
         else:
             self.text_cleaning = TextCleaning.from_params(
                 Params(copy.deepcopy(config.text_cleaning))

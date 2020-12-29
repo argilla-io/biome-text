@@ -445,79 +445,64 @@ class PipelineConfiguration(FromParams):
 
 @dataclasses.dataclass
 class TrainerConfiguration:
-    """Creates a `TrainerConfiguration`
+    """Configures the training of a pipeline
 
-    Doc strings mainly provided by
+    It is passed on to the `Pipeline.train` method. Doc strings mainly provided by
     [AllenNLP](https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects)
 
     Attributes
     ----------
-
-    optimizer: `Dict[str, Any]`, default `{"type": "adam"}`
+    optimizer
         [Pytorch optimizers](https://pytorch.org/docs/stable/optim.html)
         that can be constructed via the AllenNLP configuration framework
-
-    validation_metric: `str`, optional (default=-loss)
+    validation_metric
         Validation metric to measure for whether to stop training using patience
         and whether to serialize an is_best model each epoch.
         The metric name must be prepended with either "+" or "-",
         which specifies whether the metric is an increasing or decreasing function.
-
-    patience: `Optional[int]`, optional (default=2)
+    patience
         Number of epochs to be patient before early stopping:
         the training is stopped after `patience` epochs with no improvement.
         If given, it must be > 0. If `None`, early stopping is disabled.
-
-    num_epochs: `int`, optional (default=20)
+    num_epochs
         Number of training epochs
-
-    cuda_device: `int`, optional (default=-1)
+    cuda_device
         An integer specifying the CUDA device to use for this process. If -1, the CPU is used.
-
-    grad_norm: `Optional[float]`, optional
+        By default (None) we will automatically use a CUDA device if one is available.
+    grad_norm
         If provided, gradient norms will be rescaled to have a maximum of this value.
-
-    grad_clipping: `Optional[float]`, optional
+    grad_clipping
         If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
         If you are getting `NaN`s in your gradients during training that are not solved by using grad_norm,
         you may need this.
-
-    learning_rate_scheduler: `Optional[Dict[str, Any]]`, optional
+    learning_rate_scheduler
         If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
         (or batch, if the scheduler implements the step_batch method).
         If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
         to determine if learning has plateaued.
-
-    momentum_scheduler: `Optional[Dict[str, Any]]`, optional
+    momentum_scheduler
         If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
-
-    moving_average: `Optional[Dict[str, Any]]`, optional
+    moving_average
         If provided, we will maintain moving averages for all parameters.
         During training, we employ a shadow variable for each parameter, which maintains the moving average.
         During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
         Be careful that when saving the checkpoint, we will save the moving averages of parameters.
         This is necessary because we want the saved model to perform as well as the validated model if we load it later.
-
-    batch_size: `Optional[int]`, optional (default=16)
+    batch_size
         Size of the batch.
-
-    data_bucketing: `bool`, optional (default=False)
+    data_bucketing
         If enabled, try to apply data bucketing over training batches.
-
     batches_per_epoch
         Determines the number of batches after which a training epoch ends.
         If the number is smaller than the total amount of batches in your training data,
         the second "epoch" will take off where the first "epoch" ended.
         If this is `None`, then an epoch is set to be one full pass through your training data.
         This is useful if you want to evaluate your data more frequently on your validation data set during training.
-
     random_seed
-        Seed for the underlying random number generator.
+        Seed for the underlying random number generators.
         If None, we take the random seeds provided by AllenNLP's `prepare_environment` method.
-
     use_amp
         If `True`, we'll train using [Automatic Mixed Precision](https://pytorch.org/docs/stable/amp.html).
-
     num_serialized_models_to_keep
         Number of previous model checkpoints to retain.  Default is to keep 1 checkpoint.
         A value of None or -1 means all checkpoints will be kept.
@@ -529,7 +514,7 @@ class TrainerConfiguration:
     validation_metric: str = "-loss"
     patience: Optional[int] = 2
     num_epochs: int = 20
-    cuda_device: int = None
+    cuda_device: Optional[int] = None
     grad_norm: Optional[float] = None
     grad_clipping: Optional[float] = None
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
