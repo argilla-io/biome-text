@@ -9,6 +9,7 @@ pytestmark = pytest.mark.skip(
     reason="The pytest-notebook package is not actively maintained and "
     "the tutorial tests are quite heavy on resources. "
     "The idea is to run those tests locally and manually from time to time."
+    "THESE TESTS ARE ALSO OUT OF DATE ... :/"
 )
 
 

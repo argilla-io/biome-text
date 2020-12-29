@@ -45,26 +45,26 @@ class RecordPairClassification(ClassificationHead):
 
     Parameters
     ----------
-    backbone : `ModelBackbone`
+    backbone
         Takes care of the embedding and optionally of the language encoding
-    labels : `List[str]`
+    labels
         List of labels
-    field_encoder : `Seq2VecEncoder`
+    field_encoder
         Encodes a data field, contextualized within the field
-    record_encoder : `Seq2SeqEncoder`
+    record_encoder
         Encodes data fields, contextualized within the record
-    matcher_forward : `BiMPMMatching`
+    matcher_forward
         BiMPM matching for the forward output of the record encoder layer
-    matcher_backward : `BiMPMMatching`, optional
+    matcher_backward
         BiMPM matching for the backward output of the record encoder layer
-    aggregator : `Seq2VecEncoder`
+    aggregator
         Aggregator of all BiMPM matching vectors
-    classifier_feedforward : `FeedForward`
+    classifier_feedforward
         Fully connected layers for classification.
         A linear output layer with the number of labels at the end will be added automatically!!!
-    dropout : ``float``, optional (default=0.1)
+    dropout
         Dropout percentage to use.
-    initializer : ``InitializerApplicator``, optional (default=``InitializerApplicator()``)
+    initializer
         If provided, will be used to initialize the model parameters.
     """
 
