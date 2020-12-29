@@ -26,7 +26,9 @@ from .featurizer import InputFeaturizer
 from .helpers import sanitize_for_params
 from .helpers import save_dict_as_yaml
 from .modules.encoders import Encoder
+from .modules.heads.classification.relation_classification import RelationClassification
 from .modules.heads.task_head import TaskHeadConfiguration
+from .modules.heads.token_classification import TokenClassification
 from .tokenizer import Tokenizer
 from .tokenizer import TransformersTokenizer
 
@@ -220,10 +222,13 @@ class TokenizerConfiguration(FromParams):
         A list of token strings to the sequence before tokenized input text.
     end_tokens
         A list of token strings to the sequence after tokenized input text.
+    use_transformers
+        If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above.
+        If you specify any of the above parameters you want to set this to false.
+        If None, we automatically choose the right value based on your feature and head configuration.
     transformers_kwargs
-        If specified, we will use a pretrained transformers tokenizer and disregard all other parameters above.
-        This dict will be passed directly on to allenNLP's `PretrainedTransformerTokenizer` and should at least include
-        a `model_name` key.
+        This dict is passed on to AllenNLP's `PretrainedTransformerTokenizer`.
+        If no `model_name` key is provided, we will infer one from the features configuration.
     """
 
     # note: It's important that it inherits from FromParas so that `Pipeline.from_pretrained()` works!
@@ -238,6 +243,7 @@ class TokenizerConfiguration(FromParams):
         remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
+        use_transformers: Optional[bool] = None,
         transformers_kwargs: Optional[Dict] = None,
     ):
         self.lang = lang
@@ -249,7 +255,8 @@ class TokenizerConfiguration(FromParams):
         self.end_tokens = end_tokens
         self.use_spacy_tokens = use_spacy_tokens
         self.remove_space_tokens = remove_space_tokens
-        self.transformers_kwargs = transformers_kwargs
+        self.use_transformers = use_transformers
+        self.transformers_kwargs = transformers_kwargs or {}
 
     def __eq__(self, other):
         return all(a == b for a, b in zip(vars(self), vars(other)))
@@ -273,12 +280,14 @@ class PipelineConfiguration(FromParams):
     """
 
     __LOGGER = logging.getLogger(__name__)
+    # To be able to skip the configuration checks when testing
+    _SKIP_CHECKS = False
 
     def __init__(
         self,
         name: str,
         head: TaskHeadConfiguration,
-        features: FeaturesConfiguration = None,
+        features: Optional[FeaturesConfiguration] = None,
         tokenizer: Optional[TokenizerConfiguration] = None,
         encoder: Optional[Encoder] = None,
     ):
@@ -287,46 +296,58 @@ class PipelineConfiguration(FromParams):
         self.name = name
         self.head = head
         self.features = features or FeaturesConfiguration()
-        self.tokenizer_config = tokenizer or self._get_default_tokenizer()
+        self.tokenizer_config = tokenizer or TokenizerConfiguration()
 
-        # make sure we use the right tokenizer/indexer/embedder for the transformers feature
-        if self.tokenizer_config.transformers_kwargs:
-            self.features.transformers.is_mismatched = False
+        # figure out if we need a transformers tokenizer
+        if self.tokenizer_config.use_transformers is None:
+            self._use_transformers_tokenizer_if_sensible()
+
+        # make sure we use the right indexer/embedder for the transformers feature
+        if self.tokenizer_config.use_transformers:
+            self.features.transformers.mismatched = False
             if self.tokenizer_config.transformers_kwargs.get("model_name") is None:
                 self.tokenizer_config.transformers_kwargs[
                     "model_name"
                 ] = self.features.transformers.model_name
 
-        self._check_for_incompatible_configurations()
+        if not self._SKIP_CHECKS:
+            self._check_for_incompatible_configurations()
 
         self.encoder = encoder
 
-    def _get_default_tokenizer(self):
+    def _use_transformers_tokenizer_if_sensible(self):
         if (
+            # Only use word pieces if no word-based feature was chosen
             self.features.transformers is not None
             and self.features.word is None
             and self.features.char is None
+            # NER tags are usually given per word not per word pieces
+            and TokenClassification.__name__ not in self.head.config["type"]
+            and RelationClassification.__name__ not in self.head.config["type"]
         ):
-            return TokenizerConfiguration(
-                transformers_kwargs={
-                    "model_name": self.features.transformers.model_name
-                },
+            self.tokenizer_config.use_transformers = True
+            self.tokenizer_config.transformers_kwargs = (
+                self.tokenizer_config.transformers_kwargs
+                or {"model_name": self.features.transformers.model_name}
             )
-
-        return TokenizerConfiguration()
+        else:
+            self.tokenizer_config.use_transformers = False
 
     def _check_for_incompatible_configurations(self):
-        if self.tokenizer_config.transformers_kwargs:
+        if self.tokenizer_config.use_transformers:
             if self.features.word is not None or self.features.char is not None:
                 raise ConfigurationError(
                     "You are trying to use word or char features on subwords and possibly special tokens."
                     "This is not recommended!"
                 )
 
-            if "TokenClassification" in self.head.config["type"]:
+            if (
+                TokenClassification.__name__ in self.head.config["type"]
+                or RelationClassification.__name__ in self.head.config["type"]
+            ):
                 raise NotImplementedError(
-                    "You specified a transformers tokenizer, "
-                    "but the 'TokenClassification' head is still not capable of dealing with subword/special tokens."
+                    "You specified a transformers tokenizer, but the 'TokenClassification' and "
+                    "'RelationClassification' heads are still not capable of dealing with subword/special tokens."
                 )
 
             if (
@@ -409,7 +430,7 @@ class PipelineConfiguration(FromParams):
 
     def build_tokenizer(self) -> Tokenizer:
         """Build the pipeline tokenizer"""
-        if self.tokenizer_config.transformers_kwargs is not None:
+        if self.tokenizer_config.use_transformers:
             return TransformersTokenizer(self.tokenizer_config)
         return Tokenizer(self.tokenizer_config)
 

@@ -20,6 +20,7 @@ from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy
 from allennlp.training.metrics import SpanBasedF1Measure
 from spacy.tokens.doc import Doc
+from spacy.vocab import Vocab
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
@@ -287,7 +288,7 @@ class TokenClassification(TaskHead):
             pre_tokenized = not isinstance(raw_text, str)
             if pre_tokenized:
                 # compose spacy doc from tokens
-                doc = Doc(self.backbone.tokenizer.nlp.vocab, words=raw_text)
+                doc = Doc(Vocab(), words=raw_text)
             else:
                 doc = self.backbone.tokenizer.nlp(raw_text)
 
