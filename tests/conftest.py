@@ -25,3 +25,16 @@ def resources_data_path(resources_path) -> Path:
 def tutorials_path() -> Path:
     repo_root = Path(__file__).parent.parent
     return repo_root / "docs" / "docs" / "documentation" / "tutorials"
+
+
+@pytest.fixture
+def configurations_path() -> Path:
+    repo_root = Path(__file__).parent.parent
+    return (
+        repo_root
+        / "docs"
+        / "docs"
+        / "documentation"
+        / "user-guides"
+        / "2-configuration.md"
+    )
