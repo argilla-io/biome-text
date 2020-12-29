@@ -170,9 +170,7 @@ def test_pipeline_config(pipeline_yaml):
 
 def test_invalid_tokenizer_features_combination(transformers_pipeline_config):
     transformers_pipeline_config["features"].update({"word": {"embedding_dim": 2}})
-    transformers_pipeline_config["tokenizer"] = {
-        "transformers_kwargs": {"model_name": "sshleifer/tiny-distilroberta-base"}
-    }
+    transformers_pipeline_config["tokenizer"] = {"use_transformers": True}
 
     with pytest.raises(ConfigurationError):
         Pipeline.from_config(transformers_pipeline_config)
@@ -181,6 +179,7 @@ def test_invalid_tokenizer_features_combination(transformers_pipeline_config):
 def test_not_implemented_transformers_with_tokenclassification(
     transformers_pipeline_config,
 ):
+    transformers_pipeline_config["tokenizer"] = {"use_transformers": True}
     transformers_pipeline_config["head"] = {
         "type": "TokenClassification",
         "labels": ["NER"],

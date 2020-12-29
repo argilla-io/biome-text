@@ -185,6 +185,12 @@ class TransformersFeatures(Features):
         When `True`, only the final layer of the pretrained transformer is taken
         for the embeddings. But if set to `False`, a scalar mix of all of the layers
         is used.
+
+    Attributes
+    ----------
+    mismatched: bool (default: True)
+        If true, we will sum up the word-piece vectors in a word to pull out a single vector for each word.
+        If you use a transformers tokenizer, this is automatically set to False by the `PipelineConfiguration`.
     """
 
     namespace = "transformers"
@@ -199,8 +205,8 @@ class TransformersFeatures(Features):
         self.model_name = model_name
         self.trainable = trainable
         self.max_length = max_length
-        self.is_mismatched = True
         self.last_layer_only = last_layer_only
+        self.mismatched = True
 
     @property
     def config(self) -> Dict:
@@ -208,7 +214,7 @@ class TransformersFeatures(Features):
         config = {
             "indexer": {
                 "type": "pretrained_transformer_mismatched"
-                if self.is_mismatched
+                if self.mismatched
                 else "pretrained_transformer",
                 "model_name": self.model_name,
                 "namespace": self.namespace,
@@ -216,7 +222,7 @@ class TransformersFeatures(Features):
             },
             "embedder": {
                 "type": "pretrained_transformer_mismatched"
-                if self.is_mismatched
+                if self.mismatched
                 else "pretrained_transformer",
                 "model_name": self.model_name,
                 "train_parameters": self.trainable,
