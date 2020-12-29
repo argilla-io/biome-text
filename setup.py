@@ -44,7 +44,7 @@ if __name__ == "__main__":
         packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=1.2.0",
+            "allennlp~=1.3.0",
             "spacy~=2.3.0",
             "gevent~=20.9.0",
             "flask~=1.1.2",
