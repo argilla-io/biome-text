@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>biome.text.configuration | biome.text</title>
+    <meta name="generator" content="VuePress 1.6.0">
+    <link rel="shortcut icon" href="/biome-text/versions/2.0/favicon.ico">
+    <meta name="description" content="biome.text practical NLP open source library.">
+    <meta property="og:image" content="https://www.recogn.ai/images/biome_og.png">
+    <link rel="preload" href="/biome-text/versions/2.0/assets/css/0.styles.5dac2a4b.css" as="style"><link rel="preload" href="/biome-text/versions/2.0/assets/js/app.707817ee.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/4.1227992f.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/3.a4a13da4.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/23.0ba5f8f9.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/6.03ef7e04.js" as="script"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/10.7aed0923.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/11.3ec46b16.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/12.000cab88.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/13.537c2488.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/14.7c50bf59.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/15.3633c24f.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/16.a5240142.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/17.cdc8b1ed.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/18.e7ed21ae.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/19.755560f4.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/20.dc9e4179.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/21.13953f45.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/22.398d9aea.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/24.8302979a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/25.62260021.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/26.1215243a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/27.a328dd09.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/28.44f48765.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/29.561b18b3.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/30.641d6ef2.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/31.610dfd13.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/32.6070b73c.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/33.7ec5ed8e.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/34.442a8f35.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/35.f9efafea.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/36.35305860.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/37.c5fae4c1.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/38.078a0131.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/39.c4b4ac8f.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/40.68473de8.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/41.3f3dcd70.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/42.d37a90f2.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/43.bad8b957.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/44.d10efd41.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/45.0fb9dc60.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/46.d4c8d518.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/47.79f813fd.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/48.9180d8f5.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/49.a945947a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/5.f2628e7d.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/50.4613a40a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/51.f2e195a3.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/52.35a14214.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/53.e98bdda2.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/54.7c88b851.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/55.b3bfbe17.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/56.9ab02f82.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/57.b2fb0037.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/58.e432e878.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/59.3b428d6a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/60.9945ab02.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/61.0d5e9b70.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/62.86e6c71e.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/63.455a42d6.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/64.1b5b2fab.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/65.5a0fe577.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/66.eb22ff31.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/67.38c7d44a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/68.dac61031.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/69.f611c402.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/7.cc9bbc5b.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/70.a67f751a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/71.d1d5aca8.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/8.0a97cf5d.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/9.beff5fc4.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/vendors~docsearch.eec9cc92.js">
+    <link rel="stylesheet" href="/biome-text/versions/2.0/assets/css/0.styles.5dac2a4b.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container" data-v-348088ed><header class="navbar" data-v-348088ed><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/biome-text/versions/2.0/" class="home-link router-link-active"><!----> <span class="site-name">biome<span>.text</span></span></a> <div class="links"><form id="search-form" role="search" class="algolia-search-wrapper search-box"><input id="algolia-search-input" class="search-query"></form> <nav class="nav-links can-hide"><div class="nav-item"><a href="/biome-text/versions/2.0/api/" class="nav-link router-link-active">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/versions/2.0/documentation/" class="nav-link">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav></div></header> <div class="sidebar-mask" data-v-348088ed></div> <aside class="sidebar" data-v-348088ed><div class="sidebar__link"><a href="/biome-text/versions/2.0/"><img src="/biome-text/versions/2.0/assets/img/biome.svg" class="sidebar__img"></a></div> <nav class="nav-links"><div class="nav-item"><a href="/biome-text/versions/2.0/api/" class="nav-link router-link-active">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/versions/2.0/documentation/" class="nav-link">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>API</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/versions/2.0/api/biome/text/backbone.html" class="sidebar-link">biome.text.backbone</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/cli/cli.html" class="sidebar-link">biome.text.cli.cli</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/cli/evaluate.html" class="sidebar-link">biome.text.cli.evaluate</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/cli/serve.html" class="sidebar-link">biome.text.cli.serve</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/cli/train.html" class="sidebar-link">biome.text.cli.train</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/commons.html" class="sidebar-link">biome.text.commons</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/configuration.html" aria-current="page" class="active sidebar-link">biome.text.configuration</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/api/biome/text/configuration.html#featuresconfiguration" class="sidebar-link">FeaturesConfiguration</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/api/biome/text/configuration.html#tokenizerconfiguration" class="sidebar-link">TokenizerConfiguration</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/api/biome/text/configuration.html#pipelineconfiguration" class="sidebar-link">PipelineConfiguration</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/api/biome/text/configuration.html#trainerconfiguration" class="sidebar-link">TrainerConfiguration</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/api/biome/text/configuration.html#vocabularyconfiguration" class="sidebar-link">VocabularyConfiguration</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/api/biome/text/configuration.html#findlrconfiguration" class="sidebar-link">FindLRConfiguration</a></li></ul></li><li><a href="/biome-text/versions/2.0/api/biome/text/constants.html" class="sidebar-link">biome.text.constants</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/dataset.html" class="sidebar-link">biome.text.dataset</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/environment.html" class="sidebar-link">biome.text.environment</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/errors.html" class="sidebar-link">biome.text.errors</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/explore.html" class="sidebar-link">biome.text.explore</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/features.html" class="sidebar-link">biome.text.features</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/featurizer.html" class="sidebar-link">biome.text.featurizer</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/helpers.html" class="sidebar-link">biome.text.helpers</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/hpo.html" class="sidebar-link">biome.text.hpo</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/loggers.html" class="sidebar-link">biome.text.loggers</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/metrics.html" class="sidebar-link">biome.text.metrics</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/configuration/allennlp_configuration.html" class="sidebar-link">biome.text.modules.configuration.allennlp_configuration</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/configuration/defs.html" class="sidebar-link">biome.text.modules.configuration.defs</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/encoders/time_distributed_encoder.html" class="sidebar-link">biome.text.modules.encoders.timedistributedencoder</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/classification/classification.html" class="sidebar-link">biome.text.modules.heads.classification.classification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/classification/doc_classification.html" class="sidebar-link">biome.text.modules.heads.classification.doc_classification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/classification/record_classification.html" class="sidebar-link">biome.text.modules.heads.classification.record_classification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/classification/record_pair_classification.html" class="sidebar-link">biome.text.modules.heads.classification.recordpairclassification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/classification/relation_classification.html" class="sidebar-link">biome.text.modules.heads.classification.relation_classification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/classification/text_classification.html" class="sidebar-link">biome.text.modules.heads.classification.text_classification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/language_modelling.html" class="sidebar-link">biome.text.modules.heads.language_modelling</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/task_head.html" class="sidebar-link">biome.text.modules.heads.task_head</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/modules/heads/token_classification.html" class="sidebar-link">biome.text.modules.heads.token_classification</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/pipeline.html" class="sidebar-link">biome.text.pipeline</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/text_cleaning.html" class="sidebar-link">biome.text.text_cleaning</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/tokenizer.html" class="sidebar-link">biome.text.tokenizer</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/training_results.html" class="sidebar-link">biome.text.training_results</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/ui/app.html" class="sidebar-link">biome.text.ui.app</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/ui/ui.html" class="sidebar-link">biome.text.ui.ui</a></li><li><a href="/biome-text/versions/2.0/api/biome/text/vocabulary.html" class="sidebar-link">biome.text.vocabulary</a></li></ul></section></li></ul> </aside> <main class="page" data-v-348088ed> <div class="theme-default-content content__default"><h1 id="biome-text-configuration"><a href="#biome-text-configuration" class="header-anchor">#</a> biome.text.configuration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Module</span></h1> <div></div> <div></div> <pre class="title"><h2 id="featuresconfiguration"><a href="#featuresconfiguration" class="header-anchor">#</a> FeaturesConfiguration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">FeaturesConfiguration</span> (
+    <span>word: Union[<a title="biome.text.features.WordFeatures" href="features.html#biome.text.features.WordFeatures">WordFeatures</a>, NoneType] = None</span><span>,</span>
+    <span>char: Union[<a title="biome.text.features.CharFeatures" href="features.html#biome.text.features.CharFeatures">CharFeatures</a>, NoneType] = None</span><span>,</span>
+    <span>transformers: Union[<a title="biome.text.features.TransformersFeatures" href="features.html#biome.text.features.TransformersFeatures">TransformersFeatures</a>, NoneType] = None</span><span>,</span>
+<span>)</span>
+</code>
+</pre> <p>Configures the input features of the <code>Pipeline</code></p> <p>Use this for defining the features to be used by the model, namely word and character embeddings.</p> <p>:::tip
+If you do not pass in either of the parameters (<code>word</code> or <code>char</code>),
+your pipeline will be setup with a default word feature (embedding_dim=50).
+:::</p> <p>Example:</p> <pre><code class="language-python">word = WordFeatures(embedding_dim=100)
+char = CharFeatures(embedding_dim=16, encoder={'type': 'gru'})
+config = FeaturesConfiguration(word, char)
+</code></pre> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>word</code></strong></dt> <dd>The word feature configurations, see <code><a title="biome.text.features.WordFeatures" href="features.html#biome.text.features.WordFeatures">WordFeatures</a></code></dd> <dt><strong><code>char</code></strong></dt> <dd>The character feature configurations, see <code><a title="biome.text.features.CharFeatures" href="features.html#biome.text.features.CharFeatures">CharFeatures</a></code></dd> <dt><strong><code>transformers</code></strong></dt> <dd>The transformers feature configuration, see <code><a title="biome.text.features.TransformersFeatures" href="features.html#biome.text.features.TransformersFeatures">TransformersFeatures</a></code>
+A word-level representation of the <a href="https://huggingface.co/models">transformer</a> models using AllenNLP's</dd></dl> <pre class="title"><h3 id="ancestors"><a href="#ancestors" class="header-anchor">#</a> Ancestors</h3>
+</pre> <ul class="hlist"><li>allennlp.common.from_params.FromParams</li></ul> <dl><pre class="title"><h3 id="from-params"><a href="#from-params" class="header-anchor">#</a> from_params <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_params</span> (
+  params: allennlp.common.params.Params,
+  **extras,
+)  -&gt; <a title="biome.text.configuration.FeaturesConfiguration" href="#biome.text.configuration.FeaturesConfiguration">FeaturesConfiguration</a>
+</code>
+</pre></div></dt> <dd><p>This is the automatic implementation of <code>from_params</code>. Any class that subclasses
+<code>FromParams</code> (or <code>Registrable</code>, which itself subclasses <code>FromParams</code>) gets this
+implementation for free.
+If you want your class to be instantiated from params in the
+&quot;obvious&quot; way – pop off parameters and hand them to your constructor with the same names –
+this provides that functionality.</p> <p>If you need more complex logic in your from <code>from_params</code> method, you'll have to implement
+your own method that overrides this one.</p> <p>The <code>constructor_to_call</code> and <code>constructor_to_inspect</code> arguments deal with a bit of
+redirection that we do.
+We allow you to register particular <code>@classmethods</code> on a class as
+the constructor to use for a registered name.
+This lets you, e.g., have a single
+<code>Vocabulary</code> class that can be constructed in two different ways, with different names
+registered to each constructor.
+In order to handle this, we need to know not just the class
+we're trying to construct (<code>cls</code>), but also what method we should inspect to find its
+arguments (<code>constructor_to_inspect</code>), and what method to call when we're done constructing
+arguments (<code>constructor_to_call</code>).
+These two methods are the same when you've used a
+<code>@classmethod</code> as your constructor, but they are <code>different</code> when you use the default
+constructor (because you inspect <code>__init__</code>, but call <code>cls()</code>).</p></dd></dl> <pre class="title"><h3 id="instance-variables"><a href="#instance-variables" class="header-anchor">#</a> Instance variables</h3>
+</pre> <dl><dt id="biome.text.configuration.FeaturesConfiguration.configured_namespaces"><code class="name">var <span class="ident">configured_namespaces</span> : List[str]</code></dt> <dd><p>Return the namespaces of the features that are configured</p></dd></dl> <dl><pre class="title"><h3 id="compile-embedder"><a href="#compile-embedder" class="header-anchor">#</a> compile_embedder <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">compile_embedder</span> (
+  self,
+  vocab: allennlp.data.vocabulary.Vocabulary,
+)  -&gt; allennlp.modules.text_field_embedders.text_field_embedder.TextFieldEmbedder
+</code>
+</pre></div></dt> <dd><p>Creates the embedder based on the configured input features</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>vocab</code></strong></dt> <dd>The vocabulary for which to create the embedder</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>embedder</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="compile-featurizer"><a href="#compile-featurizer" class="header-anchor">#</a> compile_featurizer <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">compile_featurizer</span> (
+  self,
+  tokenizer: <a title="biome.text.tokenizer.Tokenizer" href="tokenizer.html#biome.text.tokenizer.Tokenizer">Tokenizer</a>,
+)  -&gt; <a title="biome.text.featurizer.InputFeaturizer" href="featurizer.html#biome.text.featurizer.InputFeaturizer">InputFeaturizer</a>
+</code>
+</pre></div></dt> <dd><p>Creates the featurizer based on the configured input features</p> <p>:::tip
+If you are creating configurations programmatically
+use this method to check that you provided a valid configuration.
+:::</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>tokenizer</code></strong></dt> <dd>Tokenizer used for this featurizer</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>featurizer</code></dt> <dd>The configured <code>InputFeaturizer</code></dd></dl></dd></dl> <div></div> <pre class="title"><h2 id="tokenizerconfiguration"><a href="#tokenizerconfiguration" class="header-anchor">#</a> TokenizerConfiguration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">TokenizerConfiguration</span> (
+    <span>lang: str = 'en'</span><span>,</span>
+    <span>max_sequence_length: int = None</span><span>,</span>
+    <span>max_nr_of_sentences: int = None</span><span>,</span>
+    <span>text_cleaning: Union[Dict[str, Any], NoneType] = None</span><span>,</span>
+    <span>segment_sentences: bool = False</span><span>,</span>
+    <span>use_spacy_tokens: bool = False</span><span>,</span>
+    <span>remove_space_tokens: bool = True</span><span>,</span>
+    <span>start_tokens: Union[List[str], NoneType] = None</span><span>,</span>
+    <span>end_tokens: Union[List[str], NoneType] = None</span><span>,</span>
+    <span>use_transformers: Union[bool, NoneType] = None</span><span>,</span>
+    <span>transformers_kwargs: Union[Dict, NoneType] = None</span><span>,</span>
+<span>)</span>
+</code>
+</pre> <p>Configures the <code>Tokenizer</code></p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>lang</code></strong></dt> <dd>The <a href="https://spacy.io/api/tokenizer">spaCy model used</a> for tokenization is language dependent.
+For optimal performance, specify the language of your input data (default: &quot;en&quot;).</dd> <dt><strong><code>max_sequence_length</code></strong></dt> <dd>Maximum length in characters for input texts truncated with <code>[:max_sequence_length]</code> after <code>TextCleaning</code>.</dd> <dt><strong><code>max_nr_of_sentences</code></strong></dt> <dd>Maximum number of sentences to keep when using <code>segment_sentences</code> truncated with <code>[:max_sequence_length]</code>.</dd> <dt><strong><code>text_cleaning</code></strong></dt> <dd>A <code>TextCleaning</code> configuration with pre-processing rules for cleaning up and transforming raw input text.</dd> <dt><strong><code>segment_sentences</code></strong></dt> <dd>Whether to segment input texts into sentences.</dd> <dt><strong><code>use_spacy_tokens</code></strong></dt> <dd>If True, the tokenized token list contains spacy tokens instead of allennlp tokens</dd> <dt><strong><code>remove_space_tokens</code></strong></dt> <dd>If True, all found space tokens will be removed from the final token list.</dd> <dt><strong><code>start_tokens</code></strong></dt> <dd>A list of token strings to the sequence before tokenized input text.</dd> <dt><strong><code>end_tokens</code></strong></dt> <dd>A list of token strings to the sequence after tokenized input text.</dd> <dt><strong><code>use_transformers</code></strong></dt> <dd>If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above.
+If you specify any of the above parameters you want to set this to false.
+If None, we automatically choose the right value based on your feature and head configuration.</dd> <dt><strong><code>transformers_kwargs</code></strong></dt> <dd>This dict is passed on to AllenNLP's <code>PretrainedTransformerTokenizer</code>.
+If no <code>model_name</code> key is provided, we will infer one from the features configuration.</dd></dl> <pre class="title"><h3 id="ancestors-2"><a href="#ancestors-2" class="header-anchor">#</a> Ancestors</h3>
+</pre> <ul class="hlist"><li>allennlp.common.from_params.FromParams</li></ul> <div></div> <pre class="title"><h2 id="pipelineconfiguration"><a href="#pipelineconfiguration" class="header-anchor">#</a> PipelineConfiguration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">PipelineConfiguration</span> (
+    <span>name: str</span><span>,</span>
+    <span>head: <a title="biome.text.modules.heads.task_head.TaskHeadConfiguration" href="modules/heads/task_head.html#biome.text.modules.heads.task_head.TaskHeadConfiguration">TaskHeadConfiguration</a></span><span>,</span>
+    <span>features: Union[<a title="biome.text.configuration.FeaturesConfiguration" href="#biome.text.configuration.FeaturesConfiguration">FeaturesConfiguration</a>, NoneType] = None</span><span>,</span>
+    <span>tokenizer: Union[<a title="biome.text.configuration.TokenizerConfiguration" href="#biome.text.configuration.TokenizerConfiguration">TokenizerConfiguration</a>, NoneType] = None</span><span>,</span>
+    <span>encoder: Union[<a title="biome.text.modules.configuration.allennlp_configuration.Seq2SeqEncoderConfiguration" href="modules/configuration/allennlp_configuration.html#biome.text.modules.configuration.allennlp_configuration.Seq2SeqEncoderConfiguration">Seq2SeqEncoderConfiguration</a>, NoneType] = None</span><span>,</span>
+<span>)</span>
+</code>
+</pre> <p>Creates a <code>Pipeline</code> configuration</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>name</code></strong></dt> <dd>The <code>name</code> for our pipeline</dd> <dt><strong><code>features</code></strong></dt> <dd>The input <code>features</code> to be used by the model pipeline. We define this using a <code><a title="biome.text.configuration.FeaturesConfiguration" href="#biome.text.configuration.FeaturesConfiguration">FeaturesConfiguration</a></code> object.</dd> <dt><strong><code>head</code></strong></dt> <dd>The <code>head</code> for the task, e.g., a LanguageModelling task, using a <code>TaskHeadConfiguration</code> object.</dd> <dt><strong><code>tokenizer</code></strong></dt> <dd>The <code>tokenizer</code> defined with a <code><a title="biome.text.configuration.TokenizerConfiguration" href="#biome.text.configuration.TokenizerConfiguration">TokenizerConfiguration</a></code> object.</dd> <dt><strong><code>encoder</code></strong></dt> <dd>The core text seq2seq <code>encoder</code> of our model using a <code>Seq2SeqEncoderConfiguration</code></dd></dl> <pre class="title"><h3 id="ancestors-3"><a href="#ancestors-3" class="header-anchor">#</a> Ancestors</h3>
+</pre> <ul class="hlist"><li>allennlp.common.from_params.FromParams</li></ul> <dl><pre class="title"><h3 id="from-yaml"><a href="#from-yaml" class="header-anchor">#</a> from_yaml <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_yaml</span>(<span>path: str) -&gt; <a title="biome.text.configuration.PipelineConfiguration" href="#biome.text.configuration.PipelineConfiguration">PipelineConfiguration</a></span>
+</code>
+</pre></div></dt> <dd><p>Creates a pipeline configuration from a config yaml file</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>path</code></strong></dt> <dd>The path to a YAML configuration file</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>pipeline_configuration</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="from-dict"><a href="#from-dict" class="header-anchor">#</a> from_dict <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_dict</span>(<span>config_dict: dict) -&gt; <a title="biome.text.configuration.PipelineConfiguration" href="#biome.text.configuration.PipelineConfiguration">PipelineConfiguration</a></span>
+</code>
+</pre></div></dt> <dd><p>Creates a pipeline configuration from a config dictionary</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>config_dict</code></strong></dt> <dd>A configuration dictionary</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>pipeline_configuration</code></dt> <dd> </dd></dl></dd></dl> <dl><pre class="title"><h3 id="as-dict"><a href="#as-dict" class="header-anchor">#</a> as_dict <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">as_dict</span>(<span>self) -&gt; Dict[str, Any]</span>
+</code>
+</pre></div></dt> <dd><p>Returns the configuration as dictionary</p> <h2 id="returns">Returns</h2> <dl><dt><code>config</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="to-yaml"><a href="#to-yaml" class="header-anchor">#</a> to_yaml <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">to_yaml</span> (
+  self,
+  path: str,
+) 
+</code>
+</pre></div></dt> <dd><p>Saves the pipeline configuration to a yaml formatted file</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>path</code></strong></dt> <dd>Path to the output file</dd></dl></dd> <pre class="title"><h3 id="build-tokenizer"><a href="#build-tokenizer" class="header-anchor">#</a> build_tokenizer <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">build_tokenizer</span>(<span>self) -&gt; <a title="biome.text.tokenizer.Tokenizer" href="tokenizer.html#biome.text.tokenizer.Tokenizer">Tokenizer</a></span>
+</code>
+</pre></div></dt> <dd><p>Build the pipeline tokenizer</p></dd> <pre class="title"><h3 id="build-featurizer"><a href="#build-featurizer" class="header-anchor">#</a> build_featurizer <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">build_featurizer</span>(<span>self) -&gt; <a title="biome.text.featurizer.InputFeaturizer" href="featurizer.html#biome.text.featurizer.InputFeaturizer">InputFeaturizer</a></span>
+</code>
+</pre></div></dt> <dd><p>Creates the pipeline featurizer</p></dd> <pre class="title"><h3 id="build-embedder"><a href="#build-embedder" class="header-anchor">#</a> build_embedder <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">build_embedder</span> (
+  self,
+  vocab: allennlp.data.vocabulary.Vocabulary,
+) 
+</code>
+</pre></div></dt> <dd><p>Build the pipeline embedder for aiven dictionary</p></dd></dl> <div></div> <pre class="title"><h2 id="trainerconfiguration"><a href="#trainerconfiguration" class="header-anchor">#</a> TrainerConfiguration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">TrainerConfiguration</span> (
+    <span>optimizer: Dict[str, Any] = &lt;factory&gt;</span><span>,</span>
+    <span>validation_metric: str = '-loss'</span><span>,</span>
+    <span>patience: Union[int, NoneType] = 2</span><span>,</span>
+    <span>num_epochs: int = 20</span><span>,</span>
+    <span>cuda_device: Union[int, NoneType] = None</span><span>,</span>
+    <span>grad_norm: Union[float, NoneType] = None</span><span>,</span>
+    <span>grad_clipping: Union[float, NoneType] = None</span><span>,</span>
+    <span>learning_rate_scheduler: Union[Dict[str, Any], NoneType] = None</span><span>,</span>
+    <span>momentum_scheduler: Union[Dict[str, Any], NoneType] = None</span><span>,</span>
+    <span>moving_average: Union[Dict[str, Any], NoneType] = None</span><span>,</span>
+    <span>use_amp: bool = False</span><span>,</span>
+    <span>num_serialized_models_to_keep: int = 1</span><span>,</span>
+    <span>batch_size: Union[int, NoneType] = 16</span><span>,</span>
+    <span>data_bucketing: bool = False</span><span>,</span>
+    <span>batches_per_epoch: Union[int, NoneType] = None</span><span>,</span>
+    <span>random_seed: Union[int, NoneType] = None</span><span>,</span>
+<span>)</span>
+</code>
+</pre> <p>Configures the training of a pipeline</p> <p>It is passed on to the <code>Pipeline.train</code> method. Doc strings mainly provided by
+<a href="https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects">AllenNLP</a></p> <h2 id="attributes">Attributes</h2> <dl><dt><strong><code>optimizer</code></strong></dt> <dd><a href="https://pytorch.org/docs/stable/optim.html">Pytorch optimizers</a>
+that can be constructed via the AllenNLP configuration framework</dd> <dt><strong><code>validation_metric</code></strong></dt> <dd>Validation metric to measure for whether to stop training using patience
+and whether to serialize an is_best model each epoch.
+The metric name must be prepended with either &quot;+&quot; or &quot;-&quot;,
+which specifies whether the metric is an increasing or decreasing function.</dd> <dt><strong><code>patience</code></strong></dt> <dd>Number of epochs to be patient before early stopping:
+the training is stopped after <code>patience</code> epochs with no improvement.
+If given, it must be &gt; 0. If <code>None</code>, early stopping is disabled.</dd> <dt><strong><code>num_epochs</code></strong></dt> <dd>Number of training epochs</dd> <dt><strong><code>cuda_device</code></strong></dt> <dd>An integer specifying the CUDA device to use for this process. If -1, the CPU is used.
+By default (None) we will automatically use a CUDA device if one is available.</dd> <dt><strong><code>grad_norm</code></strong></dt> <dd>If provided, gradient norms will be rescaled to have a maximum of this value.</dd> <dt><strong><code>grad_clipping</code></strong></dt> <dd>If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
+If you are getting <code>NaN</code>s in your gradients during training that are not solved by using grad_norm,
+you may need this.</dd> <dt><strong><code>learning_rate_scheduler</code></strong></dt> <dd>If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
+(or batch, if the scheduler implements the step_batch method).
+If you use <code>torch.optim.lr_scheduler.ReduceLROnPlateau</code>, this will use the <code>validation_metric</code> provided
+to determine if learning has plateaued.</dd> <dt><strong><code>momentum_scheduler</code></strong></dt> <dd>If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.</dd> <dt><strong><code>moving_average</code></strong></dt> <dd>If provided, we will maintain moving averages for all parameters.
+During training, we employ a shadow variable for each parameter, which maintains the moving average.
+During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
+Be careful that when saving the checkpoint, we will save the moving averages of parameters.
+This is necessary because we want the saved model to perform as well as the validated model if we load it later.</dd> <dt><strong><code>batch_size</code></strong></dt> <dd>Size of the batch.</dd> <dt><strong><code>data_bucketing</code></strong></dt> <dd>If enabled, try to apply data bucketing over training batches.</dd> <dt><strong><code>batches_per_epoch</code></strong></dt> <dd>Determines the number of batches after which a training epoch ends.
+If the number is smaller than the total amount of batches in your training data,
+the second &quot;epoch&quot; will take off where the first &quot;epoch&quot; ended.
+If this is <code>None</code>, then an epoch is set to be one full pass through your training data.
+This is useful if you want to evaluate your data more frequently on your validation data set during training.</dd> <dt><strong><code>random_seed</code></strong></dt> <dd>Seed for the underlying random number generators.
+If None, we take the random seeds provided by AllenNLP's <code>prepare_environment</code> method.</dd> <dt><strong><code>use_amp</code></strong></dt> <dd>If <code>True</code>, we'll train using <a href="https://pytorch.org/docs/stable/amp.html">Automatic Mixed Precision</a>.</dd> <dt><strong><code>num_serialized_models_to_keep</code></strong></dt> <dd>Number of previous model checkpoints to retain.
+Default is to keep 1 checkpoint.
+A value of None or -1 means all checkpoints will be kept.</dd></dl> <dl><pre class="title"><h3 id="to-allennlp-trainer"><a href="#to-allennlp-trainer" class="header-anchor">#</a> to_allennlp_trainer <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">to_allennlp_trainer</span>(<span>self) -&gt; Dict[str, Any]</span>
+</code>
+</pre></div></dt> <dd><p>Returns a configuration dict formatted for AllenNLP's trainer</p> <h2 id="returns">Returns</h2> <dl><dt><code>allennlp_trainer_config</code></dt> <dd> </dd></dl></dd></dl> <div></div> <pre class="title"><h2 id="vocabularyconfiguration"><a href="#vocabularyconfiguration" class="header-anchor">#</a> VocabularyConfiguration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">VocabularyConfiguration</span> (
+    <span>datasets: List[<a title="biome.text.dataset.Dataset" href="dataset.html#biome.text.dataset.Dataset">Dataset</a>]</span><span>,</span>
+    <span>min_count: Dict[str, int] = None</span><span>,</span>
+    <span>max_vocab_size: Union[int, Dict[str, int]] = None</span><span>,</span>
+    <span>pretrained_files: Union[Dict[str, str], NoneType] = None</span><span>,</span>
+    <span>only_include_pretrained_words: bool = False</span><span>,</span>
+    <span>tokens_to_add: Dict[str, List[str]] = None</span><span>,</span>
+    <span>min_pretrained_embeddings: Dict[str, int] = None</span><span>,</span>
+<span>)</span>
+</code>
+</pre> <p>Configures a <code>Vocabulary</code> before it gets created from the data</p> <p>Use this to configure a Vocabulary using specific arguments from <code>allennlp.data.Vocabulary</code></p> <p>See <a href="https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary]">AllenNLP Vocabulary docs</a></p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>datasets</code></strong></dt> <dd>List of datasets from which to create the vocabulary</dd> <dt><strong><code>min_count</code></strong></dt> <dd>Minimum number of appearances of a token to be included in the vocabulary.
+The key in the dictionary refers to the namespace of the input feature</dd> <dt><strong><code>max_vocab_size</code></strong></dt> <dd>If you want to cap the number of tokens in your vocabulary, you can do so with this
+parameter.
+If you specify a single integer, every namespace will have its vocabulary fixed
+to be no larger than this.
+If you specify a dictionary, then each namespace in the
+<code>counter</code> can have a separate maximum vocabulary size. Any missing key will have a value
+of <code>None</code>, which means no cap on the vocabulary size.</dd> <dt><strong><code>pretrained_files</code></strong></dt> <dd>If provided, this map specifies the path to optional pretrained embedding files for each
+namespace. This can be used to either restrict the vocabulary to only words which appear
+in this file, or to ensure that any words in this file are included in the vocabulary
+regardless of their count, depending on the value of <code>only_include_pretrained_words</code>.
+Words which appear in the pretrained embedding file but not in the data are NOT included
+in the Vocabulary.</dd> <dt><strong><code>only_include_pretrained_words</code></strong></dt> <dd>Only include tokens present in pretrained_files</dd> <dt><strong><code>tokens_to_add</code></strong></dt> <dd>A list of tokens to add to the corresponding namespace of the vocabulary,
+even if they are not present in the <code>datasets</code></dd> <dt><strong><code>min_pretrained_embeddings</code></strong></dt> <dd>Minimum number of lines to keep from pretrained_files, even for tokens not appearing in the sources.</dd></dl> <dl><pre class="title"><h3 id="build-vocab"><a href="#build-vocab" class="header-anchor">#</a> build_vocab <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">build_vocab</span> (
+  self,
+  pipeline: Pipeline,
+  lazy: bool = False,
+)  -&gt; allennlp.data.vocabulary.Vocabulary
+</code>
+</pre></div></dt> <dd><p>Build the configured vocabulary</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>pipeline</code></strong></dt> <dd>The pipeline used to create the instances from which the vocabulary is built.</dd> <dt><strong><code>lazy</code></strong></dt> <dd>If true, instances are lazily loaded from disk, otherwise they are loaded into memory.</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>vocab</code></dt> <dd> </dd></dl></dd></dl> <div></div> <pre class="title"><h2 id="findlrconfiguration"><a href="#findlrconfiguration" class="header-anchor">#</a> FindLRConfiguration <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">FindLRConfiguration</span> (
+    <span>start_lr: float = 1e-05</span><span>,</span>
+    <span>end_lr: float = 10</span><span>,</span>
+    <span>num_batches: int = 100</span><span>,</span>
+    <span>linear_steps: bool = False</span><span>,</span>
+    <span>stopping_factor: Union[float, NoneType] = None</span><span>,</span>
+<span>)</span>
+</code>
+</pre> <p>A configuration for finding the learning rate via <code>Pipeline.find_lr()</code>.</p> <p>The <code>Pipeline.find_lr()</code> method increases the learning rate from <code>start_lr</code> to <code>end_lr</code> recording the losses.</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>start_lr</code></strong></dt> <dd>The learning rate to start the search.</dd> <dt><strong><code>end_lr</code></strong></dt> <dd>The learning rate upto which search is done.</dd> <dt><strong><code>num_batches</code></strong></dt> <dd>Number of batches to run the learning rate finder.</dd> <dt><strong><code>linear_steps</code></strong></dt> <dd>Increase learning rate linearly if False exponentially.</dd> <dt><strong><code>stopping_factor</code></strong></dt> <dd>Stop the search when the current loss exceeds the best loss recorded by
+multiple of stopping factor. If <code>None</code> search proceeds till the <code>end_lr</code></dd></dl></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="page-nav__button prev"><a href="/biome-text/versions/2.0/api/biome/text/commons.html" class="prev"><span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-left" size="18px"></vp-icon></span> <span class="page-nav__button__text">
+          biome.text.commons
+        </span></a></span> <span class="page-nav__button next"><a href="/biome-text/versions/2.0/api/biome/text/constants.html"><span class="page-nav__button__text">
+          biome.text.constants
+        </span> <span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-right" size="18px"></vp-icon></span></a></span></p></div> <footer class="footer" data-v-348088ed><div data-v-348088ed>
+          Maintained by
+          <a href="https://www.recogn.ai/" target="_blank" data-v-348088ed><img width="70px" src="/biome-text/versions/2.0/assets/img/recognai.png" class="footer__img" data-v-348088ed></a></div></footer> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/biome-text/versions/2.0/assets/js/app.707817ee.js" defer></script><script src="/biome-text/versions/2.0/assets/js/4.1227992f.js" defer></script><script src="/biome-text/versions/2.0/assets/js/3.a4a13da4.js" defer></script><script src="/biome-text/versions/2.0/assets/js/23.0ba5f8f9.js" defer></script><script src="/biome-text/versions/2.0/assets/js/6.03ef7e04.js" defer></script>
+  </body>
+</html>

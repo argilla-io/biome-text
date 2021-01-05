@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Training a short text classifier of German business names | biome.text</title>
+    <meta name="generator" content="VuePress 1.6.0">
+    <link rel="shortcut icon" href="/biome-text/versions/2.0/favicon.ico">
+    <meta name="description" content="biome.text practical NLP open source library.">
+    <meta property="og:image" content="https://www.recogn.ai/images/biome_og.png">
+    <link rel="preload" href="/biome-text/versions/2.0/assets/css/0.styles.5dac2a4b.css" as="style"><link rel="preload" href="/biome-text/versions/2.0/assets/js/app.707817ee.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/4.1227992f.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/3.a4a13da4.js" as="script"><link rel="preload" href="/biome-text/versions/2.0/assets/js/10.7aed0923.js" as="script"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/11.3ec46b16.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/12.000cab88.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/13.537c2488.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/14.7c50bf59.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/15.3633c24f.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/16.a5240142.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/17.cdc8b1ed.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/18.e7ed21ae.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/19.755560f4.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/20.dc9e4179.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/21.13953f45.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/22.398d9aea.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/23.0ba5f8f9.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/24.8302979a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/25.62260021.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/26.1215243a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/27.a328dd09.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/28.44f48765.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/29.561b18b3.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/30.641d6ef2.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/31.610dfd13.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/32.6070b73c.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/33.7ec5ed8e.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/34.442a8f35.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/35.f9efafea.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/36.35305860.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/37.c5fae4c1.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/38.078a0131.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/39.c4b4ac8f.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/40.68473de8.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/41.3f3dcd70.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/42.d37a90f2.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/43.bad8b957.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/44.d10efd41.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/45.0fb9dc60.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/46.d4c8d518.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/47.79f813fd.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/48.9180d8f5.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/49.a945947a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/5.f2628e7d.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/50.4613a40a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/51.f2e195a3.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/52.35a14214.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/53.e98bdda2.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/54.7c88b851.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/55.b3bfbe17.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/56.9ab02f82.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/57.b2fb0037.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/58.e432e878.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/59.3b428d6a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/6.03ef7e04.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/60.9945ab02.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/61.0d5e9b70.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/62.86e6c71e.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/63.455a42d6.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/64.1b5b2fab.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/65.5a0fe577.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/66.eb22ff31.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/67.38c7d44a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/68.dac61031.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/69.f611c402.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/7.cc9bbc5b.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/70.a67f751a.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/71.d1d5aca8.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/8.0a97cf5d.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/9.beff5fc4.js"><link rel="prefetch" href="/biome-text/versions/2.0/assets/js/vendors~docsearch.eec9cc92.js">
+    <link rel="stylesheet" href="/biome-text/versions/2.0/assets/css/0.styles.5dac2a4b.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container" data-v-348088ed><header class="navbar" data-v-348088ed><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/biome-text/versions/2.0/" class="home-link router-link-active"><!----> <span class="site-name">biome<span>.text</span></span></a> <div class="links"><form id="search-form" role="search" class="algolia-search-wrapper search-box"><input id="algolia-search-input" class="search-query"></form> <nav class="nav-links can-hide"><div class="nav-item"><a href="/biome-text/versions/2.0/api/" class="nav-link">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/versions/2.0/documentation/" class="nav-link router-link-active">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav></div></header> <div class="sidebar-mask" data-v-348088ed></div> <aside class="sidebar" data-v-348088ed><div class="sidebar__link"><a href="/biome-text/versions/2.0/"><img src="/biome-text/versions/2.0/assets/img/biome.svg" class="sidebar__img"></a></div> <nav class="nav-links"><div class="nav-item"><a href="/biome-text/versions/2.0/api/" class="nav-link">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/versions/2.0/documentation/" class="nav-link router-link-active">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>Get started</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/versions/2.0/documentation/" aria-current="page" class="sidebar-link">Installation</a></li><li><a href="/biome-text/versions/2.0/documentation/basics.html" class="sidebar-link">The basics</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>Tutorials</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html" aria-current="page" class="active sidebar-link">Training a short text classifier of German business names</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#introduction" class="sidebar-link">Introduction</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#explore-the-training-data" class="sidebar-link">Explore the training data</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#configure-your-biome-text-pipeline" class="sidebar-link">Configure your biome.text Pipeline</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#configure-the-vocabulary" class="sidebar-link">Configure the vocabulary</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#configure-the-trainer" class="sidebar-link">Configure the trainer</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#train-your-model" class="sidebar-link">Train your model</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#make-your-first-predictions" class="sidebar-link">Make your first predictions</a></li><li class="sidebar-sub-header"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html#explore-the-model-s-predictions" class="sidebar-link">Explore the model's predictions</a></li></ul></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier.html" class="sidebar-link">Training a short text classifier of German business names</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/2-Training_a_sequence_tagger_for_Slot_Filling.html" class="sidebar-link">Training a sequence tagger for Slot Filling</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/3-Hyperparameter_optimization_with_Ray_Tune.html" class="sidebar-link">Hyperparameter optimization with Ray Tune</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html" class="sidebar-link">Using Transformers in biome.text</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/4-Using_Transformers_in_biome_text.html" class="sidebar-link">Using Transformers in biome.text</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/Training_a_text_classifier-Copy1.html" class="sidebar-link">Training a short text classifier of German business names</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/Untitled.html" class="sidebar-link">/documentation/tutorials/Untitled.html</a></li><li><a href="/biome-text/versions/2.0/documentation/tutorials/wandb.html" class="sidebar-link">Hyperparameter optimization with Ray Tune</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>User Guides</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/versions/2.0/documentation/user-guides/1-nlp-tasks.html" class="sidebar-link">NLP Tasks</a></li><li><a href="/biome-text/versions/2.0/documentation/user-guides/2-configuration.html" class="sidebar-link">Configurations</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>Community</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/versions/2.0/documentation/community/1-contributing.html" class="sidebar-link">Contributing</a></li><li><a href="/biome-text/versions/2.0/documentation/community/2-get_help.html" class="sidebar-link">Getting help</a></li><li><a href="/biome-text/versions/2.0/documentation/community/3-developer_guides.html" class="sidebar-link">Developer guides</a></li></ul></section></li></ul> </aside> <main class="page" data-v-348088ed> <div class="theme-default-content content__default"><h1 id="training-a-short-text-classifier-of-german-business-names"><a href="#training-a-short-text-classifier-of-german-business-names" class="header-anchor">#</a> Training a short text classifier of German business names</h1> <p><a target="_blank" href="https://www.recogn.ai/biome-text/documentation/tutorials/1-Training_a_text_classifier.html"><img src="https://www.recogn.ai/biome-text/assets/img/biome-isotype.svg" width="24" class="icon"></a> <a href="https://www.recogn.ai/biome-text/documentation/tutorials/1-Training_a_text_classifier.html" target="_blank" rel="noopener noreferrer">View on recogn.ai<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p> <p><a target="_blank" href="https://colab.research.google.com/github/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/1-Training_a_text_classifier.ipynb"><img src="https://www.tensorflow.org/images/colab_logo_32px.png" width="24" class="icon"></a> <a href="https://colab.research.google.com/github/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/1-Training_a_text_classifier.ipynb" target="_blank" rel="noopener noreferrer">Run in Google Colab<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p> <p><a target="_blank" href="https://github.com/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/1-Training_a_text_classifier.ipynb"><img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="24" class="icon"></a> <a href="https://github.com/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/1-Training_a_text_classifier.ipynb" target="_blank" rel="noopener noreferrer">View source on GitHub<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p> <p>When running this tutorial in Google Colab, make sure to install <em>biome.text</em> first:</p> <div class="language-python extra-class"><pre class="language-python"><code>!pip install <span class="token operator">-</span>U pip
+!pip install <span class="token operator">-</span>U git<span class="token operator">+</span>https<span class="token punctuation">:</span><span class="token operator">//</span>github<span class="token punctuation">.</span>com<span class="token operator">/</span>recognai<span class="token operator">/</span>biome<span class="token operator">-</span>text<span class="token punctuation">.</span>git
+exit<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>  <span class="token comment"># Force restart of the runtime</span>
+</code></pre></div><p><em>If</em> you want to log your runs with <a href="https://wandb.ai/home" target="_blank" rel="noopener noreferrer">WandB<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, don't forget to install its client and log in.</p> <div class="language-python extra-class"><pre class="language-python"><code>!pip install wandb
+!wandb login
+</code></pre></div><h2 id="introduction"><a href="#introduction" class="header-anchor">#</a> Introduction</h2> <p>In this tutorial we will train a basic short-text classifier for predicting the sector of a business based only on its business name.
+For this we will use a training data set with business names and business categories in German.</p> <h3 id="imports"><a href="#imports" class="header-anchor">#</a> Imports</h3> <p>Let us first import all the stuff we need for this tutorial:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">from</span> biome<span class="token punctuation">.</span>text <span class="token keyword">import</span> Pipeline<span class="token punctuation">,</span> Dataset
+<span class="token keyword">from</span> biome<span class="token punctuation">.</span>text<span class="token punctuation">.</span>configuration <span class="token keyword">import</span> VocabularyConfiguration<span class="token punctuation">,</span> WordFeatures<span class="token punctuation">,</span> TrainerConfiguration
+<span class="token keyword">from</span> biome<span class="token punctuation">.</span>text <span class="token keyword">import</span> explore
+</code></pre></div><div class="language- extra-class"><pre><code>/home/david/miniconda3/envs/biome/lib/python3.7/site-packages/ray/tune/utils/util.py:7: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+  from collections import defaultdict, deque, Mapping, Sequence
+</code></pre></div><h2 id="explore-the-training-data"><a href="#explore-the-training-data" class="header-anchor">#</a> Explore the training data</h2> <p>Let's take a look at the data we will use for training. For this we will use the <a href="https://www.recogn.ai/biome-text/api/biome/text/dataset.html#dataset" target="_blank" rel="noopener noreferrer"><code>Dataset</code><svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> class that is a very thin wrapper around HuggingFace's awesome <a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset" target="_blank" rel="noopener noreferrer">datasets.Dataset<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.
+We will download the data first to create <code>Dataset</code> instances.</p> <p>Apart from the training data we will also download an optional validation data set to estimate the generalization error.</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token comment"># Downloading the dataset first</span>
+!curl <span class="token operator">-</span>O https<span class="token punctuation">:</span><span class="token operator">//</span>biome<span class="token operator">-</span>tutorials<span class="token operator">-</span>data<span class="token punctuation">.</span>s3<span class="token operator">-</span>eu<span class="token operator">-</span>west<span class="token operator">-</span><span class="token number">1.</span>amazonaws<span class="token punctuation">.</span>com<span class="token operator">/</span>text_classifier<span class="token operator">/</span>business<span class="token punctuation">.</span>cat<span class="token punctuation">.</span>train<span class="token punctuation">.</span>csv
+!curl <span class="token operator">-</span>O https<span class="token punctuation">:</span><span class="token operator">//</span>biome<span class="token operator">-</span>tutorials<span class="token operator">-</span>data<span class="token punctuation">.</span>s3<span class="token operator">-</span>eu<span class="token operator">-</span>west<span class="token operator">-</span><span class="token number">1.</span>amazonaws<span class="token punctuation">.</span>com<span class="token operator">/</span>text_classifier<span class="token operator">/</span>business<span class="token punctuation">.</span>cat<span class="token punctuation">.</span>valid<span class="token punctuation">.</span>csv
+
+<span class="token comment"># Loading from local</span>
+train_ds <span class="token operator">=</span> Dataset<span class="token punctuation">.</span>from_csv<span class="token punctuation">(</span><span class="token string">&quot;business.cat.train.csv&quot;</span><span class="token punctuation">)</span>
+valid_ds <span class="token operator">=</span> Dataset<span class="token punctuation">.</span>from_csv<span class="token punctuation">(</span><span class="token string">&quot;business.cat.valid.csv&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  414k  100  414k    0     0   911k      0 --:--:-- --:--:-- --:--:--  911k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  104k  100  104k    0     0   295k      0 --:--:-- --:--:-- --:--:--  294k
+
+
+Using custom data configuration default
+
+
+Downloading and preparing dataset csv/default-bfb22acbbfc9cab6 (download: Unknown size, generated: Unknown size, post-processed: Unknown size, total: Unknown size) to /home/david/.cache/huggingface/datasets/csv/default-bfb22acbbfc9cab6/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2...
+
+
+
+HBox(children=(FloatProgress(value=1.0, bar_style='info', layout=Layout(width='20px'), max=1.0), HTML(value=''…
+
+
+Dataset csv downloaded and prepared to /home/david/.cache/huggingface/datasets/csv/default-bfb22acbbfc9cab6/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2. Subsequent calls will reuse this data.
+
+
+Using custom data configuration default
+
+
+Downloading and preparing dataset csv/default-9f16b32cd2264665 (download: Unknown size, generated: Unknown size, post-processed: Unknown size, total: Unknown size) to /home/david/.cache/huggingface/datasets/csv/default-9f16b32cd2264665/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2...
+
+
+
+HBox(children=(FloatProgress(value=1.0, bar_style='info', layout=Layout(width='20px'), max=1.0), HTML(value=''…
+
+
+Dataset csv downloaded and prepared to /home/david/.cache/huggingface/datasets/csv/default-9f16b32cd2264665/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2. Subsequent calls will reuse this data.
+</code></pre></div><p>Most of HuggingFace's <code>Dataset</code> API is exposed and you can checkout their nice <a href="https://huggingface.co/docs/datasets/master/processing.html" target="_blank" rel="noopener noreferrer">documentation<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> on how to work with data in a <code>Dataset</code>. For example, let's quickly check the size of our training data and print the first 10 examples as a pandas DataFrame:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token builtin">len</span><span class="token punctuation">(</span>train_ds<span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>8000
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>train_ds<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre></div><div><style scoped="scoped">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&lt;!--beforebegin--&gt;&lt;div class=&quot;language- extra-class&quot;&gt;&lt;!--afterbegin--&gt;&lt;pre&gt;&lt;code&gt;.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;!--beforeend--&gt;&lt;/div&gt;&lt;!--afterend--&gt;</style> <table border="1" class="dataframe"><thead><tr style="text-align:right;"><th></th> <th>label</th> <th>text</th></tr></thead> <tbody><tr><th>0</th> <td>Edv</td> <td>Cse Gmbh Computer Edv-service Bürobedarf</td></tr> <tr><th>1</th> <td>Maler</td> <td>Malerfachbetrieb U. Nee</td></tr> <tr><th>2</th> <td>Gebrauchtwagen</td> <td>Sippl Automobilverkäufer Hausmann</td></tr> <tr><th>3</th> <td>Handelsvermittler Und -vertreter</td> <td>Strenge Handelsagentur Werth</td></tr> <tr><th>4</th> <td>Gebrauchtwagen</td> <td>Dzengel Autohaus Gordemitz Rusch</td></tr> <tr><th>5</th> <td>Apotheken</td> <td>Schinkel-apotheke Bitzer</td></tr> <tr><th>6</th> <td>Tiefbau</td> <td>Franz Möbius Mehrings-bau-hude Und Stigge</td></tr> <tr><th>7</th> <td>Handelsvermittler Und -vertreter</td> <td>Kontze Hdl.vertr. Lau</td></tr> <tr><th>8</th> <td>Autowerkstätten</td> <td>Keßler Kfz-handel</td></tr> <tr><th>9</th> <td>Gebrauchtwagen</td> <td>Diko Lack Und Schrift Betriebsteil Der Autocen...</td></tr></tbody></table></div> <p>As we can see we have two relevant columns <em>label</em> and <em>text</em>. Our classifier will be trained to predict the <em>label</em> given the <em>text</em>.</p> <div class="custom-block tip"><p class="custom-block-title">Tip</p> <p>The <a href="https://www.recogn.ai/biome-text/api/biome/text/modules/heads/task_head.html#taskhead" target="_blank" rel="noopener noreferrer">TaskHead<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> of our model below will expect a <em>text</em> and a <em>label</em> column to be present in the <code>Dataset</code>. In our data set this is already the case, otherwise we would need to change or map the corresponding column names via <code>Dataset.rename_column_()</code> or <code>Dataset.map()</code>.</p></div> <p>We can also quickly check the distribution of our labels. Use <code>Dataset.head(None)</code> to return the complete data set as a pandas DataFrame:</p> <div class="language-python extra-class"><pre class="language-python"><code>train_ds<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token string">&quot;label&quot;</span><span class="token punctuation">]</span><span class="token punctuation">.</span>value_counts<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>Unternehmensberatungen              632
+Friseure                            564
+Tiefbau                             508
+Dienstleistungen                    503
+Gebrauchtwagen                      449
+Elektriker                          430
+Restaurants                         422
+Architekturbüros                    417
+Vereine                             384
+Versicherungsvermittler             358
+Maler                               330
+Sanitärinstallationen               323
+Edv                                 318
+Werbeagenturen                      294
+Apotheken                           289
+Physiotherapie                      286
+Vermittlungen                       277
+Hotels                              274
+Autowerkstätten                     263
+Elektrotechnik                      261
+Allgemeinärzte                      216
+Handelsvermittler Und -vertreter    202
+Name: label, dtype: int64
+</code></pre></div><p>The <code>Dataset</code> class also provides access to Hugging Face's extensive NLP datasets collection via the <code>Dataset.load_dataset()</code> method. Have a look at their <a href="https://huggingface.co/docs/datasets/master/quicktour.html" target="_blank" rel="noopener noreferrer">quicktour<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> for more details about their awesome library.</p> <h2 id="configure-your-biome-text-pipeline"><a href="#configure-your-biome-text-pipeline" class="header-anchor">#</a> Configure your <em>biome.text</em> Pipeline</h2> <p>A typical <a href="https://www.recogn.ai/biome-text/api/biome/text/pipeline.html#pipeline" target="_blank" rel="noopener noreferrer">Pipeline<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> consists of tokenizing the input, extracting features, applying a language encoding (optionally) and executing a task-specific head in the end.</p> <p>After training a pipeline, you can use it to make predictions or explore the underlying model via the explore UI.</p> <p>As a first step we must define a configuration for our pipeline.
+In this tutorial we will create a configuration dictionary and use the <code>Pipeline.from_config()</code> method to create our pipeline, but there are <a href="https://www.recogn.ai/biome-text/api/biome/text/pipeline.html#pipeline" target="_blank" rel="noopener noreferrer">other ways<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p> <p>A <em>biome.text</em> pipeline has the following main components:</p> <div class="language-yaml extra-class"><pre class="language-yaml"><code><span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token comment"># a descriptive name of your pipeline</span>
+
+<span class="token key atrule">tokenizer</span><span class="token punctuation">:</span> <span class="token comment"># how to tokenize the input</span>
+
+<span class="token key atrule">features</span><span class="token punctuation">:</span> <span class="token comment"># input features of the model</span>
+
+<span class="token key atrule">encoder</span><span class="token punctuation">:</span> <span class="token comment"># the language encoder</span>
+
+<span class="token key atrule">head</span><span class="token punctuation">:</span> <span class="token comment"># your task configuration</span>
+
+</code></pre></div><p>See the <a href="https://www.recogn.ai/biome-text/documentation/user-guides/2-configuration.html" target="_blank" rel="noopener noreferrer">Configuration section<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> for a detailed description of how these main components can be configured.</p> <p>Our complete configuration for this tutorial will be following:</p> <div class="language-python extra-class"><pre class="language-python"><code>pipeline_dict <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">&quot;name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;german_business_names&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;tokenizer&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;text_cleaning&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;rules&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">&quot;strip_spaces&quot;</span><span class="token punctuation">]</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;features&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;word&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;embedding_dim&quot;</span><span class="token punctuation">:</span> <span class="token number">64</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;lowercase_tokens&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;char&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;embedding_dim&quot;</span><span class="token punctuation">:</span> <span class="token number">32</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;lowercase_characters&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;encoder&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+                <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;gru&quot;</span><span class="token punctuation">,</span>
+                <span class="token string">&quot;num_layers&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token string">&quot;hidden_size&quot;</span><span class="token punctuation">:</span> <span class="token number">32</span><span class="token punctuation">,</span>
+                <span class="token string">&quot;bidirectional&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;dropout&quot;</span><span class="token punctuation">:</span> <span class="token number">0.1</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;head&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;TextClassification&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;labels&quot;</span><span class="token punctuation">:</span> train_ds<span class="token punctuation">.</span>unique<span class="token punctuation">(</span><span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;pooler&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;gru&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;num_layers&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;hidden_size&quot;</span><span class="token punctuation">:</span> <span class="token number">32</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;bidirectional&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;feedforward&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;num_layers&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;hidden_dims&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">32</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;activations&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">&quot;relu&quot;</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;dropout&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token number">0.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>       
+<span class="token punctuation">}</span>
+</code></pre></div><p>With this dictionary we can now create a <code>Pipeline</code>:</p> <div class="language-python extra-class"><pre class="language-python"><code>pl <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_config<span class="token punctuation">(</span>pipeline_dict<span class="token punctuation">)</span>
+</code></pre></div><h2 id="configure-the-vocabulary"><a href="#configure-the-vocabulary" class="header-anchor">#</a> Configure the vocabulary</h2> <p>The default behavior of <em>biome.text</em> is to add all tokens from the training data set to the pipeline's vocabulary.
+This is done automatically when training the pipeline for the first time.</p> <p>If you want to have more control over this step, you can define a <code>VocabularyConfiguration</code> and pass it to the <code>Pipeline.train()</code> method later on.
+In our business name classifier we only want to include words with a general meaning to our word feature vocabulary (like &quot;Computer&quot; or &quot;Autohaus&quot;, for example), and want to exclude specific names that will not help to generally classify the kind of business.
+This can be achieved by including only the most frequent words in our training set via the <code>min_count</code> argument. For a complete list of available arguments see the <a href="https://www.recogn.ai/biome-text/api/biome/text/configuration.html#vocabularyconfiguration" target="_blank" rel="noopener noreferrer">VocabularyConfiguration API<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p> <div class="language-python extra-class"><pre class="language-python"><code>vocab_config <span class="token operator">=</span> VocabularyConfiguration<span class="token punctuation">(</span>datasets<span class="token operator">=</span><span class="token punctuation">[</span>train_ds<span class="token punctuation">]</span><span class="token punctuation">,</span> min_count<span class="token operator">=</span><span class="token punctuation">{</span>WordFeatures<span class="token punctuation">.</span>namespace<span class="token punctuation">:</span> <span class="token number">20</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+</code></pre></div><h2 id="configure-the-trainer"><a href="#configure-the-trainer" class="header-anchor">#</a> Configure the trainer</h2> <p>As a next step we have to configure the <em>trainer</em>.</p> <p>The default trainer has sensible defaults and should work alright for most of your cases.
+In this tutorial, however, we want to tune a bit the learning rate and limit the training time to three epochs only.
+For a complete list of available arguments see the <a href="https://www.recogn.ai/biome-text/api/biome/text/configuration.html#trainerconfiguration" target="_blank" rel="noopener noreferrer">TrainerConfiguration API<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p> <div class="custom-block tip"><p class="custom-block-title">Tip</p> <p>By default we will use a CUDA device if one is available. If you have several devices or prefer not to use it, you can specify it here via the <code>cuda_device</code> argument.</p></div> <div class="language-python extra-class"><pre class="language-python"><code>trainer_config <span class="token operator">=</span> TrainerConfiguration<span class="token punctuation">(</span>
+    optimizer<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adam&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> <span class="token number">0.01</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    num_epochs<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><h2 id="train-your-model"><a href="#train-your-model" class="header-anchor">#</a> Train your model</h2> <p>Now we have everything ready to start the training of our model:</p> <ul><li>training data set</li> <li>pipeline</li> <li>trainer</li></ul> <p>The training output will be saved in a folder specified by the <code>output</code> argument. It contains the trained model weights and the metrics, as well as the vocabulary and a <em>log</em> folder for visualizing the training process with <a href="https://www.tensorflow.org/tensorboard/" target="_blank" rel="noopener noreferrer">tensorboard<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.
+The <code>Pipeline.train()</code> method outputs a <code>TrainingResults</code> data class that contains the</p> <ul><li><code>model_path</code>: file path of the serialized trained model</li> <li><code>metrics</code>: metrics of the training</li></ul> <div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>train<span class="token punctuation">(</span>
+    output<span class="token operator">=</span><span class="token string">&quot;output&quot;</span><span class="token punctuation">,</span>
+    training<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    validation<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    trainer<span class="token operator">=</span>trainer_config<span class="token punctuation">,</span>
+    vocab_config<span class="token operator">=</span>vocab_config<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>2020-12-18 17:55:53,986 - allennlp.data.vocabulary - INFO - Fitting token dictionary from dataset.
+
+
+
+HBox(children=(FloatProgress(value=1.0, bar_style='info', description='building vocab', layout=Layout(width='2…
+
+
+
+HBox(children=(FloatProgress(value=0.0, description='Loading instances into memory', max=8000.0, style=Progres…
+
+
+2020-12-18 17:56:06,720 - biome.text.dataset - INFO - Caching instances to /home/david/.cache/huggingface/datasets/csv/default-bfb22acbbfc9cab6/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2/839ab18424c813a4.instance_list)
+
+
+
+
+
+
+WARNING:root:Embedding at model_path, _head.backbone.embedder.token_embedder_word cannot locate the pretrained_file.  If you are fine-tuning and want to use using pretrained_file for embedding extension, please pass the mapping by --embedding-sources argument.
+WARNING:root:Embedding at model_path, _head.backbone.embedder.token_embedder_char._embedding._module cannot locate the pretrained_file.  If you are fine-tuning and want to use using pretrained_file for embedding extension, please pass the mapping by --embedding-sources argument.
+2020-12-18 17:56:07,318 - biome.text.dataset - WARNING - Reusing cached instances (/home/david/.cache/huggingface/datasets/csv/default-bfb22acbbfc9cab6/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2/839ab18424c813a4.instance_list)
+
+
+
+HBox(children=(FloatProgress(value=0.0, description='Loading instances into memory', max=2000.0, style=Progres…
+
+
+2020-12-18 17:56:11,582 - biome.text.dataset - INFO - Caching instances to /home/david/.cache/huggingface/datasets/csv/default-9f16b32cd2264665/0.0.0/2960f95a26e85d40ca41a230ac88787f715ee3003edaacb8b1f0891e9f04dda2/93a129ccc8ac1d2e.instance_list)
+2020-12-18 17:56:11,619 - allennlp.common.params - INFO - random_seed = 13370
+2020-12-18 17:56:11,619 - allennlp.common.params - INFO - numpy_seed = 1337
+2020-12-18 17:56:11,620 - allennlp.common.params - INFO - pytorch_seed = 133
+2020-12-18 17:56:11,621 - allennlp.common.checks - INFO - Pytorch version: 1.7.1
+2020-12-18 17:56:11,624 - allennlp.common.params - INFO - type = gradient_descent
+2020-12-18 17:56:11,624 - allennlp.common.params - INFO - local_rank = 0
+2020-12-18 17:56:11,625 - allennlp.common.params - INFO - patience = 2
+2020-12-18 17:56:11,625 - allennlp.common.params - INFO - validation_metric = -loss
+2020-12-18 17:56:11,626 - allennlp.common.params - INFO - num_epochs = 3
+2020-12-18 17:56:11,627 - allennlp.common.params - INFO - cuda_device = None
+2020-12-18 17:56:11,627 - allennlp.common.params - INFO - grad_norm = None
+2020-12-18 17:56:11,627 - allennlp.common.params - INFO - grad_clipping = None
+2020-12-18 17:56:11,628 - allennlp.common.params - INFO - distributed = False
+2020-12-18 17:56:11,628 - allennlp.common.params - INFO - world_size = 1
+2020-12-18 17:56:11,628 - allennlp.common.params - INFO - num_gradient_accumulation_steps = 1
+2020-12-18 17:56:11,629 - allennlp.common.params - INFO - use_amp = False
+2020-12-18 17:56:11,629 - allennlp.common.params - INFO - no_grad = None
+2020-12-18 17:56:11,630 - allennlp.common.params - INFO - learning_rate_scheduler = None
+2020-12-18 17:56:11,630 - allennlp.common.params - INFO - momentum_scheduler = None
+2020-12-18 17:56:11,631 - allennlp.common.params - INFO - moving_average = None
+2020-12-18 17:56:11,632 - allennlp.common.params - INFO - batch_callbacks = None
+2020-12-18 17:56:11,633 - allennlp.common.params - INFO - end_callbacks = None
+2020-12-18 17:56:11,633 - allennlp.common.params - INFO - trainer_callbacks = None
+
+
+
+
+
+2020-12-18 17:56:13,899 - allennlp.common.params - INFO - optimizer.type = adam
+2020-12-18 17:56:13,900 - allennlp.common.params - INFO - optimizer.parameter_groups = None
+2020-12-18 17:56:13,901 - allennlp.common.params - INFO - optimizer.lr = 0.01
+2020-12-18 17:56:13,901 - allennlp.common.params - INFO - optimizer.betas = (0.9, 0.999)
+2020-12-18 17:56:13,901 - allennlp.common.params - INFO - optimizer.eps = 1e-08
+2020-12-18 17:56:13,902 - allennlp.common.params - INFO - optimizer.weight_decay = 0.0
+2020-12-18 17:56:13,902 - allennlp.common.params - INFO - optimizer.amsgrad = False
+2020-12-18 17:56:13,902 - allennlp.training.optimizers - INFO - Number of trainable parameters: 60566
+2020-12-18 17:56:13,903 - allennlp.common.util - INFO - The following parameters are Frozen (without gradient):
+2020-12-18 17:56:13,903 - allennlp.common.util - INFO - The following parameters are Tunable (with gradient):
+2020-12-18 17:56:13,905 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_word.weight
+2020-12-18 17:56:13,906 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._embedding._module.weight
+2020-12-18 17:56:13,906 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.weight_ih_l0
+2020-12-18 17:56:13,906 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.weight_hh_l0
+2020-12-18 17:56:13,907 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.bias_ih_l0
+2020-12-18 17:56:13,907 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.bias_hh_l0
+2020-12-18 17:56:13,908 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.weight_ih_l0_reverse
+2020-12-18 17:56:13,908 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.weight_hh_l0_reverse
+2020-12-18 17:56:13,908 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.bias_ih_l0_reverse
+2020-12-18 17:56:13,909 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_char._encoder._module._module.bias_hh_l0_reverse
+2020-12-18 17:56:13,910 - allennlp.common.util - INFO - _head.pooler._module.weight_ih_l0
+2020-12-18 17:56:13,910 - allennlp.common.util - INFO - _head.pooler._module.weight_hh_l0
+2020-12-18 17:56:13,911 - allennlp.common.util - INFO - _head.pooler._module.bias_ih_l0
+2020-12-18 17:56:13,911 - allennlp.common.util - INFO - _head.pooler._module.bias_hh_l0
+2020-12-18 17:56:13,911 - allennlp.common.util - INFO - _head.pooler._module.weight_ih_l0_reverse
+2020-12-18 17:56:13,912 - allennlp.common.util - INFO - _head.pooler._module.weight_hh_l0_reverse
+2020-12-18 17:56:13,912 - allennlp.common.util - INFO - _head.pooler._module.bias_ih_l0_reverse
+2020-12-18 17:56:13,912 - allennlp.common.util - INFO - _head.pooler._module.bias_hh_l0_reverse
+2020-12-18 17:56:13,913 - allennlp.common.util - INFO - _head.feedforward._linear_layers.0.weight
+2020-12-18 17:56:13,913 - allennlp.common.util - INFO - _head.feedforward._linear_layers.0.bias
+2020-12-18 17:56:13,913 - allennlp.common.util - INFO - _head._classification_layer.weight
+2020-12-18 17:56:13,914 - allennlp.common.util - INFO - _head._classification_layer.bias
+2020-12-18 17:56:13,914 - allennlp.common.params - INFO - checkpointer.type = default
+2020-12-18 17:56:13,915 - allennlp.common.params - INFO - checkpointer.keep_serialized_model_every_num_seconds = None
+2020-12-18 17:56:13,915 - allennlp.common.params - INFO - checkpointer.num_serialized_models_to_keep = 1
+2020-12-18 17:56:13,915 - allennlp.common.params - INFO - checkpointer.model_save_interval = None
+2020-12-18 17:56:13,916 - allennlp.common.params - INFO - tensorboard_writer.summary_interval = 100
+2020-12-18 17:56:13,916 - allennlp.common.params - INFO - tensorboard_writer.histogram_interval = None
+2020-12-18 17:56:13,917 - allennlp.common.params - INFO - tensorboard_writer.batch_size_interval = None
+2020-12-18 17:56:13,917 - allennlp.common.params - INFO - tensorboard_writer.should_log_parameter_statistics = True
+2020-12-18 17:56:13,917 - allennlp.common.params - INFO - tensorboard_writer.should_log_learning_rate = True
+2020-12-18 17:56:13,918 - allennlp.common.params - INFO - tensorboard_writer.get_batch_num_total = None
+2020-12-18 17:56:13,921 - allennlp.training.trainer - INFO - Beginning training.
+2020-12-18 17:56:13,922 - allennlp.training.trainer - INFO - Epoch 0/2
+2020-12-18 17:56:13,922 - allennlp.training.trainer - INFO - Worker 0 memory usage: 2.8G
+2020-12-18 17:56:13,923 - allennlp.training.trainer - INFO - GPU 0 memory usage: 348K
+2020-12-18 17:56:13,923 - allennlp.training.trainer - INFO - Training
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=500.0), HTML(value='')))
+
+
+2020-12-18 17:56:13,967 - allennlp.training.util - WARNING - Metrics with names beginning with &quot;_&quot; will not be logged to the tqdm progress bar.
+
+2020-12-18 17:56:23,188 - allennlp.training.trainer - INFO - Validating
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=125.0), HTML(value='')))
+
+
+
+2020-12-18 17:56:24,433 - allennlp.training.tensorboard_writer - INFO -                                                 Training |  Validation
+2020-12-18 17:56:24,434 - allennlp.training.tensorboard_writer - INFO - _fscore/Allgemeinärzte                      |     0.880  |     0.974
+2020-12-18 17:56:24,435 - allennlp.training.tensorboard_writer - INFO - _fscore/Apotheken                           |     0.818  |     0.893
+2020-12-18 17:56:24,436 - allennlp.training.tensorboard_writer - INFO - _fscore/Architekturbüros                    |     0.903  |     0.986
+2020-12-18 17:56:24,437 - allennlp.training.tensorboard_writer - INFO - _fscore/Autowerkstätten                     |     0.736  |     0.746
+2020-12-18 17:56:24,438 - allennlp.training.tensorboard_writer - INFO - _fscore/Dienstleistungen                    |     0.763  |     0.861
+2020-12-18 17:56:24,440 - allennlp.training.tensorboard_writer - INFO - _fscore/Edv                                 |     0.708  |     0.705
+2020-12-18 17:56:24,441 - allennlp.training.tensorboard_writer - INFO - _fscore/Elektriker                          |     0.851  |     0.914
+2020-12-18 17:56:24,442 - allennlp.training.tensorboard_writer - INFO - _fscore/Elektrotechnik                      |     0.835  |     0.894
+2020-12-18 17:56:24,443 - allennlp.training.tensorboard_writer - INFO - _fscore/Friseure                            |     0.807  |     0.922
+2020-12-18 17:56:24,444 - allennlp.training.tensorboard_writer - INFO - _fscore/Gebrauchtwagen                      |     0.797  |     0.865
+2020-12-18 17:56:24,445 - allennlp.training.tensorboard_writer - INFO - _fscore/Handelsvermittler_Und_-vertreter    |     0.606  |     0.782
+2020-12-18 17:56:24,446 - allennlp.training.tensorboard_writer - INFO - _fscore/Hotels                              |     0.663  |     0.786
+2020-12-18 17:56:24,447 - allennlp.training.tensorboard_writer - INFO - _fscore/Maler                               |     0.856  |     1.000
+2020-12-18 17:56:24,448 - allennlp.training.tensorboard_writer - INFO - _fscore/Physiotherapie                      |     0.795  |     0.904
+2020-12-18 17:56:24,449 - allennlp.training.tensorboard_writer - INFO - _fscore/Restaurants                         |     0.571  |     0.704
+2020-12-18 17:56:24,450 - allennlp.training.tensorboard_writer - INFO - _fscore/Sanitärinstallationen               |     0.825  |     0.944
+2020-12-18 17:56:24,451 - allennlp.training.tensorboard_writer - INFO - _fscore/Tiefbau                             |     0.734  |     0.951
+2020-12-18 17:56:24,452 - allennlp.training.tensorboard_writer - INFO - _fscore/Unternehmensberatungen              |     0.821  |     0.882
+2020-12-18 17:56:24,453 - allennlp.training.tensorboard_writer - INFO - _fscore/Vereine                             |     0.848  |     0.970
+2020-12-18 17:56:24,454 - allennlp.training.tensorboard_writer - INFO - _fscore/Vermittlungen                       |     0.759  |     0.947
+2020-12-18 17:56:24,455 - allennlp.training.tensorboard_writer - INFO - _fscore/Versicherungsvermittler             |     0.855  |     0.955
+2020-12-18 17:56:24,456 - allennlp.training.tensorboard_writer - INFO - _fscore/Werbeagenturen                      |     0.794  |     0.879
+2020-12-18 17:56:24,457 - allennlp.training.tensorboard_writer - INFO - _precision/Allgemeinärzte                   |     0.933  |     0.982
+2020-12-18 17:56:24,458 - allennlp.training.tensorboard_writer - INFO - _precision/Apotheken                        |     0.941  |     1.000
+2020-12-18 17:56:24,458 - allennlp.training.tensorboard_writer - INFO - _precision/Architekturbüros                 |     0.938  |     1.000
+2020-12-18 17:56:24,459 - allennlp.training.tensorboard_writer - INFO - _precision/Autowerkstätten                  |     0.836  |     0.898
+2020-12-18 17:56:24,460 - allennlp.training.tensorboard_writer - INFO - _precision/Dienstleistungen                 |     0.754  |     0.803
+2020-12-18 17:56:24,461 - allennlp.training.tensorboard_writer - INFO - _precision/Edv                              |     0.804  |     0.902
+2020-12-18 17:56:24,462 - allennlp.training.tensorboard_writer - INFO - _precision/Elektriker                       |     0.841  |     0.870
+2020-12-18 17:56:24,464 - allennlp.training.tensorboard_writer - INFO - _precision/Elektrotechnik                   |     0.902  |     1.000
+2020-12-18 17:56:24,465 - allennlp.training.tensorboard_writer - INFO - _precision/Friseure                         |     0.768  |     0.883
+2020-12-18 17:56:24,466 - allennlp.training.tensorboard_writer - INFO - _precision/Gebrauchtwagen                   |     0.789  |     0.813
+2020-12-18 17:56:24,467 - allennlp.training.tensorboard_writer - INFO - _precision/Handelsvermittler_Und_-vertreter |     0.661  |     0.712
+2020-12-18 17:56:24,468 - allennlp.training.tensorboard_writer - INFO - _precision/Hotels                           |     0.702  |     0.775
+2020-12-18 17:56:24,469 - allennlp.training.tensorboard_writer - INFO - _precision/Maler                            |     0.897  |     1.000
+2020-12-18 17:56:24,470 - allennlp.training.tensorboard_writer - INFO - _precision/Physiotherapie                   |     0.868  |     1.000
+2020-12-18 17:56:24,472 - allennlp.training.tensorboard_writer - INFO - _precision/Restaurants                      |     0.498  |     0.636
+2020-12-18 17:56:24,473 - allennlp.training.tensorboard_writer - INFO - _precision/Sanitärinstallationen            |     0.872  |     0.988
+2020-12-18 17:56:24,473 - allennlp.training.tensorboard_writer - INFO - _precision/Tiefbau                          |     0.627  |     0.928
+2020-12-18 17:56:24,475 - allennlp.training.tensorboard_writer - INFO - _precision/Unternehmensberatungen           |     0.833  |     0.812
+2020-12-18 17:56:24,475 - allennlp.training.tensorboard_writer - INFO - _precision/Vereine                          |     0.818  |     1.000
+2020-12-18 17:56:24,476 - allennlp.training.tensorboard_writer - INFO - _precision/Vermittlungen                    |     0.688  |     0.984
+2020-12-18 17:56:24,477 - allennlp.training.tensorboard_writer - INFO - _precision/Versicherungsvermittler          |     0.881  |     1.000
+2020-12-18 17:56:24,478 - allennlp.training.tensorboard_writer - INFO - _precision/Werbeagenturen                   |     0.883  |     0.906
+2020-12-18 17:56:24,479 - allennlp.training.tensorboard_writer - INFO - _recall/Allgemeinärzte                      |     0.833  |     0.966
+2020-12-18 17:56:24,480 - allennlp.training.tensorboard_writer - INFO - _recall/Apotheken                           |     0.723  |     0.807
+2020-12-18 17:56:24,481 - allennlp.training.tensorboard_writer - INFO - _recall/Architekturbüros                    |     0.871  |     0.972
+2020-12-18 17:56:24,482 - allennlp.training.tensorboard_writer - INFO - _recall/Autowerkstätten                     |     0.658  |     0.638
+2020-12-18 17:56:24,483 - allennlp.training.tensorboard_writer - INFO - _recall/Dienstleistungen                    |     0.773  |     0.927
+2020-12-18 17:56:24,485 - allennlp.training.tensorboard_writer - INFO - _recall/Edv                                 |     0.632  |     0.579
+2020-12-18 17:56:24,486 - allennlp.training.tensorboard_writer - INFO - _recall/Elektriker                          |     0.860  |     0.964
+2020-12-18 17:56:24,487 - allennlp.training.tensorboard_writer - INFO - _recall/Elektrotechnik                      |     0.778  |     0.809
+2020-12-18 17:56:24,488 - allennlp.training.tensorboard_writer - INFO - _recall/Friseure                            |     0.851  |     0.965
+2020-12-18 17:56:24,490 - allennlp.training.tensorboard_writer - INFO - _recall/Gebrauchtwagen                      |     0.806  |     0.924
+2020-12-18 17:56:24,491 - allennlp.training.tensorboard_writer - INFO - _recall/Handelsvermittler_Und_-vertreter    |     0.559  |     0.867
+2020-12-18 17:56:24,492 - allennlp.training.tensorboard_writer - INFO - _recall/Hotels                              |     0.628  |     0.797
+2020-12-18 17:56:24,492 - allennlp.training.tensorboard_writer - INFO - _recall/Maler                               |     0.818  |     1.000
+2020-12-18 17:56:24,493 - allennlp.training.tensorboard_writer - INFO - _recall/Physiotherapie                      |     0.734  |     0.825
+2020-12-18 17:56:24,494 - allennlp.training.tensorboard_writer - INFO - _recall/Restaurants                         |     0.668  |     0.788
+2020-12-18 17:56:24,496 - allennlp.training.tensorboard_writer - INFO - _recall/Sanitärinstallationen               |     0.783  |     0.903
+2020-12-18 17:56:24,496 - allennlp.training.tensorboard_writer - INFO - _recall/Tiefbau                             |     0.884  |     0.975
+2020-12-18 17:56:24,498 - allennlp.training.tensorboard_writer - INFO - _recall/Unternehmensberatungen              |     0.810  |     0.965
+2020-12-18 17:56:24,500 - allennlp.training.tensorboard_writer - INFO - _recall/Vereine                             |     0.880  |     0.942
+2020-12-18 17:56:24,502 - allennlp.training.tensorboard_writer - INFO - _recall/Vermittlungen                       |     0.845  |     0.912
+2020-12-18 17:56:24,503 - allennlp.training.tensorboard_writer - INFO - _recall/Versicherungsvermittler             |     0.830  |     0.913
+2020-12-18 17:56:24,505 - allennlp.training.tensorboard_writer - INFO - _recall/Werbeagenturen                      |     0.721  |     0.853
+2020-12-18 17:56:24,507 - allennlp.training.tensorboard_writer - INFO - accuracy                                    |     0.784  |     0.887
+2020-12-18 17:56:24,508 - allennlp.training.tensorboard_writer - INFO - gpu_0_memory_MB                             |     0.340  |       N/A
+2020-12-18 17:56:24,509 - allennlp.training.tensorboard_writer - INFO - loss                                        |     0.778  |     0.405
+2020-12-18 17:56:24,510 - allennlp.training.tensorboard_writer - INFO - macro/fscore                                |     0.783  |     0.885
+2020-12-18 17:56:24,512 - allennlp.training.tensorboard_writer - INFO - macro/precision                             |     0.806  |     0.904
+2020-12-18 17:56:24,513 - allennlp.training.tensorboard_writer - INFO - macro/recall                                |     0.770  |     0.877
+2020-12-18 17:56:24,514 - allennlp.training.tensorboard_writer - INFO - micro/fscore                                |     0.784  |     0.887
+2020-12-18 17:56:24,516 - allennlp.training.tensorboard_writer - INFO - micro/precision                             |     0.784  |     0.887
+2020-12-18 17:56:24,517 - allennlp.training.tensorboard_writer - INFO - micro/recall                                |     0.784  |     0.887
+2020-12-18 17:56:24,518 - allennlp.training.tensorboard_writer - INFO - worker_0_memory_MB                          |  2897.738  |       N/A
+2020-12-18 17:56:24,523 - allennlp.training.checkpointer - INFO - Best validation performance so far. Copying weights to 'output/best.th'.
+2020-12-18 17:56:24,524 - allennlp.training.trainer - INFO - Epoch duration: 0:00:10.602796
+2020-12-18 17:56:24,525 - allennlp.training.trainer - INFO - Estimated training time remaining: 0:00:21
+2020-12-18 17:56:24,526 - allennlp.training.trainer - INFO - Epoch 1/2
+2020-12-18 17:56:24,526 - allennlp.training.trainer - INFO - Worker 0 memory usage: 2.8G
+2020-12-18 17:56:24,527 - allennlp.training.trainer - INFO - GPU 0 memory usage: 7.5M
+2020-12-18 17:56:24,527 - allennlp.training.trainer - INFO - Training
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=500.0), HTML(value='')))
+
+
+
+2020-12-18 17:56:33,835 - allennlp.training.trainer - INFO - Validating
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=125.0), HTML(value='')))
+
+
+
+2020-12-18 17:56:35,020 - allennlp.training.tensorboard_writer - INFO -                                                 Training |  Validation
+2020-12-18 17:56:35,020 - allennlp.training.tensorboard_writer - INFO - _fscore/Allgemeinärzte                      |     0.977  |     0.920
+2020-12-18 17:56:35,021 - allennlp.training.tensorboard_writer - INFO - _fscore/Apotheken                           |     0.875  |     0.885
+2020-12-18 17:56:35,022 - allennlp.training.tensorboard_writer - INFO - _fscore/Architekturbüros                    |     0.977  |     0.995
+2020-12-18 17:56:35,023 - allennlp.training.tensorboard_writer - INFO - _fscore/Autowerkstätten                     |     0.839  |     0.863
+2020-12-18 17:56:35,024 - allennlp.training.tensorboard_writer - INFO - _fscore/Dienstleistungen                    |     0.869  |     0.832
+2020-12-18 17:56:35,025 - allennlp.training.tensorboard_writer - INFO - _fscore/Edv                                 |     0.868  |     0.753
+2020-12-18 17:56:35,027 - allennlp.training.tensorboard_writer - INFO - _fscore/Elektriker                          |     0.939  |     0.924
+2020-12-18 17:56:35,028 - allennlp.training.tensorboard_writer - INFO - _fscore/Elektrotechnik                      |     0.908  |     0.954
+2020-12-18 17:56:35,028 - allennlp.training.tensorboard_writer - INFO - _fscore/Friseure                            |     0.949  |     0.955
+2020-12-18 17:56:35,029 - allennlp.training.tensorboard_writer - INFO - _fscore/Gebrauchtwagen                      |     0.883  |     0.914
+2020-12-18 17:56:35,030 - allennlp.training.tensorboard_writer - INFO - _fscore/Handelsvermittler_Und_-vertreter    |     0.820  |     0.761
+2020-12-18 17:56:35,031 - allennlp.training.tensorboard_writer - INFO - _fscore/Hotels                              |     0.765  |     0.800
+2020-12-18 17:56:35,032 - allennlp.training.tensorboard_writer - INFO - _fscore/Maler                               |     0.983  |     1.000
+2020-12-18 17:56:35,034 - allennlp.training.tensorboard_writer - INFO - _fscore/Physiotherapie                      |     0.942  |     0.975
+2020-12-18 17:56:35,035 - allennlp.training.tensorboard_writer - INFO - _fscore/Restaurants                         |     0.715  |     0.731
+2020-12-18 17:56:35,037 - allennlp.training.tensorboard_writer - INFO - _fscore/Sanitärinstallationen               |     0.938  |     0.955
+2020-12-18 17:56:35,037 - allennlp.training.tensorboard_writer - INFO - _fscore/Tiefbau                             |     0.961  |     0.975
+2020-12-18 17:56:35,038 - allennlp.training.tensorboard_writer - INFO - _fscore/Unternehmensberatungen              |     0.923  |     0.910
+2020-12-18 17:56:35,040 - allennlp.training.tensorboard_writer - INFO - _fscore/Vereine                             |     0.968  |     0.970
+2020-12-18 17:56:35,041 - allennlp.training.tensorboard_writer - INFO - _fscore/Vermittlungen                       |     0.942  |     0.955
+2020-12-18 17:56:35,041 - allennlp.training.tensorboard_writer - INFO - _fscore/Versicherungsvermittler             |     0.954  |     0.980
+2020-12-18 17:56:35,042 - allennlp.training.tensorboard_writer - INFO - _fscore/Werbeagenturen                      |     0.904  |     0.894
+2020-12-18 17:56:35,043 - allennlp.training.tensorboard_writer - INFO - _precision/Allgemeinärzte                   |     0.986  |     0.945
+2020-12-18 17:56:35,044 - allennlp.training.tensorboard_writer - INFO - _precision/Apotheken                        |     0.948  |     0.979
+2020-12-18 17:56:35,045 - allennlp.training.tensorboard_writer - INFO - _precision/Architekturbüros                 |     0.983  |     1.000
+2020-12-18 17:56:35,046 - allennlp.training.tensorboard_writer - INFO - _precision/Autowerkstätten                  |     0.835  |     0.857
+2020-12-18 17:56:35,047 - allennlp.training.tensorboard_writer - INFO - _precision/Dienstleistungen                 |     0.869  |     0.743
+2020-12-18 17:56:35,048 - allennlp.training.tensorboard_writer - INFO - _precision/Edv                              |     0.875  |     0.983
+2020-12-18 17:56:35,050 - allennlp.training.tensorboard_writer - INFO - _precision/Elektriker                       |     0.935  |     0.898
+2020-12-18 17:56:35,051 - allennlp.training.tensorboard_writer - INFO - _precision/Elektrotechnik                   |     0.931  |     1.000
+2020-12-18 17:56:35,052 - allennlp.training.tensorboard_writer - INFO - _precision/Friseure                         |     0.955  |     0.938
+2020-12-18 17:56:35,053 - allennlp.training.tensorboard_writer - INFO - _precision/Gebrauchtwagen                   |     0.899  |     0.930
+2020-12-18 17:56:35,054 - allennlp.training.tensorboard_writer - INFO - _precision/Handelsvermittler_Und_-vertreter |     0.808  |     0.659
+2020-12-18 17:56:35,055 - allennlp.training.tensorboard_writer - INFO - _precision/Hotels                           |     0.803  |     0.818
+2020-12-18 17:56:35,056 - allennlp.training.tensorboard_writer - INFO - _precision/Maler                            |     0.982  |     1.000
+2020-12-18 17:56:35,057 - allennlp.training.tensorboard_writer - INFO - _precision/Physiotherapie                   |     0.941  |     0.975
+2020-12-18 17:56:35,058 - allennlp.training.tensorboard_writer - INFO - _precision/Restaurants                      |     0.632  |     0.696
+2020-12-18 17:56:35,059 - allennlp.training.tensorboard_writer - INFO - _precision/Sanitärinstallationen            |     0.933  |     1.000
+2020-12-18 17:56:35,060 - allennlp.training.tensorboard_writer - INFO - _precision/Tiefbau                          |     0.970  |     0.975
+2020-12-18 17:56:35,060 - allennlp.training.tensorboard_writer - INFO - _precision/Unternehmensberatungen           |     0.912  |     0.872
+2020-12-18 17:56:35,061 - allennlp.training.tensorboard_writer - INFO - _precision/Vereine                          |     0.984  |     1.000
+2020-12-18 17:56:35,063 - allennlp.training.tensorboard_writer - INFO - _precision/Vermittlungen                    |     0.949  |     0.970
+2020-12-18 17:56:35,064 - allennlp.training.tensorboard_writer - INFO - _precision/Versicherungsvermittler          |     0.960  |     1.000
+2020-12-18 17:56:35,065 - allennlp.training.tensorboard_writer - INFO - _precision/Werbeagenturen                   |     0.931  |     0.922
+2020-12-18 17:56:35,066 - allennlp.training.tensorboard_writer - INFO - _recall/Allgemeinärzte                      |     0.968  |     0.897
+2020-12-18 17:56:35,067 - allennlp.training.tensorboard_writer - INFO - _recall/Apotheken                           |     0.813  |     0.807
+2020-12-18 17:56:35,068 - allennlp.training.tensorboard_writer - INFO - _recall/Architekturbüros                    |     0.971  |     0.991
+2020-12-18 17:56:35,069 - allennlp.training.tensorboard_writer - INFO - _recall/Autowerkstätten                     |     0.844  |     0.870
+2020-12-18 17:56:35,070 - allennlp.training.tensorboard_writer - INFO - _recall/Dienstleistungen                    |     0.869  |     0.945
+2020-12-18 17:56:35,071 - allennlp.training.tensorboard_writer - INFO - _recall/Edv                                 |     0.862  |     0.611
+2020-12-18 17:56:35,073 - allennlp.training.tensorboard_writer - INFO - _recall/Elektriker                          |     0.942  |     0.952
+2020-12-18 17:56:35,076 - allennlp.training.tensorboard_writer - INFO - _recall/Elektrotechnik                      |     0.885  |     0.912
+2020-12-18 17:56:35,077 - allennlp.training.tensorboard_writer - INFO - _recall/Friseure                            |     0.943  |     0.972
+2020-12-18 17:56:35,078 - allennlp.training.tensorboard_writer - INFO - _recall/Gebrauchtwagen                      |     0.869  |     0.898
+2020-12-18 17:56:35,080 - allennlp.training.tensorboard_writer - INFO - _recall/Handelsvermittler_Und_-vertreter    |     0.832  |     0.900
+2020-12-18 17:56:35,081 - allennlp.training.tensorboard_writer - INFO - _recall/Hotels                              |     0.730  |     0.783
+2020-12-18 17:56:35,082 - allennlp.training.tensorboard_writer - INFO - _recall/Maler                               |     0.985  |     1.000
+2020-12-18 17:56:35,083 - allennlp.training.tensorboard_writer - INFO - _recall/Physiotherapie                      |     0.944  |     0.975
+2020-12-18 17:56:35,085 - allennlp.training.tensorboard_writer - INFO - _recall/Restaurants                         |     0.825  |     0.769
+2020-12-18 17:56:35,087 - allennlp.training.tensorboard_writer - INFO - _recall/Sanitärinstallationen               |     0.944  |     0.914
+2020-12-18 17:56:35,088 - allennlp.training.tensorboard_writer - INFO - _recall/Tiefbau                             |     0.953  |     0.975
+2020-12-18 17:56:35,090 - allennlp.training.tensorboard_writer - INFO - _recall/Unternehmensberatungen              |     0.934  |     0.951
+2020-12-18 17:56:35,091 - allennlp.training.tensorboard_writer - INFO - _recall/Vereine                             |     0.953  |     0.942
+2020-12-18 17:56:35,092 - allennlp.training.tensorboard_writer - INFO - _recall/Vermittlungen                       |     0.935  |     0.941
+2020-12-18 17:56:35,093 - allennlp.training.tensorboard_writer - INFO - _recall/Versicherungsvermittler             |     0.947  |     0.962
+2020-12-18 17:56:35,095 - allennlp.training.tensorboard_writer - INFO - _recall/Werbeagenturen                      |     0.878  |     0.868
+2020-12-18 17:56:35,096 - allennlp.training.tensorboard_writer - INFO - accuracy                                    |     0.906  |     0.908
+2020-12-18 17:56:35,098 - allennlp.training.tensorboard_writer - INFO - gpu_0_memory_MB                             |     7.477  |       N/A
+2020-12-18 17:56:35,099 - allennlp.training.tensorboard_writer - INFO - loss                                        |     0.321  |     0.374
+2020-12-18 17:56:35,100 - allennlp.training.tensorboard_writer - INFO - macro/fscore                                |     0.905  |     0.905
+2020-12-18 17:56:35,101 - allennlp.training.tensorboard_writer - INFO - macro/precision                             |     0.910  |     0.916
+2020-12-18 17:56:35,102 - allennlp.training.tensorboard_writer - INFO - macro/recall                                |     0.901  |     0.901
+2020-12-18 17:56:35,104 - allennlp.training.tensorboard_writer - INFO - micro/fscore                                |     0.906  |     0.908
+2020-12-18 17:56:35,106 - allennlp.training.tensorboard_writer - INFO - micro/precision                             |     0.906  |     0.908
+2020-12-18 17:56:35,107 - allennlp.training.tensorboard_writer - INFO - micro/recall                                |     0.906  |     0.908
+2020-12-18 17:56:35,108 - allennlp.training.tensorboard_writer - INFO - worker_0_memory_MB                          |  2908.676  |       N/A
+2020-12-18 17:56:35,113 - allennlp.training.checkpointer - INFO - Best validation performance so far. Copying weights to 'output/best.th'.
+2020-12-18 17:56:35,114 - allennlp.training.trainer - INFO - Epoch duration: 0:00:10.588787
+2020-12-18 17:56:35,115 - allennlp.training.trainer - INFO - Estimated training time remaining: 0:00:10
+2020-12-18 17:56:35,116 - allennlp.training.trainer - INFO - Epoch 2/2
+2020-12-18 17:56:35,116 - allennlp.training.trainer - INFO - Worker 0 memory usage: 2.8G
+2020-12-18 17:56:35,117 - allennlp.training.trainer - INFO - GPU 0 memory usage: 7.5M
+2020-12-18 17:56:35,117 - allennlp.training.trainer - INFO - Training
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=500.0), HTML(value='')))
+
+
+
+2020-12-18 17:56:44,261 - allennlp.training.trainer - INFO - Validating
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=125.0), HTML(value='')))
+
+
+
+2020-12-18 17:56:45,441 - allennlp.training.tensorboard_writer - INFO -                                                 Training |  Validation
+2020-12-18 17:56:45,442 - allennlp.training.tensorboard_writer - INFO - _fscore/Allgemeinärzte                      |     0.961  |     0.947
+2020-12-18 17:56:45,443 - allennlp.training.tensorboard_writer - INFO - _fscore/Apotheken                           |     0.857  |     0.868
+2020-12-18 17:56:45,443 - allennlp.training.tensorboard_writer - INFO - _fscore/Architekturbüros                    |     0.978  |     0.995
+2020-12-18 17:56:45,444 - allennlp.training.tensorboard_writer - INFO - _fscore/Autowerkstätten                     |     0.841  |     0.819
+2020-12-18 17:56:45,445 - allennlp.training.tensorboard_writer - INFO - _fscore/Dienstleistungen                    |     0.898  |     0.822
+2020-12-18 17:56:45,446 - allennlp.training.tensorboard_writer - INFO - _fscore/Edv                                 |     0.854  |     0.821
+2020-12-18 17:56:45,447 - allennlp.training.tensorboard_writer - INFO - _fscore/Elektriker                          |     0.935  |     0.951
+2020-12-18 17:56:45,448 - allennlp.training.tensorboard_writer - INFO - _fscore/Elektrotechnik                      |     0.898  |     0.954
+2020-12-18 17:56:45,449 - allennlp.training.tensorboard_writer - INFO - _fscore/Friseure                            |     0.948  |     0.956
+2020-12-18 17:56:45,449 - allennlp.training.tensorboard_writer - INFO - _fscore/Gebrauchtwagen                      |     0.890  |     0.905
+2020-12-18 17:56:45,452 - allennlp.training.tensorboard_writer - INFO - _fscore/Handelsvermittler_Und_-vertreter    |     0.816  |     0.755
+2020-12-18 17:56:45,453 - allennlp.training.tensorboard_writer - INFO - _fscore/Hotels                              |     0.759  |     0.750
+2020-12-18 17:56:45,454 - allennlp.training.tensorboard_writer - INFO - _fscore/Maler                               |     0.974  |     0.988
+2020-12-18 17:56:45,455 - allennlp.training.tensorboard_writer - INFO - _fscore/Physiotherapie                      |     0.954  |     0.988
+2020-12-18 17:56:45,456 - allennlp.training.tensorboard_writer - INFO - _fscore/Restaurants                         |     0.731  |     0.761
+2020-12-18 17:56:45,457 - allennlp.training.tensorboard_writer - INFO - _fscore/Sanitärinstallationen               |     0.958  |     0.951
+2020-12-18 17:56:45,459 - allennlp.training.tensorboard_writer - INFO - _fscore/Tiefbau                             |     0.968  |     0.966
+2020-12-18 17:56:45,460 - allennlp.training.tensorboard_writer - INFO - _fscore/Unternehmensberatungen              |     0.932  |     0.893
+2020-12-18 17:56:45,461 - allennlp.training.tensorboard_writer - INFO - _fscore/Vereine                             |     0.976  |     0.961
+2020-12-18 17:56:45,462 - allennlp.training.tensorboard_writer - INFO - _fscore/Vermittlungen                       |     0.956  |     0.978
+2020-12-18 17:56:45,463 - allennlp.training.tensorboard_writer - INFO - _fscore/Versicherungsvermittler             |     0.958  |     0.976
+2020-12-18 17:56:45,464 - allennlp.training.tensorboard_writer - INFO - _fscore/Werbeagenturen                      |     0.904  |     0.839
+2020-12-18 17:56:45,465 - allennlp.training.tensorboard_writer - INFO - _precision/Allgemeinärzte                   |     0.963  |     0.964
+2020-12-18 17:56:45,467 - allennlp.training.tensorboard_writer - INFO - _precision/Apotheken                        |     0.914  |     0.939
+2020-12-18 17:56:45,468 - allennlp.training.tensorboard_writer - INFO - _precision/Architekturbüros                 |     0.985  |     1.000
+2020-12-18 17:56:45,469 - allennlp.training.tensorboard_writer - INFO - _precision/Autowerkstätten                  |     0.846  |     0.787
+2020-12-18 17:56:45,470 - allennlp.training.tensorboard_writer - INFO - _precision/Dienstleistungen                 |     0.894  |     0.770
+2020-12-18 17:56:45,471 - allennlp.training.tensorboard_writer - INFO - _precision/Edv                              |     0.855  |     0.945
+2020-12-18 17:56:45,472 - allennlp.training.tensorboard_writer - INFO - _precision/Elektriker                       |     0.939  |     0.963
+2020-12-18 17:56:45,473 - allennlp.training.tensorboard_writer - INFO - _precision/Elektrotechnik                   |     0.916  |     1.000
+2020-12-18 17:56:45,475 - allennlp.training.tensorboard_writer - INFO - _precision/Friseure                         |     0.948  |     0.921
+2020-12-18 17:56:45,475 - allennlp.training.tensorboard_writer - INFO - _precision/Gebrauchtwagen                   |     0.904  |     0.971
+2020-12-18 17:56:45,476 - allennlp.training.tensorboard_writer - INFO - _precision/Handelsvermittler_Und_-vertreter |     0.810  |     0.626
+2020-12-18 17:56:45,477 - allennlp.training.tensorboard_writer - INFO - _precision/Hotels                           |     0.798  |     0.720
+2020-12-18 17:56:45,478 - allennlp.training.tensorboard_writer - INFO - _precision/Maler                            |     0.973  |     0.988
+2020-12-18 17:56:45,479 - allennlp.training.tensorboard_writer - INFO - _precision/Physiotherapie                   |     0.958  |     0.988
+2020-12-18 17:56:45,480 - allennlp.training.tensorboard_writer - INFO - _precision/Restaurants                      |     0.643  |     0.772
+2020-12-18 17:56:45,481 - allennlp.training.tensorboard_writer - INFO - _precision/Sanitärinstallationen            |     0.971  |     0.967
+2020-12-18 17:56:45,482 - allennlp.training.tensorboard_writer - INFO - _precision/Tiefbau                          |     0.980  |     0.983
+2020-12-18 17:56:45,483 - allennlp.training.tensorboard_writer - INFO - _precision/Unternehmensberatungen           |     0.921  |     0.854
+2020-12-18 17:56:45,484 - allennlp.training.tensorboard_writer - INFO - _precision/Vereine                          |     0.992  |     0.980
+2020-12-18 17:56:45,485 - allennlp.training.tensorboard_writer - INFO - _precision/Vermittlungen                    |     0.967  |     0.971
+2020-12-18 17:56:45,486 - allennlp.training.tensorboard_writer - INFO - _precision/Versicherungsvermittler          |     0.963  |     0.990
+2020-12-18 17:56:45,487 - allennlp.training.tensorboard_writer - INFO - _precision/Werbeagenturen                   |     0.928  |     0.929
+2020-12-18 17:56:45,488 - allennlp.training.tensorboard_writer - INFO - _recall/Allgemeinärzte                      |     0.958  |     0.931
+2020-12-18 17:56:45,489 - allennlp.training.tensorboard_writer - INFO - _recall/Apotheken                           |     0.806  |     0.807
+2020-12-18 17:56:45,490 - allennlp.training.tensorboard_writer - INFO - _recall/Architekturbüros                    |     0.971  |     0.991
+2020-12-18 17:56:45,492 - allennlp.training.tensorboard_writer - INFO - _recall/Autowerkstätten                     |     0.837  |     0.855
+2020-12-18 17:56:45,492 - allennlp.training.tensorboard_writer - INFO - _recall/Dienstleistungen                    |     0.903  |     0.882
+2020-12-18 17:56:45,494 - allennlp.training.tensorboard_writer - INFO - _recall/Edv                                 |     0.852  |     0.726
+2020-12-18 17:56:45,494 - allennlp.training.tensorboard_writer - INFO - _recall/Elektriker                          |     0.930  |     0.940
+2020-12-18 17:56:45,495 - allennlp.training.tensorboard_writer - INFO - _recall/Elektrotechnik                      |     0.881  |     0.912
+2020-12-18 17:56:45,496 - allennlp.training.tensorboard_writer - INFO - _recall/Friseure                            |     0.947  |     0.993
+2020-12-18 17:56:45,497 - allennlp.training.tensorboard_writer - INFO - _recall/Gebrauchtwagen                      |     0.878  |     0.847
+2020-12-18 17:56:45,499 - allennlp.training.tensorboard_writer - INFO - _recall/Handelsvermittler_Und_-vertreter    |     0.822  |     0.950
+2020-12-18 17:56:45,499 - allennlp.training.tensorboard_writer - INFO - _recall/Hotels                              |     0.723  |     0.783
+2020-12-18 17:56:45,500 - allennlp.training.tensorboard_writer - INFO - _recall/Maler                               |     0.976  |     0.988
+2020-12-18 17:56:45,502 - allennlp.training.tensorboard_writer - INFO - _recall/Physiotherapie                      |     0.951  |     0.988
+2020-12-18 17:56:45,502 - allennlp.training.tensorboard_writer - INFO - _recall/Restaurants                         |     0.848  |     0.750
+2020-12-18 17:56:45,503 - allennlp.training.tensorboard_writer - INFO - _recall/Sanitärinstallationen               |     0.944  |     0.935
+2020-12-18 17:56:45,504 - allennlp.training.tensorboard_writer - INFO - _recall/Tiefbau                             |     0.957  |     0.950
+2020-12-18 17:56:45,505 - allennlp.training.tensorboard_writer - INFO - _recall/Unternehmensberatungen              |     0.943  |     0.937
+2020-12-18 17:56:45,506 - allennlp.training.tensorboard_writer - INFO - _recall/Vereine                             |     0.961  |     0.942
+2020-12-18 17:56:45,507 - allennlp.training.tensorboard_writer - INFO - _recall/Vermittlungen                       |     0.946  |     0.985
+2020-12-18 17:56:45,508 - allennlp.training.tensorboard_writer - INFO - _recall/Versicherungsvermittler             |     0.953  |     0.962
+2020-12-18 17:56:45,509 - allennlp.training.tensorboard_writer - INFO - _recall/Werbeagenturen                      |     0.881  |     0.765
+2020-12-18 17:56:45,511 - allennlp.training.tensorboard_writer - INFO - accuracy                                    |     0.910  |     0.905
+2020-12-18 17:56:45,511 - allennlp.training.tensorboard_writer - INFO - gpu_0_memory_MB                             |     7.477  |       N/A
+2020-12-18 17:56:45,512 - allennlp.training.tensorboard_writer - INFO - loss                                        |     0.318  |     0.349
+2020-12-18 17:56:45,513 - allennlp.training.tensorboard_writer - INFO - macro/fscore                                |     0.907  |     0.902
+2020-12-18 17:56:45,514 - allennlp.training.tensorboard_writer - INFO - macro/precision                             |     0.912  |     0.910
+2020-12-18 17:56:45,515 - allennlp.training.tensorboard_writer - INFO - macro/recall                                |     0.903  |     0.901
+2020-12-18 17:56:45,516 - allennlp.training.tensorboard_writer - INFO - micro/fscore                                |     0.910  |     0.905
+2020-12-18 17:56:45,517 - allennlp.training.tensorboard_writer - INFO - micro/precision                             |     0.910  |     0.905
+2020-12-18 17:56:45,519 - allennlp.training.tensorboard_writer - INFO - micro/recall                                |     0.910  |     0.905
+2020-12-18 17:56:45,520 - allennlp.training.tensorboard_writer - INFO - worker_0_memory_MB                          |  2908.688  |       N/A
+2020-12-18 17:56:45,526 - allennlp.training.checkpointer - INFO - Best validation performance so far. Copying weights to 'output/best.th'.
+2020-12-18 17:56:45,527 - allennlp.training.trainer - INFO - Epoch duration: 0:00:10.411623
+2020-12-18 17:56:45,528 - allennlp.training.checkpointer - INFO - loading best weights
+2020-12-18 17:56:45,532 - allennlp.models.archival - INFO - archiving weights and vocabulary to output/model.tar.gz
+
+
+
+
+
+TrainingResults(model_path='output/model.tar.gz', metrics={'best_epoch': 2, 'peak_worker_0_memory_MB': 2908.6875, 'peak_gpu_0_memory_MB': 7.47705078125, 'training_duration': '0:00:31.599811', 'training_start_epoch': 0, 'training_epochs': 2, 'epoch': 2, 'training_accuracy': 0.91025, 'training_micro/precision': 0.9102500081062317, 'training_micro/recall': 0.9102500081062317, 'training_micro/fscore': 0.9102499485015869, 'training_macro/precision': 0.9121919274330139, 'training_macro/recall': 0.9030299782752991, 'training_macro/fscore': 0.9066284894943237, 'training__precision/Edv': 0.8548895716667175, 'training__precision/Maler': 0.9728096723556519, 'training__precision/Gebrauchtwagen': 0.9036697149276733, 'training__precision/Handelsvermittler_Und_-vertreter': 0.8097561001777649, 'training__precision/Apotheken': 0.9137254953384399, 'training__precision/Tiefbau': 0.9798387289047241, 'training__precision/Autowerkstätten': 0.8461538553237915, 'training__precision/Architekturbüros': 0.985401451587677, 'training__precision/Restaurants': 0.6427289247512817, 'training__precision/Vermittlungen': 0.9667896628379822, 'training__precision/Dienstleistungen': 0.8937007784843445, 'training__precision/Vereine': 0.9919354915618896, 'training__precision/Unternehmensberatungen': 0.9211746454238892, 'training__precision/Friseure': 0.9484902024269104, 'training__precision/Hotels': 0.7983871102333069, 'training__precision/Physiotherapie': 0.9577465057373047, 'training__precision/Versicherungsvermittler': 0.9632768630981445, 'training__precision/Elektriker': 0.9389671087265015, 'training__precision/Allgemeinärzte': 0.9627906680107117, 'training__precision/Sanitärinstallationen': 0.9713375568389893, 'training__precision/Elektrotechnik': 0.9163346886634827, 'training__precision/Werbeagenturen': 0.9283154010772705, 'training__recall/Edv': 0.8522012829780579, 'training__recall/Maler': 0.9757575988769531, 'training__recall/Gebrauchtwagen': 0.8775055408477783, 'training__recall/Handelsvermittler_Und_-vertreter': 0.8217821717262268, 'training__recall/Apotheken': 0.8062283992767334, 'training__recall/Tiefbau': 0.9566929340362549, 'training__recall/Autowerkstätten': 0.8365018963813782, 'training__recall/Architekturbüros': 0.971222996711731, 'training__recall/Restaurants': 0.8483412265777588, 'training__recall/Vermittlungen': 0.9458483457565308, 'training__recall/Dienstleistungen': 0.9025844931602478, 'training__recall/Vereine': 0.9609375, 'training__recall/Unternehmensberatungen': 0.9430379867553711, 'training__recall/Friseure': 0.9468085169792175, 'training__recall/Hotels': 0.7226277589797974, 'training__recall/Physiotherapie': 0.9510489702224731, 'training__recall/Versicherungsvermittler': 0.9525139927864075, 'training__recall/Elektriker': 0.930232584476471, 'training__recall/Allgemeinärzte': 0.9583333134651184, 'training__recall/Sanitärinstallationen': 0.9442724585533142, 'training__recall/Elektrotechnik': 0.8812260627746582, 'training__recall/Werbeagenturen': 0.8809523582458496, 'training__fscore/Edv': 0.8535432815551758, 'training__fscore/Maler': 0.9742814302444458, 'training__fscore/Gebrauchtwagen': 0.89039546251297, 'training__fscore/Handelsvermittler_Und_-vertreter': 0.815724790096283, 'training__fscore/Apotheken': 0.8566176891326904, 'training__fscore/Tiefbau': 0.9681275486946106, 'training__fscore/Autowerkstätten': 0.8413001894950867, 'training__fscore/Architekturbüros': 0.9782608151435852, 'training__fscore/Restaurants': 0.731358528137207, 'training__fscore/Vermittlungen': 0.9562044143676758, 'training__fscore/Dienstleistungen': 0.898120641708374, 'training__fscore/Vereine': 0.976190447807312, 'training__fscore/Unternehmensberatungen': 0.931978166103363, 'training__fscore/Friseure': 0.9476486444473267, 'training__fscore/Hotels': 0.7586206197738647, 'training__fscore/Physiotherapie': 0.9543859958648682, 'training__fscore/Versicherungsvermittler': 0.9578652381896973, 'training__fscore/Elektriker': 0.9345793724060059, 'training__fscore/Allgemeinärzte': 0.9605568051338196, 'training__fscore/Sanitärinstallationen': 0.9576137661933899, 'training__fscore/Elektrotechnik': 0.8984375596046448, 'training__fscore/Werbeagenturen': 0.9040139317512512, 'training_loss': 0.31808928719023244, 'training_worker_0_memory_MB': 2908.6875, 'training_gpu_0_memory_MB': 7.47705078125, 'validation_accuracy': 0.9055, 'validation_micro/precision': 0.9054999947547913, 'validation_micro/recall': 0.9054999947547913, 'validation_micro/fscore': 0.9054999947547913, 'validation_macro/precision': 0.9102832078933716, 'validation_macro/recall': 0.900806725025177, 'validation_macro/fscore': 0.9019864201545715, 'validation__precision/Edv': 0.9452054500579834, 'validation__precision/Maler': 0.9879518151283264, 'validation__precision/Gebrauchtwagen': 0.9708737730979919, 'validation__precision/Handelsvermittler_Und_-vertreter': 0.6263736486434937, 'validation__precision/Apotheken': 0.9387755393981934, 'validation__precision/Tiefbau': 0.9826086759567261, 'validation__precision/Autowerkstätten': 0.7866666913032532, 'validation__precision/Architekturbüros': 1.0, 'validation__precision/Restaurants': 0.7722772359848022, 'validation__precision/Vermittlungen': 0.9710144996643066, 'validation__precision/Dienstleistungen': 0.7698412537574768, 'validation__precision/Vereine': 0.9800000190734863, 'validation__precision/Unternehmensberatungen': 0.8535031676292419, 'validation__precision/Friseure': 0.9210526347160339, 'validation__precision/Hotels': 0.7200000286102295, 'validation__precision/Physiotherapie': 0.987500011920929, 'validation__precision/Versicherungsvermittler': 0.9900990128517151, 'validation__precision/Elektriker': 0.9629629850387573, 'validation__precision/Allgemeinärzte': 0.9642857313156128, 'validation__precision/Sanitärinstallationen': 0.9666666388511658, 'validation__precision/Elektrotechnik': 1.0, 'validation__precision/Werbeagenturen': 0.9285714030265808, 'validation__recall/Edv': 0.7263157963752747, 'validation__recall/Maler': 0.9879518151283264, 'validation__recall/Gebrauchtwagen': 0.8474576473236084, 'validation__recall/Handelsvermittler_Und_-vertreter': 0.949999988079071, 'validation__recall/Apotheken': 0.8070175647735596, 'validation__recall/Tiefbau': 0.9495798349380493, 'validation__recall/Autowerkstätten': 0.8550724387168884, 'validation__recall/Architekturbüros': 0.9905660152435303, 'validation__recall/Restaurants': 0.75, 'validation__recall/Vermittlungen': 0.9852941036224365, 'validation__recall/Dienstleistungen': 0.8818181753158569, 'validation__recall/Vereine': 0.942307710647583, 'validation__recall/Unternehmensberatungen': 0.9370629191398621, 'validation__recall/Friseure': 0.9929078221321106, 'validation__recall/Hotels': 0.782608687877655, 'validation__recall/Physiotherapie': 0.987500011920929, 'validation__recall/Versicherungsvermittler': 0.9615384340286255, 'validation__recall/Elektriker': 0.9397590160369873, 'validation__recall/Allgemeinärzte': 0.931034505367279, 'validation__recall/Sanitärinstallationen': 0.9354838728904724, 'validation__recall/Elektrotechnik': 0.9117646813392639, 'validation__recall/Werbeagenturen': 0.7647058963775635, 'validation__fscore/Edv': 0.8214285969734192, 'validation__fscore/Maler': 0.9879518151283264, 'validation__fscore/Gebrauchtwagen': 0.9049773812294006, 'validation__fscore/Handelsvermittler_Und_-vertreter': 0.7549669742584229, 'validation__fscore/Apotheken': 0.8679245710372925, 'validation__fscore/Tiefbau': 0.9658119082450867, 'validation__fscore/Autowerkstätten': 0.819444477558136, 'validation__fscore/Architekturbüros': 0.9952606558799744, 'validation__fscore/Restaurants': 0.7609755992889404, 'validation__fscore/Vermittlungen': 0.9781021475791931, 'validation__fscore/Dienstleistungen': 0.8220338821411133, 'validation__fscore/Vereine': 0.9607843160629272, 'validation__fscore/Unternehmensberatungen': 0.8933333158493042, 'validation__fscore/Friseure': 0.95563143491745, 'validation__fscore/Hotels': 0.75, 'validation__fscore/Physiotherapie': 0.987500011920929, 'validation__fscore/Versicherungsvermittler': 0.9756097197532654, 'validation__fscore/Elektriker': 0.9512194991111755, 'validation__fscore/Allgemeinärzte': 0.9473684430122375, 'validation__fscore/Sanitärinstallationen': 0.9508196711540222, 'validation__fscore/Elektrotechnik': 0.9538461565971375, 'validation__fscore/Werbeagenturen': 0.8387096524238586, 'validation_loss': 0.3485018192511052, 'best_validation_accuracy': 0.9055, 'best_validation_micro/precision': 0.9054999947547913, 'best_validation_micro/recall': 0.9054999947547913, 'best_validation_micro/fscore': 0.9054999947547913, 'best_validation_macro/precision': 0.9102832078933716, 'best_validation_macro/recall': 0.900806725025177, 'best_validation_macro/fscore': 0.9019864201545715, 'best_validation__precision/Edv': 0.9452054500579834, 'best_validation__precision/Maler': 0.9879518151283264, 'best_validation__precision/Gebrauchtwagen': 0.9708737730979919, 'best_validation__precision/Handelsvermittler_Und_-vertreter': 0.6263736486434937, 'best_validation__precision/Apotheken': 0.9387755393981934, 'best_validation__precision/Tiefbau': 0.9826086759567261, 'best_validation__precision/Autowerkstätten': 0.7866666913032532, 'best_validation__precision/Architekturbüros': 1.0, 'best_validation__precision/Restaurants': 0.7722772359848022, 'best_validation__precision/Vermittlungen': 0.9710144996643066, 'best_validation__precision/Dienstleistungen': 0.7698412537574768, 'best_validation__precision/Vereine': 0.9800000190734863, 'best_validation__precision/Unternehmensberatungen': 0.8535031676292419, 'best_validation__precision/Friseure': 0.9210526347160339, 'best_validation__precision/Hotels': 0.7200000286102295, 'best_validation__precision/Physiotherapie': 0.987500011920929, 'best_validation__precision/Versicherungsvermittler': 0.9900990128517151, 'best_validation__precision/Elektriker': 0.9629629850387573, 'best_validation__precision/Allgemeinärzte': 0.9642857313156128, 'best_validation__precision/Sanitärinstallationen': 0.9666666388511658, 'best_validation__precision/Elektrotechnik': 1.0, 'best_validation__precision/Werbeagenturen': 0.9285714030265808, 'best_validation__recall/Edv': 0.7263157963752747, 'best_validation__recall/Maler': 0.9879518151283264, 'best_validation__recall/Gebrauchtwagen': 0.8474576473236084, 'best_validation__recall/Handelsvermittler_Und_-vertreter': 0.949999988079071, 'best_validation__recall/Apotheken': 0.8070175647735596, 'best_validation__recall/Tiefbau': 0.9495798349380493, 'best_validation__recall/Autowerkstätten': 0.8550724387168884, 'best_validation__recall/Architekturbüros': 0.9905660152435303, 'best_validation__recall/Restaurants': 0.75, 'best_validation__recall/Vermittlungen': 0.9852941036224365, 'best_validation__recall/Dienstleistungen': 0.8818181753158569, 'best_validation__recall/Vereine': 0.942307710647583, 'best_validation__recall/Unternehmensberatungen': 0.9370629191398621, 'best_validation__recall/Friseure': 0.9929078221321106, 'best_validation__recall/Hotels': 0.782608687877655, 'best_validation__recall/Physiotherapie': 0.987500011920929, 'best_validation__recall/Versicherungsvermittler': 0.9615384340286255, 'best_validation__recall/Elektriker': 0.9397590160369873, 'best_validation__recall/Allgemeinärzte': 0.931034505367279, 'best_validation__recall/Sanitärinstallationen': 0.9354838728904724, 'best_validation__recall/Elektrotechnik': 0.9117646813392639, 'best_validation__recall/Werbeagenturen': 0.7647058963775635, 'best_validation__fscore/Edv': 0.8214285969734192, 'best_validation__fscore/Maler': 0.9879518151283264, 'best_validation__fscore/Gebrauchtwagen': 0.9049773812294006, 'best_validation__fscore/Handelsvermittler_Und_-vertreter': 0.7549669742584229, 'best_validation__fscore/Apotheken': 0.8679245710372925, 'best_validation__fscore/Tiefbau': 0.9658119082450867, 'best_validation__fscore/Autowerkstätten': 0.819444477558136, 'best_validation__fscore/Architekturbüros': 0.9952606558799744, 'best_validation__fscore/Restaurants': 0.7609755992889404, 'best_validation__fscore/Vermittlungen': 0.9781021475791931, 'best_validation__fscore/Dienstleistungen': 0.8220338821411133, 'best_validation__fscore/Vereine': 0.9607843160629272, 'best_validation__fscore/Unternehmensberatungen': 0.8933333158493042, 'best_validation__fscore/Friseure': 0.95563143491745, 'best_validation__fscore/Hotels': 0.75, 'best_validation__fscore/Physiotherapie': 0.987500011920929, 'best_validation__fscore/Versicherungsvermittler': 0.9756097197532654, 'best_validation__fscore/Elektriker': 0.9512194991111755, 'best_validation__fscore/Allgemeinärzte': 0.9473684430122375, 'best_validation__fscore/Sanitärinstallationen': 0.9508196711540222, 'best_validation__fscore/Elektrotechnik': 0.9538461565971375, 'best_validation__fscore/Werbeagenturen': 0.8387096524238586, 'best_validation_loss': 0.3485018192511052})
+</code></pre></div><p>After 3 epochs we achieve a validation accuracy of about 0.91.
+The validation loss seems to be decreasing further, though, so we could probably train the model for a few more epochs without overfitting the training data.</p> <div class="custom-block tip"><p class="custom-block-title">Tip</p> <p>If for some reason the training gets interrupted, you can continue where you left off by setting the <code>restore</code> argument in the <code>Pipeline.train()</code> method to <code>True</code>.
+If you want to train your model for a few more epochs, you can also use the <code>restore</code> argument, but you have to modify the <code>epochs</code> argument in your <code>TrainerConfiguration</code> to reflect the total amount of epochs you aim for.</p></div> <h2 id="make-your-first-predictions"><a href="#make-your-first-predictions" class="header-anchor">#</a> Make your first predictions</h2> <p>Now that we trained our model we can go on to make our first predictions.
+We provide the input expected by our <code>TaskHead</code> of the model to the <code>Pipeline.predict()</code> method.
+In our case it is a <code>TextClassification</code> head that classifies a <code>text</code> input:</p> <div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>text<span class="token operator">=</span><span class="token string">&quot;Autohaus biome.text&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><p>The output of the <code>Pipeline.predict()</code> method is a dictionary with a <code>labels</code> and <code>probabilities</code> key containing a list of labels and their corresponding probabilities, ordered from most to less likely.</p> <div class="custom-block tip"><p class="custom-block-title">Tip</p> <p>When configuring the pipeline in the first place, we recommend to check that it is correctly setup by using the <code>predict</code> method.
+Since the pipeline is still not trained at that moment, the predictions will be arbitrary.</p></div> <p>We can also load the trained pipeline from the training output. This is useful in case you trained the pipeline in some earlier session, and want to continue your work with the inference steps:</p> <div class="language-python extra-class"><pre class="language-python"><code>pl_trained <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span><span class="token string">&quot;output/model.tar.gz&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><h2 id="explore-the-model-s-predictions"><a href="#explore-the-model-s-predictions" class="header-anchor">#</a> Explore the model's predictions</h2> <p>To check and understand the predictions of the model, we can use the <em>biome.text explore UI</em>.
+Just calling the <a href="https://www.recogn.ai/biome-text/api/biome/text/explore.html#create" target="_blank" rel="noopener noreferrer">explore.create<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> method will open the UI in the output of our cell.
+We will set the <code>explain</code> argument to true, which automatically visualizes the attribution of each token by means of <a href="https://arxiv.org/abs/1703.01365" target="_blank" rel="noopener noreferrer">integrated gradients<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p> <div class="custom-block warning"><p class="custom-block-title">Warning</p> <p>For the UI to work you need a running <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html" target="_blank" rel="noopener noreferrer">Elasticsearch<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> instance.
+We recommend installing <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode" target="_blank" rel="noopener noreferrer">Elasticsearch with docker<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p></div> <div class="language-python extra-class"><pre class="language-python"><code>explore<span class="token punctuation">.</span>create<span class="token punctuation">(</span>pl_trained<span class="token punctuation">,</span> valid_ds<span class="token punctuation">,</span> explain<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+</code></pre></div><p><img src="/biome-text/versions/2.0/assets/img/text_classifier_explore_screenshot.b068fd60.png" alt="Screenshot of the biome.text explore UI"> <em>Screenshot of the biome.text explore UI</em></p> <p>Exploring our model we could take advantage of the F1 scores of each label to figure out which labels to prioritize when gathering new training data.
+For example, although &quot;Allgemeinärzte&quot; is the second rarest label in our training data, it still seems relatively easy to classify for our model due to the distinctive words &quot;Dr.&quot; and &quot;Allgemeinmedizin&quot;.</p> <div class="language-python extra-class"><pre class="language-python"><code>
+</code></pre></div></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="page-nav__button prev"><a href="/biome-text/versions/2.0/documentation/basics.html" class="prev"><span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-left" size="18px"></vp-icon></span> <span class="page-nav__button__text">
+          The basics
+        </span></a></span> <span class="page-nav__button next"><a href="/biome-text/versions/2.0/documentation/tutorials/1-Training_a_text_classifier.html"><span class="page-nav__button__text">
+          Training a short text classifier of German business names
+        </span> <span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-right" size="18px"></vp-icon></span></a></span></p></div> <footer class="footer" data-v-348088ed><div data-v-348088ed>
+          Maintained by
+          <a href="https://www.recogn.ai/" target="_blank" data-v-348088ed><img width="70px" src="/biome-text/versions/2.0/assets/img/recognai.png" class="footer__img" data-v-348088ed></a></div></footer> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/biome-text/versions/2.0/assets/js/app.707817ee.js" defer></script><script src="/biome-text/versions/2.0/assets/js/4.1227992f.js" defer></script><script src="/biome-text/versions/2.0/assets/js/3.a4a13da4.js" defer></script><script src="/biome-text/versions/2.0/assets/js/10.7aed0923.js" defer></script>
+  </body>
+</html>
