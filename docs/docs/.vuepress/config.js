@@ -21,7 +21,9 @@ module.exports = {
     ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
     ['meta', { property: 'og:image', content: 'https://www.recogn.ai/images/biome_og.png' }],
   ],
-  base: '/biome-text/',
+  // The env variable is optionally set in our GitHub Action when deploying the docs
+  // It should look like: BiomeTextDocVersion_PATH="/versions/2.0.0/"
+  base: `/biome-text${process.env.BiomeTextDocVersion_PATH || "/"}`,
   plugins: [
     '@goy/svg-icons',
     '@vuepress/back-to-top'
