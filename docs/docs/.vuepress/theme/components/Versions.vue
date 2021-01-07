@@ -81,7 +81,7 @@ export default {
     padding: 0.5em
     color: $textColor
     font-size: 15px
-    &::after 
+    &::after
       content: ''
       border-left: 4px solid transparent
       border-right: 4px solid transparent
@@ -113,4 +113,3 @@ export default {
         color: $accentColor
 
 </style>
-
