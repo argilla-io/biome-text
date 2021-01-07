@@ -71,46 +71,46 @@ export default {
 <style lang="stylus">
 
 .nav-versions
-  display: block;
-  margin: auto;
-  text-align: center;
-  position: relative;
+  display: block
+  margin: auto
+  text-align: center
+  position: relative
   &__select
-    background: transparent;
-    min-height: 30px;
-    padding: 0.5em;
-    color: $textColor;
-    font-size: 15px;
+    background: transparent
+    min-height: 30px
+    padding: 0.5em
+    color: $textColor
+    font-size: 15px
     &::after 
-      content: '';
-      border-left: 4px solid transparent;
-      border-right: 4px solid transparent;
-      border-top: 6px solid $arrowBgColor;
-      border-bottom: 0;
-      display: inline-block;
-      margin-left: 0.5em;
+      content: ''
+      border-left: 4px solid transparent
+      border-right: 4px solid transparent
+      border-top: 6px solid $arrowBgColor
+      border-bottom: 0
+      display: inline-block
+      margin-left: 0.5em
   &__options
-    background: white;
-    border: 1px solid $borderColor; 
-    display: inline-block;
-    width: auto;
-    list-style: none;
-    border-radius: 4px;
+    background: white
+    border: 1px solid $borderColor
+    display: inline-block
+    width: auto
+    list-style: none
+    border-radius: 4px
     &__container
-      position: absolute;
-      top: 2em;
-      left: 0; 
-      right: 0; 
-      margin: auto !important;
+      position: absolute
+      top: 2em
+      left: 0
+      right: 0
+      margin: auto !important
   &__option
-    padding: 0em 0.5em;
-    font-size: 14px;
-    font-size: 15px;
-    text-align: left;
+    padding: 0em 0.5em
+    font-size: 14px
+    font-size: 15px
+    text-align: left
     a
-      color: $textColor;
+      color: $textColor
       &:hover, &:focus, &.active
-        color: $accentColor; 
+        color: $accentColor
 
 </style>
 
