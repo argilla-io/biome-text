@@ -1,8 +1,6 @@
 const path = require("path");
 const glob = require("glob")
 
-const baseContext = process.env.CONTEXT || 'docs/'
-
 function getSidebarChildren(location, replacement) {
     if (!replacement) {
         replacement = location
@@ -22,8 +20,8 @@ module.exports = {
     ['meta', { property: 'og:image', content: 'https://www.recogn.ai/images/biome_og.png' }],
   ],
   // The env variable is optionally set in our GitHub Action when deploying the docs
-  // It should look like: BiomeTextDocVersion_PATH="/versions/2.0.0/"
-  base: `/biome-text${process.env.BiomeTextDocVersion_PATH || "/"}`,
+  // It should look like: `BiomeTextDocVersion_PATH="/v2.0.0/"` or `BiomeTextDocVersion_PATH="/master/"`
+  base: `/biome-text${process.env.BIOME_TEXT_DOC_VERSION || "/"}`,
   plugins: [
     '@goy/svg-icons',
     '@vuepress/back-to-top'
