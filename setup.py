@@ -51,7 +51,7 @@ if __name__ == "__main__":
             "flask-cors~=3.0.8",
             "click~=7.1.0",
             "beautifulsoup4~=4.9.0",
-            "lxml~=4.5.0",
+            "lxml~=4.6.2",
             "fastapi~=0.55.0",
             "uvicorn~=0.11.0",
             "distributed~=2.17.0",
