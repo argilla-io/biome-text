@@ -27,12 +27,12 @@ export default {
     try {
       // This hardcoded url will be problematic if we want to move away from github pages ...
       let res = await Axios.get(
-        'https://api.github.com/repos/recognai/biome-text/git/trees/gh-pages'
+        'https://raw.githubusercontent.com/recognai/biome-text/gh-pages/versions.txt'
       );
-      // All folders are versions of the docs
-      this.options = res.data.tree.filter(e => {return e.type === 'tree';}).map(e => {return e.path});
-      // TODO: add decent sort function
-      this.options.sort();
+      this.options = res.data.split('\n')
+        .filter((e) => {return e !== ""})
+        .map((e) => {return e.trim()})
+
       this.selected = window.location.pathname.split('/')[2];
     } catch (ex) {}
   },
