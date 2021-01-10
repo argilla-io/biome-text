@@ -1,5 +1,9 @@
 const path = require("path");
-const glob = require("glob")
+const glob = require("glob");
+
+// The env variable is set in our GitHub Action CI when building the docs.
+// It should look like: `BIOME_TEXT_DOC_VERSION_PATH="/v2.0.0/"` or `BIOME_TEXT_DOC_VERSION_PATH="/master/"`
+const basePath = `/biome-text${process.env.BIOME_TEXT_DOC_VERSION_PATH || "/"}`
 
 function getSidebarChildren(location, replacement) {
     if (!replacement) {
@@ -19,9 +23,7 @@ module.exports = {
     ['link', { rel: "shortcut icon", href: "/favicon.ico"}],
     ['meta', { property: 'og:image', content: 'https://www.recogn.ai/images/biome_og.png' }],
   ],
-  // The env variable is optionally set in our GitHub Action when deploying the docs
-  // It should look like: `BiomeTextDocVersion_PATH="/v2.0.0/"` or `BiomeTextDocVersion_PATH="/master/"`
-  base: `/biome-text${process.env.BIOME_TEXT_DOC_VERSION || "/"}`,
+  base: basePath,
   plugins: [
     '@goy/svg-icons',
     '@vuepress/back-to-top'
