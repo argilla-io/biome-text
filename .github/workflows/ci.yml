@@ -44,7 +44,7 @@ jobs:
         run: pre-commit run --all-files
       - name: Run Tests 📈
         run: make test
-      - name: Set BIOME_TEXT_DOC_VERSION_PATH 🥦
+      - name: Set BIOME_TEXT_DOC_VERSION_PATH for Release 🥦
         if: ${{ github.event_name == 'release' }}
         # For tags $GITHUB_REF looks like refs/tags/<tag_name>
         run: echo BIOME_TEXT_DOC_VERSION_PATH=/$(echo $GITHUB_REF | cut -d / -f 3)/ >> $GITHUB_ENV
@@ -71,13 +71,17 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
+      - name: Checkout Code 🛎
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
       - name: Download Build Output 🧀
         uses: actions/download-artifact@v2
         with:
           name: docs_build_output
       - name: Extract Build Output 🍗
         run: tar -xzf docs_build_output.tar.gz
-      - name: Set BIOME_TEXT_DOC_VERSION_PATH 🥦
+      - name: Set BIOME_TEXT_DOC_VERSION_PATH for Release 🥦
         if: ${{ github.event_name == 'release' }}
         # For tags $GITHUB_REF looks like refs/tags/<tag_name>
         run: echo BIOME_TEXT_DOC_VERSION_PATH=/${{ github.event.release.tag_name }}/ >> $GITHUB_ENV
