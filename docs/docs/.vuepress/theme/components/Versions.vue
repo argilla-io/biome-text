@@ -25,45 +25,27 @@ export default {
   },
   created: async function() {
     try {
+      // This hardcoded url will be problematic if we want to move away from github pages ...
       let res = await Axios.get(
-        'https://api.github.com/repos/recognai/biome-text/git/trees/gh-pages'
+        'https://raw.githubusercontent.com/recognai/biome-text/gh-pages/versions.txt'
       );
-      const versionsNode = res.data.tree.find(e => {
-        return e.path.toLowerCase() === 'versions';
-      });
-      res = await Axios.get(versionsNode.url);
-      this.options = res.data.tree.map(e => {
-        return e.path ;
-      });
-      this.options.sort();
-      this.options.unshift('master');
-      const paths = window.location.pathname.split('/');
-      if (paths[2] === 'versions') {
-        this.selected = paths[3];
-      } else {
-        this.selected = 'master';
-      }
+      this.options = res.data.split('\n')
+        .filter((e) => {return e !== ""})
+        .map((e) => {return e.trim()})
+
+      this.selected = window.location.pathname.split('/')[2];
     } catch (ex) {}
   },
   methods: {
     onChange(option) {
       this.showOptions = false;
       this.selected = option;
-      const targetVersionsPath =
-        this.selected === 'master' ? '/' : `/versions/${this.selected}/`;
-      const paths = window.location.pathname.split('/')
-      if (paths[2] === 'versions') {
-        window.location.pathname =
-          paths.slice(0,2).join('/') +
-          targetVersionsPath +
-          paths.slice(4).join('/')
-      } else {
-        window.location.pathname =
-          paths.slice(0,2).join('/') +
-          targetVersionsPath +
-          paths.slice(2).join('/')
-
-      }
+      const targetVersionPath = `/${this.selected}/`;
+      const paths = window.location.pathname.split('/');
+      window.location.pathname =
+        paths.slice(0,2).join('/') +
+        targetVersionPath +
+        paths.slice(3).join('/')
     }
   }
 };
