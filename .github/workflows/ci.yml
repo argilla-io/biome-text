@@ -71,10 +71,10 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - name: Checkout gh-pages 🛎
+      - name: Checkout Code 🛎
+        # Recommended and required by JamesIves/github-pages-deploy-action
         uses: actions/checkout@v2
         with:
-          ref: gh-pages
           persist-credentials: false
       - name: Download Build Output 🧀
         uses: actions/download-artifact@v2
@@ -94,6 +94,11 @@ jobs:
           FOLDER: docs/site # The folder the action should deploy.
           TARGET_FOLDER: ${{ env.BIOME_TEXT_DOC_VERSION_PATH }}
           CLEAN: true # Automatically remove deleted files from the deploy branch
+      - name: Checkout gh-pages for Release 🛎
+        if: ${{ github.event_name == 'release' }}
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
       - name: Update Versions and Index for Release 🍗
         if: ${{ github.event_name == 'release' }}
         run: |
