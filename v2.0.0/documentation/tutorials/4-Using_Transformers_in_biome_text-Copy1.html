@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Using Transformers in biome.text | biome.text</title>
+    <meta name="generator" content="VuePress 1.6.0">
+    <link rel="shortcut icon" href="/biome-text/v2.0.0/favicon.ico">
+    <meta name="description" content="biome.text practical NLP open source library.">
+    <meta property="og:image" content="https://www.recogn.ai/images/biome_og.png">
+    <link rel="preload" href="/biome-text/v2.0.0/assets/css/0.styles.b2b158de.css" as="style"><link rel="preload" href="/biome-text/v2.0.0/assets/js/app.d2a2fc62.js" as="script"><link rel="preload" href="/biome-text/v2.0.0/assets/js/4.22f456ab.js" as="script"><link rel="preload" href="/biome-text/v2.0.0/assets/js/3.74f59053.js" as="script"><link rel="preload" href="/biome-text/v2.0.0/assets/js/67.8243a669.js" as="script"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/10.34f4e2e9.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/11.fc078865.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/12.1f5f2c2b.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/13.bbadd378.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/14.d3823f7e.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/15.8c8dcdcd.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/16.1e98b3bb.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/17.08119f24.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/18.a934096a.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/19.4ce3656f.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/20.8c9fef13.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/21.119b1ddb.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/22.e336b1a5.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/23.16ef3589.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/24.05568709.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/25.ac1f180e.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/26.34dc0b01.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/27.3bf8477e.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/28.9a49882d.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/29.1fe3f973.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/30.85803e02.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/31.d98a1084.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/32.568a3274.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/33.f2738ab8.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/34.fffa3f58.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/35.71bb9b3d.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/36.f5ddd5ca.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/37.6a886f29.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/38.7984954d.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/39.9f45040d.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/40.3ee61c0b.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/41.f7144d90.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/42.f67b6ea7.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/43.e4854e58.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/44.91f26898.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/45.9f62f1d5.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/46.0efd9264.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/47.d4b4ed56.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/48.084011b9.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/49.444af445.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/5.ec2586f2.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/50.f7dfff4d.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/51.a9773bb7.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/52.52cc4637.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/53.6ab6bae6.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/54.b02a32f6.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/55.e28af178.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/56.e0a9b5ea.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/57.ec7ad63e.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/58.532cb93b.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/59.29d97c63.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/6.45dddcaa.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/60.03842835.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/61.cdec41af.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/62.5f720eff.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/63.4a6590f6.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/64.a82abf4d.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/65.b64c7ca5.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/66.bbd798eb.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/68.db371fa9.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/69.de6d0a82.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/7.a30869d8.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/70.6dd94b13.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/71.70c69d84.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/72.e62b71ca.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/73.d9f947cc.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/8.4c76a4d2.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/9.424f20ba.js"><link rel="prefetch" href="/biome-text/v2.0.0/assets/js/vendors~docsearch.843fe44c.js">
+    <link rel="stylesheet" href="/biome-text/v2.0.0/assets/css/0.styles.b2b158de.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container" data-v-348088ed><header class="navbar" data-v-348088ed><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/biome-text/v2.0.0/" class="home-link router-link-active"><!----> <span class="site-name">biome<span>.text</span></span></a> <div class="links"><form id="search-form" role="search" class="algolia-search-wrapper search-box"><input id="algolia-search-input" class="search-query"></form> <nav class="nav-links can-hide"><div class="nav-item"><a href="/biome-text/v2.0.0/api/" class="nav-link">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/v2.0.0/documentation/" class="nav-link router-link-active">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav></div></header> <div class="sidebar-mask" data-v-348088ed></div> <aside class="sidebar" data-v-348088ed><div class="sidebar__link"><a href="/biome-text/v2.0.0/"><img src="/biome-text/v2.0.0/assets/img/biome.svg" class="sidebar__img"></a></div> <!----> <nav class="nav-links"><div class="nav-item"><a href="/biome-text/v2.0.0/api/" class="nav-link">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/v2.0.0/documentation/" class="nav-link router-link-active">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>Get started</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/v2.0.0/documentation/" aria-current="page" class="sidebar-link">Installation</a></li><li><a href="/biome-text/v2.0.0/documentation/basics.html" class="sidebar-link">The basics</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>Tutorials</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/v2.0.0/documentation/tutorials/1-Training_a_text_classifier-Copy1.html" class="sidebar-link">Training a short text classifier of German business names</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/1-Training_a_text_classifier.html" class="sidebar-link">Training a short text classifier of German business names</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/2-Training_a_sequence_tagger_for_Slot_Filling.html" class="sidebar-link">Training a sequence tagger for Slot Filling</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/3-Hyperparameter_optimization_with_Ray_Tune.html" class="sidebar-link">Hyperparameter optimization with Ray Tune</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html" aria-current="page" class="active sidebar-link">Using Transformers in biome.text</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html#introduction" class="sidebar-link">Introduction</a></li><li class="sidebar-sub-header"><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html#exploring-and-preparing-the-data" class="sidebar-link">Exploring and preparing the data</a></li><li class="sidebar-sub-header"><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html#configuring-and-training-the-pipeline" class="sidebar-link">Configuring and training the pipeline</a></li><li class="sidebar-sub-header"><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html#optimizing-the-trainer-configuration" class="sidebar-link">Optimizing the trainer configuration</a></li><li class="sidebar-sub-header"><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text-Copy1.html#making-predictions" class="sidebar-link">Making predictions</a></li></ul></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text.html" class="sidebar-link">Using Transformers in biome.text</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/Training_a_sequence_tagger_for_Slot_Filling.html" class="sidebar-link">Training a sequence tagger for Slot Filling</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/Training_a_text_classifier-Copy1.html" class="sidebar-link">Training a short text classifier of German business names</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/Training_a_text_classifier.html" class="sidebar-link">Training a short text classifier of German business names</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/Untitled.html" class="sidebar-link">/documentation/tutorials/Untitled.html</a></li><li><a href="/biome-text/v2.0.0/documentation/tutorials/wandb.html" class="sidebar-link">Hyperparameter optimization with Ray Tune</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>User Guides</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/v2.0.0/documentation/user-guides/1-nlp-tasks.html" class="sidebar-link">NLP Tasks</a></li><li><a href="/biome-text/v2.0.0/documentation/user-guides/2-configuration.html" class="sidebar-link">Configurations</a></li></ul></section></li><li><section class="sidebar-group depth-0"><p class="sidebar-heading"><span>Community</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/v2.0.0/documentation/community/1-contributing.html" class="sidebar-link">Contributing</a></li><li><a href="/biome-text/v2.0.0/documentation/community/2-get_help.html" class="sidebar-link">Getting help</a></li><li><a href="/biome-text/v2.0.0/documentation/community/3-developer_guides.html" class="sidebar-link">Developer guides</a></li></ul></section></li></ul> </aside> <main class="page" data-v-348088ed> <div class="theme-default-content content__default"><h1 id="using-transformers-in-biome-text"><a href="#using-transformers-in-biome-text" class="header-anchor">#</a> Using Transformers in biome.text</h1> <p><a target="_blank" href="https://www.recogn.ai/biome-text/documentation/tutorials/4-Using_Transformers_in_biome_text.html"><img src="https://www.recogn.ai/biome-text/assets/img/biome-isotype.svg" width="24" class="icon"></a> <a href="https://www.recogn.ai/biome-text/documentation/tutorials/4-Using_Transformers_in_biome_text.html" target="_blank" rel="noopener noreferrer">View on recogn.ai<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p> <p><a target="_blank" href="https://colab.research.google.com/github/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/4-Using_Transformers_in_biome_text.ipynb"><img src="https://www.tensorflow.org/images/colab_logo_32px.png" width="24" class="icon"></a> <a href="https://colab.research.google.com/github/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/4-Using_Transformers_in_biome_text.ipynb" target="_blank" rel="noopener noreferrer">Run in Google Colab<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p> <p><a target="_blank" href="https://github.com/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/4-Using_Transformers_in_biome_text.ipynb"><img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="24" class="icon"></a> <a href="https://github.com/recognai/biome-text/blob/master/docs/docs/documentation/tutorials/4-Using_Transformers_in_biome_text.ipynb" target="_blank" rel="noopener noreferrer">View source on GitHub<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></p> <p>When running this tutorial in Google Colab, make sure to install <em>biome.text</em> first:</p> <div class="language-python extra-class"><pre class="language-python"><code>!pip install <span class="token operator">-</span>U pip
+!pip install <span class="token operator">-</span><span class="token operator">-</span>use<span class="token operator">-</span>feature<span class="token operator">=</span><span class="token number">2020</span><span class="token operator">-</span>resolver git<span class="token operator">+</span>https<span class="token punctuation">:</span><span class="token operator">//</span>github<span class="token punctuation">.</span>com<span class="token operator">/</span>recognai<span class="token operator">/</span>biome<span class="token operator">-</span>text<span class="token punctuation">.</span>git
+</code></pre></div><p>Ignore warnings and don't forget to restart your runtime afterwards <em>(Runtime -&gt; Restart runtime)</em> .</p> <p><em>If</em> you want to log your runs with <a href="https://wandb.ai/home" target="_blank" rel="noopener noreferrer">WandB<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, don't forget to install its client and log in.</p> <div class="language-python extra-class"><pre class="language-python"><code>!pip install wandb
+!wandb login
+</code></pre></div><h2 id="introduction"><a href="#introduction" class="header-anchor">#</a> Introduction</h2> <p>In the last years we experienced a shift towards transfer learning as the standard approach to solve NLP problems. Before models were usually trained entirely from scratch, utilizing at most pretrained word embeddings. But nowadays it is very common to start with large pretrained language models as backbone of a system, and to set a task specific head on top of it. This new paradigm has made it easier to find state-of-the-art architectures for a great variety of NLP tasks.</p> <p>Almost all current language models are based on the transformer architecture. The awesome <a href="https://github.com/huggingface/transformers" target="_blank" rel="noopener noreferrer">Hugging Face Transformers<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> library provides access to hundreds of such pretrained language models including state-of-the-art models such as infamous <a href="https://github.com/google-research/bert" target="_blank" rel="noopener noreferrer">BERT<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, as well as community driven models often covering a specific language type or resource requirements.</p> <p>In this tutorial, we are going to classify <a href="https://arxiv.org/" target="_blank" rel="noopener noreferrer">arXiv<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> papers into <a href="https://arxiv.org/category_taxonomy" target="_blank" rel="noopener noreferrer">categories<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, analyzing the title of the paper and its abstract. We will use Hugging Face <a href="https://medium.com/huggingface/distilbert-8cf3380435b5" target="_blank" rel="noopener noreferrer">distilled<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> implementation of <a href="https://ai.facebook.com/blog/roberta-an-optimized-method-for-pretraining-self-supervised-nlp-systems/" target="_blank" rel="noopener noreferrer">RoBERTa<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> and explore ways how to easily include pretrained transformers in a <em>biome.text</em> pipeline.</p> <h3 id="external-links-about-transformers"><a href="#external-links-about-transformers" class="header-anchor">#</a> External links about transformers</h3> <p>If this is the first time you hear about &quot;Transformers&quot; not referring to giant robots, here is a small list of resources at which you might want to have a look first:</p> <ul><li><a href="https://arxiv.org/pdf/1706.03762.pdf" target="_blank" rel="noopener noreferrer">Attention is all your need<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>: paper that introduced the architecture.</li> <li><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener noreferrer">The Illustrated Transformer<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>: 20-30 minute article covering how they work.</li> <li><a href="https://youtu.be/4Bdc55j80l8" target="_blank" rel="noopener noreferrer">Illustrated Guide to Transformer Neural Network: a step by step explanation<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>: 15 minute long video covering how they work.</li> <li><a href="https://www.youtube.com/watch?v=8Hg2UtQg6G4" target="_blank" rel="noopener noreferrer">An Introduction To Transfer Learning In NLP and HuggingFace<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>: 1 hour talk by Thomas Wolf</li></ul> <h3 id="imports"><a href="#imports" class="header-anchor">#</a> Imports</h3> <p>Let us first import all the stuff we need for this tutorial:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token keyword">from</span> biome<span class="token punctuation">.</span>text <span class="token keyword">import</span> Dataset<span class="token punctuation">,</span> Pipeline
+<span class="token keyword">from</span> biome<span class="token punctuation">.</span>text<span class="token punctuation">.</span>configuration <span class="token keyword">import</span> VocabularyConfiguration<span class="token punctuation">,</span> TrainerConfiguration
+<span class="token keyword">from</span> biome<span class="token punctuation">.</span>text<span class="token punctuation">.</span>hpo <span class="token keyword">import</span> TuneExperiment
+<span class="token keyword">from</span> ray <span class="token keyword">import</span> tune
+</code></pre></div><div class="language- extra-class"><pre><code>/home/david/miniconda3/envs/biome/lib/python3.7/importlib/_bootstrap.py:219: RuntimeWarning: greenlet.greenlet size changed, may indicate binary incompatibility. Expected 144 from C header, got 152 from PyObject
+  return f(*args, **kwds)
+/home/david/miniconda3/envs/biome/lib/python3.7/importlib/_bootstrap.py:219: RuntimeWarning: greenlet.greenlet size changed, may indicate binary incompatibility. Expected 144 from C header, got 152 from PyObject
+  return f(*args, **kwds)
+/home/david/miniconda3/envs/biome/lib/python3.7/importlib/_bootstrap.py:219: RuntimeWarning: greenlet.greenlet size changed, may indicate binary incompatibility. Expected 144 from C header, got 152 from PyObject
+  return f(*args, **kwds)
+/home/david/miniconda3/envs/biome/lib/python3.7/importlib/_bootstrap.py:219: RuntimeWarning: greenlet.greenlet size changed, may indicate binary incompatibility. Expected 144 from C header, got 152 from PyObject
+  return f(*args, **kwds)
+</code></pre></div><h2 id="exploring-and-preparing-the-data"><a href="#exploring-and-preparing-the-data" class="header-anchor">#</a> Exploring and preparing the data</h2> <p>For this tutorial we are going to use the <a href="https://www.kaggle.com/Cornell-University/arxiv" target="_blank" rel="noopener noreferrer">arXiv dataset<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> compiled by the Cornell University, which consists of metadata of scientific papers stored in <a href="https://arxiv.org/" target="_blank" rel="noopener noreferrer">arXiv<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p> <p>We preprocessed the data in a separate <a href="https://drive.google.com/file/d/1zUSz81x15RH5mL5GoN7i7xqiNGEqclU0/view?usp=sharing" target="_blank" rel="noopener noreferrer">notebook<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> producing three csv files (train, validate and test datasets) that contain the title, the abstract and the category of the corresponding paper.</p> <p>Our NLP task will be to classify the papers into the given categories based on the title and abstract. Below we download the preprocessed data and create our <a href="https://www.recogn.ai/biome-text/api/biome/text/dataset.html#dataset" target="_blank" rel="noopener noreferrer">Datasets<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> with it.</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token comment"># Downloading the datasets</span>
+!curl <span class="token operator">-</span>O https<span class="token punctuation">:</span><span class="token operator">//</span>biome<span class="token operator">-</span>tutorials<span class="token operator">-</span>data<span class="token punctuation">.</span>s3<span class="token operator">-</span>eu<span class="token operator">-</span>west<span class="token operator">-</span><span class="token number">1.</span>amazonaws<span class="token punctuation">.</span>com<span class="token operator">/</span>transformers_arxiv<span class="token operator">-</span>classifier<span class="token operator">/</span>arxiv<span class="token operator">-</span>dataset<span class="token operator">-</span>train<span class="token punctuation">.</span>json
+!curl <span class="token operator">-</span>O https<span class="token punctuation">:</span><span class="token operator">//</span>biome<span class="token operator">-</span>tutorials<span class="token operator">-</span>data<span class="token punctuation">.</span>s3<span class="token operator">-</span>eu<span class="token operator">-</span>west<span class="token operator">-</span><span class="token number">1.</span>amazonaws<span class="token punctuation">.</span>com<span class="token operator">/</span>transformers_arxiv<span class="token operator">-</span>classifier<span class="token operator">/</span>arxiv<span class="token operator">-</span>dataset<span class="token operator">-</span>validate<span class="token punctuation">.</span>json
+!curl <span class="token operator">-</span>O https<span class="token punctuation">:</span><span class="token operator">//</span>biome<span class="token operator">-</span>tutorials<span class="token operator">-</span>data<span class="token punctuation">.</span>s3<span class="token operator">-</span>eu<span class="token operator">-</span>west<span class="token operator">-</span><span class="token number">1.</span>amazonaws<span class="token punctuation">.</span>com<span class="token operator">/</span>transformers_arxiv<span class="token operator">-</span>classifier<span class="token operator">/</span>arxiv<span class="token operator">-</span>dataset<span class="token operator">-</span>test<span class="token punctuation">.</span>json
+</code></pre></div><div class="language- extra-class"><pre><code>  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  9.9M  100  9.9M    0     0  7844k      0  0:00:01  0:00:01 --:--:-- 7838k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1270k  100 1270k    0     0  1043k      0  0:00:01  0:00:01 --:--:-- 1043k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 1236k  100 1236k    0     0  1434k      0 --:--:-- --:--:-- --:--:-- 1432k
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code><span class="token comment"># Loading from local</span>
+train_ds <span class="token operator">=</span> Dataset<span class="token punctuation">.</span>from_json<span class="token punctuation">(</span><span class="token string">&quot;arxiv-dataset-train.json&quot;</span><span class="token punctuation">)</span>
+valid_ds <span class="token operator">=</span> Dataset<span class="token punctuation">.</span>from_json<span class="token punctuation">(</span><span class="token string">&quot;arxiv-dataset-validate.json&quot;</span><span class="token punctuation">)</span>
+test_ds <span class="token operator">=</span> Dataset<span class="token punctuation">.</span>from_json<span class="token punctuation">(</span><span class="token string">&quot;arxiv-dataset-test.json&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>Using custom data configuration default
+
+
+Downloading and preparing dataset json/default-eeca6b23a235c21b (download: Unknown size, generated: Unknown size, post-processed: Unknown size, total: Unknown size) to /home/david/.cache/huggingface/datasets/json/default-eeca6b23a235c21b/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9...
+
+
+
+HBox(children=(FloatProgress(value=1.0, bar_style='info', layout=Layout(width='20px'), max=1.0), HTML(value=''…
+
+
+Dataset json downloaded and prepared to /home/david/.cache/huggingface/datasets/json/default-eeca6b23a235c21b/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9. Subsequent calls will reuse this data.
+
+
+Using custom data configuration default
+
+
+Downloading and preparing dataset json/default-750351052310c435 (download: Unknown size, generated: Unknown size, post-processed: Unknown size, total: Unknown size) to /home/david/.cache/huggingface/datasets/json/default-750351052310c435/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9...
+
+
+
+HBox(children=(FloatProgress(value=1.0, bar_style='info', layout=Layout(width='20px'), max=1.0), HTML(value=''…
+
+
+Dataset json downloaded and prepared to /home/david/.cache/huggingface/datasets/json/default-750351052310c435/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9. Subsequent calls will reuse this data.
+
+
+Using custom data configuration default
+
+
+Downloading and preparing dataset json/default-b364982e9c8b4412 (download: Unknown size, generated: Unknown size, post-processed: Unknown size, total: Unknown size) to /home/david/.cache/huggingface/datasets/json/default-b364982e9c8b4412/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9...
+
+
+
+HBox(children=(FloatProgress(value=1.0, bar_style='info', layout=Layout(width='20px'), max=1.0), HTML(value=''…
+
+
+Dataset json downloaded and prepared to /home/david/.cache/huggingface/datasets/json/default-b364982e9c8b4412/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9. Subsequent calls will reuse this data.
+</code></pre></div><p>Let's have a look at the first 10 examples of the train dataset.</p> <div class="language-python extra-class"><pre class="language-python"><code>train_ds<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span>
+</code></pre></div><div><style scoped="scoped">
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&lt;!--beforebegin--&gt;&lt;div class=&quot;language- extra-class&quot;&gt;&lt;!--afterbegin--&gt;&lt;pre&gt;&lt;code&gt;.dataframe tbody tr th {
+    vertical-align: top;
+}
+
+.dataframe thead th {
+    text-align: right;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;!--beforeend--&gt;&lt;/div&gt;&lt;!--afterend--&gt;</style> <table border="1" class="dataframe"><thead><tr style="text-align:right;"><th></th> <th>title</th> <th>categories</th> <th>abstract</th></tr></thead> <tbody><tr><th>0</th> <td>Coherent structures in the wake of a SAE squar...</td> <td>physics.flu-dyn</td> <td>The wake of a SAE squareback vehicle model i...</td></tr> <tr><th>1</th> <td>On the interaction of precipitates and tensile...</td> <td>cond-mat.mtrl-sci</td> <td>Although magnesium alloys deform extensively...</td></tr> <tr><th>2</th> <td>Multi-domain Spectral Collocation Method for V...</td> <td>math.NA</td> <td>Spectral and spectral element methods using ...</td></tr> <tr><th>3</th> <td>The min-max edge q-coloring problem</td> <td>cs.DS</td> <td>In this paper we introduce and study a new p...</td></tr> <tr><th>4</th> <td>A Simple Model for a Dual Non-Abelian Monopole...</td> <td>hep-th</td> <td>We investigate the flux-tube joining two equ...</td></tr> <tr><th>5</th> <td>A second moment bound for critical points of p...</td> <td>math.PR</td> <td>We consider the number of critical points of...</td></tr> <tr><th>6</th> <td>$\Sigma^0$ production in proton nucleus collis...</td> <td>nucl-ex</td> <td>The production of $\Sigma^{0}$ baryons in th...</td></tr> <tr><th>7</th> <td>Zero-temperature glass transition in two dimen...</td> <td>cond-mat.stat-mech</td> <td>The nature of the glass transition is theore...</td></tr> <tr><th>8</th> <td>Measurement of the $B^0_s\to\mu^+\mu^-$ branch...</td> <td>hep-ex</td> <td>A search for the rare decays $B^0_s\to\mu^+\...</td></tr> <tr><th>9</th> <td>STAR inner tracking upgrade - A performance study</td> <td>nucl-ex</td> <td>Anisotropic flow measurements have demonstra...</td></tr></tbody></table></div> <p>Our pipeline defined in the next section, or to be more precise the <code>TaskClassification</code> task <a href="https://www.recogn.ai/biome-text/documentation/basics.html#head" target="_blank" rel="noopener noreferrer">head<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, will expect a <em>text</em> and <em>label</em> column to be present in our data.
+Therefore, we need to map our input to these two columns:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token comment"># Renaming the 'categories' column into 'label'</span>
+train_ds<span class="token punctuation">.</span>rename_column_<span class="token punctuation">(</span><span class="token string">&quot;categories&quot;</span><span class="token punctuation">,</span> <span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span>
+valid_ds<span class="token punctuation">.</span>rename_column_<span class="token punctuation">(</span><span class="token string">&quot;categories&quot;</span><span class="token punctuation">,</span> <span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span>
+test_ds<span class="token punctuation">.</span>rename_column_<span class="token punctuation">(</span><span class="token string">&quot;categories&quot;</span><span class="token punctuation">,</span> <span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span>
+
+<span class="token comment"># Combining 'title' and 'abstract' into a 'text' column, and remove them afterwards</span>
+train_ds <span class="token operator">=</span> train_ds<span class="token punctuation">.</span><span class="token builtin">map</span><span class="token punctuation">(</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token string">&quot;text&quot;</span><span class="token punctuation">:</span> x<span class="token punctuation">[</span><span class="token string">&quot;title&quot;</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token string">&quot; &quot;</span> <span class="token operator">+</span> x<span class="token punctuation">[</span><span class="token string">&quot;abstract&quot;</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">,</span> remove_columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">&quot;title&quot;</span><span class="token punctuation">,</span> <span class="token string">&quot;abstract&quot;</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+valid_ds <span class="token operator">=</span> valid_ds<span class="token punctuation">.</span><span class="token builtin">map</span><span class="token punctuation">(</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token string">&quot;text&quot;</span><span class="token punctuation">:</span> x<span class="token punctuation">[</span><span class="token string">&quot;title&quot;</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token string">&quot; &quot;</span> <span class="token operator">+</span> x<span class="token punctuation">[</span><span class="token string">&quot;abstract&quot;</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">,</span> remove_columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">&quot;title&quot;</span><span class="token punctuation">,</span> <span class="token string">&quot;abstract&quot;</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+test_ds <span class="token operator">=</span> test_ds<span class="token punctuation">.</span><span class="token builtin">map</span><span class="token punctuation">(</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token string">&quot;text&quot;</span><span class="token punctuation">:</span> x<span class="token punctuation">[</span><span class="token string">&quot;title&quot;</span><span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token string">&quot; &quot;</span> <span class="token operator">+</span> x<span class="token punctuation">[</span><span class="token string">&quot;abstract&quot;</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">,</span> remove_columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">&quot;title&quot;</span><span class="token punctuation">,</span> <span class="token string">&quot;abstract&quot;</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>HBox(children=(FloatProgress(value=0.0, max=10000.0), HTML(value='')))
+
+
+
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=1250.0), HTML(value='')))
+
+
+
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=1250.0), HTML(value='')))
+</code></pre></div><h2 id="configuring-and-training-the-pipeline"><a href="#configuring-and-training-the-pipeline" class="header-anchor">#</a> Configuring and training the pipeline</h2> <p>As we have seen in <a href="https://www.recogn.ai/biome-text/documentation/tutorials/1-Training_a_text_classifier.html#explore-the-training-data" target="_blank" rel="noopener noreferrer">previous tutorials<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, a <em>biome.text</em> <a href="https://www.recogn.ai/biome-text/documentation/basics.html#pipeline" target="_blank" rel="noopener noreferrer"><code>Pipeline</code><svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> consists of tokenizing the input, extracting text features, applying a language encoding (optionally) and executing a task-specific head in the end. In <em>biome.text</em> the pre-trained transformers by Hugging Face are treated as a text feature, just like the <em>word</em> and <em>char</em> feature.</p> <p>In this section we will configure and train 3 different pipelines to showcase the usage of transformers in <em>biome.text</em>.</p> <h3 id="fine-tuning-the-transformer"><a href="#fine-tuning-the-transformer" class="header-anchor">#</a> Fine-tuning the transformer</h3> <p>In our first pipeline we follow the common approach to use pretrained transformers in classification tasks. It consists of fine-tuning the transformer weights and using a special token as pooler in the end. In our configuration the former step means setting the <code>trainable</code> parameter in the <em>transformers</em> features to <code>True</code>. The downside of fine-tuning is that most of the pre-trained transformers are relatively big and require dedicated hardware to be fine-tuned. For example, in this tutorial we will use <code>distilroberta-base</code>, a <a href="https://github.com/huggingface/transformers/tree/master/examples/distillation" target="_blank" rel="noopener noreferrer">distilled version<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> of RoBERTa with a total of ~80M parameters.</p> <p>We also need to specify the maximum number of input tokens <code>max_length</code> supported by the pretrained transformer. If you are sure that your input data does not exceed this limit, you can skip this parameter.</p> <p>With BERT-like models, such as RoBERTa, a special [CLS] token is added as first token to each input. It is pretrained to effectively represent the entire input and can be used as pooler in the head component. Many BERT like models pass this token through a non-linear tanh activation layer that is part of the pretraining. If you want to use these pretrained weights you have to use the <code>bert_pooler</code> together with the corresponding <code>pretrained_model</code>. We will fine-tune these weights as well (setting <code>require_grad</code> to <code>True</code>) and add a little dropout.</p> <div class="custom-block tip"><p class="custom-block-title">Tip</p> <p>You can also use the [CLS] token directly without passing it through the non-linear layer by using the <code>cls_pooler</code>.</p></div> <p>The <code>TextClassification</code> head automatically applies a linear layer with an output dimension corresponding to the number of labels in the end.</p> <div class="language-python extra-class"><pre class="language-python"><code>pipeline_dict_finetuning <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">&quot;name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;arxiv_categories_classification&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;features&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;transformers&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;model_name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;distilroberta-base&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;trainable&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>  <span class="token comment"># freeze the weights of the transformer</span>
+            <span class="token string">&quot;max_length&quot;</span><span class="token punctuation">:</span> <span class="token number">512</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;head&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;TextClassification&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;labels&quot;</span><span class="token punctuation">:</span> train_ds<span class="token punctuation">.</span>unique<span class="token punctuation">(</span><span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;pooler&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;bert_pooler&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;pretrained_model&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;distilroberta-base&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;requires_grad&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;dropout&quot;</span><span class="token punctuation">:</span> <span class="token number">0.1</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token comment"># If you do not want to use the pre-trained activation layer for the CLS token (see text) </span>
+        <span class="token comment"># &quot;pooler&quot;: {</span>
+        <span class="token comment">#     &quot;type&quot;: &quot;cls_pooler&quot;,</span>
+        <span class="token comment"># }</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_config<span class="token punctuation">(</span>pipeline_dict_finetuning<span class="token punctuation">)</span>
+</code></pre></div><p>In our trainer configuration we will use canonical values for the <code>batch_size</code> and <code>lr</code> taken from the Hugging Face transformers library. We also will apply a linearly decaying learning rate scheduler with 50 warm-up steps, which is recommended when fine-tuning a pretrained model. For now we will stick to two epochs to allow for a rapid iteration.</p> <div class="language-python extra-class"><pre class="language-python"><code>trainer <span class="token operator">=</span> TrainerConfiguration<span class="token punctuation">(</span>
+    optimizer<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adamw&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> <span class="token number">5e</span><span class="token operator">-</span><span class="token number">5</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    learning_rate_scheduler<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;linear_with_warmup&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;num_epochs&quot;</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;num_steps_per_epoch&quot;</span><span class="token punctuation">:</span> <span class="token number">1250</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;warmup_steps&quot;</span><span class="token punctuation">:</span> <span class="token number">50</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    batch_size<span class="token operator">=</span><span class="token number">8</span><span class="token punctuation">,</span>
+    num_epochs<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>train<span class="token punctuation">(</span>
+    output<span class="token operator">=</span><span class="token string">&quot;output/fine_tuning&quot;</span><span class="token punctuation">,</span>
+    training<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    validation<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    trainer<span class="token operator">=</span>trainer<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>After two epochs we achieve an accuracy of about 0.65, which is competetive looking at the corresponding <a href="https://www.kaggle.com/Cornell-University/arxiv/notebooks" target="_blank" rel="noopener noreferrer">Kaggle notebooks<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>. Keep in mind that we did not optimize any of the training parameters.</p> <h3 id="training-with-a-frozen-transformer"><a href="#training-with-a-frozen-transformer" class="header-anchor">#</a> Training with a frozen transformer</h3> <p>In our second pipeline we keep the weights of the transformer frozen by setting <code>trainable: False</code> and only train the pooler in the head component. In this setup the training will be significantly faster and does not necessarily require dedicated hardware.</p> <p>As pooler we will use a bidirectional <a href="https://en.wikipedia.org/wiki/Gated_recurrent_unit" target="_blank" rel="noopener noreferrer">GRU<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> in the head.</p> <div class="language-python extra-class"><pre class="language-python"><code>pipeline_dict_frozen <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">&quot;name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;arxiv_categories_classification&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;features&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;transformers&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;model_name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;distilroberta-base&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;trainable&quot;</span><span class="token punctuation">:</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;max_length&quot;</span><span class="token punctuation">:</span> <span class="token number">512</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;head&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;TextClassification&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;labels&quot;</span><span class="token punctuation">:</span> train_ds<span class="token punctuation">.</span>unique<span class="token punctuation">(</span><span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;pooler&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;gru&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;num_layers&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;hidden_size&quot;</span><span class="token punctuation">:</span> <span class="token number">128</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;bidirectional&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_config<span class="token punctuation">(</span>pipeline_dict_frozen<span class="token punctuation">)</span>
+</code></pre></div><p>In our training configuration we will use the same <code>batch_size</code> as in the previous configuration but increase the learning rate to Pytorch's default value for the AdamW optimizer, in order to work well with the GRU. We also remove the learning rate scheduler with its warmup steps, since we do not modify the pretrained transformer weights.</p> <div class="language-python extra-class"><pre class="language-python"><code>trainer <span class="token operator">=</span> TrainerConfiguration<span class="token punctuation">(</span>
+    optimizer<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adamw&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> <span class="token number">0.002</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    batch_size<span class="token operator">=</span><span class="token number">8</span><span class="token punctuation">,</span>
+    num_epochs<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>train<span class="token punctuation">(</span>
+    output<span class="token operator">=</span><span class="token string">&quot;output/frozen_transformer&quot;</span><span class="token punctuation">,</span>
+    training<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    validation<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    trainer<span class="token operator">=</span>trainer<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><div class="language- extra-class"><pre><code>HBox(children=(FloatProgress(value=0.0, description='Loading instances into memory', max=10000.0, style=Progre…
+
+
+2020-11-25 13:05:41,770 - biome.text.dataset - INFO - Caching instances to /home/david/.cache/huggingface/datasets/json/default-eeca6b23a235c21b/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9/c7f20f7b187d1e70.instance_list)
+
+
+
+
+
+
+HBox(children=(FloatProgress(value=0.0, description='Loading instances into memory', max=1250.0, style=Progres…
+
+
+2020-11-25 13:05:49,968 - biome.text.dataset - INFO - Caching instances to /home/david/.cache/huggingface/datasets/json/default-750351052310c435/0.0.0/fb88b12bd94767cb0cc7eedcd82ea1f402d2162addc03a37e81d4f8dc7313ad9/a6f11b086d6ad975.instance_list)
+
+
+
+
+
+2020-11-25 13:05:50,600 - allennlp.common.params - INFO - random_seed = 13370
+2020-11-25 13:05:50,600 - allennlp.common.params - INFO - numpy_seed = 1337
+2020-11-25 13:05:50,600 - allennlp.common.params - INFO - pytorch_seed = 133
+2020-11-25 13:05:50,602 - allennlp.common.checks - INFO - Pytorch version: 1.6.0
+2020-11-25 13:05:50,675 - allennlp.common.params - INFO - type = gradient_descent
+2020-11-25 13:05:50,676 - allennlp.common.params - INFO - local_rank = 0
+2020-11-25 13:05:50,676 - allennlp.common.params - INFO - patience = 2
+2020-11-25 13:05:50,676 - allennlp.common.params - INFO - validation_metric = -loss
+2020-11-25 13:05:50,677 - allennlp.common.params - INFO - num_epochs = 2
+2020-11-25 13:05:50,677 - allennlp.common.params - INFO - cuda_device = None
+2020-11-25 13:05:50,678 - allennlp.common.params - INFO - grad_norm = None
+2020-11-25 13:05:50,678 - allennlp.common.params - INFO - grad_clipping = None
+2020-11-25 13:05:50,678 - allennlp.common.params - INFO - distributed = False
+2020-11-25 13:05:50,679 - allennlp.common.params - INFO - world_size = 1
+2020-11-25 13:05:50,679 - allennlp.common.params - INFO - num_gradient_accumulation_steps = 1
+2020-11-25 13:05:50,679 - allennlp.common.params - INFO - use_amp = False
+2020-11-25 13:05:50,680 - allennlp.common.params - INFO - no_grad = None
+2020-11-25 13:05:50,680 - allennlp.common.params - INFO - learning_rate_scheduler = None
+2020-11-25 13:05:50,681 - allennlp.common.params - INFO - momentum_scheduler = None
+2020-11-25 13:05:50,681 - allennlp.common.params - INFO - moving_average = None
+2020-11-25 13:05:50,681 - allennlp.common.params - INFO - batch_callbacks = None
+2020-11-25 13:05:50,682 - allennlp.common.params - INFO - end_callbacks = None
+2020-11-25 13:05:50,682 - allennlp.common.params - INFO - trainer_callbacks = None
+2020-11-25 13:05:50,683 - allennlp.common.params - INFO - optimizer.type = adamw
+2020-11-25 13:05:50,683 - allennlp.common.params - INFO - optimizer.parameter_groups = None
+2020-11-25 13:05:50,684 - allennlp.common.params - INFO - optimizer.lr = 0.002
+2020-11-25 13:05:50,684 - allennlp.common.params - INFO - optimizer.betas = (0.9, 0.999)
+2020-11-25 13:05:50,685 - allennlp.common.params - INFO - optimizer.eps = 1e-08
+2020-11-25 13:05:50,685 - allennlp.common.params - INFO - optimizer.weight_decay = 0.01
+2020-11-25 13:05:50,685 - allennlp.common.params - INFO - optimizer.amsgrad = False
+2020-11-25 13:05:50,688 - allennlp.training.optimizers - INFO - Number of trainable parameters: 702514
+2020-11-25 13:05:50,689 - allennlp.common.util - INFO - The following parameters are Frozen (without gradient):
+2020-11-25 13:05:50,689 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.embeddings.word_embeddings.weight
+2020-11-25 13:05:50,689 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.embeddings.position_embeddings.weight
+2020-11-25 13:05:50,690 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.embeddings.token_type_embeddings.weight
+2020-11-25 13:05:50,691 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.embeddings.LayerNorm.weight
+2020-11-25 13:05:50,691 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.embeddings.LayerNorm.bias
+2020-11-25 13:05:50,692 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.self.query.weight
+2020-11-25 13:05:50,692 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.self.query.bias
+2020-11-25 13:05:50,693 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.self.key.weight
+2020-11-25 13:05:50,694 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.self.key.bias
+2020-11-25 13:05:50,694 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.self.value.weight
+2020-11-25 13:05:50,695 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.self.value.bias
+2020-11-25 13:05:50,695 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.output.dense.weight
+2020-11-25 13:05:50,695 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.output.dense.bias
+2020-11-25 13:05:50,696 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.output.LayerNorm.weight
+2020-11-25 13:05:50,697 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.attention.output.LayerNorm.bias
+2020-11-25 13:05:50,697 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.intermediate.dense.weight
+2020-11-25 13:05:50,697 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.intermediate.dense.bias
+2020-11-25 13:05:50,698 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.output.dense.weight
+2020-11-25 13:05:50,699 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.output.dense.bias
+2020-11-25 13:05:50,699 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.output.LayerNorm.weight
+2020-11-25 13:05:50,700 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.0.output.LayerNorm.bias
+2020-11-25 13:05:50,701 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.self.query.weight
+2020-11-25 13:05:50,701 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.self.query.bias
+2020-11-25 13:05:50,701 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.self.key.weight
+2020-11-25 13:05:50,702 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.self.key.bias
+2020-11-25 13:05:50,703 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.self.value.weight
+2020-11-25 13:05:50,704 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.self.value.bias
+2020-11-25 13:05:50,704 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.output.dense.weight
+2020-11-25 13:05:50,704 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.output.dense.bias
+2020-11-25 13:05:50,705 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.output.LayerNorm.weight
+2020-11-25 13:05:50,705 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.attention.output.LayerNorm.bias
+2020-11-25 13:05:50,706 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.intermediate.dense.weight
+2020-11-25 13:05:50,706 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.intermediate.dense.bias
+2020-11-25 13:05:50,706 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.output.dense.weight
+2020-11-25 13:05:50,707 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.output.dense.bias
+2020-11-25 13:05:50,708 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.output.LayerNorm.weight
+2020-11-25 13:05:50,708 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.1.output.LayerNorm.bias
+2020-11-25 13:05:50,709 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.self.query.weight
+2020-11-25 13:05:50,709 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.self.query.bias
+2020-11-25 13:05:50,709 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.self.key.weight
+2020-11-25 13:05:50,710 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.self.key.bias
+2020-11-25 13:05:50,711 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.self.value.weight
+2020-11-25 13:05:50,712 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.self.value.bias
+2020-11-25 13:05:50,712 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.output.dense.weight
+2020-11-25 13:05:50,712 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.output.dense.bias
+2020-11-25 13:05:50,712 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.output.LayerNorm.weight
+2020-11-25 13:05:50,713 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.attention.output.LayerNorm.bias
+2020-11-25 13:05:50,713 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.intermediate.dense.weight
+2020-11-25 13:05:50,714 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.intermediate.dense.bias
+2020-11-25 13:05:50,715 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.output.dense.weight
+2020-11-25 13:05:50,715 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.output.dense.bias
+2020-11-25 13:05:50,716 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.output.LayerNorm.weight
+2020-11-25 13:05:50,716 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.2.output.LayerNorm.bias
+2020-11-25 13:05:50,716 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.self.query.weight
+2020-11-25 13:05:50,717 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.self.query.bias
+2020-11-25 13:05:50,717 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.self.key.weight
+2020-11-25 13:05:50,717 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.self.key.bias
+2020-11-25 13:05:50,718 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.self.value.weight
+2020-11-25 13:05:50,718 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.self.value.bias
+2020-11-25 13:05:50,718 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.output.dense.weight
+2020-11-25 13:05:50,719 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.output.dense.bias
+2020-11-25 13:05:50,719 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.output.LayerNorm.weight
+2020-11-25 13:05:50,719 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.attention.output.LayerNorm.bias
+2020-11-25 13:05:50,720 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.intermediate.dense.weight
+2020-11-25 13:05:50,720 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.intermediate.dense.bias
+2020-11-25 13:05:50,720 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.output.dense.weight
+2020-11-25 13:05:50,721 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.output.dense.bias
+2020-11-25 13:05:50,721 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.output.LayerNorm.weight
+2020-11-25 13:05:50,722 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.3.output.LayerNorm.bias
+2020-11-25 13:05:50,722 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.self.query.weight
+2020-11-25 13:05:50,722 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.self.query.bias
+2020-11-25 13:05:50,723 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.self.key.weight
+2020-11-25 13:05:50,723 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.self.key.bias
+2020-11-25 13:05:50,723 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.self.value.weight
+2020-11-25 13:05:50,723 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.self.value.bias
+2020-11-25 13:05:50,724 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.output.dense.weight
+2020-11-25 13:05:50,724 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.output.dense.bias
+2020-11-25 13:05:50,724 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.output.LayerNorm.weight
+2020-11-25 13:05:50,725 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.attention.output.LayerNorm.bias
+2020-11-25 13:05:50,725 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.intermediate.dense.weight
+2020-11-25 13:05:50,727 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.intermediate.dense.bias
+2020-11-25 13:05:50,727 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.output.dense.weight
+2020-11-25 13:05:50,728 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.output.dense.bias
+2020-11-25 13:05:50,728 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.output.LayerNorm.weight
+2020-11-25 13:05:50,728 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.4.output.LayerNorm.bias
+2020-11-25 13:05:50,729 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.self.query.weight
+2020-11-25 13:05:50,729 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.self.query.bias
+2020-11-25 13:05:50,729 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.self.key.weight
+2020-11-25 13:05:50,730 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.self.key.bias
+2020-11-25 13:05:50,730 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.self.value.weight
+2020-11-25 13:05:50,730 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.self.value.bias
+2020-11-25 13:05:50,734 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.output.dense.weight
+2020-11-25 13:05:50,734 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.output.dense.bias
+2020-11-25 13:05:50,735 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.output.LayerNorm.weight
+2020-11-25 13:05:50,735 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.attention.output.LayerNorm.bias
+2020-11-25 13:05:50,735 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.intermediate.dense.weight
+2020-11-25 13:05:50,736 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.intermediate.dense.bias
+2020-11-25 13:05:50,736 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.output.dense.weight
+2020-11-25 13:05:50,737 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.output.dense.bias
+2020-11-25 13:05:50,737 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.output.LayerNorm.weight
+2020-11-25 13:05:50,737 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.encoder.layer.5.output.LayerNorm.bias
+2020-11-25 13:05:50,738 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.pooler.dense.weight
+2020-11-25 13:05:50,739 - allennlp.common.util - INFO - _head.backbone.embedder.token_embedder_transformers.transformer_model.pooler.dense.bias
+2020-11-25 13:05:50,739 - allennlp.common.util - INFO - The following parameters are Tunable (with gradient):
+2020-11-25 13:05:50,740 - allennlp.common.util - INFO - _head.pooler._module.weight_ih_l0
+2020-11-25 13:05:50,741 - allennlp.common.util - INFO - _head.pooler._module.weight_hh_l0
+2020-11-25 13:05:50,741 - allennlp.common.util - INFO - _head.pooler._module.bias_ih_l0
+2020-11-25 13:05:50,741 - allennlp.common.util - INFO - _head.pooler._module.bias_hh_l0
+2020-11-25 13:05:50,741 - allennlp.common.util - INFO - _head.pooler._module.weight_ih_l0_reverse
+2020-11-25 13:05:50,742 - allennlp.common.util - INFO - _head.pooler._module.weight_hh_l0_reverse
+2020-11-25 13:05:50,742 - allennlp.common.util - INFO - _head.pooler._module.bias_ih_l0_reverse
+2020-11-25 13:05:50,743 - allennlp.common.util - INFO - _head.pooler._module.bias_hh_l0_reverse
+2020-11-25 13:05:50,743 - allennlp.common.util - INFO - _head._classification_layer.weight
+2020-11-25 13:05:50,743 - allennlp.common.util - INFO - _head._classification_layer.bias
+2020-11-25 13:05:50,744 - allennlp.common.params - INFO - checkpointer.type = default
+2020-11-25 13:05:50,744 - allennlp.common.params - INFO - checkpointer.keep_serialized_model_every_num_seconds = None
+2020-11-25 13:05:50,745 - allennlp.common.params - INFO - checkpointer.num_serialized_models_to_keep = 1
+2020-11-25 13:05:50,745 - allennlp.common.params - INFO - checkpointer.model_save_interval = None
+2020-11-25 13:05:50,745 - allennlp.common.params - INFO - tensorboard_writer.summary_interval = 100
+2020-11-25 13:05:50,747 - allennlp.common.params - INFO - tensorboard_writer.histogram_interval = None
+2020-11-25 13:05:50,748 - allennlp.common.params - INFO - tensorboard_writer.batch_size_interval = None
+2020-11-25 13:05:50,748 - allennlp.common.params - INFO - tensorboard_writer.should_log_parameter_statistics = True
+2020-11-25 13:05:50,749 - allennlp.common.params - INFO - tensorboard_writer.should_log_learning_rate = True
+2020-11-25 13:05:50,749 - allennlp.common.params - INFO - tensorboard_writer.get_batch_num_total = None
+[34m[1mwandb[0m: Currently logged in as: [33mdcfidalgo[0m (use `wandb login --relogin` to force relogin)
+[34m[1mwandb[0m: wandb version 0.10.11 is available!  To upgrade, please run:
+[34m[1mwandb[0m:  $ pip install wandb --upgrade
+</code></pre></div><p>Tracking run with wandb version 0.10.8<br>
+Syncing run <strong style="color:#cdcd00;">comfy-jazz-218</strong> to <a href="https://wandb.ai" target="_blank">Weights &amp; Biases</a> <a href="https://docs.wandb.com/integrations/jupyter.html" target="_blank">(Documentation)</a>.<br>
+Project page: <a href="https://wandb.ai/dcfidalgo/biome" target="_blank">https://wandb.ai/dcfidalgo/biome</a><br>
+Run page: <a href="https://wandb.ai/dcfidalgo/biome/runs/3guw1my1" target="_blank">https://wandb.ai/dcfidalgo/biome/runs/3guw1my1</a><br>
+Run data is saved locally in <code>wandb/run-20201125_130551-3guw1my1</code><br><br></p> <div class="language- extra-class"><pre><code>2020-11-25 13:05:52,016 - allennlp.training.trainer - INFO - Beginning training.
+2020-11-25 13:05:52,017 - allennlp.training.trainer - INFO - Epoch 0/1
+2020-11-25 13:05:52,018 - allennlp.training.trainer - INFO - Worker 0 memory usage: 3.1G
+2020-11-25 13:05:52,020 - allennlp.training.trainer - INFO - Training
+
+
+
+HBox(children=(FloatProgress(value=0.0, max=1250.0), HTML(value='')))
+
+
+2020-11-25 13:05:57,995 - allennlp.training.util - WARNING - Metrics with names beginning with &quot;_&quot; will not be logged to the tqdm progress bar.
+
+
+
+
+---------------------------------------------------------------------------
+
+KeyboardInterrupt                         Traceback (most recent call last)
+
+&lt;ipython-input-10-d00873962548&gt; in &lt;module&gt;()
+      3     training=train_ds,
+      4     validation=valid_ds,
+----&gt; 5     trainer=trainer,
+      6 )
+
+
+~/recognai/biome/biome-text/src/biome/text/pipeline.py in train(self, output, training, trainer, validation, test, extend_vocab, loggers, lazy, restore, quiet)
+    347                     )
+    348
+--&gt; 349             self._model.file_path, metrics = pipeline_trainer.train()
+    350             train_results = TrainingResults(self.model_path, metrics)
+    351
+
+
+~/recognai/biome/biome-text/src/biome/text/_helpers.py in train(self)
+    206
+    207         try:
+--&gt; 208             metrics = self._trainer.train()
+    209         except KeyboardInterrupt:
+    210             # if we have completed an epoch, try to create a model archive.
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/allennlp/training/trainer.py in train(self)
+    964         &quot;&quot;&quot;
+    965         try:
+--&gt; 966             return self._try_train()
+    967         finally:
+    968             # make sure pending events are flushed to disk and files are closed properly
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/allennlp/training/trainer.py in _try_train(self)
+    999         for epoch in range(epoch_counter, self._num_epochs):
+   1000             epoch_start_time = time.time()
+-&gt; 1001             train_metrics = self._train_epoch(epoch)
+   1002
+   1003             if self._master and self._checkpointer is not None:
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/allennlp/training/trainer.py in _train_epoch(self, epoch)
+    714             for batch in batch_group:
+    715                 with amp.autocast(self._use_amp):
+--&gt; 716                     batch_outputs = self.batch_outputs(batch, for_training=True)
+    717                     batch_group_outputs.append(batch_outputs)
+    718                     loss = batch_outputs[&quot;loss&quot;]
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/allennlp/training/trainer.py in batch_outputs(self, batch, for_training)
+    602         &quot;&quot;&quot;
+    603         batch = nn_util.move_to_device(batch, self.cuda_device)
+--&gt; 604         output_dict = self._pytorch_model(**batch)
+    605
+    606         if for_training:
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/recognai/biome/biome-text/src/biome/text/_model.py in forward(self, *args, **kwargs)
+    144     def forward(self, *args, **kwargs) -&gt; Dict[str, torch.Tensor]:
+    145         &quot;&quot;&quot;The main forward method. Wraps the head forward method and converts the head output into a dictionary&quot;&quot;&quot;
+--&gt; 146         head_output: TaskOutput = self._head.forward(*args, **kwargs)
+    147         # we don't want to break AllenNLP API: TaskOutput -&gt; as_dict()
+    148         return head_output.as_dict()
+
+
+~/recognai/biome/biome-text/src/biome/text/modules/heads/classification/text_classification.py in forward(self, text, label)
+     69
+     70         mask = get_text_field_mask(text)
+---&gt; 71         embedded_text = self.backbone.forward(text, mask)
+     72         embedded_text = self.pooler(embedded_text, mask=mask)
+     73
+
+
+~/recognai/biome/biome-text/src/biome/text/backbone.py in forward(self, text, mask, num_wrapping_dims)
+     70             Encoded representation of the input
+     71         &quot;&quot;&quot;
+---&gt; 72         embeddings = self.embedder(text, num_wrapping_dims=num_wrapping_dims)
+     73         return self.encoder(embeddings, mask=mask)
+     74
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/allennlp/modules/text_field_embedders/basic_text_field_embedder.py in forward(self, text_field_input, num_wrapping_dims, **kwargs)
+    101                 # If there are multiple tensor arguments, we have to require matching names from the
+    102                 # TokenIndexer.  I don't think there's an easy way around that.
+--&gt; 103                 token_vectors = embedder(**tensors, **forward_params_values)
+    104             if token_vectors is not None:
+    105                 # To handle some very rare use cases, we allow the return value of the embedder to
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/allennlp/modules/token_embedders/pretrained_transformer_embedder.py in forward(self, token_ids, mask, type_ids, segment_concat_mask)
+    183             parameters[&quot;token_type_ids&quot;] = type_ids
+    184
+--&gt; 185         transformer_output = self.transformer_model(**parameters)
+    186         if self._scalar_mix is not None:
+    187             # As far as I can tell, the hidden states will always be the last element
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/transformers/modeling_roberta.py in forward(self, input_ids, attention_mask, token_type_ids, position_ids, head_mask, inputs_embeds, encoder_hidden_states, encoder_attention_mask, output_attentions, output_hidden_states, return_dict)
+    683             output_attentions=output_attentions,
+    684             output_hidden_states=output_hidden_states,
+--&gt; 685             return_dict=return_dict,
+    686         )
+    687         sequence_output = encoder_outputs[0]
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/transformers/modeling_roberta.py in forward(self, hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, output_attentions, output_hidden_states, return_dict)
+    422                     encoder_hidden_states,
+    423                     encoder_attention_mask,
+--&gt; 424                     output_attentions,
+    425                 )
+    426             hidden_states = layer_outputs[0]
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/transformers/modeling_roberta.py in forward(self, hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, output_attentions)
+    341             attention_mask,
+    342             head_mask,
+--&gt; 343             output_attentions=output_attentions,
+    344         )
+    345         attention_output = self_attention_outputs[0]
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/transformers/modeling_roberta.py in forward(self, hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, output_attentions)
+    275             encoder_hidden_states,
+    276             encoder_attention_mask,
+--&gt; 277             output_attentions,
+    278         )
+    279         attention_output = self.output(self_outputs[0], hidden_states)
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/transformers/modeling_roberta.py in forward(self, hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, output_attentions)
+    203         # This is actually dropping out entire tokens to attend to, which might
+    204         # seem a bit unusual, but is taken from the original Transformer paper.
+--&gt; 205         attention_probs = self.dropout(attention_probs)
+    206
+    207         # Mask heads if we want to
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/module.py in _call_impl(self, *input, **kwargs)
+    720             result = self._slow_forward(*input, **kwargs)
+    721         else:
+--&gt; 722             result = self.forward(*input, **kwargs)
+    723         for hook in itertools.chain(
+    724                 _global_forward_hooks.values(),
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/modules/dropout.py in forward(self, input)
+     56
+     57     def forward(self, input: Tensor) -&gt; Tensor:
+---&gt; 58         return F.dropout(input, self.p, self.training, self.inplace)
+     59
+     60
+
+
+~/miniconda3/envs/biome/lib/python3.7/site-packages/torch/nn/functional.py in dropout(input, p, training, inplace)
+    971     return (_VF.dropout_(input, p, training)
+    972             if inplace
+--&gt; 973             else _VF.dropout(input, p, training))
+    974
+    975
+
+
+KeyboardInterrupt:
+</code></pre></div><p>The training is about 4 times faster compared with fine-tuning the transformer, and after two epochs we reach a respectable accuracy of about 0.60. Keep in mind that we did not optimize any of the training parameters.</p> <h3 id="combining-text-features"><a href="#combining-text-features" class="header-anchor">#</a> Combining text features</h3> <p>As mentioned earlier, the pretrained transformers are treated as a text feature in <em>biome.text</em>. We can easily combine them with other features, such as the <em>char</em> feature for example, which encodes word tokens based on their characters.</p> <p>Keep in mind that the <em>char</em> feature provides a feature vector per word (spaCy) token, while the <em>transformers</em> feature provides a contextualized feature vector per word piece. Therefore, we simply sum up the word piece vectors of the transformers feature, to end up with concatenated feature vectors per word token.</p> <div class="custom-block warning"><p class="custom-block-title">Note</p> <p>This also means that special transformer tokens, such as BERT's [CLS] token, are ignored when combining text features.</p></div> <p>As in the second configuration, we will pool the feature vectors with a <em>GRU</em> in the <em>head</em> component.</p> <div class="language-python extra-class"><pre class="language-python"><code>pipeline_dict_combining <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">&quot;name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;arxiv_categories_classification&quot;</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;tokenizer&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;features&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;char&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;embedding_dim&quot;</span><span class="token punctuation">:</span> <span class="token number">32</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;lowercase_characters&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;encoder&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+                <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;gru&quot;</span><span class="token punctuation">,</span>
+                <span class="token string">&quot;num_layers&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+                <span class="token string">&quot;hidden_size&quot;</span><span class="token punctuation">:</span> <span class="token number">32</span><span class="token punctuation">,</span>
+                <span class="token string">&quot;bidirectional&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;dropout&quot;</span><span class="token punctuation">:</span> <span class="token number">0.1</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;transformers&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;model_name&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;distilroberta-base&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;trainable&quot;</span><span class="token punctuation">:</span> <span class="token boolean">False</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;max_length&quot;</span><span class="token punctuation">:</span> <span class="token number">512</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;head&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;TextClassification&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;labels&quot;</span><span class="token punctuation">:</span> train_ds<span class="token punctuation">.</span>unique<span class="token punctuation">(</span><span class="token string">&quot;label&quot;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;pooler&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+            <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;gru&quot;</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;num_layers&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;hidden_size&quot;</span><span class="token punctuation">:</span> <span class="token number">128</span><span class="token punctuation">,</span>
+            <span class="token string">&quot;bidirectional&quot;</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_config<span class="token punctuation">(</span>pipeline_dict_combining<span class="token punctuation">)</span>
+</code></pre></div><p>For the <em>char</em> feature we have to manually create the vocab before the training.</p> <div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>create_vocabulary<span class="token punctuation">(</span>VocabularyConfiguration<span class="token punctuation">(</span>sources<span class="token operator">=</span><span class="token punctuation">[</span>train_ds<span class="token punctuation">,</span> valid_ds<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre></div><p>We will use the same training configuration as in the frozen transformer section.</p> <div class="language-python extra-class"><pre class="language-python"><code>trainer <span class="token operator">=</span> TrainerConfiguration<span class="token punctuation">(</span>
+    optimizer<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adamw&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> <span class="token number">0.001</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    batch_size<span class="token operator">=</span><span class="token number">8</span><span class="token punctuation">,</span>
+    num_epochs<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>train<span class="token punctuation">(</span>
+    output<span class="token operator">=</span><span class="token string">&quot;output/combined_features&quot;</span><span class="token punctuation">,</span>
+    training<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    validation<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    trainer<span class="token operator">=</span>trainer<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>With an accuracy of 0.55, combining features in this case seems to be counterproductive. The main reason is the exclusion of the special transformers tokens and the usage of feature vectors per word instead of word-pieces. Even when fine-tuning the transformer, those differences seem to significantly affect the performance as shown in our <a href="https://wandb.ai/ignacioct/biome/reports/Exploring-Ways-to-use-Pretrained-Transformers-in-biome-text--VmlldzoyNzk2MTM" target="_blank" rel="noopener noreferrer">WandB report<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p> <h3 id="compare-performances-with-tensorboard-optional"><a href="#compare-performances-with-tensorboard-optional" class="header-anchor">#</a> Compare performances with TensorBoard (optional)</h3> <p>In the output folder of the trainig we automatically log the results with <a href="https://www.tensorflow.org/tensorboard/" target="_blank" rel="noopener noreferrer">TensorBoard<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>. This helps us to conveniently compare the three training runs from above. Alternatively, if you installed and logged in to WandB, the runs should have been logged automatically to the <em>biome</em> project of your account.</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token operator">%</span>load_ext tensorboard
+<span class="token operator">%</span>tensorboard <span class="token operator">-</span><span class="token operator">-</span>logdir<span class="token operator">=</span>output
+</code></pre></div><h2 id="optimizing-the-trainer-configuration"><a href="#optimizing-the-trainer-configuration" class="header-anchor">#</a> Optimizing the trainer configuration</h2> <p>As described in the <a href="https://www.recogn.ai/biome-text/documentation/tutorials/3-Hyperparameter_optimization_with_Ray_Tune.html#imports" target="_blank" rel="noopener noreferrer">HPO tutorial<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>, <em>biome.text</em> relies on the <a href="https://docs.ray.io/en/latest/tune.html#tune-index" target="_blank" rel="noopener noreferrer">Ray Tune library<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> to perform hyperparameter optimization.
+We recommend to go through that tutorial first, as we will be skipping most of the implementation details here.</p> <h3 id="frozen-transformer"><a href="#frozen-transformer" class="header-anchor">#</a> Frozen transformer</h3> <p>In this section we will first try to improve the performance of the frozen-transformer configuration by conducting a random search for three training parameters:</p> <ul><li>learning rate</li> <li>weight decay</li> <li>batch size</li></ul> <p>We also set <code>num_serialized_models_to_keep</code> to 0 to reduce the disk storage footprint.</p> <div class="language-python extra-class"><pre class="language-python"><code>trainer_dict <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">&quot;optimizer&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adamw&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> tune<span class="token punctuation">.</span>loguniform<span class="token punctuation">(</span><span class="token number">5e</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">5e</span><span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;weight_decay&quot;</span><span class="token punctuation">:</span> tune<span class="token punctuation">.</span>loguniform<span class="token punctuation">(</span><span class="token number">1e</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">0.1</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;batch_size&quot;</span><span class="token punctuation">:</span> tune<span class="token punctuation">.</span>choice<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">8</span><span class="token punctuation">,</span> <span class="token number">16</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;num_epochs&quot;</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;num_serialized_models_to_keep&quot;</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>Having defined the search space for our hyperparameters, we create a <code>TuneExperiment</code> where we specify the number of samples to be dranw from our search space, the <code>local_dir</code> for our HPO output and the computing resources we want Ray Tune to have access to.</p> <div class="language-python extra-class"><pre class="language-python"><code>tune_exp <span class="token operator">=</span> TuneExperiment<span class="token punctuation">(</span>
+    pipeline_config<span class="token operator">=</span>pipeline_dict_frozen<span class="token punctuation">,</span>
+    trainer_config<span class="token operator">=</span>trainer_dict<span class="token punctuation">,</span>
+    train_dataset<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    valid_dataset<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    name<span class="token operator">=</span><span class="token string">&quot;frozen_transformer_sweep&quot;</span><span class="token punctuation">,</span>
+    <span class="token comment"># parameters for tune.run</span>
+    num_samples<span class="token operator">=</span><span class="token number">50</span><span class="token punctuation">,</span>
+    local_dir<span class="token operator">=</span><span class="token string">&quot;tune_runs&quot;</span><span class="token punctuation">,</span>
+    resources_per_trial<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">&quot;gpu&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">&quot;cpu&quot;</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>With our TuneExperiment object at hand, we simply have to pass it on to the <a href="https://docs.ray.io/en/master/tune/api_docs/execution.html#tune-run" target="_blank" rel="noopener noreferrer"><code>tune.run</code><svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> function to start our random search.</p> <p>To speed things up we will use the <a href="https://blog.ml.cmu.edu/2018/12/12/massively-parallel-hyperparameter-optimization/" target="_blank" rel="noopener noreferrer">ASHA<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> trial scheduler that terminates low performing trials early. In our case we take the <em>validation_accuracy</em> as a meassure of the models performance.</p> <p>In Google Colab with a GPU backend this random search should not take more than about 1.5 hours and we recommend following the progress via WandB. Alternatively, you could follow the progress via <a href="https://www.tensorflow.org/tensorboard/" target="_blank" rel="noopener noreferrer">TensorBoard<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> by launching a TensorBoard instance before starting the random search, and pointing it to the <em>local_dir</em> output:</p> <div class="language-python extra-class"><pre class="language-python"><code><span class="token operator">%</span>tensorboard <span class="token operator">-</span><span class="token operator">-</span>logdir<span class="token operator">=</span>tune_runs
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>analysis <span class="token operator">=</span> tune<span class="token punctuation">.</span>run<span class="token punctuation">(</span>
+    tune_exp<span class="token punctuation">,</span>
+    scheduler<span class="token operator">=</span>tune<span class="token punctuation">.</span>schedulers<span class="token punctuation">.</span>ASHAScheduler<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    metric<span class="token operator">=</span><span class="token string">&quot;validation_accuracy&quot;</span><span class="token punctuation">,</span>
+    mode<span class="token operator">=</span><span class="token string">&quot;max&quot;</span><span class="token punctuation">,</span>
+    progress_reporter<span class="token operator">=</span>tune<span class="token punctuation">.</span>JupyterNotebookReporter<span class="token punctuation">(</span>overwrite<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>With the best configuration of our random search we should achieve an accuracy of about 0.64.</p> <h3 id="fine-tuning-the-transformer-2"><a href="#fine-tuning-the-transformer-2" class="header-anchor">#</a> Fine-tuning the transformer</h3> <p>We will also try to optimize the training parameters for a fine-tuning of the transformer. Since this is computationally much more expensive, we will take only a subset of our training data for the random search.</p> <div class="language-python extra-class"><pre class="language-python"><code>train_1000 <span class="token operator">=</span> train_ds<span class="token punctuation">.</span>shuffle<span class="token punctuation">(</span>seed<span class="token operator">=</span><span class="token number">43</span><span class="token punctuation">)</span><span class="token punctuation">.</span>select<span class="token punctuation">(</span><span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre></div><p>The training parameters we are going to tune are the following:</p> <ul><li>learning rate</li> <li>weight decay</li> <li>warmup steps</li></ul> <div class="language-python extra-class"><pre class="language-python"><code>trainer_dict <span class="token operator">=</span> <span class="token punctuation">{</span>
+    <span class="token string">&quot;optimizer&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adamw&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> tune<span class="token punctuation">.</span>loguniform<span class="token punctuation">(</span><span class="token number">1e</span><span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">1e</span><span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;weight_decay&quot;</span><span class="token punctuation">:</span> tune<span class="token punctuation">.</span>loguniform<span class="token punctuation">(</span><span class="token number">1e</span><span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">0.1</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;learning_rate_scheduler&quot;</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;linear_with_warmup&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;num_epochs&quot;</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;num_steps_per_epoch&quot;</span><span class="token punctuation">:</span> <span class="token number">125</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;warmup_steps&quot;</span><span class="token punctuation">:</span> tune<span class="token punctuation">.</span>choice<span class="token punctuation">(</span><span class="token builtin">list</span><span class="token punctuation">(</span><span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">101</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;batch_size&quot;</span><span class="token punctuation">:</span> <span class="token number">8</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;num_epochs&quot;</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+    <span class="token string">&quot;num_serialized_models_to_keep&quot;</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span>
+</code></pre></div><p>After having defined the search space, we create a <code>TuneExperiment</code> providing this time the subset of the training data.</p> <div class="language-python extra-class"><pre class="language-python"><code>tune_exp <span class="token operator">=</span> TuneExperiment<span class="token punctuation">(</span>
+    pipeline_config<span class="token operator">=</span>pipeline_dict_finetuning<span class="token punctuation">,</span>
+    trainer_config<span class="token operator">=</span>trainer_dict<span class="token punctuation">,</span>
+    train_dataset<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    valid_dataset<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    name<span class="token operator">=</span><span class="token string">&quot;finetuning_sweep3&quot;</span><span class="token punctuation">,</span>
+    <span class="token comment"># parameters for tune.run</span>
+    num_samples<span class="token operator">=</span><span class="token number">50</span><span class="token punctuation">,</span>
+    local_dir<span class="token operator">=</span><span class="token string">&quot;tune_runs&quot;</span><span class="token punctuation">,</span>
+    resources_per_trial<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">&quot;gpu&quot;</span><span class="token punctuation">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">&quot;cpu&quot;</span><span class="token punctuation">:</span><span class="token number">2</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>Again, we will use the <a href="https://blog.ml.cmu.edu/2018/12/12/massively-parallel-hyperparameter-optimization/" target="_blank" rel="noopener noreferrer">ASHA<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a> trial scheduler and maximize the <em>validation_accuracy</em>.</p> <p>In Google Colab with a GPU backend, this random search should not take longer than 1.5 hours.</p> <div class="language-python extra-class"><pre class="language-python"><code>analysis <span class="token operator">=</span> tune<span class="token punctuation">.</span>run<span class="token punctuation">(</span>
+    tune_exp<span class="token punctuation">,</span>
+    scheduler<span class="token operator">=</span>tune<span class="token punctuation">.</span>schedulers<span class="token punctuation">.</span>ASHAScheduler<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    metric<span class="token operator">=</span><span class="token string">&quot;validation_accuracy&quot;</span><span class="token punctuation">,</span>
+    mode<span class="token operator">=</span><span class="token string">&quot;max&quot;</span><span class="token punctuation">,</span>
+    progress_reporter<span class="token operator">=</span>tune<span class="token punctuation">.</span>JupyterNotebookReporter<span class="token punctuation">(</span>overwrite<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>We now take the configuration that yielded the best <em>validation accuracy</em> and train the pipeline on the full training set. In our random search the best configuration was following:</p> <ul><li>learning rate: 0.0000453</li> <li>warmup steps: 45</li> <li>weight decay: 0.003197</li></ul> <div class="language-python extra-class"><pre class="language-python"><code>pl <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_config<span class="token punctuation">(</span>pipeline_dict_finetuning<span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>trainer <span class="token operator">=</span> TrainerConfiguration<span class="token punctuation">(</span>
+    optimizer<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;adamw&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;lr&quot;</span><span class="token punctuation">:</span> <span class="token number">0.0000453</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;weight_decay&quot;</span><span class="token punctuation">:</span> <span class="token number">0.003197</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    learning_rate_scheduler<span class="token operator">=</span><span class="token punctuation">{</span>
+        <span class="token string">&quot;type&quot;</span><span class="token punctuation">:</span> <span class="token string">&quot;linear_with_warmup&quot;</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;num_epochs&quot;</span><span class="token punctuation">:</span> <span class="token number">2</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;num_steps_per_epoch&quot;</span><span class="token punctuation">:</span> <span class="token number">1250</span><span class="token punctuation">,</span>
+        <span class="token string">&quot;warmup_steps&quot;</span><span class="token punctuation">:</span> <span class="token number">45</span><span class="token punctuation">,</span>
+    <span class="token punctuation">}</span><span class="token punctuation">,</span>
+    batch_size<span class="token operator">=</span><span class="token number">8</span><span class="token punctuation">,</span>
+    num_epochs<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><div class="language-python extra-class"><pre class="language-python"><code>pl<span class="token punctuation">.</span>train<span class="token punctuation">(</span>
+    output<span class="token operator">=</span><span class="token string">&quot;output/transformer_final_model/&quot;</span><span class="token punctuation">,</span>
+    training<span class="token operator">=</span>train_ds<span class="token punctuation">,</span>
+    validation<span class="token operator">=</span>valid_ds<span class="token punctuation">,</span>
+    trainer<span class="token operator">=</span>trainer<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+</code></pre></div><p>With the optimized training parameters we achieve an accuracy of about 0.67.</p> <h3 id="evaluating-with-a-test-set"><a href="#evaluating-with-a-test-set" class="header-anchor">#</a> Evaluating with a test set</h3> <p>TO BE DONE</p> <h2 id="making-predictions"><a href="#making-predictions" class="header-anchor">#</a> Making predictions</h2> <p>Let's quickly recap what we have learnt so far:</p> <ul><li>Freezing the pretrained transformer and optimizing a GRU pooler in the head can be valid option if computing resources are limited;</li> <li>However, fine-tuning the transformer at word-piece level and using the CLS token as &quot;pooler&quot; works best;</li> <li>A quick HPO of the training parameters improved the accuracies by ~0.03.</li></ul> <p>With our best model at hand we will finally make a simple prediction. First we have to load the pipeline from our training output:</p> <div class="language-python extra-class"><pre class="language-python"><code>pl_trained <span class="token operator">=</span> Pipeline<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span><span class="token string">&quot;output/transformer_final_model/model.tar.gz&quot;</span><span class="token punctuation">)</span>
+</code></pre></div><p>Then we can simply call the <code>predict</code> method that outputs a dictionary with a <code>labels</code> and <code>probabilities</code> key containing a list of labels and their corresponding probabilities, ordered from most to less likely.</p> <div class="language-python extra-class"><pre class="language-python"><code>prediction_dict <span class="token operator">=</span> pl_trained<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>text<span class="token operator">=</span><span class="token string">&quot;This is a title of a super intelligent Natural Language Processing system&quot;</span><span class="token punctuation">)</span>
+prediction_dict
+</code></pre></div><p>The most likely category predicted is the &quot;<em>cs.CL</em>&quot; category, which seems fitting according to this <a href="https://arxiv.org/category_taxonomy" target="_blank" rel="noopener noreferrer">list of arxiv categories and their meanings<svg xmlns="http://www.w3.org/2000/svg" aria-labelledby="outbound-link-title" role="img" focusable="false" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound"><title id="outbound-link-title">(opens new window)</title> <path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a>.</p></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="page-nav__button prev"><a href="/biome-text/v2.0.0/documentation/tutorials/3-Hyperparameter_optimization_with_Ray_Tune.html" class="prev"><span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-left" size="18px"></vp-icon></span> <span class="page-nav__button__text">
+          Hyperparameter optimization with Ray Tune
+        </span></a></span> <span class="page-nav__button next"><a href="/biome-text/v2.0.0/documentation/tutorials/4-Using_Transformers_in_biome_text.html"><span class="page-nav__button__text">
+          Using Transformers in biome.text
+        </span> <span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-right" size="18px"></vp-icon></span></a></span></p></div> <footer class="footer" data-v-348088ed><div data-v-348088ed>
+          Maintained by
+          <a href="https://www.recogn.ai/" target="_blank" data-v-348088ed><img width="70px" src="/biome-text/v2.0.0/assets/img/recognai.png" class="footer__img" data-v-348088ed></a></div></footer> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/biome-text/v2.0.0/assets/js/app.d2a2fc62.js" defer></script><script src="/biome-text/v2.0.0/assets/js/4.22f456ab.js" defer></script><script src="/biome-text/v2.0.0/assets/js/3.74f59053.js" defer></script><script src="/biome-text/v2.0.0/assets/js/67.8243a669.js" defer></script>
+  </body>
+</html>
