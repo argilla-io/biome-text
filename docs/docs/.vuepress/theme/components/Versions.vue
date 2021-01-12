@@ -57,12 +57,16 @@ export default {
   margin: auto
   text-align: center
   position: relative
+  z-index: 1
   &__select
     background: transparent
     min-height: 30px
     padding: 0.5em
     color: $textColor
     font-size: 15px
+    cursor: pointer
+    @media (max-width: $MQMobile)
+      font-size: 16px
     &::after
       content: ''
       border-left: 4px solid transparent
@@ -85,10 +89,11 @@ export default {
       right: 0
       margin: auto !important
   &__option
-    padding: 0em 0.5em
-    font-size: 14px
+    padding: 0.2em 1em
     font-size: 15px
     text-align: left
+    @media (max-width: $MQMobile)
+      padding: 0.5em 2em
     a
       color: $textColor
       &:hover, &:focus, &.active
