@@ -18,6 +18,9 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
+      - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
+        if: ${{ github.event_name == 'release' }}
+        run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
       - name: Checkout Code 🛎
         uses: actions/checkout@v2
       - name: Setup ElasticSearch 🔎
@@ -44,9 +47,6 @@ jobs:
         run: pre-commit run --all-files
       - name: Run Tests 📈
         run: make test
-      - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
-        if: ${{ github.event_name == 'release' }}
-        run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
       - name: Prepare Docs for Versioning 🥓
         working-directory: ./docs
         run: |
@@ -75,6 +75,9 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
+      - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
+        if: ${{ github.event_name == 'release' }}
+        run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
       - name: Checkout Code 🛎
         # Recommended and required by JamesIves/github-pages-deploy-action
         uses: actions/checkout@v2
@@ -86,9 +89,6 @@ jobs:
           name: docs_build_output
       - name: Extract Build Output 🍗
         run: tar -xzf docs_build_output.tar.gz
-      - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
-        if: ${{ github.event_name == 'release' }}
-        run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
       - name: Deploy Docs 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
