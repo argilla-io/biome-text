@@ -2,7 +2,7 @@
   <span class="nav-versions" v-if="options && options.length > 0">
     <div class="nav-versions__select" v-model="selected" @click="showOptions = true"><strong>{{selected}}</strong></div>
     <div class="nav-versions__options__container" v-if="showOptions">
-      <ul class="nav-versions__options">
+      <ul class="nav-versions__options" v-click-outside="clickOutside">
         <li class="nav-versions__option" @click="onChange(option)" v-for="option in options" :value="option">
           <a :class="option === selected ? 'active' : ''" href="#">{{ option }}</a>
         </li>
@@ -46,6 +46,9 @@ export default {
         paths.slice(0,2).join('/') +
         targetVersionPath +
         paths.slice(3).join('/')
+    },
+    clickOutside() {
+      this.showOptions = false;
     }
   }
 };

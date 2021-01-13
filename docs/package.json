@@ -25,11 +25,12 @@
     "@goy/vuepress-plugin-svg-icons": "^4.1.0",
     "@vuepress/plugin-active-header-links": "^1.4.1",
     "@vuepress/plugin-back-to-top": "^1.4.1",
-    "vuepress": "^1.4.1",
-    "renamer": "^2.0.0"
+    "renamer": "^2.0.0",
+    "vuepress": "^1.4.1"
   },
   "dependencies": {
-    "vuepress-bar": "^0.3.0",
-    "axios": ">=0.21.1"
+    "axios": ">=0.21.1",
+    "v-click-outside": "^3.1.2",
+    "vuepress-bar": "^0.3.0"
   }
 }
