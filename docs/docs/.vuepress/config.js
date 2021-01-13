@@ -2,8 +2,10 @@ const path = require("path");
 const glob = require("glob");
 
 // The env variable is set in our GitHub Action CI when building the docs.
-// It should look like: `BIOME_TEXT_DOC_VERSION_PATH="/v2.0.0/"` or `BIOME_TEXT_DOC_VERSION_PATH="/master/"`
-const basePath = `/biome-text${process.env.BIOME_TEXT_DOC_VERSION_PATH || "/"}`
+// It must be the same as the release tag or 'master', that is e.g. "v2.0.0" or "v2.1.0rc1" or "master"
+const basePath = process.env.BIOME_TEXT_DOC_VERSION
+    ? `/biome-text/${process.env.BIOME_TEXT_DOC_VERSION}/`
+    : "/biome-text/"
 
 function getSidebarChildren(location, replacement) {
     if (!replacement) {
