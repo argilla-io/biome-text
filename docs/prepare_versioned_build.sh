@@ -20,17 +20,6 @@ if [ -z "$BIOME_TEXT_DOC_VERSION" ]; then
   exit 1
 fi
 
-echo " - Modifying tutorials ..."
-
-modified=$(find ./docs/documentation/tutorials -maxdepth 1 -name "*.ipynb" \
-  -exec sed -i -e "s|pip install -U git+https://github.com/recognai/biome-text.git|pip install -U biome-text|g" \
-    -e "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" \
-    -e "s|/biome-text/blob/master/|/biome-text/blob/$BIOME_TEXT_DOC_VERSION/|g" {} \; \
-  -exec echo {} \; | wc -l)
-if [ "$modified" -eq 0 ]; then
-  echo "ERROR: No tutorials modified!"
-  exit 1
-fi
 
 echo " - Modifying font urls  ..."
 
@@ -38,6 +27,22 @@ if ! sed -i "s|/biome-text/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" ./docs/.vuep
   echo "ERROR: Could not modify 'fonts.styl'!"
   exit 1
 fi
+
+
+if [ "$BIOME_TEXT_DOC_VERSION" != "master" ]; then
+  echo " - Modifying tutorials ..."
+
+  modified=$(find ./docs/documentation/tutorials -maxdepth 1 -name "*.ipynb" \
+    -exec sed -i -e "s|pip install -U git+https://github.com/recognai/biome-text.git|pip install -U biome-text|g" \
+      -e "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" \
+      -e "s|/biome-text/blob/master/|/biome-text/blob/$BIOME_TEXT_DOC_VERSION/|g" {} \; \
+    -exec echo {} \; | wc -l)
+  if [ "$modified" -eq 0 ]; then
+    echo "ERROR: No tutorials modified!"
+    exit 1
+  fi
+fi
+
 
 echo " - Done!"
 
