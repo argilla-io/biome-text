@@ -23,7 +23,8 @@ fi
 echo " - Modifying tutorials ..."
 
 modified=$(find ./docs/documentation/tutorials -maxdepth 1 -name "*.ipynb" \
-  -exec sed -i -e "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" \
+  -exec sed -i -e "s|pip install -U git+https://github.com/recognai/biome-text.git|pip install -U biome-text|g" \
+    -e "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" \
     -e "s|/biome-text/blob/master/|/biome-text/blob/$BIOME_TEXT_DOC_VERSION/|g" {} \; \
   -exec echo {} \; | wc -l)
 if [ "$modified" -eq 0 ]; then
