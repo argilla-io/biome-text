@@ -47,6 +47,11 @@ jobs:
       - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
         if: ${{ github.event_name == 'release' }}
         run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
+      - name: Prepare Docs for Versioning 🥓
+        working-directory: ./docs
+        run: |
+          chmod +x ./prepare_versioned_build.sh
+          bash ./prepare_versioned_build.sh
       - name: Build Docs 📘
         # build and zip the docs
         run: |
