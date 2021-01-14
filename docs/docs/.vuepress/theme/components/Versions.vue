@@ -57,7 +57,7 @@ export default {
 
 .nav-versions
   display: block
-  margin: auto
+  margin: auto auto 1.5em auto
   text-align: center
   position: relative
   z-index: 1
