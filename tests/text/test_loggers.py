@@ -1,31 +1,38 @@
 import os
+import sys
 from tempfile import mkdtemp
 from urllib.parse import urlparse
 
 import mlflow
+import pytest
 from mlflow.utils import mlflow_tags
 
 from biome.text import Pipeline
 from biome.text import PipelineConfiguration
 from biome.text import TrainerConfiguration
 from biome.text.loggers import MlflowLogger
+from biome.text.loggers import WandBLogger
 from biome.text.modules.heads import TaskHeadConfiguration
 from biome.text.modules.heads import TextClassification
 from biome.text.training_results import TrainingResults
 
 
-def test_mlflow_logger():
-
-    logger = MlflowLogger(
-        experiment_name="test-experiment", run_name="test_run", tag1="my-tag"
-    )
-
-    pipeline = Pipeline.from_config(
+@pytest.fixture
+def pipeline() -> Pipeline:
+    return Pipeline.from_config(
         PipelineConfiguration(
             name="test-pipeline",
             head=TaskHeadConfiguration(type=TextClassification, labels=["A", "B"]),
         )
     )
+
+
+def test_mlflow_logger(pipeline):
+
+    logger = MlflowLogger(
+        experiment_name="test-experiment", run_name="test_run", tag1="my-tag"
+    )
+
     trainer = TrainerConfiguration()
 
     logger.init_train(pipeline, trainer, training=None)
@@ -69,3 +76,34 @@ def test_mlflow_logger():
         assert (
             metric in run.data.metrics and run.data.metrics[metric] == metrics[metric]
         )
+
+
+@pytest.mark.skipif("wandb" not in sys.modules, reason="wandb client not installed")
+class TestWandBLogger:
+    def test_wandb_logger_init_warning(self, monkeypatch, capsys):
+        import wandb
+
+        monkeypatch.setattr(wandb.sdk.internal.internal_api.Api, "api_url", None)
+
+        wandb.ensure_configured()
+        WandBLogger(run_name="test_run", tags=["test_tag"])
+        assert capsys.readouterr().err.startswith("wandb")
+
+    def test_wandb_logger_init_train(self, monkeypatch, pipeline):
+        import wandb
+
+        monkeypatch.setenv("WANDB_API_KEY", "mock_api_key")
+        monkeypatch.setenv("WANDB_MODE", "dryrun")
+
+        wandb.ensure_configured()
+        logger = WandBLogger(run_name="test_run", tags=["test_tag"])
+
+        logger.init_train(
+            pipeline=pipeline,
+            trainer_configuration=TrainerConfiguration(),
+            training=None,
+        )
+
+        assert logger._run.name == "test_run"
+        assert logger._run.tags[0] == "test_tag"
+        assert logger._run.dir.startswith(".wandb")
