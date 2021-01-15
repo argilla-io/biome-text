@@ -728,6 +728,16 @@ class Pipeline:
         """Returns the names of the trainable parameters in the pipeline"""
         return [name for name, p in self._model.named_parameters() if p.requires_grad]
 
+    def model_parameters(self):
+        """Returns an iterator over all model parameters, yielding the name and the parameter itself.
+
+        You can use this to freeze certain parameters in the training, example:
+        >>> for name, parameter in self.model_parameters():
+        >>>     if not name.endswith("bias"):
+        >>>         parameter.requires_grad = False
+        """
+        return self._model.named_parameters()
+
     @property
     def model_path(self) -> str:
         """Returns the file path to the serialized version of the last trained model"""
@@ -783,7 +793,10 @@ class Pipeline:
         return PipelineConfiguration.from_params(config)
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        """(DEPRECATED) Creates the vocabulary for the pipeline from scratch
+        """Creates the vocabulary for the pipeline from scratch
+
+        DEPRECATED: The vocabulary is now created automatically and this method will be removed in the future.
+        You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default.
 
         Parameters
         ----------
