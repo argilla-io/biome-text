@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import glob
 
-from packaging import version
 from pip import __version__ as pip_version
+from pkg_resources import parse_version
 from setuptools import setup
 
 try:
@@ -16,7 +16,7 @@ REQUIRED_PIP_VERSION = "20.3.0"
 
 
 if __name__ == "__main__":
-    if version.parse(pip_version) <= version.parse(REQUIRED_PIP_VERSION):
+    if parse_version(pip_version) <= parse_version(REQUIRED_PIP_VERSION):
         raise OSError(
             f"Minimal required pip version is {REQUIRED_PIP_VERSION}, found: {pip_version}\n"
             "Please upgrade pip: pip install --upgrade pip"
@@ -52,7 +52,6 @@ if __name__ == "__main__":
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
             "mlflow~=1.9.0",
-            "packaging",
             "pandas~=1.1.0",
             "ray[tune]~=1.0.0",
             "s3fs~=0.4.0",

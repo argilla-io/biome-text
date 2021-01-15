@@ -19,9 +19,9 @@ from biome.text.training_results import TrainingResults
 _HAS_WANDB = False
 try:
     import wandb
-    from packaging import version
+    from pkg_resources import parse_version
 
-    assert version.parse(wandb.__version__) >= version.parse("0.10.12")
+    assert parse_version(wandb.__version__) >= parse_version("0.10.12")
 except ImportError:
     pass
 except AssertionError:
