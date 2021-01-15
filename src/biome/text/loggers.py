@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
@@ -15,10 +16,16 @@ from biome.text.dataset import InstancesDataset
 from biome.text.training_results import TrainingResults
 
 # We do not require wandb
+_HAS_WANDB = False
 try:
     import wandb
+    from packaging import version
+
+    assert version.parse(wandb.__version__) >= version.parse("0.10.12")
 except ImportError:
-    _HAS_WANDB = False
+    pass
+except AssertionError:
+    logging.warning("To log to WandB, please update your wandb client to >=0.10.12")
 else:
     wandb.ensure_configured()
     _HAS_WANDB = True
@@ -235,8 +242,14 @@ class WandBLogger(BaseTrainLogger):
         config["pipeline"][
             "num_trainable_parameters"
         ] = pipeline.num_trainable_parameters
+
+        Path(".wandb").mkdir(exist_ok=True)
         self._run = wandb.init(
-            project=self.project_name, name=self.run_name, tags=self.tags, config=config
+            project=self.project_name,
+            name=self.run_name,
+            tags=self.tags,
+            config=config,
+            dir=".wandb",
         )
 
     def log_epoch_metrics(self, epoch: int, metrics: Dict[str, Any]):
