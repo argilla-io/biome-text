@@ -4,7 +4,6 @@ import torch
 from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
-from biome.text import VocabularyConfiguration
 
 
 @pytest.fixture(scope="module")
