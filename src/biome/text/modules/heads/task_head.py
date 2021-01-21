@@ -74,7 +74,7 @@ class TaskHead(torch.nn.Module, Registrable):
         """
         return None
 
-    def forward(self, *args: Any, **kwargs: Any) -> Dict:
+    def forward(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         """The head's forward pass, it must include the backbone's `forward`.
 
         When trained, the returned dict has to have a 'loss' key pointing to a

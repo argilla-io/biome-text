@@ -73,7 +73,7 @@ class TextClassification(ClassificationHead):
         self,
         text: TextFieldTensors,
         label: torch.IntTensor = None,
-    ) -> TaskOutput:
+    ) -> Dict[str, Any]:
 
         mask = get_text_field_mask(text)
         embedded_text = self.backbone.forward(text, mask)
@@ -83,7 +83,14 @@ class TextClassification(ClassificationHead):
             embedded_text = self.feedforward(embedded_text)
 
         logits = self._classification_layer(embedded_text)
-        return self.calculate_output(logits=logits, label=label)
+
+        if label is not None:
+            return {
+                "loss": self.compute_metrics_and_return_loss(logits, label),
+                "logits": logits,
+            }
+
+        return {"logits": logits}
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
