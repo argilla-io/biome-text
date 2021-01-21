@@ -39,7 +39,6 @@ from .errors import MissingArgumentError
 from .errors import WrongValueError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
-from .modules.heads import TaskOutput
 
 
 class _HashDict(dict):
@@ -338,7 +337,7 @@ class PipelineModel(allennlp.models.Model):
         return predictions
 
     def _get_instances_and_predictions(
-        self, input_dicts: Dict[str, Any]
+        self, input_dicts: Iterable[Dict[str, Any]]
     ) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
         """Returns instances from the input_dicts and their predictions.
 
