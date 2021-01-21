@@ -24,9 +24,7 @@ from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.encoders import TimeDistributedEncoder
-
-from ..task_head import TaskOutput
-from .classification import ClassificationHead
+from biome.text.modules.heads.classification.classification import ClassificationHead
 
 
 class DocumentClassification(ClassificationHead):
