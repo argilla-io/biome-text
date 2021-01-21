@@ -6,9 +6,11 @@ import pytest
 from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
-from biome.text import VocabularyConfiguration
 from biome.text import vocabulary
 from biome.text.modules.heads import TaskOutput
+from biome.text.modules.heads.task_output import EntityOutput
+from biome.text.modules.heads.task_output import TokenClassificationOutput
+from biome.text.modules.heads.task_output import TokenOutput
 
 
 @pytest.fixture
@@ -96,53 +98,52 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     )
 
 
-class TestDecode:
-    def test_pretokenized_decode(self, pipeline_dict):
+class TestMakeTaskOutput:
+    def test_pretokenized_input(self, pipeline_dict):
         pipeline = Pipeline.from_config(pipeline_dict)
         output = self._input_top_k2(pipeline)
+        expected_output = TokenClassificationOutput(
+            tags=[["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]],
+            entities=[
+                [EntityOutput(start_token=3, end_token=4, label="NER")],
+                [EntityOutput(start_token=1, end_token=4, label="NER")],
+            ],
+            scores=[2, 1],
+        )
 
-        assert output.keys() == dict(entities=None, tags=None, scores=None).keys()
-        assert output["entities"] == [
-            [
-                [dict(start_token=3, end_token=4, label="NER")],
-                [dict(start_token=1, end_token=4, label="NER")],
-            ]
-        ]
-        assert output["tags"] == [
-            [["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]]
-        ]
-        assert output["scores"] == [[2, 1]]
+        assert output == expected_output
 
-    def test_untokenized_decode(self, pipeline_dict):
+    def test_untokenized_input(self, pipeline_dict):
         pipeline = Pipeline.from_config(pipeline_dict)
         output = self._input_top_k2(pipeline, pretokenized=False)
-
-        assert (
-            output.keys()
-            == dict(entities=None, tags=None, scores=None, tokens=None).keys()
+        expected_output = TokenClassificationOutput(
+            tags=[["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]],
+            entities=[
+                [
+                    EntityOutput(
+                        start_token=3, end_token=4, label="NER", start=10, end=14
+                    )
+                ],
+                [
+                    EntityOutput(
+                        start_token=1, end_token=4, label="NER", start=5, end=14
+                    )
+                ],
+            ],
+            scores=[2, 1],
+            tokens=[
+                TokenOutput(end=4, start=0, text="this"),
+                TokenOutput(end=7, start=5, text="is"),
+                TokenOutput(end=9, start=8, text="a"),
+                TokenOutput(end=14, start=10, text="test"),
+            ],
         )
-        assert output["entities"] == [
-            [
-                [dict(start_token=3, end_token=4, label="NER", start=10, end=14)],
-                [dict(start_token=1, end_token=4, label="NER", start=5, end=14)],
-            ]
-        ]
-        assert output["tags"] == [
-            [["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]]
-        ]
-        assert output["scores"] == [[2, 1]]
-        assert output["tokens"] == [
-            [
-                {"end": 4, "start": 0, "text": "this"},
-                {"end": 7, "start": 5, "text": "is"},
-                {"end": 9, "start": 8, "text": "a"},
-                {"end": 14, "start": 10, "text": "test"},
-            ]
-        ]
+
+        assert output == expected_output
 
     @staticmethod
     def _input_top_k2(pipeline, pretokenized=True):
-        raw_text = [["this", "is", "a", "test"]] if pretokenized else ["this is a test"]
+        raw_text = ["this", "is", "a", "test"] if pretokenized else "this is a test"
         tag_idx_sequence = [
             vocabulary.index_for_label(pipeline.backbone.vocab, tag)
             for tag in ["O", "O", "O", "U-NER"]
@@ -151,48 +152,13 @@ class TestDecode:
             vocabulary.index_for_label(pipeline.backbone.vocab, tag)
             for tag in ["O", "B-NER", "I-NER", "L-NER"]
         ]
-        viterbi_paths = [[(tag_idx_sequence, 2), (tag_idx_sequence2, 1)]]
-        task_output = TaskOutput(
-            viterbi_paths=viterbi_paths, raw_text=raw_text, mask=None, probs=None
+        viterbi_paths = [(tag_idx_sequence, 2), (tag_idx_sequence2, 1)]
+        single_forward_output = dict(
+            viterbi_paths=viterbi_paths,
+            raw_text=raw_text,
         )
 
-        return pipeline.head.decode(task_output).as_dict()
-
-    def test_mixed_decode(self, pipeline_dict):
-        pipeline = Pipeline.from_config(pipeline_dict)
-        output = self._mixed_input_top_k1(pipeline)
-
-        assert (
-            output.keys()
-            == dict(entities=None, tags=None, scores=None, tokens=None).keys()
-        )
-        assert output["entities"] == [
-            [[dict(start_token=3, end_token=4, label="NER")]],
-            [[dict(start_token=3, end_token=4, label="NER", start=10, end=14)]],
-        ]
-        assert output["tokens"] == [
-            None,
-            [
-                {"end": 4, "start": 0, "text": "this"},
-                {"end": 7, "start": 5, "text": "is"},
-                {"end": 9, "start": 8, "text": "a"},
-                {"end": 14, "start": 10, "text": "test"},
-            ],
-        ]
-
-    @staticmethod
-    def _mixed_input_top_k1(pipeline):
-        raw_text = [["this", "is", "a", "test"], "this is a test"]
-        tag_idx_sequence = [
-            vocabulary.index_for_label(pipeline.backbone.vocab, tag)
-            for tag in ["O", "O", "O", "U-NER"]
-        ]
-        viterbi_paths = [[(tag_idx_sequence, 1)]] * 2
-        task_output = TaskOutput(
-            viterbi_paths=viterbi_paths, raw_text=raw_text, mask=None, probs=None
-        )
-
-        return pipeline.head.decode(task_output).as_dict()
+        return pipeline.head.make_task_output(single_forward_output)
 
 
 def test_preserve_pretokenization(
