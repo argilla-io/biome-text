@@ -12,33 +12,7 @@ from allennlp.data import Instance
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
-
-
-class TaskOutput:
-    """
-    Task output data class
-
-    A task output will contains almost the logits and probs properties
-    """
-
-    def __init__(
-        self,
-        logits: torch.Tensor = None,
-        loss: Optional[torch.Tensor] = None,
-        **extra_data
-    ):
-        self.logits = logits
-        self.loss = loss
-
-        for k, v in extra_data.items():
-            self.__setattr__(k, v)
-
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
-
-    def as_dict(self) -> Dict[str, torch.Tensor]:
-        """Dict representation of task output"""
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+from biome.text.modules.heads.task_output import TaskOutput
 
 
 class TaskName(Enum):
