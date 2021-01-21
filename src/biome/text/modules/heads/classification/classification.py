@@ -36,9 +36,6 @@ class ClassificationHead(TaskHead):
 
         # label related configurations
         self._multilabel = multilabel
-        self.calculate_output = (
-            self.multi_label_output if self._multilabel else self.single_label_output
-        )
 
         # metrics and loss
         if self._multilabel:
@@ -194,31 +191,18 @@ class ClassificationHead(TaskHead):
 
         return final_metrics
 
-    def single_label_output(
+    def compute_metrics_and_return_loss(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None
-    ) -> TaskOutput:
-        output = TaskOutput(logits=logits)
+    ) -> float:
+        for metric in self.metrics.values():
+            metric(logits, label)
 
-        if label is not None:
-            output.loss = self._loss(logits, label.long())
-            for metric in self.metrics.values():
-                metric(logits, label)
-
-        return output
-
-    def multi_label_output(
-        self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None
-    ) -> TaskOutput:
-        output = TaskOutput(logits=logits)
-
-        if label is not None:
+        if self._multilabel:
             # casting long to float for BCELoss
             # see https://discuss.pytorch.org/t/nn-bcewithlogitsloss-cant-accept-one-hot-target/59980
-            output.loss = self._loss(
+            return self._loss(
                 logits.view(-1, self.num_labels),
                 label.view(-1, self.num_labels).type_as(logits),
             )
-            for metric in self.metrics.values():
-                metric(logits, label)
 
-        return output
+        return self._loss(logits, label.long())
