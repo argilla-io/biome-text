@@ -96,11 +96,11 @@ class DocumentClassification(ClassificationHead):
         instance = self.backbone.featurizer(
             document, to_field=self.forward_arg_name, exclude_record_keys=True
         )
-        return self.add_label(instance, label, to_field=self.label_name)
+        return self._add_label(instance, label, to_field=self.label_name)
 
     def forward(
         self, document: TextFieldTensors, label: torch.IntTensor = None
-    ) -> TaskOutput:
+    ) -> Dict[str, Any]:
         mask = get_text_field_mask(
             document, num_wrapping_dims=1
         )  # Why num_wrapping_dims=1 !?
@@ -117,7 +117,8 @@ class DocumentClassification(ClassificationHead):
             embedded_text = self.feedforward(embedded_text)
 
         logits = self._classification_layer(embedded_text)
-        return self.calculate_output(logits=logits, label=label)
+
+        return self._make_forward_output(logits, label)
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int

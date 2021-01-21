@@ -164,7 +164,7 @@ class RecordPairClassification(ClassificationHead):
                 self._RECORD2_ARG_NAME_IN_FORWARD: record2_instance.get("record"),
             }
         )
-        instance = self.add_label(instance, label)
+        instance = self._add_label(instance, label)
 
         return instance
 
@@ -173,7 +173,7 @@ class RecordPairClassification(ClassificationHead):
         record1: TextFieldTensors,
         record2: TextFieldTensors,
         label: torch.LongTensor = None,
-    ) -> TaskOutput:
+    ) -> Dict[str, Any]:
         # pylint: disable=arguments-differ
         """
         Parameters
@@ -214,9 +214,7 @@ class RecordPairClassification(ClassificationHead):
             record_mask_record2,
         )
 
-        output: TaskOutput = self.single_label_output(logits, label)
-
-        return output
+        return self._make_forward_output(logits, label)
 
     def _field_encoding(
         self,

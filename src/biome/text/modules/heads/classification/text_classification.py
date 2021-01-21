@@ -67,7 +67,7 @@ class TextClassification(ClassificationHead):
             aggregate=True,
             exclude_record_keys=True,
         )
-        return self.add_label(instance, label, to_field=self.label_name)
+        return self._add_label(instance, label, to_field=self.label_name)
 
     def forward(  # type: ignore
         self,
@@ -84,13 +84,7 @@ class TextClassification(ClassificationHead):
 
         logits = self._classification_layer(embedded_text)
 
-        if label is not None:
-            return {
-                "loss": self.compute_metrics_and_return_loss(logits, label),
-                "logits": logits,
-            }
-
-        return {"logits": logits}
+        return self._make_forward_output(logits, label)
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int

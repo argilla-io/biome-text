@@ -88,7 +88,7 @@ class TaskHead(torch.nn.Module, Registrable):
         raise NotImplementedError
 
     def featurize(self, *args, **kwargs) -> Optional[Instance]:
-        """Converts incoming data into an allennlp `Instance`, used for pyTorch tensors generation"""
+        """Converts incoming data into an Allennlp `Instance`, used for pyTorch tensors generation"""
         raise NotImplementedError
 
     def make_task_output(
