@@ -85,7 +85,7 @@ class ClassificationHead(TaskHead):
         """Returns a dict with the logits and optionally the loss"""
         if label is not None:
             return {
-                "loss": self.compute_metrics_and_return_loss(logits, label),
+                "loss": self._compute_metrics_and_return_loss(logits, label),
                 "logits": logits,
             }
 
