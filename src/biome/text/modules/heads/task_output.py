@@ -12,16 +12,6 @@ SENTINEL = cast(None, "SENTINEL TO SKIP DATACLASS FIELDS WHEN CONVERTING TO DICT
 
 
 @dataclasses.dataclass
-class AttributionOutput:
-    """Output dataclass for a attribution."""
-
-    text: str
-    start: int
-    end: int
-    attribution: float
-
-
-@dataclasses.dataclass
 class TokenOutput:
     """Output dataclass for a token.
 
@@ -106,8 +96,6 @@ class ClassificationOutput(TaskOutput):
 
     labels: List[str]
     probabilities: List[float]
-    attributions: Optional[AttributionOutput] = SENTINEL
-    tokens: Optional[List[TokenOutput]] = SENTINEL
 
 
 @dataclasses.dataclass
