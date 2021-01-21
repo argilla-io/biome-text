@@ -60,9 +60,3 @@ class ClassificationOutput(TaskOutput):
 @dataclasses.dataclass
 class TokenClassificationOutput(TaskOutput):
     """Output dataclass for the `TokenClassification` head"""
-
-
-def test_output():
-    a = AttributionsOutput(text="a", start=1, attribution=1, end=SENTINEL)
-    c = ClassificationOutput(labels=1, probabilities=1, attributions=a)
-    print(c.as_dict())
