@@ -100,7 +100,13 @@ class TaskHead(torch.nn.Module, Registrable):
         """
         return None
 
-    def forward(self, *args: Any, **kwargs: Any) -> TaskOutput:
+    def forward(self, *args: Any, **kwargs: Any) -> Dict:
+        """The head's forward pass, it must include the backbone's `forward`.
+
+        When trained, the returned dict has to have a 'loss' key pointing to a
+        scalar `torch.Tensor` representing the loss to be optimized.
+        When used for inference, it has to include everything to make the TaskOutput -> `self.make_task_output`.
+        """
         raise NotImplementedError
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
@@ -111,21 +117,25 @@ class TaskHead(torch.nn.Module, Registrable):
         """Converts incoming data into an allennlp `Instance`, used for pyTorch tensors generation"""
         raise NotImplementedError
 
-    def decode(self, output: TaskOutput) -> TaskOutput:
-        """Completes the output for the prediction
-
-        The base implementation adds nothing.
+    def make_task_output(
+        self, single_forward_output: Dict[str, numpy.ndarray]
+    ) -> TaskOutput:
+        """Transforms the forward output to a task output, only used for predictions.
 
         Parameters
         ----------
-        output
-            The output from the head's forward method
+        single_forward_output
+            A single (not batched) output from the head's forward method
 
         Returns
         -------
-        completed_output
+        task_output
+            A task specific output for the prediction
         """
-        return output
+        # One could implement a generic solution to just forward the forward_output:
+        # dataclass with necessary fields: C = dataclasses.make_dataclass(...)
+        # inherit from TaskOutput: return type("...", (C, TaskOutput, ), {})(**forward_output)
+        raise NotImplementedError
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
