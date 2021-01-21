@@ -17,10 +17,9 @@ from biome.text import helpers
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.metrics import MultiLabelF1Measure
-
-from ..task_head import TaskHead
-from ..task_head import TaskName
-from ..task_head import TaskOutput
+from biome.text.modules.heads.task_head import TaskHead
+from biome.text.modules.heads.task_head import TaskName
+from biome.text.modules.heads.task_output import ClassificationOutput
 
 
 class ClassificationHead(TaskHead):
@@ -54,7 +53,7 @@ class ClassificationHead(TaskHead):
             )
             self._loss = torch.nn.CrossEntropyLoss()
 
-    def forward(self, *args: Any, **kwargs: Any) -> TaskOutput:
+    def forward(self, *args: Any, **kwargs: Any) -> Dict:
         raise NotImplementedError
 
     def featurize(self, *args, **kwargs) -> Optional[Instance]:
@@ -86,39 +85,25 @@ class ClassificationHead(TaskHead):
         instance.add_field(to_field, field)
         return instance
 
-    def decode(self, output: TaskOutput) -> TaskOutput:
-        """Completes the output for the prediction
+    def make_task_output(
+        self, single_forward_output: Dict[str, numpy.ndarray]
+    ) -> ClassificationOutput:
+        logits = torch.from_numpy(single_forward_output["logits"])
 
-        Mainly adds probabilities and keys for the UI.
-
-        Parameters
-        ----------
-        output
-            The output from the head's forward method
-
-        Returns
-        -------
-        completed_output
-        """
         if self._multilabel:
-            probabilities_batch = output.logits.sigmoid()
+            probabilities = logits.sigmoid()
         else:
-            probabilities_batch = torch.nn.functional.softmax(output.logits, dim=-1)
+            probabilities = torch.nn.functional.softmax(logits, dim=0)
 
-        output.labels, output.probabilities = [], []
-        if self.num_labels > 0:
-            output.labels, output.probabilities = zip(
-                *[
-                    self._get_labels_and_probabilities(probs)
-                    for probs in probabilities_batch
-                ]
-            )
+        labels, all_probabilities = (
+            self._add_and_sort_labels_and_probabilities(probabilities)
+            if self.num_labels > 0
+            else ([], [])
+        )
 
-        del output.logits
+        return ClassificationOutput(labels=labels, probabilities=all_probabilities)
 
-        return output
-
-    def _get_labels_and_probabilities(
+    def _add_and_sort_labels_and_probabilities(
         self, probabilities: torch.Tensor
     ) -> Tuple[List[str], List[float]]:
         """Returns the labels and probabilities sorted by the probability (descending)
