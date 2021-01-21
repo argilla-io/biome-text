@@ -128,5 +128,5 @@ class LanguageModellingOutput(TaskOutput):
 
     lm_embeddings: numpy.array
     mask: numpy.array
-    # Is only included if
+    # Is only included if batch size == 1
     loss: Optional[float] = SENTINEL
