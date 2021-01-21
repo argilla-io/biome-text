@@ -5,6 +5,8 @@ from typing import Optional
 from typing import Tuple
 from typing import cast
 
+import numpy
+
 # this sentinel is used to omit certain dataclass fields when the dataclass is converted to a dict
 SENTINEL = cast(None, "SENTINEL TO SKIP DATACLASS FIELDS WHEN CONVERTING TO DICT")
 
@@ -130,3 +132,13 @@ class TokenClassificationOutput(TaskOutput):
     entities: List[List[EntityOutput]]
     scores: List[float]
     tokens: Optional[List[TokenOutput]] = SENTINEL
+
+
+@dataclasses.dataclass
+class LanguageModellingOutput(TaskOutput):
+    """Output dataclass for the `LanguageModelling` head"""
+
+    lm_embeddings: numpy.array
+    mask: numpy.array
+    # Is only included if
+    loss: Optional[float] = SENTINEL

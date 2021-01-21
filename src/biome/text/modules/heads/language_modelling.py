@@ -1,7 +1,9 @@
+from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Tuple
 
+import numpy
 import torch
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Instance
@@ -18,6 +20,7 @@ from biome.text.modules.configuration import ComponentConfiguration
 from .task_head import TaskHead
 from .task_head import TaskName
 from .task_head import TaskOutput
+from .task_output import LanguageModellingOutput
 
 
 class LanguageModelling(TaskHead):
@@ -80,7 +83,7 @@ class LanguageModelling(TaskHead):
     def featurize(self, text: str) -> Optional[Instance]:
         return self.backbone.featurizer(text, to_field="text", aggregate=True)
 
-    def forward(self, text: TextFieldTensors) -> TaskOutput:  # type: ignore
+    def forward(self, text: TextFieldTensors) -> Dict[str, Any]:  # type: ignore
 
         mask = get_text_field_mask(text)
         contextual_embeddings = self.backbone.forward(text, mask)
@@ -130,11 +133,10 @@ class LanguageModelling(TaskHead):
             # Perplexity needs the value to be on the cpu
             metric(average_loss.to("cpu"))
 
-        return TaskOutput(
-            logits=None,
-            probs=None,
+        return dict(
             loss=average_loss,
-            **{"lm_embeddings": contextual_embeddings, "mask": mask},
+            lm_embeddings=contextual_embeddings,
+            mask=mask,
         )
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
@@ -181,6 +183,18 @@ class LanguageModelling(TaskHead):
         ).view(-1, self._forward_dim)
 
         return self._loss(non_masked_embeddings, non_masked_targets)
+
+    def make_task_output(
+        self, single_forward_output: Dict[str, numpy.ndarray]
+    ) -> LanguageModellingOutput:
+        task_output = LanguageModellingOutput(
+            lm_embeddings=single_forward_output["lm_embeddings"],
+            mask=single_forward_output["mask"],
+        )
+        if "loss" in single_forward_output:
+            task_output.loss = float(single_forward_output["loss"])
+
+        return task_output
 
 
 class LanguageModellingConfiguration(ComponentConfiguration[LanguageModelling]):
