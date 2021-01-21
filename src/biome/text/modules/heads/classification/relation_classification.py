@@ -30,6 +30,8 @@ class RelationClassification(ClassificationHead):
     Task head for relation classification
     """
 
+    _TEXT_ARG_NAME_IN_FORWARD = "text"
+    _LABEL_ARG_NAME_IN_FORWARD = "label"
     __LOGGER = logging.getLogger(__name__)
 
     def __init__(
@@ -81,7 +83,7 @@ class RelationClassification(ClassificationHead):
 
         instance = self.backbone.featurizer(
             text,
-            to_field=self.forward_arg_name,
+            to_field=self._TEXT_ARG_NAME_IN_FORWARD,
             aggregate=True,
             exclude_record_keys=True,
         )
@@ -104,7 +106,9 @@ class RelationClassification(ClassificationHead):
             ),
         )
 
-        return self._add_label(instance, label, to_field=self.label_name)
+        return self._add_label(
+            instance, label, to_field=self._LABEL_ARG_NAME_IN_FORWARD
+        )
 
     def forward(  # type: ignore
         self,
