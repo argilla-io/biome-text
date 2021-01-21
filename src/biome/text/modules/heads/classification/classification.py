@@ -53,13 +53,7 @@ class ClassificationHead(TaskHead):
             )
             self._loss = torch.nn.CrossEntropyLoss()
 
-    def forward(self, *args: Any, **kwargs: Any) -> Dict:
-        raise NotImplementedError
-
-    def featurize(self, *args, **kwargs) -> Optional[Instance]:
-        raise NotImplementedError
-
-    def add_label(
+    def _add_label(
         self,
         instance: Instance,
         label: Union[List[str], List[int], str, int],
@@ -84,6 +78,34 @@ class ClassificationHead(TaskHead):
 
         instance.add_field(to_field, field)
         return instance
+
+    def _make_forward_output(
+        self, logits: torch.Tensor, label: Optional[torch.IntTensor]
+    ) -> Dict[str, Any]:
+        """Returns a dict with the logits and optionally the loss"""
+        if label is not None:
+            return {
+                "loss": self.compute_metrics_and_return_loss(logits, label),
+                "logits": logits,
+            }
+
+        return {"logits": logits}
+
+    def _compute_metrics_and_return_loss(
+        self, logits: torch.Tensor, label: torch.IntTensor
+    ) -> float:
+        for metric in self.metrics.values():
+            metric(logits, label)
+
+        if self._multilabel:
+            # casting long to float for BCELoss
+            # see https://discuss.pytorch.org/t/nn-bcewithlogitsloss-cant-accept-one-hot-target/59980
+            return self._loss(
+                logits.view(-1, self.num_labels),
+                label.view(-1, self.num_labels).type_as(logits),
+            )
+
+        return self._loss(logits, label.long())
 
     def make_task_output(
         self, single_forward_output: Dict[str, numpy.ndarray]
@@ -175,19 +197,3 @@ class ClassificationHead(TaskHead):
                     final_metrics.update({"_{}/{}".format(k, label): v})
 
         return final_metrics
-
-    def compute_metrics_and_return_loss(
-        self, logits: torch.Tensor, label: Optional[torch.IntTensor] = None
-    ) -> float:
-        for metric in self.metrics.values():
-            metric(logits, label)
-
-        if self._multilabel:
-            # casting long to float for BCELoss
-            # see https://discuss.pytorch.org/t/nn-bcewithlogitsloss-cant-accept-one-hot-target/59980
-            return self._loss(
-                logits.view(-1, self.num_labels),
-                label.view(-1, self.num_labels).type_as(logits),
-            )
-
-        return self._loss(logits, label.long())
