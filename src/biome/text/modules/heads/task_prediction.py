@@ -32,7 +32,7 @@ class Token:
 
 @dataclasses.dataclass
 class Entity:
-    """Output dataclass for a NER entity
+    """Output dataclass for a NER entity in a prediction.
 
     Parameters
     ----------
