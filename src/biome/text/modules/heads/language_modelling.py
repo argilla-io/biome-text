@@ -19,8 +19,8 @@ from biome.text.modules.configuration import ComponentConfiguration
 
 from .task_head import TaskHead
 from .task_head import TaskName
-from .task_head import TaskOutput
-from .task_output import LanguageModellingOutput
+from .task_head import TaskPrediction
+from .task_prediction import LanguageModellingPrediction
 
 
 class LanguageModelling(TaskHead):
@@ -184,17 +184,17 @@ class LanguageModelling(TaskHead):
 
         return self._loss(non_masked_embeddings, non_masked_targets)
 
-    def make_task_output(
+    def make_task_prediction(
         self, single_forward_output: Dict[str, numpy.ndarray]
-    ) -> LanguageModellingOutput:
-        task_output = LanguageModellingOutput(
+    ) -> LanguageModellingPrediction:
+        task_prediction = LanguageModellingPrediction(
             lm_embeddings=single_forward_output["lm_embeddings"],
             mask=single_forward_output["mask"],
         )
         if "loss" in single_forward_output:
-            task_output.loss = float(single_forward_output["loss"])
+            task_prediction.loss = float(single_forward_output["loss"])
 
-        return task_output
+        return task_prediction
 
 
 class LanguageModellingConfiguration(ComponentConfiguration[LanguageModelling]):

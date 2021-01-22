@@ -7,10 +7,10 @@ from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
 from biome.text import vocabulary
-from biome.text.modules.heads import TaskOutput
-from biome.text.modules.heads.task_output import EntityOutput
-from biome.text.modules.heads.task_output import TokenClassificationOutput
-from biome.text.modules.heads.task_output import TokenOutput
+from biome.text.modules.heads import TaskPrediction
+from biome.text.modules.heads.task_prediction import Entity
+from biome.text.modules.heads.task_prediction import Token
+from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
 
 
 @pytest.fixture
@@ -102,11 +102,11 @@ class TestMakeTaskOutput:
     def test_pretokenized_input(self, pipeline_dict):
         pipeline = Pipeline.from_config(pipeline_dict)
         output = self._input_top_k2(pipeline)
-        expected_output = TokenClassificationOutput(
+        expected_output = TokenClassificationPrediction(
             tags=[["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]],
             entities=[
-                [EntityOutput(start_token=3, end_token=4, label="NER")],
-                [EntityOutput(start_token=1, end_token=4, label="NER")],
+                [Entity(start_token=3, end_token=4, label="NER")],
+                [Entity(start_token=1, end_token=4, label="NER")],
             ],
             scores=[2, 1],
         )
@@ -116,26 +116,18 @@ class TestMakeTaskOutput:
     def test_untokenized_input(self, pipeline_dict):
         pipeline = Pipeline.from_config(pipeline_dict)
         output = self._input_top_k2(pipeline, pretokenized=False)
-        expected_output = TokenClassificationOutput(
+        expected_output = TokenClassificationPrediction(
             tags=[["O", "O", "O", "U-NER"], ["O", "B-NER", "I-NER", "L-NER"]],
             entities=[
-                [
-                    EntityOutput(
-                        start_token=3, end_token=4, label="NER", start=10, end=14
-                    )
-                ],
-                [
-                    EntityOutput(
-                        start_token=1, end_token=4, label="NER", start=5, end=14
-                    )
-                ],
+                [Entity(start_token=3, end_token=4, label="NER", start=10, end=14)],
+                [Entity(start_token=1, end_token=4, label="NER", start=5, end=14)],
             ],
             scores=[2, 1],
             tokens=[
-                TokenOutput(end=4, start=0, text="this"),
-                TokenOutput(end=7, start=5, text="is"),
-                TokenOutput(end=9, start=8, text="a"),
-                TokenOutput(end=14, start=10, text="test"),
+                Token(end=4, start=0, text="this"),
+                Token(end=7, start=5, text="is"),
+                Token(end=9, start=8, text="a"),
+                Token(end=14, start=10, text="test"),
             ],
         )
 
@@ -158,7 +150,7 @@ class TestMakeTaskOutput:
             raw_text=raw_text,
         )
 
-        return pipeline.head.make_task_output(single_forward_output)
+        return pipeline.head.make_task_prediction(single_forward_output)
 
 
 def test_preserve_pretokenization(

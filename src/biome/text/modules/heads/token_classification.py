@@ -32,9 +32,9 @@ from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
-from biome.text.modules.heads.task_output import EntityOutput
-from biome.text.modules.heads.task_output import TokenClassificationOutput
-from biome.text.modules.heads.task_output import TokenOutput
+from biome.text.modules.heads.task_prediction import Entity
+from biome.text.modules.heads.task_prediction import Token
+from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
 
 
 class TokenClassification(TaskHead):
@@ -240,13 +240,11 @@ class TokenClassification(TaskHead):
 
         return output
 
-    def make_task_output(
+    def make_task_prediction(
         self, single_forward_output: Dict
-    ) -> TokenClassificationOutput:
+    ) -> TokenClassificationPrediction:
         # The dims are: top_k, tags
-        tags: List[List[str]] = self._make_tags_output(
-            single_forward_output["viterbi_paths"]
-        )
+        tags: List[List[str]] = self._make_tags(single_forward_output["viterbi_paths"])
         # construct a spacy Doc
         pre_tokenized = not isinstance(single_forward_output["raw_text"], str)
         if pre_tokenized:
@@ -255,35 +253,35 @@ class TokenClassification(TaskHead):
         else:
             doc = self.backbone.tokenizer.nlp(single_forward_output["raw_text"])
 
-        task_output = TokenClassificationOutput(
+        task_prediction = TokenClassificationPrediction(
             tags=tags,
             scores=[score for tags, score in single_forward_output["viterbi_paths"]],
-            entities=self._make_entities_output(doc, tags, pre_tokenized),
+            entities=self._make_entities(doc, tags, pre_tokenized),
         )
         if not pre_tokenized:
-            task_output.tokens = self._make_tokens_output(doc)
+            task_prediction.tokens = self._make_tokens(doc)
 
-        return task_output
+        return task_prediction
 
-    def _make_tags_output(
+    def _make_tags(
         self, viterbi_paths: List[Tuple[List[int], float]]
     ) -> List[List[str]]:
-        """Makes the 'tags' key of the task output"""
+        """Makes the 'tags' key of the task prediction"""
         return [
             [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
             for tags, score in viterbi_paths
         ]
 
-    def _make_entities_output(
+    def _make_entities(
         self,
         doc: Doc,
         k_tags: List[List[str]],
         pre_tokenized: bool,
-    ) -> List[List[EntityOutput]]:
-        """Makes the 'entities' key of the task output. Computes offsets with respect to char and token id"""
+    ) -> List[List[Entity]]:
+        """Makes the 'entities' key of the task prediction. Computes offsets with respect to char and token id"""
         return [
             [
-                EntityOutput(**entity)
+                Entity(**entity)
                 for entity in offsets_from_tags(
                     doc, tags, self._label_encoding, only_token_spans=pre_tokenized
                 )
@@ -291,10 +289,10 @@ class TokenClassification(TaskHead):
             for tags in k_tags
         ]
 
-    def _make_tokens_output(self, doc: Doc) -> List[TokenOutput]:
-        """Makes the 'tokens' key of the task output"""
+    def _make_tokens(self, doc: Doc) -> List[Token]:
+        """Makes the 'tokens' key of the task prediction"""
         return [
-            TokenOutput(text=token.text, start=token.idx, end=token.idx + len(token))
+            Token(text=token.text, start=token.idx, end=token.idx + len(token))
             for token in doc
         ]
 

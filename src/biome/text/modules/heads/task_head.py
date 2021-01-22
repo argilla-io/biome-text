@@ -12,7 +12,7 @@ from allennlp.data import Instance
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
-from biome.text.modules.heads.task_output import TaskOutput
+from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class TaskName(Enum):
@@ -91,9 +91,9 @@ class TaskHead(torch.nn.Module, Registrable):
         """Converts incoming data into an Allennlp `Instance`, used for pyTorch tensors generation"""
         raise NotImplementedError
 
-    def make_task_output(
+    def make_task_prediction(
         self, single_forward_output: Dict[str, numpy.ndarray]
-    ) -> TaskOutput:
+    ) -> TaskPrediction:
         """Transforms the forward output to a task output, only used for predictions.
 
         Parameters
@@ -103,12 +103,14 @@ class TaskHead(torch.nn.Module, Registrable):
 
         Returns
         -------
-        task_output
+        task_prediction
             A task specific output for the prediction
         """
-        # One could implement a generic solution to just forward the forward_output:
-        # dataclass with necessary fields: C = dataclasses.make_dataclass(...)
-        # inherit from TaskOutput: return type("...", (C, TaskOutput, ), {})(**forward_output)
+        # One could implement a generic solution to just pass on the forward_output, but it would be slow and i
+        # recommend thinking about what a prediction should return, it is very likely not the same as for the forward.
+        # Possible solution:
+        # Dynamically create a dataclass with necessary fields: C = dataclasses.make_dataclass(...)
+        # Inherit from TaskPrediction: return type("...", (C, TaskPrediction, ), {})(**forward_output)
         raise NotImplementedError
 
     def explain_prediction(

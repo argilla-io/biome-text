@@ -21,7 +21,7 @@ from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
-from ..task_head import TaskOutput
+from ..task_head import TaskPrediction
 from .classification import ClassificationHead
 
 

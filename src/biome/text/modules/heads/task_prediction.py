@@ -12,8 +12,8 @@ SENTINEL = cast(None, "SENTINEL TO SKIP DATACLASS FIELDS WHEN CONVERTING TO DICT
 
 
 @dataclasses.dataclass
-class TokenOutput:
-    """Output dataclass for a token.
+class Token:
+    """Output dataclass for a token in a prediction.
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ class TokenOutput:
 
 
 @dataclasses.dataclass
-class EntityOutput:
+class Entity:
     """Output dataclass for a NER entity
 
     Parameters
@@ -56,10 +56,10 @@ class EntityOutput:
 
 
 @dataclasses.dataclass
-class TaskOutput:
+class TaskPrediction:
     """Base class for the TaskOutput classes.
 
-    Each head should implement a proper task output class that defines its prediction output.
+    Each head should implement a proper task prediction class that defines its prediction output.
     You can use the SENTINEL as default value if you want to omit certain fields when converting to a dict.
     """
 
@@ -75,7 +75,7 @@ class TaskOutput:
 
 
 @dataclasses.dataclass
-class ClassificationOutput(TaskOutput):
+class ClassificationPrediction(TaskPrediction):
     """Output dataclass for all `ClassificationHead`s:
     - `TextClassification`
     - `RecordClassification`
@@ -95,7 +95,7 @@ class ClassificationOutput(TaskOutput):
 
 
 @dataclasses.dataclass
-class TokenClassificationOutput(TaskOutput):
+class TokenClassificationPrediction(TaskPrediction):
     """Output dataclass for the `TokenClassification` head
 
     Parameters
@@ -113,13 +113,13 @@ class TokenClassificationOutput(TaskOutput):
     """
 
     tags: List[List[str]]
-    entities: List[List[EntityOutput]]
+    entities: List[List[Entity]]
     scores: List[float]
-    tokens: Optional[List[TokenOutput]] = SENTINEL
+    tokens: Optional[List[Token]] = SENTINEL
 
 
 @dataclasses.dataclass
-class LanguageModellingOutput(TaskOutput):
+class LanguageModellingPrediction(TaskPrediction):
     """Output dataclass for the `LanguageModelling` head"""
 
     lm_embeddings: numpy.array

@@ -89,7 +89,7 @@ class PipelineModel(allennlp.models.Model):
     inputs: List[str]
         The model inputs
     output: List[str]
-        The model output
+        The model outputs (not prediction): Corresponding to the `TaskHead.featurize` optional arguments.
     """
 
     PREDICTION_FILE_NAME = "predictions.json"
@@ -362,10 +362,10 @@ class PipelineModel(allennlp.models.Model):
 
         instances = [self.text_to_instance(**input_dict) for input_dict in input_dicts]
         try:
-            forward_output = self.forward_on_instances(instances)
+            forward_outputs = self.forward_on_instances(instances)
             predictions = [
-                self.head.make_task_output(output).as_dict()
-                for output in forward_output
+                self.head.make_task_prediction(output).as_dict()
+                for output in forward_outputs
             ]
         except Exception as error:
             raise WrongValueError(
