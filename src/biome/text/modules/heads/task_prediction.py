@@ -12,6 +12,28 @@ SENTINEL = cast(None, "SENTINEL TO SKIP DATACLASS FIELDS WHEN CONVERTING TO DICT
 
 
 @dataclasses.dataclass
+class Attribution:
+    """Output dataclass for an attribution in a prediction.
+
+    Parameters
+    ----------
+    text
+        Text belonging to the attribution
+    start
+        Start char id
+    end
+        End char id
+    attribution
+        Numeric value quantifying the attribution of 'text' to the prediction
+    """
+
+    text: str
+    start: int
+    end: int
+    attribution: float
+
+
+@dataclasses.dataclass
 class Token:
     """Output dataclass for a token in a prediction.
 
@@ -88,10 +110,16 @@ class ClassificationPrediction(TaskPrediction):
         Ordered list of predictions, from the label with the highest to the label with the lowest probability.
     probabilities
         Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each token to the prediction with the highest probability.
+    tokens
+        Tokens of the tokenized input
     """
 
     labels: List[str]
     probabilities: List[float]
+    attributions: Optional[Attribution] = SENTINEL
+    tokens: Optional[List[Token]] = SENTINEL
 
 
 @dataclasses.dataclass
@@ -109,7 +137,7 @@ class TokenClassificationPrediction(TaskPrediction):
     scores
         Ordered list of scores for each list of NER tags (highest to lowest).
     tokens
-        Tokens of the tokenized input
+        Tokens of the tokenized input, only returned when input is not pretokenized.
     """
 
     tags: List[List[str]]
