@@ -20,18 +20,18 @@ from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import EmbeddingConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
-
-from ..task_head import TaskOutput
-from .text_classification import TextClassification
+from biome.text.modules.heads.classification.classification import ClassificationHead
 
 # from biome.text.modules.encoders.multi_head_self_attention_encoder import MultiheadSelfAttentionEncoder
 
 
-class RelationClassification(TextClassification):
+class RelationClassification(ClassificationHead):
     """
     Task head for relation classification
     """
 
+    _TEXT_ARG_NAME_IN_FORWARD = "text"
+    _LABEL_ARG_NAME_IN_FORWARD = "label"
     __LOGGER = logging.getLogger(__name__)
 
     def __init__(
@@ -46,13 +46,7 @@ class RelationClassification(TextClassification):
         # self_attention: Optional[MultiheadSelfAttentionEncoder] = None
     ) -> None:
 
-        super(RelationClassification, self).__init__(
-            backbone,
-            labels,
-            pooler=pooler,
-            feedforward=feedforward,
-            multilabel=multilabel,
-        )
+        super().__init__(backbone=backbone, labels=labels, multilabel=multilabel)
 
         self._label_encoding = entity_encoding
         self._entity_tags_namespace = "entities"
@@ -74,34 +68,11 @@ class RelationClassification(TextClassification):
             if not feedforward
             else feedforward.input_dim(self.pooler.get_output_dim()).compile()
         )
+
         self._classification_layer = torch.nn.Linear(
             (self.feedforward or self.pooler).get_output_dim(), self.num_labels
         )
         # self.self_attention = self_attention
-
-    def forward(  # type: ignore
-        self,
-        text: TextFieldTensors,
-        entities: torch.IntTensor,
-        label: torch.IntTensor = None,
-    ) -> TaskOutput:
-
-        mask = get_text_field_mask(text)
-        embedded_text = self.backbone.forward(text, mask)
-
-        embedded_ents = self.entities_embedder(entities)
-        embedded_text = torch.cat((embedded_text, embedded_ents), dim=-1)
-        """
-        if self.self_attention:
-            embedded_text = self.self_attention(embedded_text)
-        """
-        embedded_text = self.pooler(embedded_text, mask=mask)
-
-        if self.feedforward is not None:
-            embedded_text = self.feedforward(embedded_text)
-
-        logits = self._classification_layer(embedded_text)
-        return self.calculate_output(logits=logits, label=label)
 
     def featurize(
         self,
@@ -112,7 +83,7 @@ class RelationClassification(TextClassification):
 
         instance = self.backbone.featurizer(
             text,
-            to_field=self.forward_arg_name,
+            to_field=self._TEXT_ARG_NAME_IN_FORWARD,
             aggregate=True,
             exclude_record_keys=True,
         )
@@ -135,7 +106,34 @@ class RelationClassification(TextClassification):
             ),
         )
 
-        return self.add_label(instance, label, to_field=self.label_name)
+        return self._add_label(
+            instance, label, to_field=self._LABEL_ARG_NAME_IN_FORWARD
+        )
+
+    def forward(  # type: ignore
+        self,
+        text: TextFieldTensors,
+        entities: torch.IntTensor,
+        label: torch.IntTensor = None,
+    ) -> Dict[str, Any]:
+
+        mask = get_text_field_mask(text)
+        embedded_text = self.backbone.forward(text, mask)
+
+        embedded_ents = self.entities_embedder(entities)
+        embedded_text = torch.cat((embedded_text, embedded_ents), dim=-1)
+        """
+        if self.self_attention:
+            embedded_text = self.self_attention(embedded_text)
+        """
+        embedded_text = self.pooler(embedded_text, mask=mask)
+
+        if self.feedforward is not None:
+            embedded_text = self.feedforward(embedded_text)
+
+        logits = self._classification_layer(embedded_text)
+
+        return self._make_forward_output(logits=logits, label=label)
 
 
 class RelationClassificationConfiguration(

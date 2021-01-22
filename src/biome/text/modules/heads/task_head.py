@@ -12,33 +12,7 @@ from allennlp.data import Instance
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
-
-
-class TaskOutput:
-    """
-    Task output data class
-
-    A task output will contains almost the logits and probs properties
-    """
-
-    def __init__(
-        self,
-        logits: torch.Tensor = None,
-        loss: Optional[torch.Tensor] = None,
-        **extra_data
-    ):
-        self.logits = logits
-        self.loss = loss
-
-        for k, v in extra_data.items():
-            self.__setattr__(k, v)
-
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
-
-    def as_dict(self) -> Dict[str, torch.Tensor]:
-        """Dict representation of task output"""
-        return {k: v for k, v in self.__dict__.items() if v is not None}
+from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class TaskName(Enum):
@@ -100,7 +74,13 @@ class TaskHead(torch.nn.Module, Registrable):
         """
         return None
 
-    def forward(self, *args: Any, **kwargs: Any) -> TaskOutput:
+    def forward(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """The head's forward pass, it must include the backbone's `forward`.
+
+        When trained, the returned dict has to have a 'loss' key pointing to a
+        scalar `torch.Tensor` representing the loss to be optimized.
+        When used for inference, it has to include everything to make the TaskOutput -> `self.make_task_output`.
+        """
         raise NotImplementedError
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
@@ -108,24 +88,30 @@ class TaskHead(torch.nn.Module, Registrable):
         raise NotImplementedError
 
     def featurize(self, *args, **kwargs) -> Optional[Instance]:
-        """Converts incoming data into an allennlp `Instance`, used for pyTorch tensors generation"""
+        """Converts incoming data into an Allennlp `Instance`, used for pyTorch tensors generation"""
         raise NotImplementedError
 
-    def decode(self, output: TaskOutput) -> TaskOutput:
-        """Completes the output for the prediction
-
-        The base implementation adds nothing.
+    def make_task_prediction(
+        self, single_forward_output: Dict[str, numpy.ndarray]
+    ) -> TaskPrediction:
+        """Transforms the forward output to a task output, only used for predictions.
 
         Parameters
         ----------
-        output
-            The output from the head's forward method
+        single_forward_output
+            A single (not batched) output from the head's forward method
 
         Returns
         -------
-        completed_output
+        task_prediction
+            A task specific output for the prediction
         """
-        return output
+        # One could implement a generic solution to just pass on the forward_output, but it would be slow and i
+        # recommend thinking about what a prediction should return, it is very likely not the same as for the forward.
+        # Possible solution:
+        # Dynamically create a dataclass with necessary fields: C = dataclasses.make_dataclass(...)
+        # Inherit from TaskPrediction: return type("...", (C, TaskPrediction, ), {})(**forward_output)
+        raise NotImplementedError
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int

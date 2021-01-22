@@ -39,7 +39,6 @@ from .errors import MissingArgumentError
 from .errors import WrongValueError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
-from .modules.heads import TaskOutput
 
 
 class _HashDict(dict):
@@ -90,7 +89,7 @@ class PipelineModel(allennlp.models.Model):
     inputs: List[str]
         The model inputs
     output: List[str]
-        The model output
+        The model outputs (not prediction): Corresponding to the `TaskHead.featurize` optional arguments.
     """
 
     PREDICTION_FILE_NAME = "predictions.json"
@@ -172,30 +171,8 @@ class PipelineModel(allennlp.models.Model):
         self._update_head_related_attributes()
 
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
-        """The main forward method. Wraps the head forward method and converts the head output into a dictionary"""
-        head_output: TaskOutput = self._head.forward(*args, **kwargs)
-        # we don't want to break AllenNLP API: TaskOutput -> as_dict()
-        return head_output.as_dict()
-
-    def make_output_human_readable(
-        self, output_dict: Dict[str, torch.Tensor]
-    ) -> Dict[str, torch.Tensor]:
-        """Completes the output for the prediction
-
-        Parameters
-        ----------
-        output_dict
-            The `TaskOutput` from the model's forward method as dict
-
-        Returns
-        -------
-        output_dict
-            Completed output
-        """
-        # we don't want to break AllenNLP API: dict -> TaskOutput -> dict
-        output = TaskOutput(**output_dict)
-        completed_output = self._head.decode(output)
-        return completed_output.as_dict()
+        """The main forward method just wraps the head forward method"""
+        return self._head.forward(*args, **kwargs)
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Fetch metrics defined in head layer"""
@@ -360,7 +337,7 @@ class PipelineModel(allennlp.models.Model):
         return predictions
 
     def _get_instances_and_predictions(
-        self, input_dicts
+        self, input_dicts: Iterable[Dict[str, Any]]
     ) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
         """Returns instances from the input_dicts and their predictions.
 
@@ -385,7 +362,11 @@ class PipelineModel(allennlp.models.Model):
 
         instances = [self.text_to_instance(**input_dict) for input_dict in input_dicts]
         try:
-            predictions = self.forward_on_instances(instances)
+            forward_outputs = self.forward_on_instances(instances)
+            predictions = [
+                self.head.make_task_prediction(output).as_dict()
+                for output in forward_outputs
+            ]
         except Exception as error:
             raise WrongValueError(
                 f"Failed to make predictions for '{input_dicts}'"

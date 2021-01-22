@@ -15,7 +15,7 @@ from .language_modelling import LanguageModellingConfiguration
 from .task_head import TaskHead
 from .task_head import TaskHeadConfiguration
 from .task_head import TaskName
-from .task_head import TaskOutput
+from .task_head import TaskPrediction
 from .token_classification import TokenClassification
 from .token_classification import TokenClassificationConfiguration
 

@@ -26,9 +26,7 @@ from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.encoders import TimeDistributedEncoder
-
-from ..task_head import TaskOutput
-from .classification import ClassificationHead
+from biome.text.modules.heads.classification.classification import ClassificationHead
 
 
 class RecordPairClassification(ClassificationHead):
@@ -164,7 +162,7 @@ class RecordPairClassification(ClassificationHead):
                 self._RECORD2_ARG_NAME_IN_FORWARD: record2_instance.get("record"),
             }
         )
-        instance = self.add_label(instance, label)
+        instance = self._add_label(instance, label)
 
         return instance
 
@@ -173,7 +171,7 @@ class RecordPairClassification(ClassificationHead):
         record1: TextFieldTensors,
         record2: TextFieldTensors,
         label: torch.LongTensor = None,
-    ) -> TaskOutput:
+    ) -> Dict[str, Any]:
         # pylint: disable=arguments-differ
         """
         Parameters
@@ -214,9 +212,7 @@ class RecordPairClassification(ClassificationHead):
             record_mask_record2,
         )
 
-        output: TaskOutput = self.single_label_output(logits, label)
-
-        return output
+        return self._make_forward_output(logits, label)
 
     def _field_encoding(
         self,

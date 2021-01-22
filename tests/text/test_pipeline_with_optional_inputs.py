@@ -30,7 +30,7 @@ class MyCustomHead(TextClassification):
             aggregate=True,
             exclude_record_keys=True,
         )
-        return self.add_label(instance, label, to_field=self.label_name)
+        return self._add_label(instance, label, to_field=self.label_name)
 
 
 def test_check_pipeline_inputs_and_output():

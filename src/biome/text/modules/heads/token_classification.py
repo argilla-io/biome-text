@@ -24,16 +24,17 @@ from spacy.vocab import Vocab
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.errors import WrongValueError
 from biome.text.helpers import offsets_from_tags
 from biome.text.helpers import span_labels_to_tag_labels
 from biome.text.helpers import tags_from_offsets
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
-
-from ...errors import WrongValueError
-from .task_head import TaskHead
-from .task_head import TaskName
-from .task_head import TaskOutput
+from biome.text.modules.heads.task_head import TaskHead
+from biome.text.modules.heads.task_head import TaskName
+from biome.text.modules.heads.task_prediction import Entity
+from biome.text.modules.heads.task_prediction import Token
+from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
 
 
 class TokenClassification(TaskHead):
@@ -206,7 +207,7 @@ class TokenClassification(TaskHead):
         text: TextFieldTensors,
         raw_text: List[Union[str, List[str]]],
         tags: torch.IntTensor = None,
-    ) -> TaskOutput:
+    ) -> Dict:
 
         mask = get_text_field_mask(text)
         embedded_text = self.dropout(self.backbone.forward(text, mask))
@@ -227,86 +228,73 @@ class TokenClassification(TaskHead):
             for j, tag_id in enumerate(instance_tags):
                 class_probabilities[i, j, tag_id] = 1
 
-        output = TaskOutput(
-            logits=logits,
-            probs=class_probabilities,
+        output = dict(
             viterbi_paths=viterbi_paths,
-            mask=mask,
             raw_text=raw_text,
         )
 
         if tags is not None:
-            output.loss = self._loss(logits, tags, mask)
+            output["loss"] = self._loss(logits, tags, mask)
             for metric in self.__all_metrics:
                 metric(class_probabilities, tags, mask)
 
         return output
 
-    def _decode_tags(
+    def make_task_prediction(
+        self, single_forward_output: Dict
+    ) -> TokenClassificationPrediction:
+        # The dims are: top_k, tags
+        tags: List[List[str]] = self._make_tags(single_forward_output["viterbi_paths"])
+        # construct a spacy Doc
+        pre_tokenized = not isinstance(single_forward_output["raw_text"], str)
+        if pre_tokenized:
+            # compose doc from tokens
+            doc = Doc(Vocab(), words=single_forward_output["raw_text"])
+        else:
+            doc = self.backbone.tokenizer.nlp(single_forward_output["raw_text"])
+
+        task_prediction = TokenClassificationPrediction(
+            tags=tags,
+            scores=[score for tags, score in single_forward_output["viterbi_paths"]],
+            entities=self._make_entities(doc, tags, pre_tokenized),
+        )
+        if not pre_tokenized:
+            task_prediction.tokens = self._make_tokens(doc)
+
+        return task_prediction
+
+    def _make_tags(
         self, viterbi_paths: List[Tuple[List[int], float]]
     ) -> List[List[str]]:
-        """Decode predicted tags"""
+        """Makes the 'tags' key of the task prediction"""
         return [
             [vocabulary.label_for_index(self.backbone.vocab, idx) for idx in tags]
             for tags, score in viterbi_paths
         ]
 
-    def _decode_entities(
+    def _make_entities(
         self,
         doc: Doc,
         k_tags: List[List[str]],
         pre_tokenized: bool,
-    ) -> List[List[Dict]]:
-        """Decode predicted entities from tags"""
+    ) -> List[List[Entity]]:
+        """Makes the 'entities' key of the task prediction. Computes offsets with respect to char and token id"""
         return [
-            offsets_from_tags(
-                doc, tags, self._label_encoding, only_token_spans=pre_tokenized
-            )
+            [
+                Entity(**entity)
+                for entity in offsets_from_tags(
+                    doc, tags, self._label_encoding, only_token_spans=pre_tokenized
+                )
+            ]
             for tags in k_tags
         ]
 
-    def _decode_tokens(self, doc: Doc) -> List[Dict]:
-        """Decode tokens"""
+    def _make_tokens(self, doc: Doc) -> List[Token]:
+        """Makes the 'tokens' key of the task prediction"""
         return [
-            {"text": token.text, "start": token.idx, "end": token.idx + len(token)}
+            Token(text=token.text, start=token.idx, end=token.idx + len(token))
             for token in doc
         ]
-
-    def decode(self, output: TaskOutput) -> TaskOutput:
-        # The dims are: batch, top_k, tags
-        output.tags: List[List[List[str]]] = [
-            self._decode_tags(paths) for paths in output.viterbi_paths
-        ]
-        output.scores: List[List[float]] = [
-            [score for tags, score in paths] for paths in output.viterbi_paths
-        ]
-
-        output.entities: List[List[List[Dict]]] = []
-        output.tokens: List[List[Dict]] = []
-        # iterate over batch
-        for raw_text, k_tags in zip(output.raw_text, output.tags):
-            pre_tokenized = not isinstance(raw_text, str)
-            if pre_tokenized:
-                # compose spacy doc from tokens
-                doc = Doc(Vocab(), words=raw_text)
-            else:
-                doc = self.backbone.tokenizer.nlp(raw_text)
-
-            output.entities.append(self._decode_entities(doc, k_tags, pre_tokenized))
-            output.tokens.append(
-                self._decode_tokens(doc) if not pre_tokenized else None
-            )
-
-        if not any(output.tokens):  # drop tokens field if no data
-            del output.tokens
-
-        del output.logits
-        del output.mask
-        del output.probs
-        del output.raw_text
-        del output.viterbi_paths
-
-        return output
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         metrics = {

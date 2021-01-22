@@ -21,7 +21,7 @@ from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 
-from ..task_head import TaskOutput
+from ..task_head import TaskPrediction
 from .classification import ClassificationHead
 
 
@@ -67,13 +67,13 @@ class TextClassification(ClassificationHead):
             aggregate=True,
             exclude_record_keys=True,
         )
-        return self.add_label(instance, label, to_field=self.label_name)
+        return self._add_label(instance, label, to_field=self.label_name)
 
     def forward(  # type: ignore
         self,
         text: TextFieldTensors,
         label: torch.IntTensor = None,
-    ) -> TaskOutput:
+    ) -> Dict[str, Any]:
 
         mask = get_text_field_mask(text)
         embedded_text = self.backbone.forward(text, mask)
@@ -83,7 +83,8 @@ class TextClassification(ClassificationHead):
             embedded_text = self.feedforward(embedded_text)
 
         logits = self._classification_layer(embedded_text)
-        return self.calculate_output(logits=logits, label=label)
+
+        return self._make_forward_output(logits, label)
 
     def explain_prediction(
         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int

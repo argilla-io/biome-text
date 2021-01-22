@@ -57,7 +57,7 @@ class RecordClassification(DocumentClassification):
             {input_key: inputs[input_key] for input_key in self._inputs},
             to_field="document",
         )
-        return self.add_label(instance, label)
+        return self._add_label(instance, label)
 
 
 class RecordClassificationConfiguration(ComponentConfiguration[RecordClassification]):
