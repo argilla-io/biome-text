@@ -88,10 +88,6 @@ class ClassificationOutput(TaskOutput):
         Ordered list of predictions, from the label with the highest to the label with the lowest probability.
     probabilities
         Ordered list of probabilities, from highest to lowest probability.
-    attributions
-        Attribution of each token to the prediction with the highest probability.
-    tokens
-        Tokens of the tokenized input
     """
 
     labels: List[str]
