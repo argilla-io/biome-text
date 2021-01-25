@@ -668,3 +668,20 @@ class FindLRConfiguration:
     num_batches: int = 100
     linear_steps: bool = False
     stopping_factor: Optional[float] = None
+
+
+# We need this to be hashable for the prediction cache -> frozen=True
+@dataclasses.dataclass(frozen=True)
+class PredictionConfiguration:
+    """Contains configurations for a `Pipeline.prediction`
+
+    Parameters
+    ----------
+    add_tokens
+    add_attributions
+    attributions_kwargs
+    """
+
+    add_tokens: bool = False
+    add_attributions: bool = False
+    attributions_kwargs: Optional[Dict] = None
