@@ -97,6 +97,8 @@ def update_method_signature(
         return to_method(*args, **kwargs)
 
     wrapper.__signature__ = signature
+    wrapper.__doc__ = to_method.__doc__
+
     return wrapper
 
 
