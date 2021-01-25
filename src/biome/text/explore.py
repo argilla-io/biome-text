@@ -283,10 +283,6 @@ def _explore(
     if options.prediction_cache > 0:
         pipeline.init_prediction_cache(options.prediction_cache)
 
-    # TODO: Here we should use a future evaluate method that takes as required input also the labels!!!
-    # Maybe a predict should actually fail if you pass on a label ...
-    apply_func = pipeline.explain_batch if options.explain else pipeline.predict_batch
-
     def add_predictions(batch, columns):
         # For the last batch, this batch_size can be smaller than the batch_size specified in the map function!
         batch_size = len(batch[pipeline.inputs[0]])
@@ -298,7 +294,11 @@ def _explore(
             }
             for i in range(batch_size)
         ]
-        predictions = apply_func(input_dicts)
+        predictions = pipeline.predict(
+            batch=input_dicts, add_attributions=options.explain
+        )
+        if not isinstance(predictions, list):
+            predictions = [predictions]
 
         return {
             "prediction": _make_prediction_backward_compatible(sanitize(predictions))
