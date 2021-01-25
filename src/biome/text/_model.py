@@ -35,10 +35,12 @@ from allennlp.models.archival import CONFIG_NAME
 from . import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
+from .configuration import PredictionConfiguration
 from .errors import MissingArgumentError
 from .errors import WrongValueError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
+from .modules.heads import TaskPrediction
 
 
 class _HashDict(dict):
@@ -283,219 +285,65 @@ class PipelineModel(allennlp.models.Model):
 
     def _log_predictions(
         self,
-        input_dicts: Iterable[Dict[str, Any]],
-        predictions: Iterable[Dict[str, Any]],
+        batch: Iterable[Dict[str, Any]],
+        predictions: Iterable[TaskPrediction],
     ) -> None:
         """Log predictions to a file for a model analysis and feedback sessions.
 
         Parameters
         ----------
-        input_dicts
+        batch
             Input data to the model
         predictions
             Returned predictions from the model
         """
-        for input_dict, prediction in zip(input_dicts, predictions):
+        for input_dict, prediction in zip(batch, predictions):
             self._prediction_logger.info(
-                json.dumps(dict(inputs=input_dict, prediction=sanitize(prediction)))
+                json.dumps(
+                    dict(inputs=input_dict, prediction=sanitize(prediction.as_dict()))
+                )
             )
 
-    def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
-        """Returns a prediction given some input data based on the current state of the model
-
-        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
-        (`print(Pipeline.inputs)`)
-
-        Returns
-        -------
-        predictions: `Dict[str, numpy.ndarray]`
-            A dictionary containing the predictions and additional information
-        """
-        inputs = self._model_inputs_from_args(*args, **kwargs)
-
-        return self.predict_batch([inputs])[0]
-
-    def predict_batch(
-        self, input_dicts: Iterable[Dict[str, Any]]
-    ) -> List[Dict[str, numpy.ndarray]]:
+    def predict(
+        self, batch: List[Dict[str, Any]], prediction_config: PredictionConfiguration
+    ) -> List[TaskPrediction]:
         """Returns predictions given some input data based on the current state of the model
 
-        The predictions will be computed batch-wise, which is faster
-        than calling `self.predict` for every single input data.
+        The keys of the input dicts in the batch must coincide with the `self.inputs` attribute.
 
         Parameters
         ----------
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
-        """
-        _, predictions = self._get_instances_and_predictions(input_dicts)
-
-        # Log predictions if the prediction logger was initialized
-        if hasattr(self, "_prediction_logger"):
-            self._log_predictions(input_dicts, predictions)
-
-        return predictions
-
-    def _get_instances_and_predictions(
-        self, input_dicts: Iterable[Dict[str, Any]]
-    ) -> Tuple[List[Instance], List[Dict[str, numpy.ndarray]]]:
-        """Returns instances from the input_dicts and their predictions.
-
-        Helper method used by the predict and explain methods.
-
-        Parameters
-        ----------
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
-
-        Returns
-        -------
-        (instances, predictions)
+        batch
+            A list of dictionaries that represents a batch of inputs.
+            The dictionary keys must comply with the `self.inputs` attribute.
+        prediction_config
+            Contains configurations for the prediction
         """
         if self.training:
             warnings.warn(
-                "Train model enabled. "
+                "Training mode enabled."
                 "Disabling training mode automatically. You can manually disable it: "
                 "self.eval() or self.train(False)"
             )
             self.eval()
 
-        instances = [self.text_to_instance(**input_dict) for input_dict in input_dicts]
+        instances = [self.text_to_instance(**input_dict) for input_dict in batch]
         try:
             forward_outputs = self.forward_on_instances(instances)
             predictions = [
-                self.head.make_task_prediction(output).as_dict()
-                for output in forward_outputs
+                self.head.make_task_prediction(output, instance, prediction_config)
+                for output, instance in zip(forward_outputs, instances)
             ]
         except Exception as error:
             raise WrongValueError(
-                f"Failed to make predictions for '{input_dicts}'"
+                f"Failed to make predictions for '{batch}'"
             ) from error
 
-        return instances, predictions
+        # Log predictions if the prediction logger was initialized
+        if hasattr(self, "_prediction_logger"):
+            self._log_predictions(batch, predictions)
 
-    def explain(self, *args, n_steps: int, **kwargs) -> Dict[str, Any]:
-        """Returns a prediction given some input data including the attribution of each token to the prediction.
-
-        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
-
-        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
-        (`print(Pipeline.inputs)`)
-
-        Parameters
-        ----------
-        n_steps: int
-            The number of steps used when calculating the attribution of each token.
-            If the number of steps is less than 1, the attributions will not be calculated.
-
-        Returns
-        -------
-        predictions: `Dict[str, numpy.ndarray]`
-            A dictionary containing the predictions and attributions
-        """
-        inputs = self._model_inputs_from_args(*args, **kwargs)
-
-        return self.explain_batch([inputs], n_steps)[0]
-
-    def explain_batch(self, input_dicts: Iterable[Dict[str, Any]], n_steps: int):
-        """Returns a prediction given some input data including the attribution of each token to the prediction.
-
-        The predictions will be computed batch-wise, which is faster
-        than calling `self.predict` for every single input data.
-
-        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
-
-        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
-        (`print(Pipeline.inputs)`)
-
-        Parameters
-        ----------
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
-        n_steps
-            The number of steps used when calculating the attribution of each token.
-            If the number of steps is less than 1, the attributions will not be calculated.
-
-        Returns
-        -------
-        predictions
-            A list of dictionaries containing the predictions and attributions
-        """
-        instances, predictions = self._get_instances_and_predictions(input_dicts)
-
-        explained_predictions = [
-            self.__build_explained_prediction(prediction, instance, n_steps)
-            for instance, prediction in zip(instances, predictions)
-        ]
-
-        return explained_predictions
-
-    def __build_explained_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
-    ):
-
-        explained_prediction = (
-            prediction
-            if n_steps <= 0
-            else self._head.explain_prediction(
-                prediction=prediction, instance=instance, n_steps=n_steps
-            )
-        )
-
-        # If no explain was found, we return input tokenization as default
-        # TODO: We should use an explain data structure instead of dict
-        if not explained_prediction.get("explain"):
-            explained_prediction["explain"] = self._get_instance_tokenization(instance)
-
-        return explained_prediction
-
-    def _get_instance_tokenization(self, instance: Instance) -> Dict[str, Any]:
-        """Gets the tokenization information to current instance"""
-
-        def extract_field_tokens(
-            field: Field,
-        ) -> Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]:
-            """Tries to extract tokens from field"""
-
-            def token_2_attribution(
-                token: Token, attribution: float = 0.0
-            ) -> Dict[str, Any]:
-                return {"token": token.text, "attribution": attribution}
-
-            if isinstance(field, TextField):
-                return [
-                    token_2_attribution(token)
-                    for token in cast(TextField, field).tokens
-                ]
-            if isinstance(field, ListField):
-                return [
-                    extract_field_tokens(inner_field)
-                    for inner_field in cast(ListField, field)
-                ]
-            if isinstance(field, SequenceLabelField):
-                return [
-                    {"label": label, "token": token["token"]}
-                    for label, token in zip(
-                        field.labels, extract_field_tokens(field.sequence_field)
-                    )
-                ]
-            if isinstance(field, MetadataField):
-                return []
-            raise WrongValueError(f"Cannot extract fields from [{type(field)}]")
-
-        return {
-            name: tokens
-            for name, field in instance.items()
-            for tokens in [extract_field_tokens(field)]
-            if tokens
-        }
-
-    def _model_inputs_from_args(self, *args, **kwargs) -> Dict[str, Any]:
-        """Returns model input data dictionary"""
-        inputs = {k: v for k, v in zip(self.inputs, args)}
-        inputs.update(kwargs)
-
-        return inputs
+        return predictions
 
 
 allennlp.models.Model.register(PipelineModel.__name__, exist_ok=True)(PipelineModel)
