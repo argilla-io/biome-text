@@ -107,8 +107,10 @@ class ClassificationHead(TaskHead):
 
         return self._loss(logits, label.long())
 
-    def make_task_prediction(
-        self, single_forward_output: Dict[str, numpy.ndarray]
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
     ) -> ClassificationPrediction:
         logits = torch.from_numpy(single_forward_output["logits"])
 
