@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from typing import cast
 
 import numpy
@@ -45,11 +46,14 @@ class Token:
         Start char id
     end
         End char id
+    field
+        Field name of the input to which the token belongs
     """
 
     text: str
     start: int
     end: int
+    field: str
 
 
 @dataclasses.dataclass
@@ -118,8 +122,8 @@ class ClassificationPrediction(TaskPrediction):
 
     labels: List[str]
     probabilities: List[float]
-    attributions: Optional[Attribution] = SENTINEL
-    tokens: Optional[List[Token]] = SENTINEL
+    attributions: Optional[List[Attribution]] = SENTINEL
+    tokens: Optional[List[Union[Token, List[Token]]]] = SENTINEL
 
 
 @dataclasses.dataclass
@@ -137,7 +141,7 @@ class TokenClassificationPrediction(TaskPrediction):
     scores
         Ordered list of scores for each list of NER tags (highest to lowest).
     tokens
-        Tokens of the tokenized input, only returned when input is not pretokenized.
+        Tokens of the tokenized input.
     """
 
     tags: List[List[str]]
@@ -154,3 +158,4 @@ class LanguageModellingPrediction(TaskPrediction):
     mask: numpy.array
     # Is only included if batch size == 1
     loss: Optional[float] = SENTINEL
+    tokens: Optional[List[Token]] = SENTINEL
