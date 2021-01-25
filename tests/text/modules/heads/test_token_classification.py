@@ -7,7 +7,6 @@ from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
 from biome.text import vocabulary
-from biome.text.modules.heads import TaskPrediction
 from biome.text.modules.heads.task_prediction import Entity
 from biome.text.modules.heads.task_prediction import Token
 from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
@@ -98,7 +97,7 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     )
 
 
-class TestMakeTaskOutput:
+class TestMakeTaskPrediction:
     def test_pretokenized_input(self, pipeline_dict):
         pipeline = Pipeline.from_config(pipeline_dict)
         output = self._input_top_k2(pipeline)
