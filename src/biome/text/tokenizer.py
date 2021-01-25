@@ -13,6 +13,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from spacy.language import Language
 from spacy.tokens.doc import Doc
 
+from biome.text.helpers import spacy_to_allennlp_token
 from biome.text.text_cleaning import TextCleaning
 
 if TYPE_CHECKING:
@@ -190,19 +191,7 @@ class Tokenizer:
         keep_spacy_tokens is True
         """
         if not self.config.use_spacy_tokens:
-            tokens = [
-                Token(
-                    token.text,
-                    token.idx,
-                    token.idx + len(token.text),
-                    token.lemma_,
-                    token.pos_,
-                    token.tag_,
-                    token.dep_,
-                    token.ent_type_,
-                )
-                for token in tokens
-            ]
+            tokens = [spacy_to_allennlp_token(token) for token in tokens]
         for start_token in self._start_tokens:
             tokens.insert(0, Token(start_token, 0))
         for end_token in self._end_tokens:
