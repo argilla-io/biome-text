@@ -541,6 +541,24 @@ class Pipeline:
             else predictions[0].as_dict()
         )
 
+    def predict_batch(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(batch=...)` instead. This method will be removed in the future."
+        )
+
+    def explain(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the future."
+        )
+
+    def explain_batch(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
+        )
+
     def evaluate(
         self,
         dataset: Dataset,
@@ -783,6 +801,6 @@ class Pipeline:
             Specifies the sources of the vocabulary and how to extract it
         """
         raise DeprecationWarning(
-            "The vocabulary is now created automatically and this method will be removed in the future. "
+            "The vocabulary is created automatically and this method will be removed in the future. "
             "You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default."
         )
