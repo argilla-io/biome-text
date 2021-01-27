@@ -44,11 +44,6 @@ def _serve(pipeline: Pipeline, port: int):
             with http_error_handling():
                 return sanitize(pipeline.predict(**inputs))
 
-        @app.post("/explain")
-        async def explain(inputs: Dict[str, Any]):
-            with http_error_handling():
-                return sanitize(pipeline.explain(**inputs))
-
         @app.get("/_config")
         async def config():
             with http_error_handling():
