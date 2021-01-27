@@ -150,7 +150,7 @@ class TaskHead(torch.nn.Module, Registrable):
     def _extract_tokens(self, instance: Instance) -> List[Union[Token, List[Token]]]:
         """Extracts the tokens from all TextFields in an instance.
 
-        This is a generic implementation and you might have to overwrite it for you specific head.
+        This is a generic implementation and you might have to overwrite it for your specific head.
         """
         tokens: List[Union[Token, List[Token]]] = []
 
@@ -170,6 +170,7 @@ class TaskHead(torch.nn.Module, Registrable):
 
     @staticmethod
     def _extract_tokens_from_text_field(field: TextField, name: str):
+        """Helper function for `self._extract_tokens`"""
         return [
             Token(
                 text=token.text,
@@ -181,8 +182,11 @@ class TaskHead(torch.nn.Module, Registrable):
         ]
 
     def _compute_attributions(
-        self, single_forward_output, instance, **kwargs
-    ) -> List[Attribution]:
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+        **kwargs
+    ) -> List[Union[Attribution, List[Attribution]]]:
         """Tries to attribute the prediction to input features.
 
         Must be implemented by the child class
