@@ -331,8 +331,10 @@ class PipelineModel(allennlp.models.Model):
         try:
             forward_outputs = self.forward_on_instances(instances)
             predictions = [
-                self.head.make_task_prediction(output, instance, prediction_config)
-                for output, instance in zip(forward_outputs, instances)
+                self.head.make_task_prediction(
+                    forward_output, instance, prediction_config
+                )
+                for forward_output, instance in zip(forward_outputs, instances)
             ]
         except Exception as error:
             raise WrongValueError(
