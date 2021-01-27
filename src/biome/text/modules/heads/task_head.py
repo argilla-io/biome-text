@@ -139,7 +139,22 @@ class TaskHead(torch.nn.Module, Registrable):
         single_forward_output: Dict[str, numpy.ndarray],
         instance: Instance,
     ) -> TaskPrediction:
-        """Makes a basic task prediction. Must be implemented by the child class."""
+        """Makes a basic task prediction.
+
+        Must be implemented by the child class.
+
+        Parameters
+        ----------
+        single_forward_output
+            A single (not batched) output from the head's forward method
+        instance
+            The instance underlying the prediction
+
+        Returns
+        -------
+        task_prediction
+            A task specific output for the prediction
+        """
         # One could implement a generic solution to just pass on the forward_output, but it would be slow and i
         # recommend thinking about what a prediction should return, it is very likely not the same as for the forward.
         # Possible solution:
@@ -151,6 +166,15 @@ class TaskHead(torch.nn.Module, Registrable):
         """Extracts the tokens from all TextFields in an instance.
 
         This is a generic implementation and you might have to overwrite it for your specific head.
+
+        Parameters
+        ----------
+        instance
+            The instance underlying the prediction
+
+        Returns
+        -------
+        tokens
         """
         tokens: List[Union[Token, List[Token]]] = []
 
@@ -189,7 +213,18 @@ class TaskHead(torch.nn.Module, Registrable):
     ) -> List[Union[Attribution, List[Attribution]]]:
         """Tries to attribute the prediction to input features.
 
-        Must be implemented by the child class
+        Must be implemented by the child class.
+
+        Parameters
+        ----------
+        single_forward_output
+            A single (not batched) output from the head's forward method
+        instance
+            The instance underlying the prediction
+
+        Returns
+        -------
+        attributions
         """
         raise NotImplementedError(
             "Attributing the prediction to the input is not implemented in this head"
