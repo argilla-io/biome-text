@@ -19,7 +19,6 @@ from biome.text.backbone import ModelBackbone
 from biome.text.metrics import MultiLabelF1Measure
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
-from biome.text.modules.heads.task_prediction import ClassificationPrediction
 
 
 class ClassificationHead(TaskHead):
@@ -107,11 +106,11 @@ class ClassificationHead(TaskHead):
 
         return self._loss(logits, label.long())
 
-    def _make_task_prediction(
+    def _compute_labels_and_probabilities(
         self,
         single_forward_output: Dict[str, numpy.ndarray],
-        instance: Instance,
-    ) -> ClassificationPrediction:
+    ) -> Tuple[List[str], List[float]]:
+        """Computes the probabilities based on the logits and looks up the labels"""
         logits = torch.from_numpy(single_forward_output["logits"])
 
         if self._multilabel:
@@ -125,7 +124,7 @@ class ClassificationHead(TaskHead):
             else ([], [])
         )
 
-        return ClassificationPrediction(labels=labels, probabilities=all_probabilities)
+        return labels, all_probabilities
 
     def _add_and_sort_labels_and_probabilities(
         self, probabilities: torch.Tensor
