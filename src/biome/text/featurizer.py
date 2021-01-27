@@ -67,14 +67,10 @@ class InputFeaturizer:
         """
         data = record
 
-        if isinstance(data, list) and isinstance(data[0], Token):
-            record_tokens = data
+        if tokenize:
+            record_tokens = self._data_tokens(data, exclude_record_keys)
         else:
-            record_tokens = (
-                self._data_tokens(data, exclude_record_keys)
-                if tokenize
-                else [[Token(t) for t in data]]
-            )
+            record_tokens = [[t if isinstance(t, Token) else Token(t) for t in data]]
 
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
 
