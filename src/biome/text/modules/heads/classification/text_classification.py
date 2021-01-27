@@ -110,8 +110,10 @@ class TextClassification(ClassificationHead):
         Parameters
         ----------
         single_forward_output
+            Non-batched forward output containing numpy arrays
         instance
-        n_steps: int
+            The instance containing the input data
+        n_steps
             The number of steps used when calculating the attribution of each token.
 
         Returns
