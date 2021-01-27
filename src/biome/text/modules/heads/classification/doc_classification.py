@@ -102,7 +102,7 @@ class DocumentClassification(ClassificationHead):
     ) -> Dict[str, Any]:
         mask = get_text_field_mask(document, num_wrapping_dims=1)
         embeddings = self.backbone.embedder(document, num_wrapping_dims=1)
-        logits = self._encoder_and_head_forward(embeddings)
+        logits = self._encoder_and_head_forward(embeddings, mask)
 
         output = self._make_forward_output(logits, label)
 
