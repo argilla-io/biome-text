@@ -5,7 +5,7 @@ import pytest
 from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
-from biome.text import VocabularyConfiguration
+from biome.text.modules.heads.task_prediction import Attribution
 
 
 @pytest.fixture
@@ -13,14 +13,14 @@ def training_dataset() -> Dataset:
     """Creating the dataframe."""
     data = {
         "record1": [
-            {"@fist_name": "Hans", "@last_name": "Peter"},
-            {"@fist_name": "Heinrich", "@last_name": "Meier"},
-            {"@fist_name": "Hans", "@last_name": "Peter"},
+            {"@first_name": "Hans", "@last_name": "Peter"},
+            {"@first_name": "Heinrich", "@last_name": "Meier"},
+            {"@first_name": "Hans", "@last_name": "Peter"},
         ],
         "record2": [
-            {"@fist_name": "Hans", "@last_name": "Petre"},
-            {"@fist_name": "Heinz", "@last_name": "Meier"},
-            {"@fist_name": "Hansel", "@last_name": "Peter"},
+            {"@first_name": "Hans", "@last_name": "Petre"},
+            {"@first_name": "Heinz", "@last_name": "Meier"},
+            {"@first_name": "Hansel", "@last_name": "Peter"},
         ],
         "label": ["duplicate", "not_duplicate", "duplicate"],
     }
@@ -154,27 +154,6 @@ def trainer_dict() -> Dict:
     return trainer_dict
 
 
-def test_explain(pipeline_dict):
-    """Checking expected parammeters of two rows of a dataset"""
-
-    pipeline = Pipeline.from_config(pipeline_dict)
-    explain = pipeline.explain(
-        record1={"first_name": "Hans"},
-        record2={"first_name": "Hansel"},
-    )
-    # Records 1 and 2 must have the same dictionary length, and must be equal to the string assigned to them
-    assert len(explain["explain"]["record1"]) == len(explain["explain"]["record2"])
-    assert explain["explain"]["record1"][0]["token"] == "first_name Hans"
-    assert explain["explain"]["record2"][0]["token"] == "first_name Hansel"
-
-    # Checking .explain method
-    with pytest.raises(RuntimeError):
-        pipeline.explain(
-            record1={"first_name": "Hans", "last_name": "Zimmermann"},
-            record2={"first_name": "Hansel"},
-        )
-
-
 def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     """Testing the correct working of prediction, vocab creating and training"""
     pipeline = Pipeline.from_config(pipeline_dict)
@@ -186,3 +165,33 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
         training=training_dataset,
         validation=training_dataset,
     )
+
+
+def test_attributions(pipeline_dict, training_dataset):
+    pipeline = Pipeline.from_config(pipeline_dict)
+    instance = pipeline.head.featurize(
+        training_dataset["record1"][0], training_dataset["record2"][0]
+    )
+    forward_output = pipeline._model.forward_on_instances([instance])
+
+    attributions = pipeline.head._compute_attributions(forward_output[0], instance)
+
+    assert all([isinstance(attribution, Attribution) for attribution in attributions])
+    assert len(attributions) == 4
+    assert all([isinstance(attr.attribution, float) for attr in attributions])
+    assert all([attributions[i].field == "record1" for i in [0, 1]])
+    assert all([attributions[i].field == "record2" for i in [2, 3]])
+    assert attributions[1].start == 0 and attributions[1].end == 16
+
+    assert attributions[0].text == "@first_name Hans"
+    assert attributions[3].text == "@last_name Petre"
+
+    # Raise error when records with different number of record fields
+    instance = pipeline.head.featurize(
+        record1={"first_name": "Hans", "last_name": "Zimmermann"},
+        record2={"first_name": "Hansel"},
+    )
+    forward_output = pipeline._model.forward_on_instances([instance])
+
+    with pytest.raises(RuntimeError):
+        pipeline.head._compute_attributions(forward_output[0], instance)
