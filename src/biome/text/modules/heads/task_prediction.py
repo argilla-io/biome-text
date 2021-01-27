@@ -24,6 +24,8 @@ class Attribution:
         Start char id
     end
         End char id
+    field
+        Field name of the input to which the attribution belongs
     attribution
         Numeric value quantifying the attribution of 'text' to the prediction
     """
@@ -31,6 +33,7 @@ class Attribution:
     text: str
     start: int
     end: int
+    field: str
     attribution: float
 
 
