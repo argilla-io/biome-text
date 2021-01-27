@@ -121,9 +121,6 @@ class TextClassification(ClassificationHead):
         attributions
             A list of attributions
         """
-        # TODO: An optimized implementation would be to calculate the attributions directly in the forward method
-        #  and provide a practical switch, maybe: `with head.turn_attributions_on(): self.forward_on_instances()`
-        #  In this way we would calculate the attributions batch wise and on on GPU if available.
         # captum needs `torch.Tensor`s and we need a batch dimension (-> unsqueeze)
         embeddings = torch.from_numpy(single_forward_output["embeddings"]).unsqueeze(0)
         logits = torch.from_numpy(single_forward_output["logits"]).unsqueeze(0)
