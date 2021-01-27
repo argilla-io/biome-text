@@ -524,8 +524,7 @@ class Pipeline:
         if ((args or kwargs) and batch) or not (args or kwargs or batch):
             raise ValueError("Please provide either 'arg/kwargs' OR a 'batch'")
         if args or kwargs:
-            batch = [{k: v for k, v in zip(self.inputs, args)}]
-            batch[0].update(kwargs)
+            batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
 
         prediction_config = PredictionConfiguration(
             add_tokens=add_tokens,
@@ -540,6 +539,13 @@ class Pipeline:
             if len(predictions) > 1
             else predictions[0].as_dict()
         )
+
+    def _map_args_kwargs_to_input(self, *args, **kwargs) -> Dict[str, Any]:
+        """Helper function for the `self.predict` method"""
+        input_dict = {k: v for k, v in zip(self.inputs, args)}
+        input_dict.update(kwargs)
+
+        return input_dict
 
     def predict_batch(self, *args, **kwargs):
         """DEPRECATED"""
