@@ -3,7 +3,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from typing import Union
 from typing import cast
 
 import numpy
@@ -104,12 +103,8 @@ class TaskPrediction:
 
 
 @dataclasses.dataclass
-class ClassificationPrediction(TaskPrediction):
-    """Output dataclass for all `ClassificationHead`s:
-    - `TextClassification`
-    - `RecordClassification`
-    - `DocumentClassification`
-    - `RecordPairClassification`
+class TextClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `TextClassification` head
 
     Parameters
     ----------
@@ -118,7 +113,7 @@ class ClassificationPrediction(TaskPrediction):
     probabilities
         Ordered list of probabilities, from highest to lowest probability.
     attributions
-        Attribution of each token to the prediction with the highest probability.
+        Attribution of each token to the prediction.
     tokens
         Tokens of the tokenized input
     """
@@ -126,7 +121,93 @@ class ClassificationPrediction(TaskPrediction):
     labels: List[str]
     probabilities: List[float]
     attributions: Optional[List[Attribution]] = SENTINEL
-    tokens: Optional[List[Union[Token, List[Token]]]] = SENTINEL
+    tokens: Optional[List[Token]] = SENTINEL
+
+
+@dataclasses.dataclass
+class DocumentClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `DocumentClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each token to the prediction.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    attributions: Optional[List[List[Attribution]]] = SENTINEL
+    tokens: Optional[List[List[Token]]] = SENTINEL
+
+
+@dataclasses.dataclass
+class RecordClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `RecordClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each token to the prediction.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    attributions: Optional[List[List[Attribution]]] = SENTINEL
+    tokens: Optional[List[List[Token]]] = SENTINEL
+
+
+@dataclasses.dataclass
+class RecordPairClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `RecordPairClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each record field to the prediction. The calculated attributions only make sense
+        for a duplicate/not_duplicate binary classification task of the two records.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    attributions: Optional[List[Attribution]] = SENTINEL
+    tokens: Optional[List[List[Token]]] = SENTINEL
+
+
+@dataclasses.dataclass
+class RelationClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `RelationClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    tokens: Optional[List[Token]] = SENTINEL
 
 
 @dataclasses.dataclass
