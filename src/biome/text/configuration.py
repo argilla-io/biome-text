@@ -684,4 +684,4 @@ class PredictionConfiguration:
 
     add_tokens: bool = False
     add_attributions: bool = False
-    attributions_kwargs: Optional[Dict] = None
+    attributions_kwargs: Dict = dataclasses.field(default_factory=dict)
