@@ -9,6 +9,7 @@ from typing import cast
 import torch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
+from allennlp.data.fields import MetadataField
 from allennlp.data.fields import SequenceLabelField
 from allennlp.data.fields import TextField
 from allennlp.modules import ConditionalRandomField
@@ -55,7 +56,6 @@ class TokenClassification(TaskHead):
     """
 
     __LOGGER = logging.getLogger(__name__)
-    _RAW_TEXT_INSTANCE_ATTRIBUTE = "raw_text"
 
     task_name = TaskName.token_classification
 
@@ -175,10 +175,10 @@ class TokenClassification(TaskHead):
                 return None
         # text is already pre-tokenized
         else:
-            tokens = [Token(token) for token in text]
+            tokens = [Token(t) for t in text]
 
         instance = self._featurize_tokens(tokens, tags)
-        setattr(instance, self._RAW_TEXT_INSTANCE_ATTRIBUTE)
+        instance.add_field("raw_text", MetadataField(text))
 
         return instance
 
@@ -206,6 +206,7 @@ class TokenClassification(TaskHead):
     def forward(  # type: ignore
         self,
         text: TextFieldTensors,
+        raw_text: List[Union[str, List[str]]],
         tags: torch.IntTensor = None,
     ) -> Dict:
 
@@ -228,7 +229,10 @@ class TokenClassification(TaskHead):
             for j, tag_id in enumerate(instance_tags):
                 class_probabilities[i, j, tag_id] = 1
 
-        output = dict(viterbi_paths=viterbi_paths)
+        output = dict(
+            viterbi_paths=viterbi_paths,
+            raw_text=raw_text,
+        )
 
         if tags is not None:
             output["loss"] = self._loss(logits, tags, mask)
@@ -245,16 +249,12 @@ class TokenClassification(TaskHead):
         # The dims are: top_k, tags
         tags: List[List[str]] = self._make_tags(single_forward_output["viterbi_paths"])
         # construct a spacy Doc
-        pre_tokenized = not getattr(instance, self._RAW_TEXT_INSTANCE_ATTRIBUTE, str)
+        pre_tokenized = not isinstance(single_forward_output["raw_text"], str)
         if pre_tokenized:
             # compose doc from tokens
-            doc = Doc(
-                Vocab(), words=getattr(instance, self._RAW_TEXT_INSTANCE_ATTRIBUTE)
-            )
+            doc = Doc(Vocab(), words=single_forward_output["raw_text"])
         else:
-            doc = self.backbone.tokenizer.nlp(
-                getattr(instance, self._RAW_TEXT_INSTANCE_ATTRIBUTE)
-            )
+            doc = self.backbone.tokenizer.nlp(single_forward_output["raw_text"])
 
         return TokenClassificationPrediction(
             tags=tags,
