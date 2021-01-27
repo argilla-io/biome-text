@@ -21,7 +21,6 @@ from biome.text import Pipeline
 from biome.text import constants
 from biome.text import helpers
 from biome.text.dataset import Dataset
-from biome.text.modules.heads import TaskName
 from biome.text.ui import launch_ui
 
 _LOGGER = logging.getLogger(__name__)
@@ -79,8 +78,8 @@ class _ExploreOptions:
         Only for Dataset: Number of processes to run predictions in parallel (default: 1)
     prediction_cache_size
         The size of the cache for caching predictions (default is `0)
-    explain
-        Whether to extract and return explanations of token importance (default is `False`)
+    attributions
+        Whether to extract and return attributions for the predictions (default is `False`)
     force_delete
         Whether to delete existing explore with `explore_id` before indexing new items (default is `True)
     **metadata
@@ -92,14 +91,14 @@ class _ExploreOptions:
         batch_size: int = 500,
         num_proc: int = 1,
         prediction_cache_size: int = 0,
-        explain: bool = False,
+        attributions: bool = False,
         force_delete: bool = True,
         **metadata,
     ):
         self.batch_size = batch_size
         self.num_proc = num_proc
         self.prediction_cache = prediction_cache_size
-        self.explain = explain
+        self.attributions = attributions
         self.force_delete = force_delete
         self.metadata = metadata
 
@@ -212,7 +211,7 @@ def create(
     batch_size: int = 50,
     num_proc: int = 1,
     prediction_cache_size: int = 0,
-    explain: bool = False,
+    attributions: bool = False,
     force_delete: bool = True,
     show_explore: bool = True,
     **metadata,
@@ -239,8 +238,8 @@ def create(
         Only for Dataset: Number of processes to run predictions in parallel (default: 1)
     prediction_cache_size
         The size of the cache for caching predictions (default is `0)
-    explain
-        Whether to extract and return explanations of token importance (default is `False`)
+    attributions
+        Whether to extract and return attributions for the predictions (default is `False`)
     force_delete
         Deletes exploration with the same `explore_id` before indexing the new explore items (default is `True)
     show_explore
@@ -251,7 +250,7 @@ def create(
         batch_size=batch_size,
         num_proc=num_proc,
         prediction_cache_size=prediction_cache_size,
-        explain=explain,
+        attributions=attributions,
         force_delete=force_delete,
         **metadata,
     )
@@ -295,7 +294,7 @@ def _explore(
             for i in range(batch_size)
         ]
         predictions = pipeline.predict(
-            batch=input_dicts, add_attributions=options.explain
+            batch=input_dicts, add_attributions=options.attributions
         )
         if not isinstance(predictions, list):
             predictions = [predictions]
