@@ -5,6 +5,7 @@ from typing import Optional
 from typing import Union
 from typing import cast
 
+import numpy
 import torch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
@@ -19,6 +20,7 @@ from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.heads.classification.classification import ClassificationHead
 from biome.text.modules.heads.task_prediction import Attribution
+from biome.text.modules.heads.task_prediction import TextClassificationPrediction
 
 
 class TextClassification(ClassificationHead):
@@ -145,10 +147,22 @@ class TextClassification(ClassificationHead):
                 text=token.text,
                 start=token.idx,
                 end=token.idx + len(token.text),
+                field=self.forward_arg_name,
                 attribution=attribution,
             )
             for token, attribution in zip(text_tokens, attributions)
         ]
+
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+    ) -> TextClassificationPrediction:
+        labels, probabilities = self._compute_labels_and_probabilities(
+            single_forward_output
+        )
+
+        return TextClassificationPrediction(labels=labels, probabilities=probabilities)
 
 
 class TextClassificationConfiguration(ComponentConfiguration[TextClassification]):
