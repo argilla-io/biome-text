@@ -5,9 +5,8 @@ from typing import Optional
 from typing import Tuple
 from typing import cast
 
-import numpy as np
+import numpy
 import torch
-from allennlp.data import Batch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
 from allennlp.modules import FeedForward
@@ -18,7 +17,6 @@ from allennlp.nn import InitializerApplicator
 from allennlp.nn import util
 from captum.attr import IntegratedGradients
 
-from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import BiMpmMatchingConfiguration
 from biome.text.modules.configuration import ComponentConfiguration
@@ -27,6 +25,8 @@ from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.heads.classification.classification import ClassificationHead
+from biome.text.modules.heads.task_prediction import Attribution
+from biome.text.modules.heads.task_prediction import RecordPairClassificationPrediction
 
 
 class RecordPairClassification(ClassificationHead):
@@ -212,7 +212,18 @@ class RecordPairClassification(ClassificationHead):
             record_mask_record2,
         )
 
-        return self._make_forward_output(logits, label)
+        output = self._make_forward_output(logits, label)
+
+        # For computing the attributions
+        # TODO: An optimized implementation would be to calculate the attributions directly in the forward method
+        #  and provide a practical switch, maybe: `with head.turn_attributions_on(): self.forward_on_instances()`
+        #  In this way we would calculate the attributions batch wise and on on GPU if available.
+        output["field_encoded_record1"] = field_encoded_record1
+        output["record_mask_record1"] = record_mask_record1
+        output["field_encoded_record2"] = field_encoded_record2
+        output["record_mask_record2"] = record_mask_record2
+
+        return output
 
     def _field_encoding(
         self,
@@ -220,7 +231,7 @@ class RecordPairClassification(ClassificationHead):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Embeds and encodes the records in a field context.
 
-        We do this in a helper function to reuse it for the `explain_prediction` method.
+        We do this in a helper function to reuse it for the `self._compute_attributions` method.
 
         Parameters
         ----------
@@ -256,7 +267,7 @@ class RecordPairClassification(ClassificationHead):
     ) -> torch.Tensor:
         """Encodes in a record context, matches encodings, aggregates the matching results, classifies.
 
-        We do this in a helper function to reuse it for the `explain_prediction` method.
+        We do this in a helper function to reuse it for the `self._compute_attributions` method.
 
         Parameters
         ----------
@@ -320,9 +331,9 @@ class RecordPairClassification(ClassificationHead):
         encoded_record2
             encoded record2 (record context)
         mask_record1
-            mask for record encoder for record1
+            mask for encoded record1
         mask_record2
-            mask for record encoder for record2
+            mask for encoded record2
 
         Returns
         -------
@@ -370,46 +381,56 @@ class RecordPairClassification(ClassificationHead):
 
         return matching_vector_record1_cat, matching_vector_record2_cat
 
-    def explain_prediction(
-        self, prediction: Dict[str, np.array], instance: Instance, n_steps: int
-    ) -> Dict[str, Any]:
-        """Calculates attributions for each data field in the record by integrating the gradients.
+    def _compute_attributions(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+        n_steps: int = 50,
+    ) -> List[Attribution]:
+        """Computes attributions for each data field in the record by means of the
+        [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
 
         IMPORTANT: The calculated attributions only make sense for a duplicate/not_duplicate binary classification task
         of the two records.
 
         Parameters
         ----------
-        prediction
+        single_forward_output
+            Non-batched forward output containing numpy arrays
         instance
+            The instance containing the input data
         n_steps
+            The number of steps used when calculating the attribution of each token.
 
         Returns
         -------
-        prediction_dict
-            The prediction dictionary with a newly added "explain" key
+        attributions
         """
-        batch = Batch([instance])
-        tokens_ids = batch.as_tensor_dict()
+        # captum needs `torch.Tensor`s and we need a batch dimension (-> unsqueeze)
+        field_encoded_record1 = torch.from_numpy(
+            single_forward_output["field_encoded_record1"]
+        ).unsqueeze(0)
+        record_mask_record1 = torch.from_numpy(
+            single_forward_output["record_mask_record1"]
+        ).unsqueeze(0)
 
-        # 1. Get field encodings
-        # TODO(dcfidalgo): optimize: for the prediction we already embedded and field encoded the records.
-        #     Also, the forward passes here are always done on cpu!
-        field_encoded_record1, record_mask_record1 = self._field_encoding(
-            tokens_ids.get(self._RECORD1_ARG_NAME_IN_FORWARD)
-        )
-        field_encoded_record2, record_mask_record2 = self._field_encoding(
-            tokens_ids.get(self._RECORD2_ARG_NAME_IN_FORWARD)
-        )
+        field_encoded_record2 = torch.from_numpy(
+            single_forward_output["field_encoded_record2"]
+        ).unsqueeze(0)
+        record_mask_record2 = torch.from_numpy(
+            single_forward_output["record_mask_record2"]
+        ).unsqueeze(0)
+
+        logits = torch.from_numpy(single_forward_output["logits"]).unsqueeze(0)
+
         if not field_encoded_record1.size() == field_encoded_record2.size():
             raise RuntimeError("Both records must have the same number of data fields!")
 
         # 2. Get attributes
         ig = IntegratedGradients(self._bimpm_forward)
 
-        prediction_target = int(
-            vocabulary.index_for_label(self.backbone.vocab, prediction["labels"][0])
-        )
+        prediction_target = torch.argmax(logits)
+
         ig_attribute_record1 = ig.attribute(
             inputs=(field_encoded_record1, field_encoded_record2),
             baselines=(field_encoded_record2, field_encoded_record2),
@@ -458,7 +479,7 @@ class RecordPairClassification(ClassificationHead):
         # elif prediction_target == 1:
         #     ...
         # else:
-        #     raise RuntimeError("The `explain` method is only implemented for a binary classification task: "
+        #     raise RuntimeError("The `compute_attributions` method is only implemented for a binary classification task: "
         #                        "[duplicate, not_duplicate]")
 
         attributions_record1, delta_record1 = self._get_attributions_and_delta(
@@ -469,39 +490,44 @@ class RecordPairClassification(ClassificationHead):
         )
 
         # 3. Get tokens corresponding to the attributions
-        field_tokens_record1 = []
+        field_text_record1 = []
         for textfield in instance.get(self._RECORD1_ARG_NAME_IN_FORWARD):
-            field_tokens_record1.append(
+            field_text_record1.append(
                 " ".join([token.text for token in textfield.tokens])
             )
-        field_tokens_record2 = []
+        field_text_record2 = []
         for textfield in instance.get(self._RECORD2_ARG_NAME_IN_FORWARD):
-            field_tokens_record2.append(
+            field_text_record2.append(
                 " ".join([token.text for token in textfield.tokens])
             )
 
-        return {
-            **prediction,
-            "explain": {
-                self._RECORD1_ARG_NAME_IN_FORWARD: [
-                    {"token": token, "attribution": attribution}
-                    for token, attribution in zip(
-                        field_tokens_record1, attributions_record1
-                    )
-                ],
-                self._RECORD2_ARG_NAME_IN_FORWARD: [
-                    {"token": token, "attribution": attribution}
-                    for token, attribution in zip(
-                        field_tokens_record2, attributions_record2
-                    )
-                ],
-            },
-        }
+        output_record1 = [
+            Attribution(
+                text=field_text,
+                start=0,
+                end=len(field_text),
+                field=self._RECORD1_ARG_NAME_IN_FORWARD,
+                attribution=attribution,
+            )
+            for field_text, attribution in zip(field_text_record1, attributions_record1)
+        ]
+        output_record2 = [
+            Attribution(
+                text=field_text,
+                start=0,
+                end=len(field_text),
+                field=self._RECORD2_ARG_NAME_IN_FORWARD,
+                attribution=attribution,
+            )
+            for field_text, attribution in zip(field_text_record2, attributions_record2)
+        ]
+
+        return output_record1 + output_record2
 
     @staticmethod
     def _get_attributions_and_delta(
         ig_attribute_output, zero_or_one: int
-    ) -> Tuple[np.array, float]:
+    ) -> Tuple[numpy.array, float]:
         """Gets attributions and delta out of the `IntegratedGradients.attribute()` output.
 
         Parameters
@@ -521,6 +547,19 @@ class RecordPairClassification(ClassificationHead):
         delta = ig_attribute_output[1]
 
         return attributions, delta
+
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+    ) -> RecordPairClassificationPrediction:
+        labels, probabilities = self._compute_labels_and_probabilities(
+            single_forward_output
+        )
+
+        return RecordPairClassificationPrediction(
+            labels=labels, probabilities=probabilities
+        )
 
 
 class RecordPairClassificationConfiguration(
