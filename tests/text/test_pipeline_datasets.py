@@ -8,8 +8,20 @@ from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import PipelineConfiguration
 from biome.text import TrainerConfiguration
+from biome.text.backbone import ModelBackbone
+from biome.text.modules.heads import TextClassification
 from biome.text.modules.heads import TextClassificationConfiguration
-from tests.text.test_pipeline_model import TestHead
+
+
+class TestHead(TextClassification):
+    def __init__(self, backbone: ModelBackbone):
+        super(TestHead, self).__init__(backbone, labels=["test", "notest"])
+
+    #
+    # def explain_prediction(
+    #         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
+    # ) -> Dict[str, Any]:
+    #     return {}
 
 
 @pytest.fixture

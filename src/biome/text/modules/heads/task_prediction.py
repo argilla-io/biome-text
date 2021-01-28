@@ -12,6 +12,31 @@ SENTINEL = cast(None, "SENTINEL TO SKIP DATACLASS FIELDS WHEN CONVERTING TO DICT
 
 
 @dataclasses.dataclass
+class Attribution:
+    """Output dataclass for an attribution in a prediction.
+
+    Parameters
+    ----------
+    text
+        Text belonging to the attribution
+    start
+        Start char id
+    end
+        End char id
+    field
+        Field name of the input to which the attribution belongs
+    attribution
+        Numeric value quantifying the attribution of 'text' to the prediction
+    """
+
+    text: str
+    start: int
+    end: int
+    field: str
+    attribution: float
+
+
+@dataclasses.dataclass
 class Token:
     """Output dataclass for a token in a prediction.
 
@@ -23,11 +48,14 @@ class Token:
         Start char id
     end
         End char id
+    field
+        Field name of the input to which the token belongs
     """
 
     text: str
     start: int
     end: int
+    field: str
 
 
 @dataclasses.dataclass
@@ -75,12 +103,8 @@ class TaskPrediction:
 
 
 @dataclasses.dataclass
-class ClassificationPrediction(TaskPrediction):
-    """Output dataclass for all `ClassificationHead`s:
-    - `TextClassification`
-    - `RecordClassification`
-    - `DocumentClassification`
-    - `RecordPairClassification`
+class TextClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `TextClassification` head
 
     Parameters
     ----------
@@ -88,10 +112,102 @@ class ClassificationPrediction(TaskPrediction):
         Ordered list of predictions, from the label with the highest to the label with the lowest probability.
     probabilities
         Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each token to the prediction.
+    tokens
+        Tokens of the tokenized input
     """
 
     labels: List[str]
     probabilities: List[float]
+    attributions: Optional[List[Attribution]] = SENTINEL
+    tokens: Optional[List[Token]] = SENTINEL
+
+
+@dataclasses.dataclass
+class DocumentClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `DocumentClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each token to the prediction.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    attributions: Optional[List[List[Attribution]]] = SENTINEL
+    tokens: Optional[List[List[Token]]] = SENTINEL
+
+
+@dataclasses.dataclass
+class RecordClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `RecordClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each token to the prediction.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    attributions: Optional[List[List[Attribution]]] = SENTINEL
+    tokens: Optional[List[List[Token]]] = SENTINEL
+
+
+@dataclasses.dataclass
+class RecordPairClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `RecordPairClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    attributions
+        Attribution of each record field to the prediction. The calculated attributions only make sense
+        for a duplicate/not_duplicate binary classification task of the two records.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    attributions: Optional[List[Attribution]] = SENTINEL
+    tokens: Optional[List[List[Token]]] = SENTINEL
+
+
+@dataclasses.dataclass
+class RelationClassificationPrediction(TaskPrediction):
+    """Output dataclass for the `RelationClassification` head
+
+    Parameters
+    ----------
+    labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    tokens
+        Tokens of the tokenized input
+    """
+
+    labels: List[str]
+    probabilities: List[float]
+    tokens: Optional[List[Token]] = SENTINEL
 
 
 @dataclasses.dataclass
@@ -109,7 +225,7 @@ class TokenClassificationPrediction(TaskPrediction):
     scores
         Ordered list of scores for each list of NER tags (highest to lowest).
     tokens
-        Tokens of the tokenized input
+        Tokens of the tokenized input.
     """
 
     tags: List[List[str]]
@@ -126,3 +242,4 @@ class LanguageModellingPrediction(TaskPrediction):
     mask: numpy.array
     # Is only included if batch size == 1
     loss: Optional[float] = SENTINEL
+    tokens: Optional[List[Token]] = SENTINEL

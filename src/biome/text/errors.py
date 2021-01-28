@@ -13,15 +13,15 @@ class ValidationError(BaseError):
     pass
 
 
-class MissingArgumentError(ValidationError):
+class WrongInputError(ValidationError):
     """Error related with input params"""
 
     def __init__(self, arg_name: str):
-        super(MissingArgumentError, self).__init__()
+        super(WrongInputError, self).__init__()
         self.arg_name = arg_name
 
     def __str__(self) -> str:
-        return f"Missing argument '{self.arg_name}'"
+        return f"Wrong model input '{self.arg_name}'"
 
 
 class ActionNotSupportedError(ValidationError):

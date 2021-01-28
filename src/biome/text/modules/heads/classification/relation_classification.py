@@ -6,6 +6,7 @@ from typing import Optional
 from typing import Union
 from typing import cast
 
+import numpy
 import torch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
@@ -23,6 +24,7 @@ from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.heads.classification.classification import ClassificationHead
 
 # from biome.text.modules.encoders.multi_head_self_attention_encoder import MultiheadSelfAttentionEncoder
+from biome.text.modules.heads.task_prediction import RelationClassificationPrediction
 
 
 class RelationClassification(ClassificationHead):
@@ -134,6 +136,19 @@ class RelationClassification(ClassificationHead):
         logits = self._classification_layer(embedded_text)
 
         return self._make_forward_output(logits=logits, label=label)
+
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+    ) -> RelationClassificationPrediction:
+        labels, probabilities = self._compute_labels_and_probabilities(
+            single_forward_output
+        )
+
+        return RelationClassificationPrediction(
+            labels=labels, probabilities=probabilities
+        )
 
 
 class RelationClassificationConfiguration(

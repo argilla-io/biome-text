@@ -44,10 +44,10 @@ def _serve(pipeline: Pipeline, port: int):
             with http_error_handling():
                 return sanitize(pipeline.predict(**inputs))
 
-        @app.post("/explain")
+        @app.post("/predict_with_attributions")
         async def explain(inputs: Dict[str, Any]):
             with http_error_handling():
-                return sanitize(pipeline.explain(**inputs))
+                return sanitize(pipeline.predict(**inputs, add_attributions=True))
 
         @app.get("/_config")
         async def config():

@@ -229,7 +229,7 @@ In order to support users with fine-grained error analysis and empower them to i
 ```python
 from biome.text import explore
 
-explore.create(pipeline, train_ds, explain=True)
+explore.create(pipeline, train_ds, attributions=True)
 ```
 
 This search-based UI can help:

@@ -184,8 +184,10 @@ class LanguageModelling(TaskHead):
 
         return self._loss(non_masked_embeddings, non_masked_targets)
 
-    def make_task_prediction(
-        self, single_forward_output: Dict[str, numpy.ndarray]
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
     ) -> LanguageModellingPrediction:
         task_prediction = LanguageModellingPrediction(
             lm_embeddings=single_forward_output["lm_embeddings"],

@@ -8,7 +8,6 @@ from inspect import Parameter
 from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
@@ -27,8 +26,11 @@ from allennlp.models.archival import Archive
 from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
+from biome.text._model import PipelineModel
+from biome.text.backbone import ModelBackbone
 from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
+from biome.text.configuration import PredictionConfiguration
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
@@ -37,14 +39,11 @@ from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.features import WordFeatures
 from biome.text.helpers import update_method_signature
-
-from ._model import PipelineModel
-from .backbone import ModelBackbone
-from .loggers import BaseTrainLogger
-from .loggers import add_default_wandb_logger_if_needed
-from .modules.heads import TaskHead
-from .modules.heads import TaskHeadConfiguration
-from .training_results import TrainingResults
+from biome.text.loggers import BaseTrainLogger
+from biome.text.loggers import add_default_wandb_logger_if_needed
+from biome.text.modules.heads import TaskHead
+from biome.text.modules.heads import TaskHeadConfiguration
+from biome.text.training_results import TrainingResults
 
 logging.getLogger("allennlp").setLevel(logging.ERROR)
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
@@ -487,82 +486,84 @@ class Pipeline:
             logger.addHandler(file_handler)
             logger.addHandler(console_handler)
 
-    def predict(self, *args, **kwargs) -> Dict[str, numpy.ndarray]:
+    def predict(
+        self,
+        *args,
+        batch: Optional[List[Dict[str, Any]]] = None,
+        add_tokens: bool = False,
+        add_attributions: bool = False,
+        attributions_kwargs: Optional[Dict] = None,
+        **kwargs,
+    ) -> Union[Dict[str, numpy.ndarray], List[Dict[str, numpy.ndarray]]]:
         """Returns a prediction given some input data based on the current state of the model
 
         The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
         (`print(Pipeline.inputs)`)
 
-        Returns
-        -------
-        predictions: `Dict[str, numpy.ndarray]`
-            A dictionary containing the predictions and additional information
-        """
-        return self._model.predict(*args, **kwargs)
-
-    def predict_batch(
-        self, input_dicts: Iterable[Dict[str, Any]]
-    ) -> List[Dict[str, numpy.ndarray]]:
-        """Returns predictions given some input data based on the current state of the model
-
-        The predictions will be computed batch-wise, which is faster
-        than calling `self.predict` for every single input data.
-
         Parameters
         ----------
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
-        """
-        return self._model.predict_batch(input_dicts)
-
-    def explain(self, *args, n_steps: int = 5, **kwargs) -> Dict[str, Any]:
-        """Returns a prediction given some input data including the attribution of each token to the prediction.
-
-        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
-
-        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
-        (`print(Pipeline.inputs)`)
-
-        Parameters
-        ----------
-        n_steps: int
-            The number of steps used when calculating the attribution of each token.
-            If the number of steps is less than 1, the attributions will not be calculated.
-
-        Returns
-        -------
-        predictions: `Dict[str, numpy.ndarray]`
-            A dictionary containing the predictions and attributions
-        """
-        return self._model.explain(*args, n_steps=n_steps, **kwargs)
-
-    def explain_batch(
-        self, input_dicts: Iterable[Dict[str, Any]], n_steps: int = 5
-    ) -> List[Dict[str, numpy.ndarray]]:
-        """Returns a prediction given some input data including the attribution of each token to the prediction.
-
-        The predictions will be computed batch-wise, which is faster
-        than calling `self.predict` for every single input data.
-
-        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
-
-        The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
-        (`print(Pipeline.inputs)`)
-
-        Parameters
-        ----------
-        input_dicts
-            The input data. The keys of the dicts must comply with the `self.inputs` attribute
-        n_steps
-            The number of steps used when calculating the attribution of each token.
-            If the number of steps is less than 1, the attributions will not be calculated.
+        *args/**kwargs
+            These are dynamically updated and correspond to the pipeline's `self.inputs`.
+            You can provide either args/kwargs OR a batch.
+        batch
+            A list of dictionaries that represents a batch of inputs. The dictionary keys must comply with the
+            `self.inputs` attribute. You can provide either args/kwargs OR a batch. Predicting batches should
+            typically be faster than repeated calls with args/kwargs.
+        add_tokens
+            If true, adds a 'tokens' key in the prediction that contains the tokenized input.
+        add_attributions
+            If true, adds a 'attributions' key that contains attributions of the input to the prediction.
+        attributions_kwargs
+            This dict is directly passed on to the `TaskHead.compute_attributions()`.
 
         Returns
         -------
         predictions
-            A list of dictionaries containing the predictions and attributions
+            A dictionary or a list of dictionaries containing the predictions and additional information.
         """
-        return self._model.explain_batch(input_dicts, n_steps=n_steps)
+        if ((args or kwargs) and batch) or not (args or kwargs or batch):
+            raise ValueError("Please provide either 'arg/kwargs' OR a 'batch'")
+        if args or kwargs:
+            batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
+
+        prediction_config = PredictionConfiguration(
+            add_tokens=add_tokens,
+            add_attributions=add_attributions,
+            attributions_kwargs=attributions_kwargs or {},
+        )
+
+        predictions = self._model.predict(batch, prediction_config)
+
+        return (
+            [prediction.as_dict() for prediction in predictions]
+            if len(predictions) > 1
+            else predictions[0].as_dict()
+        )
+
+    def _map_args_kwargs_to_input(self, *args, **kwargs) -> Dict[str, Any]:
+        """Helper function for the `self.predict` method"""
+        input_dict = {k: v for k, v in zip(self.inputs, args)}
+        input_dict.update(kwargs)
+
+        return input_dict
+
+    def predict_batch(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(batch=...)` instead. This method will be removed in the future."
+        )
+
+    def explain(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the future."
+        )
+
+    def explain_batch(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
+        )
 
     def evaluate(
         self,
@@ -744,18 +745,20 @@ class Pipeline:
         return self._model.file_path
 
     def _update_prediction_signatures(self):
-        """Fixes the `self.predict` signature to match the model inputs for interactive work-flows"""
-        new_signature = inspect.Signature(
-            [
-                Parameter(name=_input, kind=Parameter.POSITIONAL_OR_KEYWORD)
-                for _input in self.inputs
-            ]
-        )
+        """Updates the `self.predict` signature to match the model inputs for interactive work-flows"""
+        updated_parameters = [
+            Parameter(name=_input, kind=Parameter.POSITIONAL_OR_KEYWORD)
+            for _input in self.inputs
+        ] + [
+            par
+            for name, par in inspect.signature(self.predict).parameters.items()
+            if name not in ["args", "kwargs"]
+        ]
+        new_signature = inspect.Signature(updated_parameters)
 
-        for method in [self.predict, self.explain]:
-            self.__setattr__(
-                method.__name__, update_method_signature(new_signature, method)
-            )
+        self.__setattr__(
+            self.predict.__name__, update_method_signature(new_signature, self.predict)
+        )
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
@@ -804,6 +807,6 @@ class Pipeline:
             Specifies the sources of the vocabulary and how to extract it
         """
         raise DeprecationWarning(
-            "The vocabulary is now created automatically and this method will be removed in the future. "
+            "The vocabulary is created automatically and this method will be removed in the future. "
             "You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default."
         )

@@ -7,7 +7,6 @@ from typing import cast
 
 import numpy
 import torch
-from allennlp.data import Batch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
 from allennlp.data.fields import ListField
@@ -25,6 +24,8 @@ from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
 from biome.text.modules.encoders import TimeDistributedEncoder
 from biome.text.modules.heads.classification.classification import ClassificationHead
+from biome.text.modules.heads.task_prediction import Attribution
+from biome.text.modules.heads.task_prediction import DocumentClassificationPrediction
 
 
 class DocumentClassification(ClassificationHead):
@@ -99,95 +100,114 @@ class DocumentClassification(ClassificationHead):
     def forward(
         self, document: TextFieldTensors, label: torch.IntTensor = None
     ) -> Dict[str, Any]:
-        mask = get_text_field_mask(
-            document, num_wrapping_dims=1
-        )  # Why num_wrapping_dims=1 !?
-        embedded_text = self.backbone.forward(document, mask, num_wrapping_dims=1)
-        embedded_text = self.tokens_pooler(embedded_text, mask=mask)
+        mask = get_text_field_mask(document, num_wrapping_dims=1)
+        embeddings = self.backbone.embedder(document, num_wrapping_dims=1)
+        logits = self._encoder_and_head_forward(embeddings, mask)
+
+        output = self._make_forward_output(logits, label)
+
+        # For computing the attributions
+        # TODO: An optimized implementation would be to calculate the attributions directly in the forward method
+        #  and provide a practical switch, maybe: `with head.turn_attributions_on(): self.forward_on_instances()`
+        #  In this way we would calculate the attributions batch wise and on on GPU if available.
+        output["embeddings"], output["mask"] = embeddings, mask
+
+        return output
+
+    def _encoder_and_head_forward(
+        self, embeddings: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        """We reuse this method for the computation of the attributions"""
+        encoded_text = self.tokens_pooler(
+            self.backbone.encoder(embeddings, mask=mask), mask=mask
+        )
 
         # Here we need to mask the TextFields that only contain the padding token -> last dimension only contains False
         # Those fields were added to possibly equalize the batch.
         mask = torch.sum(mask, -1) > 0
-        embedded_text = self.sentences_encoder(embedded_text, mask=mask)
-        embedded_text = self.sentences_pooler(embedded_text, mask=mask)
+        encoded_text = self.sentences_pooler(
+            self.sentences_encoder(encoded_text, mask=mask), mask=mask
+        )
 
         if self.feedforward is not None:
-            embedded_text = self.feedforward(embedded_text)
+            encoded_text = self.feedforward(encoded_text)
 
-        logits = self._classification_layer(embedded_text)
+        return self._classification_layer(encoded_text)
 
-        return self._make_forward_output(logits, label)
+    def _compute_attributions(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+        n_steps: int = 50,
+    ) -> List[List[Attribution]]:
+        """Attributes the prediction to the input.
 
-    def explain_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
-    ) -> Dict[str, Any]:
-        """Here, we must apply transformations for manage ListFields tensors shapes"""
+        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
 
-        dataset = Batch([instance])
-        input_tokens_ids = dataset.as_tensor_dict()
-        ig = IntegratedGradients(self._explain_embeddings)
+        Parameters
+        ----------
+        single_forward_output
+            Non-batched forward output containing numpy arrays
+        instance
+            The instance containing the input data
+        n_steps
+            The number of steps used when calculating the attribution of each token.
 
-        num_wrapping_dims = 1
+        Returns
+        -------
+        attributions
+            A list of list of attributions due to the the ListField level
+        """
+        # captum needs `torch.Tensor`s and we need a batch dimension (-> unsqueeze)
+        embeddings = torch.from_numpy(single_forward_output["embeddings"]).unsqueeze(0)
+        mask = torch.from_numpy(single_forward_output["mask"]).unsqueeze(0)
+        logits = torch.from_numpy(single_forward_output["logits"]).unsqueeze(0)
 
-        document_tokens = [
-            [token.text for token in cast(TextField, text_field).tokens]
-            for text_field in cast(ListField, instance.get(self.forward_arg_name))
-        ]
-        document_tensors = input_tokens_ids.get(self.forward_arg_name)
-        mask = get_text_field_mask(
-            document_tensors, num_wrapping_dims=num_wrapping_dims
-        )
-        text_embeddings = self.backbone.embedder.forward(
-            document_tensors, num_wrapping_dims=num_wrapping_dims
-        )
-
-        label_id = vocabulary.index_for_label(
-            self.backbone.vocab, prediction.get(self.label_name)
-        )
+        ig = IntegratedGradients(self._encoder_and_head_forward)
         attributions, delta = ig.attribute(
-            text_embeddings,
-            target=label_id,
+            embeddings,
+            n_steps=n_steps,
+            target=torch.argmax(logits),
             additional_forward_args=mask,
             return_convergence_delta=True,
-            n_steps=n_steps,
         )
         attributions = attributions.sum(dim=3).squeeze(0)
         attributions = attributions / torch.norm(attributions)
         attributions = attributions.detach().numpy()
 
-        return {
-            **prediction,
-            "explain": {
-                self.forward_arg_name: [
-                    [
-                        {"token": token, "attribution": attribution}
-                        for token, attribution in zip(
-                            sentence_tokens, sentence_attribution
-                        )
-                    ]
-                    for sentence_tokens, sentence_attribution in zip(
-                        document_tokens, attributions
-                    )
-                ]
-            },
-        }
+        document_tokens = [
+            cast(TextField, text_field).tokens
+            for text_field in cast(ListField, instance.get(self.forward_arg_name))
+        ]
 
-    def _explain_embeddings(
-        self, embeddings: torch.Tensor, mask: torch.Tensor
-    ) -> torch.Tensor:
-        """Embedding interpret for ListField shapes"""
-        embedded_text = self.backbone.encoder.forward(embeddings, mask)
-        embedded_text = self.tokens_pooler(embedded_text, mask=mask)
+        return [
+            [
+                Attribution(
+                    text=token.text,
+                    start=token.idx,
+                    end=token.idx + len(token.text),
+                    field=self.forward_arg_name,
+                    attribution=attribution,
+                )
+                for token, attribution in zip(sentence_tokens, sentence_attributions)
+            ]
+            for sentence_tokens, sentence_attributions in zip(
+                document_tokens, attributions
+            )
+        ]
 
-        sentences_mask = torch.sum(mask, -1) > 0
-        embedded_text = self.sentences_encoder(embedded_text, mask=sentences_mask)
-        embedded_text = self.sentences_pooler(embedded_text, mask=sentences_mask)
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+    ) -> DocumentClassificationPrediction:
+        labels, probabilities = self._compute_labels_and_probabilities(
+            single_forward_output
+        )
 
-        if self.feedforward is not None:
-            embedded_text = self.feedforward(embedded_text)
-
-        logits = self._classification_layer(embedded_text)
-        return logits
+        return DocumentClassificationPrediction(
+            labels=labels, probabilities=probabilities
+        )
 
 
 class DocumentClassificationConfiguration(

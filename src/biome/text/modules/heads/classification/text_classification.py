@@ -7,7 +7,6 @@ from typing import cast
 
 import numpy
 import torch
-from allennlp.data import Batch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
 from allennlp.data.fields import TextField
@@ -15,14 +14,13 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
-from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
-
-from ..task_head import TaskPrediction
-from .classification import ClassificationHead
+from biome.text.modules.heads.classification.classification import ClassificationHead
+from biome.text.modules.heads.task_prediction import Attribution
+from biome.text.modules.heads.task_prediction import TextClassificationPrediction
 
 
 class TextClassification(ClassificationHead):
@@ -76,43 +74,65 @@ class TextClassification(ClassificationHead):
     ) -> Dict[str, Any]:
 
         mask = get_text_field_mask(text)
-        embedded_text = self.backbone.forward(text, mask)
-        embedded_text = self.pooler(embedded_text, mask=mask)
+        embeddings = self.backbone.embedder(text)
+        logits = self._encoder_and_head_forward(embeddings, mask)
 
-        if self.feedforward is not None:
-            embedded_text = self.feedforward(embedded_text)
+        output = self._make_forward_output(logits, label)
 
-        logits = self._classification_layer(embedded_text)
+        # For computing the attributions
+        # TODO: An optimized implementation would be to calculate the attributions directly in the forward method
+        #  and provide a practical switch, maybe: `with head.turn_attributions_on(): self.forward_on_instances()`
+        #  In this way we would calculate the attributions batch wise and on on GPU if available.
+        output["embeddings"], output["mask"] = embeddings, mask
 
-        return self._make_forward_output(logits, label)
+        return output
 
-    def explain_prediction(
-        self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
-    ) -> Dict[str, Any]:
-
-        dataset = Batch([instance])
-        input_tokens_ids = dataset.as_tensor_dict()
-        ig = IntegratedGradients(self._explain_embeddings)
-
-        num_wrapping_dims = 0
-
-        text_tokens = [
-            token.text
-            for token in cast(TextField, instance.get(self.forward_arg_name)).tokens
-        ]
-        text_tensor = input_tokens_ids.get(self.forward_arg_name)
-        mask = get_text_field_mask(text_tensor, num_wrapping_dims=num_wrapping_dims)
-        text_embeddings = self.backbone.embedder.forward(
-            text_tensor, num_wrapping_dims=num_wrapping_dims
+    def _encoder_and_head_forward(
+        self, embeddings: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        """We reuse this method for the computation of the attributions"""
+        encoded_text = self.pooler(
+            self.backbone.encoder(embeddings, mask=mask), mask=mask
         )
+        if self.feedforward:
+            encoded_text = self.feedforward(encoded_text)
 
-        label_id = vocabulary.index_for_label(
-            self.backbone.vocab, prediction["labels"][0]
-        )
+        return self._classification_layer(encoded_text)
+
+    def _compute_attributions(
+        self,
+        single_forward_output,
+        instance,
+        n_steps: int = 50,
+    ) -> List[Attribution]:
+        """Attributes the prediction to the input.
+
+        The attributions are calculated by means of the [Integrated Gradients](https://arxiv.org/abs/1703.01365) method.
+
+        Parameters
+        ----------
+        single_forward_output
+            Non-batched forward output containing numpy arrays
+        instance
+            The instance containing the input data
+        n_steps
+            The number of steps used when calculating the attribution of each token.
+
+        Returns
+        -------
+        attributions
+            A list of attributions
+        """
+        # captum needs `torch.Tensor`s and we need a batch dimension (-> unsqueeze)
+        embeddings = torch.from_numpy(single_forward_output["embeddings"]).unsqueeze(0)
+        logits = torch.from_numpy(single_forward_output["logits"]).unsqueeze(0)
+        mask = torch.from_numpy(single_forward_output["mask"]).unsqueeze(0)
+
+        ig = IntegratedGradients(self._encoder_and_head_forward)
         attributions, delta = ig.attribute(
-            text_embeddings,
+            embeddings,
             n_steps=n_steps,
-            target=label_id,
+            target=torch.argmax(logits),
             additional_forward_args=mask,
             return_convergence_delta=True,
         )
@@ -120,25 +140,29 @@ class TextClassification(ClassificationHead):
         attributions = attributions / torch.norm(attributions)
         attributions = attributions.detach().numpy()
 
-        return {
-            **prediction,
-            "explain": {
-                self.forward_arg_name: [
-                    {"token": token, "attribution": attribution}
-                    for token, attribution in zip(text_tokens, attributions)
-                ]
-            },
-        }
+        text_tokens = cast(TextField, instance[self.forward_arg_name]).tokens
 
-    def _explain_embeddings(
-        self, embeddings: torch.Tensor, mask: torch.Tensor
-    ) -> torch.Tensor:
-        """Explain embeddings for single text classification task"""
-        embedded_text = self.backbone.encoder.forward(embeddings, mask)
-        embedded_text = self.pooler.forward(embedded_text, mask)
-        if self.feedforward:
-            embedded_text = self.feedforward.forward(embedded_text)
-        return self._classification_layer(embedded_text)
+        return [
+            Attribution(
+                text=token.text,
+                start=token.idx,
+                end=token.idx + len(token.text),
+                field=self.forward_arg_name,
+                attribution=attribution,
+            )
+            for token, attribution in zip(text_tokens, attributions)
+        ]
+
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+    ) -> TextClassificationPrediction:
+        labels, probabilities = self._compute_labels_and_probabilities(
+            single_forward_output
+        )
+
+        return TextClassificationPrediction(labels=labels, probabilities=probabilities)
 
 
 class TextClassificationConfiguration(ComponentConfiguration[TextClassification]):

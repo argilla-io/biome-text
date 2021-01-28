@@ -19,7 +19,6 @@ from biome.text.backbone import ModelBackbone
 from biome.text.metrics import MultiLabelF1Measure
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
-from biome.text.modules.heads.task_prediction import ClassificationPrediction
 
 
 class ClassificationHead(TaskHead):
@@ -59,7 +58,10 @@ class ClassificationHead(TaskHead):
         label: Union[List[str], List[int], str, int],
         to_field: str = "label",
     ) -> Optional[Instance]:
-        """Includes the label field for classification into the instance data"""
+        """Includes the label field for classification into the instance data
+
+        Helper function for the child's `self.featurize` method.
+        """
         # "if not label:" fails for ndarrays this is why we explicitly check None
         if label is None:
             return instance
@@ -82,7 +84,10 @@ class ClassificationHead(TaskHead):
     def _make_forward_output(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor]
     ) -> Dict[str, Any]:
-        """Returns a dict with the logits and optionally the loss"""
+        """Returns a dict with the logits and optionally the loss
+
+        Helper function for the child's `self.forward` method.
+        """
         if label is not None:
             return {
                 "loss": self._compute_metrics_and_return_loss(logits, label),
@@ -94,6 +99,7 @@ class ClassificationHead(TaskHead):
     def _compute_metrics_and_return_loss(
         self, logits: torch.Tensor, label: torch.IntTensor
     ) -> float:
+        """Helper function for the `self._make_forward_output` method."""
         for metric in self.metrics.values():
             metric(logits, label)
 
@@ -107,9 +113,23 @@ class ClassificationHead(TaskHead):
 
         return self._loss(logits, label.long())
 
-    def make_task_prediction(
-        self, single_forward_output: Dict[str, numpy.ndarray]
-    ) -> ClassificationPrediction:
+    def _compute_labels_and_probabilities(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+    ) -> Tuple[List[str], List[float]]:
+        """Computes the probabilities based on the logits and looks up the labels
+
+        This is a helper function for the `self._make_task_prediction` of the children.
+
+        Parameters
+        ----------
+        single_forward_output
+            A single (not batched) output from the head's forward method
+
+        Returns
+        -------
+        (labels, probabilities)
+        """
         logits = torch.from_numpy(single_forward_output["logits"])
 
         if self._multilabel:
@@ -123,15 +143,15 @@ class ClassificationHead(TaskHead):
             else ([], [])
         )
 
-        return ClassificationPrediction(labels=labels, probabilities=all_probabilities)
+        return labels, all_probabilities
 
     def _add_and_sort_labels_and_probabilities(
         self, probabilities: torch.Tensor
     ) -> Tuple[List[str], List[float]]:
         """Returns the labels and probabilities sorted by the probability (descending)
 
-        The list of the returned probabilities can be larger than the input probabilities,
-        since we add all defined labels in the head.
+        Helper function for the `self._compute_labels_and_probabilities` method. The list of the returned
+        probabilities can be larger than the input probabilities, since we add all defined labels in the head.
 
         Parameters
         ----------

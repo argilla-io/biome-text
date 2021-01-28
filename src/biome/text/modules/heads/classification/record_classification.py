@@ -1,7 +1,9 @@
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
 
+import numpy
 from allennlp.data import Instance
 
 from biome.text.backbone import ModelBackbone
@@ -9,8 +11,8 @@ from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
-
-from .doc_classification import DocumentClassification
+from biome.text.modules.heads import DocumentClassification
+from biome.text.modules.heads.task_prediction import RecordClassificationPrediction
 
 
 class RecordClassification(DocumentClassification):
@@ -58,6 +60,19 @@ class RecordClassification(DocumentClassification):
             to_field="document",
         )
         return self._add_label(instance, label)
+
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+    ) -> RecordClassificationPrediction:
+        labels, probabilities = self._compute_labels_and_probabilities(
+            single_forward_output
+        )
+
+        return RecordClassificationPrediction(
+            labels=labels, probabilities=probabilities
+        )
 
 
 class RecordClassificationConfiguration(ComponentConfiguration[RecordClassification]):

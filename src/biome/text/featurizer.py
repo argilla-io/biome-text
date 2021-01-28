@@ -39,7 +39,7 @@ class InputFeaturizer:
 
     def __call__(
         self,
-        record: Union[str, List[str], Dict[str, Any]],
+        record: Union[str, List[str], List[Token], Dict[str, Any]],
         to_field: str = "record",
         aggregate: bool = False,
         tokenize: bool = True,
@@ -49,29 +49,29 @@ class InputFeaturizer:
 
         Parameters
         ----------
-        record: `Union[str, List[str], Dict[str, Any]]`
+        record
             Input data
-        to_field: `str`
+        to_field
             The field name in the returned instance
-        aggregate: `bool`
+        aggregate
             If true, the returned instance will contain a single `TextField` with all record fields;
             If false, the instance will contain a `ListField` of `TextField`s.
-        tokenize: `bool`
+        tokenize
             If false, skip tokenization phase and pass record data as tokenized token list.
-        exclude_record_keys: `bool`
+        exclude_record_keys
             If true, excludes record keys from the output tokens in the featurization of dictionaries
 
         Returns
         -------
-        instance: `Instance`
+        instance
         """
         data = record
 
-        record_tokens = (
-            self._data_tokens(data, exclude_record_keys)
-            if tokenize
-            else [[Token(t) for t in data]]
-        )
+        if tokenize:
+            record_tokens = self._data_tokens(data, exclude_record_keys)
+        else:
+            record_tokens = [[t if isinstance(t, Token) else Token(t) for t in data]]
+
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
 
     def _data_tokens(

@@ -9,6 +9,7 @@ from typing import cast
 import torch
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
+from allennlp.data import Token
 from allennlp.data.fields import MetadataField
 from allennlp.data.fields import SequenceLabelField
 from allennlp.data.fields import TextField
@@ -26,6 +27,7 @@ from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.errors import WrongValueError
 from biome.text.helpers import offsets_from_tags
+from biome.text.helpers import spacy_to_allennlp_token
 from biome.text.helpers import span_labels_to_tag_labels
 from biome.text.helpers import tags_from_offsets
 from biome.text.modules.configuration import ComponentConfiguration
@@ -33,7 +35,6 @@ from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
 from biome.text.modules.heads.task_prediction import Entity
-from biome.text.modules.heads.task_prediction import Token
 from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
 
 
@@ -160,7 +161,7 @@ class TokenClassification(TaskHead):
         """
         if isinstance(text, str):
             doc = self.backbone.tokenizer.nlp(text)
-            tokens = [token.text for token in doc]
+            tokens = [spacy_to_allennlp_token(token) for token in doc]
             tags = (
                 tags_from_offsets(doc, entities, self._label_encoding)
                 if entities is not None
@@ -174,7 +175,7 @@ class TokenClassification(TaskHead):
                 return None
         # text is already pre-tokenized
         else:
-            tokens = text
+            tokens = [Token(t) for t in text]
 
         instance = self._featurize_tokens(tokens, tags)
         instance.add_field("raw_text", MetadataField(text))
@@ -182,7 +183,7 @@ class TokenClassification(TaskHead):
         return instance
 
     def _featurize_tokens(
-        self, tokens: List[str], tags: Union[List[str], List[int]]
+        self, tokens: List[Token], tags: Union[List[str], List[int]]
     ) -> Optional[Instance]:
         """Create an example Instance from token and tags"""
 
@@ -240,8 +241,10 @@ class TokenClassification(TaskHead):
 
         return output
 
-    def make_task_prediction(
-        self, single_forward_output: Dict
+    def _make_task_prediction(
+        self,
+        single_forward_output: Dict,
+        instance: Instance,
     ) -> TokenClassificationPrediction:
         # The dims are: top_k, tags
         tags: List[List[str]] = self._make_tags(single_forward_output["viterbi_paths"])
@@ -253,15 +256,11 @@ class TokenClassification(TaskHead):
         else:
             doc = self.backbone.tokenizer.nlp(single_forward_output["raw_text"])
 
-        task_prediction = TokenClassificationPrediction(
+        return TokenClassificationPrediction(
             tags=tags,
             scores=[score for tags, score in single_forward_output["viterbi_paths"]],
             entities=self._make_entities(doc, tags, pre_tokenized),
         )
-        if not pre_tokenized:
-            task_prediction.tokens = self._make_tokens(doc)
-
-        return task_prediction
 
     def _make_tags(
         self, viterbi_paths: List[Tuple[List[int], float]]
@@ -287,13 +286,6 @@ class TokenClassification(TaskHead):
                 )
             ]
             for tags in k_tags
-        ]
-
-    def _make_tokens(self, doc: Doc) -> List[Token]:
-        """Makes the 'tokens' key of the task prediction"""
-        return [
-            Token(text=token.text, start=token.idx, end=token.idx + len(token))
-            for token in doc
         ]
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:

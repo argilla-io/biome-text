@@ -68,6 +68,7 @@ def trainer_dict() -> dict:
             "type": "adam",
             "lr": 0.0001,
         },
+        "cuda_device": -1,
     }
 
 

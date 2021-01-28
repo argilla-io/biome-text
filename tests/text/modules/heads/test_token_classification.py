@@ -7,7 +7,6 @@ from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
 from biome.text import vocabulary
-from biome.text.modules.heads import TaskPrediction
 from biome.text.modules.heads.task_prediction import Entity
 from biome.text.modules.heads.task_prediction import Token
 from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
@@ -66,23 +65,6 @@ def test_tokenization_with_blank_tokens(pipeline_dict):
     assert len(predictions["tags"][0]) == 4
 
 
-def test_default_explain(pipeline_dict):
-    pipeline = Pipeline.from_config(pipeline_dict)
-
-    prediction = pipeline.explain("This is a simple text")
-    assert prediction["explain"]
-    assert len(prediction["explain"]["text"]) == len(prediction["tags"][0][0])
-    # enable training mode for generate instances with tags
-    pipeline.head.train()
-
-    prediction = pipeline.explain(text="This is a simple text", entities=[])
-    assert len(prediction["explain"]["tags"]) == len(prediction["explain"]["text"])
-
-    for label in prediction["explain"]["tags"]:
-        assert "label" in label
-        assert "token" in label
-
-
 def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
 
@@ -98,7 +80,7 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     )
 
 
-class TestMakeTaskOutput:
+class TestMakeTaskPrediction:
     def test_pretokenized_input(self, pipeline_dict):
         pipeline = Pipeline.from_config(pipeline_dict)
         output = self._input_top_k2(pipeline)
@@ -123,12 +105,6 @@ class TestMakeTaskOutput:
                 [Entity(start_token=1, end_token=4, label="NER", start=5, end=14)],
             ],
             scores=[2, 1],
-            tokens=[
-                Token(end=4, start=0, text="this"),
-                Token(end=7, start=5, text="is"),
-                Token(end=9, start=8, text="a"),
-                Token(end=14, start=10, text="test"),
-            ],
         )
 
         assert output == expected_output
@@ -150,7 +126,7 @@ class TestMakeTaskOutput:
             raw_text=raw_text,
         )
 
-        return pipeline.head.make_task_prediction(single_forward_output)
+        return pipeline.head._make_task_prediction(single_forward_output, None)
 
 
 def test_preserve_pretokenization(
