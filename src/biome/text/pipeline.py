@@ -721,9 +721,7 @@ class Pipeline:
         pipeline_copy = Pipeline(model, config)
         pipeline_copy._model.load_state_dict(self._model.state_dict())
 
-        self.__setattr__(
-            self.predict.__name__, update_method_signature(new_signature, self.predict)
-        )
+        return pipeline_copy
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
