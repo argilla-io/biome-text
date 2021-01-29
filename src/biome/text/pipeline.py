@@ -1,5 +1,6 @@
 import copy
 import inspect
+import json
 import logging
 import os
 import shutil
@@ -23,6 +24,7 @@ from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from allennlp.models.archival import archive_model
 from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
@@ -730,6 +732,29 @@ class Pipeline:
         pipeline_copy._model.load_state_dict(self._model.state_dict())
 
         return pipeline_copy
+
+    def save(self, directory: Union[str, Path]):
+        """Saves the pipeline in the given directory as `model.tar.gz` file."""
+        if isinstance(directory, str):
+            directory = Path(directory)
+
+        directory.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            self.vocab.save_to_files(str(temp_path / "vocabulary"))
+            torch.save(self._model.state_dict(), temp_path / "best.th")
+            with (temp_path / "config.json").open("w") as file:
+                json.dump(
+                    {
+                        "model": {
+                            "config": self.config.as_dict(),
+                            "type": "PipelineModel",
+                        }
+                    },
+                    file,
+                    indent=4,
+                )
+            archive_model(temp_dir, archive_path=directory)
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
