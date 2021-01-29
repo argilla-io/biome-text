@@ -15,6 +15,7 @@ from typing import Type
 from typing import Union
 from typing import cast
 
+import mlflow
 import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
@@ -755,6 +756,23 @@ class Pipeline:
                     indent=4,
                 )
             archive_model(temp_dir, archive_path=directory)
+
+    def to_mlflow(self, tracking_uri: str = "./mlruns"):
+        """Logs the pipeline as MLFlow Model to a MLFlow Tracking server"""
+        mlflow.set_tracking_uri(tracking_uri)
+        conda_env = {
+            "name": "mlflow-dev",
+            "channels": ["defaults", "conda-forge"],
+            "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
+        }
+
+        with mlflow.start_run(run_name="log_biome_model", experiment_id=0):
+            mlflow.pyfunc.log_model(
+                artifact_path="BiomeTextModel",
+                loader_module="biome.text.mlflow_model",
+                data_path="./test_output/model.tar.gz",
+                conda_env=conda_env,
+            )
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
