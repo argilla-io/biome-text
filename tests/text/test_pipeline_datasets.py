@@ -52,7 +52,7 @@ def test_training_with_data_bucketing(
     pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
     configuration = TrainerConfiguration(
-        data_bucketing=True, batch_size=2, num_epochs=5
+        data_bucketing=True, batch_size=2, num_epochs=5, cuda_device=-1
     )
 
     pipeline.copy().train(
@@ -102,7 +102,7 @@ def test_training_from_pretrained_with_head_replace(
 
 def test_training_with_logging(pipeline: Pipeline, dataset: Dataset, tmp_path: str):
     configuration = TrainerConfiguration(
-        data_bucketing=True, batch_size=2, num_epochs=5
+        data_bucketing=True, batch_size=2, num_epochs=5, cuda_device=-1
     )
     output_dir = os.path.join(tmp_path, "output")
     pipeline.train(
