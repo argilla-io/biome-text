@@ -65,6 +65,22 @@ class Pipeline:
 
         self._update_prediction_signatures()
 
+    def _update_prediction_signatures(self):
+        """Updates the `self.predict` signature to match the model inputs for interactive work-flows"""
+        updated_parameters = [
+            Parameter(name=_input, kind=Parameter.POSITIONAL_OR_KEYWORD)
+            for _input in self.inputs
+        ] + [
+            par
+            for name, par in inspect.signature(self.predict).parameters.items()
+            if name not in ["args", "kwargs"]
+        ]
+        new_signature = inspect.Signature(updated_parameters)
+
+        self.__setattr__(
+            self.predict.__name__, update_method_signature(new_signature, self.predict)
+        )
+
     @classmethod
     def from_yaml(cls, path: str, vocab_path: Optional[str] = None) -> "Pipeline":
         """Creates a pipeline from a config yaml file
@@ -147,6 +163,79 @@ class Pipeline:
             raise TypeError(f"Cannot load model. Wrong format of {model}")
 
         return cls(model, config)
+
+    @property
+    def name(self) -> str:
+        """Gets the pipeline name"""
+        return self._model.name
+
+    @property
+    def inputs(self) -> List[str]:
+        """Gets the pipeline input field names"""
+        return self._model.inputs
+
+    @property
+    def output(self) -> List[str]:
+        """Gets the pipeline output field names"""
+        return self._model.output
+
+    @property
+    def backbone(self) -> ModelBackbone:
+        """Gets the model backbone of the pipeline"""
+        return self.head.backbone
+
+    @property
+    def head(self) -> TaskHead:
+        """Gets the pipeline task head"""
+        return self._model.head
+
+    @property
+    def vocab(self) -> Vocabulary:
+        """Gets the pipeline vocabulary"""
+        return self._model.vocab
+
+    @property
+    def config(self) -> PipelineConfiguration:
+        """Gets the pipeline configuration"""
+        return self._config
+
+    @property
+    def type_name(self) -> str:
+        """The pipeline name. Equivalent to task head name"""
+        return self.head.__class__.__name__
+
+    @property
+    def num_trainable_parameters(self) -> int:
+        """Number of trainable parameters present in the model.
+
+        At training time, this number can change when freezing/unfreezing certain parameter groups.
+        """
+        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
+            self.__LOGGER.warning(
+                "At least one vocabulary of your features is still empty! "
+                "The number of trainable parameters usually depends on the size of your vocabulary."
+            )
+        return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
+
+    @property
+    def num_parameters(self) -> int:
+        """Number of parameters present in the model."""
+        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
+            self.__LOGGER.warning(
+                "At least one vocabulary of your features is still empty! "
+                "The number of trainable parameters usually depends on the size of your vocabulary."
+            )
+        return sum(p.numel() for p in self._model.parameters())
+
+    @property
+    def named_trainable_parameters(self) -> List[str]:
+        """Returns the names of the trainable parameters in the pipeline"""
+        return [name for name, p in self._model.named_parameters() if p.requires_grad]
+
+    @property
+    def model_path(self) -> str:
+        """Returns the file path to the serialized version of the last trained model"""
+        return self._model.file_path
 
     def init_prediction_logger(self, output_dir: str, max_logging_size: int = 100):
         """Initializes the prediction logging.
@@ -422,18 +511,6 @@ class Pipeline:
                 "All your features need a non-empty vocabulary for a training!"
             )
 
-    def copy(self) -> "Pipeline":
-        """Returns a copy of the pipeline"""
-        model = PipelineModel.from_params(
-            Params({"config": self.config}), vocab=copy.deepcopy(self.vocab)
-        )
-        config = copy.deepcopy(self._config)
-
-        pipeline_copy = Pipeline(model, config)
-        pipeline_copy._model.load_state_dict(self._model.state_dict())
-
-        return pipeline_copy
-
     @staticmethod
     def __restore_training_logging():
         """Restore the training logging. This method should be called after a training process"""
@@ -547,24 +624,6 @@ class Pipeline:
 
         return input_dict
 
-    def predict_batch(self, *args, **kwargs):
-        """DEPRECATED"""
-        raise DeprecationWarning(
-            "Use `self.predict(batch=...)` instead. This method will be removed in the future."
-        )
-
-    def explain(self, *args, **kwargs):
-        """DEPRECATED"""
-        raise DeprecationWarning(
-            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the future."
-        )
-
-    def explain_batch(self, *args, **kwargs):
-        """DEPRECATED"""
-        raise DeprecationWarning(
-            "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
-        )
-
     def evaluate(
         self,
         dataset: Dataset,
@@ -661,74 +720,6 @@ class Pipeline:
         self._config.head = TaskHeadConfiguration(type=type, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
-    @property
-    def name(self) -> str:
-        """Gets the pipeline name"""
-        return self._model.name
-
-    @property
-    def inputs(self) -> List[str]:
-        """Gets the pipeline input field names"""
-        return self._model.inputs
-
-    @property
-    def output(self) -> List[str]:
-        """Gets the pipeline output field names"""
-        return self._model.output
-
-    @property
-    def backbone(self) -> ModelBackbone:
-        """Gets the model backbone of the pipeline"""
-        return self.head.backbone
-
-    @property
-    def head(self) -> TaskHead:
-        """Gets the pipeline task head"""
-        return self._model.head
-
-    @property
-    def vocab(self) -> Vocabulary:
-        """Gets the pipeline vocabulary"""
-        return self._model.vocab
-
-    @property
-    def config(self) -> PipelineConfiguration:
-        """Gets the pipeline configuration"""
-        return self._config
-
-    @property
-    def type_name(self) -> str:
-        """The pipeline name. Equivalent to task head name"""
-        return self.head.__class__.__name__
-
-    @property
-    def num_trainable_parameters(self) -> int:
-        """Number of trainable parameters present in the model.
-
-        At training time, this number can change when freezing/unfreezing certain parameter groups.
-        """
-        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            self.__LOGGER.warning(
-                "At least one vocabulary of your features is still empty! "
-                "The number of trainable parameters usually depends on the size of your vocabulary."
-            )
-        return sum(p.numel() for p in self._model.parameters() if p.requires_grad)
-
-    @property
-    def num_parameters(self) -> int:
-        """Number of parameters present in the model."""
-        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            self.__LOGGER.warning(
-                "At least one vocabulary of your features is still empty! "
-                "The number of trainable parameters usually depends on the size of your vocabulary."
-            )
-        return sum(p.numel() for p in self._model.parameters())
-
-    @property
-    def named_trainable_parameters(self) -> List[str]:
-        """Returns the names of the trainable parameters in the pipeline"""
-        return [name for name, p in self._model.named_parameters() if p.requires_grad]
-
     def model_parameters(self):
         """Returns an iterator over all model parameters, yielding the name and the parameter itself.
 
@@ -739,22 +730,15 @@ class Pipeline:
         """
         return self._model.named_parameters()
 
-    @property
-    def model_path(self) -> str:
-        """Returns the file path to the serialized version of the last trained model"""
-        return self._model.file_path
+    def copy(self) -> "Pipeline":
+        """Returns a copy of the pipeline"""
+        model = PipelineModel.from_params(
+            Params({"config": self.config}), vocab=copy.deepcopy(self.vocab)
+        )
+        config = copy.deepcopy(self._config)
 
-    def _update_prediction_signatures(self):
-        """Updates the `self.predict` signature to match the model inputs for interactive work-flows"""
-        updated_parameters = [
-            Parameter(name=_input, kind=Parameter.POSITIONAL_OR_KEYWORD)
-            for _input in self.inputs
-        ] + [
-            par
-            for name, par in inspect.signature(self.predict).parameters.items()
-            if name not in ["args", "kwargs"]
-        ]
-        new_signature = inspect.Signature(updated_parameters)
+        pipeline_copy = Pipeline(model, config)
+        pipeline_copy._model.load_state_dict(self._model.state_dict())
 
         self.__setattr__(
             self.predict.__name__, update_method_signature(new_signature, self.predict)
@@ -795,6 +779,8 @@ class Pipeline:
         config = archive.config["model"]["config"]
         return PipelineConfiguration.from_params(config)
 
+    # deprecated methods:
+
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         """Creates the vocabulary for the pipeline from scratch
 
@@ -809,4 +795,22 @@ class Pipeline:
         raise DeprecationWarning(
             "The vocabulary is created automatically and this method will be removed in the future. "
             "You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default."
+        )
+
+    def predict_batch(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(batch=...)` instead. This method will be removed in the future."
+        )
+
+    def explain(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the future."
+        )
+
+    def explain_batch(self, *args, **kwargs):
+        """DEPRECATED"""
+        raise DeprecationWarning(
+            "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
         )
