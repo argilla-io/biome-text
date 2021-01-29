@@ -136,7 +136,7 @@ class Pipeline:
         return cls(model, config)
 
     @classmethod
-    def from_pretrained(cls, path: str) -> "Pipeline":
+    def from_pretrained(cls, path: Union[str, Path]) -> "Pipeline":
         """Loads a pretrained pipeline providing a *model.tar.gz* file path
 
         Parameters
@@ -156,7 +156,7 @@ class Pipeline:
             overrides={"dataset_reader": {"type": "interleaving", "readers": {}}},
         )
         model = cls._model_from_archive(archive)
-        model.file_path = path
+        model.file_path = str(path)
         config = cls._config_from_archive(archive)
 
         if not isinstance(model, PipelineModel):
