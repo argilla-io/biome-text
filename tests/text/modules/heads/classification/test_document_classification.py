@@ -51,6 +51,9 @@ def test_make_task_prediction(pipeline):
     prediction = pipeline.head._make_task_prediction(forward_output[0], None)
 
     assert isinstance(prediction, DocumentClassificationPrediction)
+    assert isinstance(prediction.labels, list) and isinstance(
+        prediction.probabilities, list
+    )
     assert len(prediction.labels) == len(prediction.probabilities) == 6
     # check descending order
     assert_allclose(
