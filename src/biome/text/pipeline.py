@@ -71,14 +71,14 @@ class Pipeline:
 
         Parameters
         ----------
-        path : `str`
+        path
             The path to a YAML configuration file
-        vocab_path : `Optional[str]`
+        vocab_path
             If provided, the pipeline vocab will be loaded from this path
 
         Returns
         -------
-        pipeline: `Pipeline`
+        pipeline
             A configured pipeline
         """
         pipeline_configuration = PipelineConfiguration.from_yaml(path)
@@ -95,14 +95,14 @@ class Pipeline:
 
         Parameters
         ----------
-        config: `Union[PipelineConfiguration, dict]`
+        config
             A `PipelineConfiguration` object or a configuration dict
-        vocab_path: `Optional[str]`
+        vocab_path
             If provided, the pipeline vocabulary will be loaded from this path
 
         Returns
         -------
-        pipeline: `Pipeline`
+        pipeline
             A configured pipeline
         """
         if isinstance(config, dict):
@@ -125,12 +125,12 @@ class Pipeline:
 
         Parameters
         ----------
-        path: `str`
+        path
             The path to the *model.tar.gz* file of a pretrained `Pipeline`
 
         Returns
         -------
-        pipeline: `Pipeline`
+        pipeline
             A pretrained pipeline
         """
         archive = load_archive(
