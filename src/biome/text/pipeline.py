@@ -388,11 +388,14 @@ class Pipeline:
         training_results
             Training results including the generated model path and the related metrics
         """
-        trainer = trainer or TrainerConfiguration()
-        try:
-            if not restore and os.path.isdir(output):
-                shutil.rmtree(output)
+        from ._helpers import PipelineTrainer
 
+        trainer = trainer or TrainerConfiguration()
+
+        if not restore and os.path.isdir(output):
+            shutil.rmtree(output)
+
+        try:
             self.__configure_training_logging(output, quiet)
 
             self._prepare_vocab(
@@ -403,8 +406,6 @@ class Pipeline:
                 training_data=training,
                 lazy=lazy,
             )
-
-            from ._helpers import PipelineTrainer
 
             datasets = {"training": training, "validation": validation, "test": test}
             for name, dataset in datasets.items():
@@ -422,30 +423,10 @@ class Pipeline:
                 **datasets,
             )
 
-            for logger in loggers:
-                try:
-                    logger.init_train(
-                        pipeline=self,
-                        trainer_configuration=trainer,
-                        **datasets,
-                    )
-                except Exception as e:
-                    self.__LOGGER.warning(
-                        "Logger %s failed on init_train: %s", logger, e
-                    )
+            training_results = pipeline_trainer.train()
+            self._model.file_path = training_results.model_path
 
-            self._model.file_path, metrics = pipeline_trainer.train()
-            train_results = TrainingResults(self.model_path, metrics)
-
-            for logger in loggers:
-                try:
-                    logger.end_train(train_results)
-                except Exception as e:
-                    self.__LOGGER.warning(
-                        "Logger %s failed on end_traing: %s", logger, e
-                    )
-
-            return train_results
+            return training_results
 
         finally:
             self.__restore_training_logging()
