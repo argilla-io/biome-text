@@ -173,15 +173,13 @@ class ClassificationHead(TaskHead):
             all_classes_probs, descending=True
         ).tolist()
 
-        labels, probabilities = zip(
-            *[
-                (
-                    vocabulary.label_for_index(self.backbone.vocab, idx),
-                    float(all_classes_probs[idx]),
-                )
-                for idx in sorted_indexes_by_prob
-            ]
-        )
+        labels = [
+            vocabulary.label_for_index(self.backbone.vocab, idx)
+            for idx in sorted_indexes_by_prob
+        ]
+        probabilities = [
+            float(all_classes_probs[idx]) for idx in sorted_indexes_by_prob
+        ]
 
         return labels, probabilities
 
