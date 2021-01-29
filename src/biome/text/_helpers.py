@@ -208,7 +208,7 @@ class PipelineTrainer:
         for logger in self._epoch_callbacks:
             try:
                 logger.init_train(
-                    pipeline=self,
+                    pipeline=self._pipeline,
                     trainer_configuration=self._trainer_config,
                     training=self._training,
                     validation=self._validation,
