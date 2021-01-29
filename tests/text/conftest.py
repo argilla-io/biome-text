@@ -1,6 +1,7 @@
 import pytest
 
 from biome.text._helpers import PipelineTrainer
+from biome.text.training_results import TrainingResults
 
 
 @pytest.fixture
@@ -11,6 +12,8 @@ def deactivate_pipeline_trainer(monkeypatch):
     monkeypatch.setattr(PipelineTrainer, "__init__", mock_init)
 
     def mock_train(*args, **kwargs):
-        return "mock_output_path", {"mock_metric": 0.0}
+        return TrainingResults(
+            model_path="mock_output_path", metrics={"mock_metric": 0.0}
+        )
 
     monkeypatch.setattr(PipelineTrainer, "train", mock_train)
