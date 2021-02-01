@@ -52,7 +52,10 @@ def test_return_single_or_list(pipeline, monkeypatch):
     monkeypatch.setattr(pipeline._model, "predict", mock_predict)
 
     assert isinstance(pipeline.predict("test"), dict)
-    assert isinstance(pipeline.predict(batch=[{"text": "test"}]), dict)
+
+    batch_prediction = pipeline.predict(batch=[{"text": "test"}])
+    assert isinstance(batch_prediction, list) and len(batch_prediction) == 1
+    assert isinstance(batch_prediction[0], dict)
 
     batch_prediction = pipeline.predict(batch=[{"text": "test"}, {"text": "test"}])
     assert isinstance(batch_prediction, list) and len(batch_prediction) == 2
