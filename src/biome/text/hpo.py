@@ -96,7 +96,7 @@ class TuneExperiment(tune.Experiment):
     ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
     ... }
     >>> trainer_config = {
-    ...     "optimizer": {"type": "adam", "lr": tune.loguniform([1e-3, 1e-2])}
+    ...     "optimizer": {"type": "adam", "lr": tune.loguniform(1e-3, 1e-2)}
     ... }
     >>> train_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
     >>> valid_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
