@@ -734,8 +734,19 @@ class Pipeline:
 
         return pipeline_copy
 
-    def save(self, directory: Union[str, Path]):
-        """Saves the pipeline in the given directory as `model.tar.gz` file."""
+    def save(self, directory: Union[str, Path]) -> str:
+        """Saves the pipeline in the given directory as `model.tar.gz` file.
+
+        Parameters
+        ----------
+        directory
+            Save the 'model.tar.gz' file to this directory.
+
+        Returns
+        -------
+        file_path
+            Path to the 'model.tar.gz' file.
+        """
         if isinstance(directory, str):
             directory = Path(directory)
 
