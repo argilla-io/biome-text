@@ -11,6 +11,7 @@ check: ## applies a code pylint with autopep8 reformating
 
 test: ## launch package tests
 	@python -m pytest
+	@python -m pytest --doctest-modules src/biome/text
 
 ui: ## serve the UI for development
 	@cd ui && npm install && npm run serve
