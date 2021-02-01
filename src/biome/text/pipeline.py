@@ -807,7 +807,7 @@ class Pipeline:
         ... })
         >>> model_uri = pipeline.to_mlflow()
         >>> model = mlflow.pyfunc.load_model(model_uri)
-        >>> model.predict(pandas.DataFrame([{"text": "Test this text"}]))
+        >>> preciction: pandas.DataFrame = model.predict(pandas.DataFrame([{"text": "Test this text"}]))
         """
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
