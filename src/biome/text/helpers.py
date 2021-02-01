@@ -24,7 +24,7 @@ from elasticsearch import Elasticsearch
 from spacy.tokens import Token as SpacyToken
 from spacy.tokens.doc import Doc
 
-from . import environment
+from biome.text import environment
 
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
@@ -387,9 +387,12 @@ def merge_dicts(source: Dict[str, Any], destination: Dict[str, Any]) -> Dict[str
     """
     Merge two dictionaries recursivelly
 
+    Examples
+    --------
     >>> a = { 'first' : { 'all_rows' : { 'pass' : 'dog', 'number' : '1' } } }
     >>> b = { 'first' : { 'all_rows' : { 'fail' : 'cat', 'number' : '5' } } }
-    >>> merge_dicts(b, a) == { 'first' : { 'all_rows' : { 'pass' : 'dog', 'fail' : 'cat', 'number' : '5' } } }
+    >>> merge_dicts(b, a)
+    {'first': {'all_rows': {'pass': 'dog', 'number': '5', 'fail': 'cat'}}}
 
     """
     if not isinstance(destination, dict):

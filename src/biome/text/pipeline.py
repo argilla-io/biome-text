@@ -704,10 +704,18 @@ class Pipeline:
     def model_parameters(self):
         """Returns an iterator over all model parameters, yielding the name and the parameter itself.
 
-        You can use this to freeze certain parameters in the training, example:
-        >>> for name, parameter in self.model_parameters():
-        >>>     if not name.endswith("bias"):
-        >>>         parameter.requires_grad = False
+        Examples
+        --------
+        You can use this to freeze certain parameters in the training:
+
+        >>> pipeline = Pipeline.from_config({
+        ...     "name": "model_parameters_example",
+        ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
+        ... })
+        >>> for name, parameter in pipeline.model_parameters():
+        ...     if not name.endswith("bias"):
+        ...         parameter.requires_grad = False
+
         """
         return self._model.named_parameters()
 
