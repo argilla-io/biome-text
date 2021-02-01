@@ -768,24 +768,72 @@ class Pipeline:
                     file,
                     indent=4,
                 )
-            archive_model(temp_dir, archive_path=directory)
+            archive_model(temp_path, archive_path=directory)
 
-    def to_mlflow(self, tracking_uri: str = "./mlruns"):
-        """Logs the pipeline as MLFlow Model to a MLFlow Tracking server"""
-        mlflow.set_tracking_uri(tracking_uri)
+        return str(directory / "model.tar.gz")
+
+    def to_mlflow(
+        self,
+        tracking_uri: Optional[str] = None,
+        experiment_id: Optional[int] = None,
+        run_name: str = "Log biome.text model",
+    ):
+        """Logs the pipeline as MLFlow Model to a MLFlow Tracking server
+
+        Parameters
+        ----------
+        tracking_uri
+            The URI of the MLFlow tracking server. MLFlow defaults to './mlruns'.
+        experiment_id
+            ID of the experiment under which to create the logging run. If this argument is unspecified,
+            will look for valid experiment in the following order: activated using `mlflow.set_experiment`,
+            `MLFLOW_EXPERIMENT_NAME` environment variable, `MLFLOW_EXPERIMENT_ID` environment variable,
+            or the default experiment as defined by the tracking server.
+        run_name
+            The name of the MLFlow run logging the model
+
+        Returns
+        -------
+        model_uri
+            The URI of the logged MLFlow model. The model gets logged as an artifact to the corresponding run.
+
+        Examples
+        --------
+        After logging the pipeline to MLFlow you can use the MLFlow model for inference:
+        >>> import mlflow, pandas, biome.text
+        >>> pipeline = biome.text.Pipeline.from_config({
+        ...     "name": "to_mlflow_example",
+        ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
+        ... })
+        >>> model_uri = pipeline.to_mlflow()
+        >>> model = mlflow.pyfunc.load_model(model_uri)
+        >>> model.predict(pandas.DataFrame([{"text": "Test this text"}]))
+        """
+        if tracking_uri:
+            mlflow.set_tracking_uri(tracking_uri)
+
+        # This conda environment is only needed when serving the model later on with `mlflow models serve`
         conda_env = {
             "name": "mlflow-dev",
             "channels": ["defaults", "conda-forge"],
             "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
         }
 
-        with mlflow.start_run(run_name="log_biome_model", experiment_id=0):
-            mlflow.pyfunc.log_model(
-                artifact_path="BiomeTextModel",
-                loader_module="biome.text.mlflow_model",
-                data_path="./test_output/model.tar.gz",
-                conda_env=conda_env,
-            )
+        with tempfile.TemporaryDirectory() as tmpdir_name:
+            file_path = self.save(directory=tmpdir_name)
+
+            with mlflow.start_run(
+                experiment_id=experiment_id, run_name=run_name
+            ) as run:
+                mlflow.pyfunc.log_model(
+                    artifact_path="BiomeTextModel",
+                    loader_module="biome.text.mlflow_model",
+                    data_path=file_path,
+                    conda_env=conda_env,
+                )
+                model_uri = os.path.join(run.info.artifact_uri, "BiomeTextModel")
+
+        return model_uri
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
