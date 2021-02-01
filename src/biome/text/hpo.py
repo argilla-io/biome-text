@@ -1,6 +1,6 @@
 """
-This module includes all components related to a HPO experiment execution.
-It tries to allow for a simple integration with HPO libraries like Ray Tune.
+This module includes all components related to an HPO experiment execution.
+It tries to allow for a simple integration with the HPO library 'Ray Tune'.
 """
 import tempfile
 from datetime import datetime
@@ -54,10 +54,6 @@ class TuneMetricsLogger(BaseTrainLogger):
 class TuneExperiment(tune.Experiment):
     """This class provides a trainable function and a config to conduct an HPO with `ray.tune.run`
 
-    Minimal usage:
-    >>> my_exp = TuneExperiment(pipeline_config, trainer_config, train_dataset, valid_dataset)
-    >>> tune.run(my_exp)
-
     Parameters
     ----------
     pipeline_config
@@ -88,6 +84,25 @@ class TuneExperiment(tune.Experiment):
         The trainable function used by ray tune
     config
         The config dict passed on to the trainable function
+
+    Examples
+    --------
+    A minimal usage would be:
+
+    >>> from biome.text import Dataset
+    >>> from ray import tune
+    >>> pipeline_config = {
+    ...     "name": "tune_experiment_example",
+    ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
+    ... }
+    >>> trainer_config = {
+    ...     "optimizer": {"type": "adam", "lr": tune.loguniform([1e-3, 1e-2])}
+    ... }
+    >>> train_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
+    >>> valid_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
+    >>> my_exp = TuneExperiment(pipeline_config, trainer_config, train_dataset, valid_dataset, num_samples=10)
+    >>> tune.run(my_exp) # doctest: +SKIP
+
     """
 
     def __init__(
