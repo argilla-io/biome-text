@@ -29,6 +29,7 @@ from biome.text import helpers
 from biome.text._model import PipelineModel
 from biome.text.dataset import InstancesDataset
 from biome.text.errors import http_error_handling
+from biome.text.training_results import TrainingResults
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -193,7 +194,7 @@ class PipelineTrainer:
             batch_weight_key=self._batch_weight_key,
         )
 
-    def train(self) -> Tuple[str, Dict[str, Any]]:
+    def train(self) -> TrainingResults:
         """
         Train the inner model with given configuration on initialization
 
@@ -203,6 +204,18 @@ class PipelineTrainer:
         """
 
         from allennlp.models.model import _DEFAULT_WEIGHTS
+
+        for logger in self._epoch_callbacks:
+            try:
+                logger.init_train(
+                    pipeline=self._pipeline,
+                    trainer_configuration=self._trainer_config,
+                    training=self._training,
+                    validation=self._validation,
+                    test=self._test,
+                )
+            except Exception as e:
+                self.__LOGGER.warning("Logger %s failed on init_train: %s", logger, e)
 
         try:
             metrics = self._trainer.train()
@@ -225,7 +238,17 @@ class PipelineTrainer:
             metrics_json = json.dumps(metrics, indent=2)
             metrics_file.write(metrics_json)
 
-        return os.path.join(self._output_dir, "model.tar.gz"), metrics
+        training_results = TrainingResults(
+            os.path.join(self._output_dir, "model.tar.gz"), metrics
+        )
+
+        for logger in self._epoch_callbacks:
+            try:
+                logger.end_train(training_results)
+            except Exception as e:
+                self.__LOGGER.warning("Logger %s failed on end_traing: %s", logger, e)
+
+        return training_results
 
     def save_best_model(self):
         """Packages the best model as tar.gz archive"""
