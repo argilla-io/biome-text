@@ -535,9 +535,9 @@ class Pipeline:
         predictions = self._model.predict(batch, prediction_config)
 
         return (
-            [prediction.as_dict() for prediction in predictions]
-            if len(predictions) > 1
-            else predictions[0].as_dict()
+            predictions[0].as_dict()
+            if (args or kwargs)
+            else [prediction.as_dict() for prediction in predictions]
         )
 
     def _map_args_kwargs_to_input(self, *args, **kwargs) -> Dict[str, Any]:
