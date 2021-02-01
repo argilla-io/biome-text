@@ -9,8 +9,10 @@ from inspect import Parameter
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Type
 from typing import Union
 from typing import cast
@@ -704,7 +706,7 @@ class Pipeline:
         self._config.head = TaskHeadConfiguration(type=type, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
-    def model_parameters(self):
+    def model_parameters(self) -> Iterator[Tuple[str, torch.Tensor]]:
         """Returns an iterator over all model parameters, yielding the name and the parameter itself.
 
         Examples
