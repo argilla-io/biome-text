@@ -58,6 +58,7 @@ jobs:
           make build_docs
           tar -czf docs_build_output.tar.gz docs/site
       - name: Upload Build Output 🍕
+        if: ${{ github.event_name == 'push' || github.event_name == 'release' }}
         uses: actions/upload-artifact@v2
         with:
           name: docs_build_output
