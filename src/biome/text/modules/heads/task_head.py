@@ -199,7 +199,7 @@ class TaskHead(torch.nn.Module, Registrable):
             Token(
                 text=token.text,
                 start=token.idx,
-                end=token.idx + len(token.text),
+                end=token.idx + len(token.text) if isinstance(token.idx, int) else None,
                 field=name,
             )
             for token in field
