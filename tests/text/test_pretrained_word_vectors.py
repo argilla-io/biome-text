@@ -69,7 +69,7 @@ def test_create_pipeline_with_weights_file(pipeline_config, dataset, tmp_path):
 
 
 def test_extending_vocab_with_weights_file(
-    pipeline_config, dataset, dataset2, deactivate_pipeline_trainer, caplog
+    pipeline_config, dataset, dataset2, deactivate_pipeline_trainer, capsys
 ):
     pipeline = Pipeline.from_config(pipeline_config)
     # create vocab
@@ -92,14 +92,17 @@ def test_extending_vocab_with_weights_file(
     )
 
     # extending the vocab with the weights file deleted should trigger a warning
-    logging.captureWarnings(True)
     Path(pipeline_config["features"]["word"]["weights_file"]).unlink()
     pipeline.train(
         output="dummy",
         training=Dataset.from_dict({"text": ["that"], "label": ["good"]}),
     )
-    assert caplog.records[0].module == "embedding"
-    assert "cannot locate the pretrained_file" in caplog.records[0].message
+    captured_output = capsys.readouterr()
+    assert (
+        "WARNING - Embedding at model_path, "
+        "_head.backbone.embedder.token_embedder_word cannot locate the pretrained_file."
+        in captured_output.err
+    )
 
 
 def test_raise_filenotfound_error(pipeline_config, deactivate_pipeline_trainer):

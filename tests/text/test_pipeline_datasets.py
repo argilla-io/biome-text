@@ -17,12 +17,6 @@ class TestHead(TextClassification):
     def __init__(self, backbone: ModelBackbone):
         super(TestHead, self).__init__(backbone, labels=["test", "notest"])
 
-    #
-    # def explain_prediction(
-    #         self, prediction: Dict[str, numpy.array], instance: Instance, n_steps: int
-    # ) -> Dict[str, Any]:
-    #     return {}
-
 
 @pytest.fixture
 def dataset(tmp_path) -> Dataset:
@@ -111,7 +105,7 @@ def test_training_with_logging(pipeline: Pipeline, dataset: Dataset, tmp_path: s
 
     assert os.path.exists(os.path.join(output_dir, "train.log"))
     with open(os.path.join(output_dir, "train.log")) as train_log:
-        for line in train_log.readlines()[3:]:
+        for line in train_log.readlines()[4:]:
             assert "allennlp" in line
 
     assert logging.getLogger("allennlp").level == logging.ERROR
