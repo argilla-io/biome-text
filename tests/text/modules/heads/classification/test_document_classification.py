@@ -77,6 +77,6 @@ def test_compute_attributions(pipeline):
     assert all(
         [isinstance(attribution, Attribution) for attribution in attributions[0]]
     )
-    assert all([attr.field == "document" for attr in attributions[0]])
+    assert all([attr.field == "text" for attr in attributions[0]])
     assert all([isinstance(attr.attribution, float) for attr in attributions[0]])
     assert attributions[0][1].start == 5 and attributions[0][1].end == 9

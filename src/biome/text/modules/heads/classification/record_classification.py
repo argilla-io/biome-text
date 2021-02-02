@@ -57,7 +57,7 @@ class RecordClassification(DocumentClassification):
 
         instance = self.backbone.featurizer(
             {input_key: inputs[input_key] for input_key in self._inputs},
-            to_field="document",
+            to_field=self.forward_arg_name,
         )
         return self._add_label(instance, label)
 

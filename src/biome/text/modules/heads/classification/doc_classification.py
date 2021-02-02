@@ -16,7 +16,6 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
-from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
@@ -34,7 +33,7 @@ class DocumentClassification(ClassificationHead):
     classification but including the doc2vec transformation layers
     """
 
-    forward_arg_name = "document"
+    forward_arg_name = "text"
     label_name = "label"
 
     def __init__(
@@ -89,19 +88,19 @@ class DocumentClassification(ClassificationHead):
 
     def featurize(
         self,
-        document: Any,
+        text: Any,
         label: Optional[Union[int, str, List[Union[int, str]]]] = None,
     ) -> Optional[Instance]:
         instance = self.backbone.featurizer(
-            document, to_field=self.forward_arg_name, exclude_record_keys=True
+            text, to_field=self.forward_arg_name, exclude_record_keys=True
         )
         return self._add_label(instance, label, to_field=self.label_name)
 
     def forward(
-        self, document: TextFieldTensors, label: torch.IntTensor = None
+        self, text: TextFieldTensors, label: torch.IntTensor = None
     ) -> Dict[str, Any]:
-        mask = get_text_field_mask(document, num_wrapping_dims=1)
-        embeddings = self.backbone.embedder(document, num_wrapping_dims=1)
+        mask = get_text_field_mask(text, num_wrapping_dims=1)
+        embeddings = self.backbone.embedder(text, num_wrapping_dims=1)
         logits = self._encoder_and_head_forward(embeddings, mask)
 
         output = self._make_forward_output(logits, label)
