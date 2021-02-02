@@ -51,7 +51,7 @@ if __name__ == "__main__":
             "gevent~=20.9.0",
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
-            "mlflow~=1.9.0",
+            "mlflow~=1.13.1",
             "pandas~=1.1.0",
             "ray[tune]~=1.0.0",
             "s3fs~=0.4.0",

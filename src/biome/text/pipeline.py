@@ -1,5 +1,6 @@
 import copy
 import inspect
+import json
 import logging
 import os
 import shutil
@@ -8,12 +9,15 @@ from inspect import Parameter
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import Iterator
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Type
 from typing import Union
 from typing import cast
 
+import mlflow
 import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
@@ -23,6 +27,7 @@ from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
+from allennlp.models.archival import archive_model
 from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
@@ -701,7 +706,7 @@ class Pipeline:
         self._config.head = TaskHeadConfiguration(type=type, **kwargs)
         self._model.set_head(self._config.head.compile(backbone=self.backbone))
 
-    def model_parameters(self):
+    def model_parameters(self) -> Iterator[Tuple[str, torch.Tensor]]:
         """Returns an iterator over all model parameters, yielding the name and the parameter itself.
 
         Examples
@@ -730,6 +735,105 @@ class Pipeline:
         pipeline_copy._model.load_state_dict(self._model.state_dict())
 
         return pipeline_copy
+
+    def save(self, directory: Union[str, Path]) -> str:
+        """Saves the pipeline in the given directory as `model.tar.gz` file.
+
+        Parameters
+        ----------
+        directory
+            Save the 'model.tar.gz' file to this directory.
+
+        Returns
+        -------
+        file_path
+            Path to the 'model.tar.gz' file.
+        """
+        if isinstance(directory, str):
+            directory = Path(directory)
+
+        directory.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            self.vocab.save_to_files(str(temp_path / "vocabulary"))
+            torch.save(self._model.state_dict(), temp_path / "best.th")
+            with (temp_path / "config.json").open("w") as file:
+                json.dump(
+                    {
+                        "model": {
+                            "config": self.config.as_dict(),
+                            "type": "PipelineModel",
+                        }
+                    },
+                    file,
+                    indent=4,
+                )
+            archive_model(temp_path, archive_path=directory)
+
+        return str(directory / "model.tar.gz")
+
+    def to_mlflow(
+        self,
+        tracking_uri: Optional[str] = None,
+        experiment_id: Optional[int] = None,
+        run_name: str = "Log biome.text model",
+    ):
+        """Logs the pipeline as MLFlow Model to a MLFlow Tracking server
+
+        Parameters
+        ----------
+        tracking_uri
+            The URI of the MLFlow tracking server. MLFlow defaults to './mlruns'.
+        experiment_id
+            ID of the experiment under which to create the logging run. If this argument is unspecified,
+            will look for valid experiment in the following order: activated using `mlflow.set_experiment`,
+            `MLFLOW_EXPERIMENT_NAME` environment variable, `MLFLOW_EXPERIMENT_ID` environment variable,
+            or the default experiment as defined by the tracking server.
+        run_name
+            The name of the MLFlow run logging the model
+
+        Returns
+        -------
+        model_uri
+            The URI of the logged MLFlow model. The model gets logged as an artifact to the corresponding run.
+
+        Examples
+        --------
+        After logging the pipeline to MLFlow you can use the MLFlow model for inference:
+        >>> import mlflow, pandas, biome.text
+        >>> pipeline = biome.text.Pipeline.from_config({
+        ...     "name": "to_mlflow_example",
+        ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
+        ... })
+        >>> model_uri = pipeline.to_mlflow()
+        >>> model = mlflow.pyfunc.load_model(model_uri)
+        >>> preciction: pandas.DataFrame = model.predict(pandas.DataFrame([{"text": "Test this text"}]))
+        """
+        if tracking_uri:
+            mlflow.set_tracking_uri(tracking_uri)
+
+        # This conda environment is only needed when serving the model later on with `mlflow models serve`
+        conda_env = {
+            "name": "mlflow-dev",
+            "channels": ["defaults", "conda-forge"],
+            "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir_name:
+            file_path = self.save(directory=tmpdir_name)
+
+            with mlflow.start_run(
+                experiment_id=experiment_id, run_name=run_name
+            ) as run:
+                mlflow.pyfunc.log_model(
+                    artifact_path="BiomeTextModel",
+                    loader_module="biome.text.mlflow_model",
+                    data_path=file_path,
+                    conda_env=conda_env,
+                )
+                model_uri = os.path.join(run.info.artifact_uri, "BiomeTextModel")
+
+        return model_uri
 
     @staticmethod
     def _add_transformers_vocab_if_needed(model: PipelineModel):
