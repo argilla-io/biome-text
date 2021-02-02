@@ -677,19 +677,6 @@ class Pipeline:
         finally:
             self._model.to(prior_device if prior_device >= 0 else "cpu")
 
-    def serve(self, port: int = 9998):
-        """Launches a REST prediction service with the current model
-
-        Parameters
-        ----------
-        port: `int`
-            The port on which the prediction service will be running (default: 9998)
-        """
-        from ._helpers import _serve
-
-        self._model = self._model.eval()
-        return _serve(self, port)
-
     def set_head(self, type: Type[TaskHead], **kwargs):
         """Sets a new task head for the pipeline
 
