@@ -2,6 +2,7 @@ import click
 from click import Path
 
 from biome.text import Pipeline
+from biome.text._helpers import _serve
 
 
 @click.command()
@@ -27,8 +28,9 @@ def serve(pipeline_path: str, port: int, predictions_dir: str) -> None:
     PIPELINE_PATH is the path to a pretrained pipeline (model.tar.gz file).
     """
     pipeline = Pipeline.from_pretrained(pipeline_path)
+    pipeline._model.eval()
 
     if predictions_dir:
         pipeline.init_prediction_logger(predictions_dir)
 
-    pipeline.serve(port)
+    return _serve(pipeline, port)
