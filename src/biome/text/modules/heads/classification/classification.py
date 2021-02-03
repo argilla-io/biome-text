@@ -20,6 +20,8 @@ from biome.text.backbone import ModelBackbone
 from biome.text.metrics import MultiLabelF1Measure
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
+from biome.text.modules.heads.task_prediction import Attribution
+from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class ClassificationHead(TaskHead):
@@ -220,3 +222,22 @@ class ClassificationHead(TaskHead):
                     final_metrics.update({"_{}/{}".format(k, label): v})
 
         return final_metrics
+
+    def forward(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    def featurize(self, *args, **kwargs) -> Optional[Instance]:
+        raise NotImplementedError
+
+    def _make_task_prediction(
+        self, single_forward_output: Dict[str, numpy.ndarray], instance: Instance
+    ) -> TaskPrediction:
+        raise NotImplementedError
+
+    def _compute_attributions(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+        **kwargs,
+    ) -> List[Union[Attribution, List[Attribution]]]:
+        raise NotImplementedError
