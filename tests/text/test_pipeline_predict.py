@@ -46,7 +46,10 @@ def test_map_args_kwargs_to_input():
 def test_return_single_or_list(pipeline, monkeypatch):
     def mock_predict(batch, prediction_config):
         return [
-            TextClassificationPrediction(labels=["a"], probabilities=[1]) for _ in batch
+            TextClassificationPrediction(labels=["a"], probabilities=[1])
+            if i % 2 == 0
+            else None
+            for i, _ in enumerate(batch)
         ]
 
     monkeypatch.setattr(pipeline._model, "predict", mock_predict)
@@ -57,5 +60,8 @@ def test_return_single_or_list(pipeline, monkeypatch):
     assert isinstance(batch_prediction, list) and len(batch_prediction) == 1
     assert isinstance(batch_prediction[0], dict)
 
-    batch_prediction = pipeline.predict(batch=[{"text": "test"}, {"text": "test"}])
+    batch_prediction = pipeline.predict(
+        batch=[{"text": "test"}, {"text": "no instance for this input"}]
+    )
     assert isinstance(batch_prediction, list) and len(batch_prediction) == 2
+    assert isinstance(batch_prediction[0], dict) and batch_prediction[1] is None
