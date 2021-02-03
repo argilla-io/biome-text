@@ -80,9 +80,7 @@ class ClassificationHead(TaskHead):
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
         if not field:
             # We have label info but we cannot build the label field --> discard the instance
-            self._LOGGER.warning(
-                f"Cannot create a label field for {label}, discarding instance."
-            )
+            self._LOGGER.warning(f"Cannot create label field for `label={label}`!")
             return None
 
         instance.add_field(to_field, field)
