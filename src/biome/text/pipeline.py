@@ -62,7 +62,7 @@ class Pipeline:
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
     """
 
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, model: PipelineModel, config: PipelineConfiguration):
         self._model = model
@@ -217,7 +217,7 @@ class Pipeline:
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
         if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            self.__LOGGER.warning(
+            self._LOGGER.warning(
                 "At least one vocabulary of your features is still empty! "
                 "The number of trainable parameters usually depends on the size of your vocabulary."
             )
@@ -227,7 +227,7 @@ class Pipeline:
     def num_parameters(self) -> int:
         """Number of parameters present in the model."""
         if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            self.__LOGGER.warning(
+            self._LOGGER.warning(
                 "At least one vocabulary of your features is still empty! "
                 "The number of trainable parameters usually depends on the size of your vocabulary."
             )
@@ -558,7 +558,9 @@ class Pipeline:
         add_attributions: bool = False,
         attributions_kwargs: Optional[Dict] = None,
         **kwargs,
-    ) -> Union[Dict[str, numpy.ndarray], List[Dict[str, numpy.ndarray]]]:
+    ) -> Union[
+        Optional[Dict[str, numpy.ndarray]], List[Optional[Dict[str, numpy.ndarray]]]
+    ]:
         """Returns a prediction given some input data based on the current state of the model
 
         The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
@@ -607,12 +609,12 @@ class Pipeline:
         )
 
         predictions = self._model.predict(batch, prediction_config)
+        predictions_dict = [
+            prediction.as_dict() if prediction is not None else prediction
+            for prediction in predictions
+        ]
 
-        return (
-            predictions[0].as_dict()
-            if (args or kwargs)
-            else [prediction.as_dict() for prediction in predictions]
-        )
+        return predictions_dict[0] if (args or kwargs) else predictions_dict
 
     def _map_args_kwargs_to_input(self, *args, **kwargs) -> Dict[str, Any]:
         """Helper function for the `self.predict` method"""

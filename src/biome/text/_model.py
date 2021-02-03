@@ -85,6 +85,7 @@ class PipelineModel(allennlp.models.Model):
     """
 
     PREDICTION_FILE_NAME = "predictions.json"
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, name: str, head: TaskHead):
         super().__init__(vocab=head.backbone.vocab)
@@ -296,7 +297,7 @@ class PipelineModel(allennlp.models.Model):
 
     def predict(
         self, batch: List[Dict[str, Any]], prediction_config: PredictionConfiguration
-    ) -> List[TaskPrediction]:
+    ) -> List[Optional[TaskPrediction]]:
         """Returns predictions given some input data based on the current state of the model
 
         The keys of the input dicts in the batch must coincide with the `self.inputs` attribute.
@@ -318,18 +319,36 @@ class PipelineModel(allennlp.models.Model):
             self.eval()
 
         instances = [self.text_to_instance(**input_dict) for input_dict in batch]
+        # Filter out None instances, that is when the head could not create an instance out of the input
+        none_indices, not_none_instances = [], []
+        for i, instance in enumerate(instances):
+            if instance is None:
+                none_indices.append(i)
+            else:
+                not_none_instances.append(instance)
+
         try:
-            forward_outputs = self.forward_on_instances(instances)
-            predictions = [
-                self.head.make_task_prediction(
-                    forward_output, instance, prediction_config
-                )
-                for forward_output, instance in zip(forward_outputs, instances)
-            ]
+            forward_outputs = self.forward_on_instances(not_none_instances)
         except Exception as error:
             raise WrongValueError(
                 f"Failed to make predictions for '{batch}'"
             ) from error
+        else:
+            predictions = []
+            for forward_output, instance in zip(forward_outputs, not_none_instances):
+                try:
+                    predictions.append(
+                        self.head.make_task_prediction(
+                            forward_output, instance, prediction_config
+                        )
+                    )
+                except Exception as exception:
+                    self._LOGGER.exception(exception)
+                    predictions.append(None)
+
+        # Add None for the none instances
+        for index in none_indices:
+            predictions.insert(index, None)
 
         # Log predictions if the prediction logger was initialized
         if hasattr(self, "_prediction_logger"):
