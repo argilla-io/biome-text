@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from typing import Dict
 from typing import List
@@ -25,6 +26,7 @@ class ClassificationHead(TaskHead):
     """Base abstract class for classification problems"""
 
     task_name = TaskName.text_classification
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(
         self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
@@ -76,6 +78,9 @@ class ClassificationHead(TaskHead):
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
         if not field:
             # We have label info but we cannot build the label field --> discard the instance
+            self._LOGGER.warning(
+                f"Cannot create a label field for {label}, discarding instance."
+            )
             return None
 
         instance.add_field(to_field, field)
