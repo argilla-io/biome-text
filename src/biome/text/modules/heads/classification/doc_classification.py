@@ -94,6 +94,20 @@ class DocumentClassification(ClassificationHead):
         instance = self.backbone.featurizer(
             text, to_field=self.forward_arg_name, exclude_record_keys=True
         )
+
+        if not any(
+            [
+                cast(TextField, text_field).tokens
+                for text_field in cast(
+                    ListField, instance[self.forward_arg_name]
+                ).field_list
+            ]
+        ):
+            self._LOGGER.warning(
+                f"Only empty TextFields for `{self.forward_arg_name}={text}`!"
+            )
+            return None
+
         return self._add_label(instance, label, to_field=self.label_name)
 
     def forward(

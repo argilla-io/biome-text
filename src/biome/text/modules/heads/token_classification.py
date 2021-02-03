@@ -177,30 +177,30 @@ class TokenClassification(TaskHead):
         else:
             tokens = [Token(t) for t in text]
 
-        instance = self._featurize_tokens(tokens, tags)
-        instance.add_field("raw_text", MetadataField(text))
-
-        return instance
-
-    def _featurize_tokens(
-        self, tokens: List[Token], tags: Union[List[str], List[int]]
-    ) -> Optional[Instance]:
-        """Create an example Instance from token and tags"""
-
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
         )
 
+        if not cast(TextField, instance["text"]).tokens:
+            self._LOGGER.warning(f"Empty TextField for `text={text}`!")
+            return None
+
         if self.training:
-            assert tags, f"No tags found when training. Data [{tokens, tags}]"
-            instance.add_field(
-                "tags",
-                SequenceLabelField(
-                    tags,
-                    sequence_field=cast(TextField, instance["text"]),
-                    label_namespace=vocabulary.LABELS_NAMESPACE,
-                ),
-            )
+            try:
+                instance.add_field(
+                    "tags",
+                    SequenceLabelField(
+                        tags,
+                        sequence_field=cast(TextField, instance["text"]),
+                        label_namespace=vocabulary.LABELS_NAMESPACE,
+                    ),
+                )
+            except Exception as exception:
+                self._LOGGER.exception(str(exception) + f". For `({tokens, tags})`")
+                return None
+
+        instance.add_field("raw_text", MetadataField(text))
+
         return instance
 
     def forward(  # type: ignore

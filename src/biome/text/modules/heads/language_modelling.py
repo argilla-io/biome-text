@@ -2,12 +2,14 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Tuple
+from typing import cast
 
 import numpy
 import torch
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
+from allennlp.data.fields import TextField
 from allennlp.modules import SoftmaxLoss
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import get_token_ids_from_text_field_tensors
@@ -19,7 +21,6 @@ from biome.text.modules.configuration import ComponentConfiguration
 
 from .task_head import TaskHead
 from .task_head import TaskName
-from .task_head import TaskPrediction
 from .task_prediction import LanguageModellingPrediction
 
 
@@ -81,7 +82,12 @@ class LanguageModelling(TaskHead):
             )
 
     def featurize(self, text: str) -> Optional[Instance]:
-        return self.backbone.featurizer(text, to_field="text", aggregate=True)
+        instance = self.backbone.featurizer(text, to_field="text", aggregate=True)
+        if not cast(TextField, instance["text"]).tokens:
+            self._LOGGER.warning(f"Empty TextField for `text={text}`!")
+            return None
+
+        return instance
 
     def forward(self, text: TextFieldTensors) -> Dict[str, Any]:  # type: ignore
 

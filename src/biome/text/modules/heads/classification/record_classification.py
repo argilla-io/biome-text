@@ -2,9 +2,12 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import cast
 
 import numpy
 from allennlp.data import Instance
+from allennlp.data.fields import ListField
+from allennlp.data.fields import TextField
 
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
@@ -55,10 +58,22 @@ class RecordClassification(DocumentClassification):
         self, label: Optional[Union[str, List[str]]] = None, **inputs
     ) -> Optional[Instance]:
 
-        instance = self.backbone.featurizer(
-            {input_key: inputs[input_key] for input_key in self._inputs},
-            to_field=self.forward_arg_name,
-        )
+        record = {input_key: inputs[input_key] for input_key in self._inputs}
+        instance = self.backbone.featurizer(record, to_field=self.forward_arg_name)
+
+        if not any(
+            [
+                cast(TextField, text_field).tokens
+                for text_field in cast(
+                    ListField, instance[self.forward_arg_name]
+                ).field_list
+            ]
+        ):
+            self._LOGGER.warning(
+                f"Only empty TextFields for `{self.forward_arg_name}={record}`!"
+            )
+            return None
+
         return self._add_label(instance, label)
 
     def _make_task_prediction(

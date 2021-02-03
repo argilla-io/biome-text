@@ -34,7 +34,7 @@ class RelationClassification(ClassificationHead):
 
     _TEXT_ARG_NAME_IN_FORWARD = "text"
     _LABEL_ARG_NAME_IN_FORWARD = "label"
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -90,11 +90,17 @@ class RelationClassification(ClassificationHead):
             exclude_record_keys=True,
         )
 
+        if not cast(TextField, instance[self._TEXT_ARG_NAME_IN_FORWARD]).tokens:
+            self._LOGGER.warning(
+                f"Empty TextField for `{self._TEXT_ARG_NAME_IN_FORWARD}={text}`!"
+            )
+            return None
+
         doc = self.backbone.tokenizer.nlp(text)
         entity_tags = tags_from_offsets(doc, entities, self._label_encoding)
 
         if "-" in entity_tags:
-            self.__LOGGER.warning(
+            self._LOGGER.warning(
                 f"Could not align spans with tokens for following example: '{text}' {entities}"
             )
             return None

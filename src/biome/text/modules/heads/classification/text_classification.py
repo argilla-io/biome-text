@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from typing import Dict
 from typing import List
@@ -30,6 +31,7 @@ class TextClassification(ClassificationHead):
 
     label_name = "label"
     forward_arg_name = "text"
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -67,6 +69,12 @@ class TextClassification(ClassificationHead):
             aggregate=True,
             exclude_record_keys=True,
         )
+        if not cast(TextField, instance[self.forward_arg_name]).tokens:
+            self._LOGGER.warning(
+                f"Empty TextField for `{self.forward_arg_name}={text}`!"
+            )
+            return None
+
         return self._add_label(instance, label, to_field=self.label_name)
 
     def forward(  # type: ignore
