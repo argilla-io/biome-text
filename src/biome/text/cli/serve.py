@@ -95,7 +95,7 @@ def _serve(pipeline: Pipeline, port: int):
     def make_app() -> FastAPI:
         app = FastAPI()
 
-        error_msg = f". Check the docs at '0.0.0.0:{port}/docs' for an example of a valid request body."
+        error_msg = f"\nCheck the docs at '0.0.0.0:{port}/docs' for an example of a valid request body."
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request, exc):
