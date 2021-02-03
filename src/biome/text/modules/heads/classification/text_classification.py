@@ -57,7 +57,9 @@ class TextClassification(ClassificationHead):
         )
 
     def featurize(
-        self, text: Any, label: Optional[Union[int, str, List[Union[int, str]]]] = None
+        self,
+        text: Union[str, List[str], Dict[str, str]],
+        label: Optional[Union[str, List[str]]] = None,
     ) -> Optional[Instance]:
         instance = self.backbone.featurizer(
             text,
