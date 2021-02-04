@@ -8,6 +8,7 @@ from allennlp.data import Token
 from allennlp.data import TokenIndexer
 from allennlp.data.fields import ListField
 from allennlp.data.fields import TextField
+from spacy.tokens import Token as SpacyToken
 
 from biome.text.features import WordFeatures
 from biome.text.tokenizer import Tokenizer
@@ -39,7 +40,7 @@ class InputFeaturizer:
 
     def __call__(
         self,
-        record: Union[str, List[str], List[Token], Dict[str, Any]],
+        data: Union[str, List[str], List[Token], Dict[str, str]],
         to_field: str = "record",
         aggregate: bool = False,
         tokenize: bool = True,
@@ -49,7 +50,7 @@ class InputFeaturizer:
 
         Parameters
         ----------
-        record
+        data
             Input data
         to_field
             The field name in the returned instance
@@ -64,15 +65,75 @@ class InputFeaturizer:
         Returns
         -------
         instance
+
+        Raises
+        ------
+        FeaturizeError
+            We cannot featurize the input
         """
-        data = record
+        if self._contains_empty_strings(data):
+            raise FeaturizeError(
+                f"The provided input data contains empty strings/tokens: {data}"
+            )
 
         if tokenize:
             record_tokens = self._data_tokens(data, exclude_record_keys)
         else:
             record_tokens = [[t if isinstance(t, Token) else Token(t) for t in data]]
 
+        if self._contains_empty_strings(record_tokens):
+            raise FeaturizeError(
+                f"Empty tokens are produced for the provided input data: {data}"
+            )
+
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})
+
+    def _contains_empty_strings(
+        self,
+        data: Union[
+            str,
+            Union[Token, SpacyToken],
+            List[Union[str, Token, SpacyToken]],
+            List[List[Union[str, Token, SpacyToken]]],
+            Dict[str, str],
+        ],
+    ) -> bool:
+        """Checks if the data contains empty strings/tokens
+
+        Parameters
+        ----------
+        data
+            The provided input data
+
+        Returns
+        -------
+        bool
+
+        Raises
+        ------
+        FeaturizeError
+            If the input data contains a wrong data type
+        """
+        if isinstance(data, list):
+            return (
+                any([self._contains_empty_strings(item) for item in data])
+                # We want to return True for empty lists
+                or not data
+            )
+        if isinstance(data, dict):
+            return (
+                any([self._contains_empty_strings(item) for item in data.values()])
+                # We want to return True for empty dicts
+                or not data
+            )
+        if isinstance(data, str):
+            return data == ""
+        if isinstance(data, (Token, SpacyToken)):
+            return data.text == ""
+
+        raise FeaturizeError(
+            f"Wrong input type for the featurizer: {(type(data), data)}"
+        )
 
     def _data_tokens(
         self, data: Union[str, List[str], Dict[str, Any]], exclude_record_keys: bool
@@ -127,3 +188,9 @@ class InputFeaturizer:
     def has_word_features(self) -> bool:
         """Checks if word features are already configured as part of the featurization"""
         return WordFeatures.namespace in self.indexer
+
+
+class FeaturizeError(Exception):
+    """Base class for exceptions in this module"""
+
+    pass
