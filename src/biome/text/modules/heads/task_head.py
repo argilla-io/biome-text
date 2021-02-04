@@ -10,8 +10,10 @@ import numpy
 import torch
 from allennlp.common import Registrable
 from allennlp.data import Instance
+from allennlp.data import Token as AllenNLPToken
 from allennlp.data.fields import ListField
 from allennlp.data.fields import TextField
+from spacy.tokens import Token as SpacyToken
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
@@ -192,18 +194,27 @@ class TaskHead(torch.nn.Module, Registrable):
 
         return tokens
 
-    @staticmethod
-    def _extract_tokens_from_text_field(field: TextField, name: str):
+    def _extract_tokens_from_text_field(
+        self, field: TextField, name: str
+    ) -> List[Token]:
         """Helper function for `self._extract_tokens`"""
         return [
             Token(
                 text=token.text,
                 start=token.idx,
-                end=token.idx + len(token.text) if isinstance(token.idx, int) else None,
+                end=self._get_token_end(token),
                 field=name,
             )
             for token in field
         ]
+
+    @staticmethod
+    def _get_token_end(token: Union[AllenNLPToken, SpacyToken]) -> Optional[int]:
+        """While AllenNLP tokens have an idx_end, spacy Tokens do not"""
+        try:
+            return token.idx_end
+        except AttributeError:
+            return token.idx + len(token.text) if isinstance(token.idx, int) else None
 
     def _compute_attributions(
         self,

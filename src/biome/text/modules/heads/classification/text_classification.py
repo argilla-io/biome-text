@@ -148,7 +148,7 @@ class TextClassification(ClassificationHead):
             Attribution(
                 text=token.text,
                 start=token.idx,
-                end=token.idx + len(token.text) if isinstance(token.idx, int) else None,
+                end=self._get_token_end(token),
                 field=self.forward_arg_name,
                 attribution=attribution,
             )
