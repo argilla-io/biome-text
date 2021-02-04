@@ -13,6 +13,7 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
+from typing import Union
 
 import allennlp
 import torch
@@ -176,8 +177,9 @@ class PipelineModel(allennlp.models.Model):
         try:
             return self._head.featurize(**inputs)
         except TypeError as error:
-            # wrong inputs
-            raise WrongInputError(arg_name=error.args[0])
+            # probably wrong input arguments for the head
+            self._LOGGER.exception(error)
+            return None
 
     def extend_vocabulary(self, vocab: Vocabulary):
         """Extend the model's vocabulary with `vocab`
@@ -296,7 +298,9 @@ class PipelineModel(allennlp.models.Model):
             )
 
     def predict(
-        self, batch: List[Dict[str, Any]], prediction_config: PredictionConfiguration
+        self,
+        batch: List[Dict[str, Union[str, List[str], Dict[str, str]]]],
+        prediction_config: PredictionConfiguration,
     ) -> List[Optional[TaskPrediction]]:
         """Returns predictions given some input data based on the current state of the model
 
@@ -330,21 +334,29 @@ class PipelineModel(allennlp.models.Model):
         try:
             forward_outputs = self.forward_on_instances(not_none_instances)
         except Exception as error:
-            raise WrongValueError(
-                f"Failed to make predictions for '{batch}'"
-            ) from error
-        else:
-            predictions = []
-            for forward_output, instance in zip(forward_outputs, not_none_instances):
-                try:
-                    predictions.append(
-                        self.head.make_task_prediction(
-                            forward_output, instance, prediction_config
-                        )
+            input_examples = [
+                example for i, example in enumerate(batch) if i not in none_indices
+            ]
+            self._LOGGER.exception(error)
+            self._LOGGER.warning(
+                f"Failed to make a forward pass for '{input_examples}'"
+            )
+            return [None] * len(batch)
+
+        predictions = []
+        for forward_output, instance in zip(forward_outputs, not_none_instances):
+            try:
+                predictions.append(
+                    self.head.make_task_prediction(
+                        forward_output, instance, prediction_config
                     )
-                except Exception as exception:
-                    self._LOGGER.exception(exception)
-                    predictions.append(None)
+                )
+            except Exception as error:
+                self._LOGGER.exception(error)
+                self._LOGGER.warning(
+                    f"Failed to make a task prediction for '{forward_output, instance}'"
+                )
+                predictions.append(None)
 
         # Add None for the none instances
         for index in none_indices:
