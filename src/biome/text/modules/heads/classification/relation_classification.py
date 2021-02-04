@@ -16,6 +16,7 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.helpers import tags_from_offsets
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import EmbeddingConfiguration
@@ -82,18 +83,15 @@ class RelationClassification(ClassificationHead):
         entities: List[Dict],
         label: Optional[Union[str, List[str]]] = None,
     ) -> Optional[Instance]:
-
-        instance = self.backbone.featurizer(
-            text,
-            to_field=self._TEXT_ARG_NAME_IN_FORWARD,
-            aggregate=True,
-            exclude_record_keys=True,
-        )
-
-        if not cast(TextField, instance[self._TEXT_ARG_NAME_IN_FORWARD]).tokens:
-            self._LOGGER.warning(
-                f"Empty TextField for `{self._TEXT_ARG_NAME_IN_FORWARD}={text}`!"
+        try:
+            instance = self.backbone.featurizer(
+                text,
+                to_field=self._TEXT_ARG_NAME_IN_FORWARD,
+                aggregate=True,
+                exclude_record_keys=True,
             )
+        except FeaturizeError as error:
+            self._LOGGER.exception(error)
             return None
 
         doc = self.backbone.tokenizer.nlp(text)
@@ -105,14 +103,18 @@ class RelationClassification(ClassificationHead):
             )
             return None
 
-        instance.add_field(
-            "entities",
-            SequenceLabelField(
-                entity_tags,
-                sequence_field=cast(TextField, instance["text"]),
-                label_namespace=self._entity_tags_namespace,
-            ),
-        )
+        try:
+            instance.add_field(
+                "entities",
+                SequenceLabelField(
+                    entity_tags,
+                    sequence_field=cast(TextField, instance["text"]),
+                    label_namespace=self._entity_tags_namespace,
+                ),
+            )
+        except Exception as error:
+            self._LOGGER.exception(error)
+            return None
 
         return self._add_label(
             instance, label, to_field=self._LABEL_ARG_NAME_IN_FORWARD

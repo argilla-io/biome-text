@@ -18,6 +18,7 @@ from allennlp.nn import util
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import BiMpmMatchingConfiguration
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
@@ -150,12 +151,17 @@ class RecordPairClassification(ClassificationHead):
         instance
             AllenNLP instance containing the two records plus optionally a label
         """
-        record1_instance = self.backbone.featurizer(
-            record1, to_field="record", aggregate=False
-        )
-        record2_instance = self.backbone.featurizer(
-            record2, to_field="record", aggregate=False
-        )
+        try:
+            record1_instance = self.backbone.featurizer(
+                record1, to_field="record", aggregate=False
+            )
+            record2_instance = self.backbone.featurizer(
+                record2, to_field="record", aggregate=False
+            )
+        except FeaturizeError as error:
+            self._LOGGER.exception(error)
+            return None
+
         instance = Instance(
             {
                 self._RECORD1_ARG_NAME_IN_FORWARD: record1_instance.get("record"),

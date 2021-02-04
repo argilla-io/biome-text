@@ -26,6 +26,7 @@ from spacy.vocab import Vocab
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.errors import WrongValueError
+from biome.text.featurizer import FeaturizeError
 from biome.text.helpers import offsets_from_tags
 from biome.text.helpers import spacy_to_allennlp_token
 from biome.text.helpers import span_labels_to_tag_labels
@@ -55,7 +56,7 @@ class TokenClassification(TaskHead):
     feedforward
     """
 
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     task_name = TaskName.token_classification
 
@@ -169,7 +170,7 @@ class TokenClassification(TaskHead):
             )
             # discard misaligned examples for now
             if "-" in tags:
-                self.__LOGGER.warning(
+                self._LOGGER.warning(
                     f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
                 return None
@@ -177,12 +178,12 @@ class TokenClassification(TaskHead):
         else:
             tokens = [Token(t) for t in text]
 
-        instance = self.backbone.featurizer(
-            tokens, to_field="text", tokenize=False, aggregate=True
-        )
-
-        if not cast(TextField, instance["text"]).tokens:
-            self._LOGGER.warning(f"Empty TextField for `text={text}`!")
+        try:
+            instance = self.backbone.featurizer(
+                tokens, to_field="text", tokenize=False, aggregate=True
+            )
+        except FeaturizeError as error:
+            self._LOGGER.exception(error)
             return None
 
         if self.training:

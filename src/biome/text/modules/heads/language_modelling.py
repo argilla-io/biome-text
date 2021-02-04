@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from typing import Dict
 from typing import Optional
@@ -19,6 +20,7 @@ from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.configuration import ComponentConfiguration
 
+from ...featurizer import FeaturizeError
 from .task_head import TaskHead
 from .task_head import TaskName
 from .task_prediction import LanguageModellingPrediction
@@ -31,6 +33,7 @@ class LanguageModelling(TaskHead):
     """
 
     task_name = TaskName.language_modelling
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -82,9 +85,10 @@ class LanguageModelling(TaskHead):
             )
 
     def featurize(self, text: str) -> Optional[Instance]:
-        instance = self.backbone.featurizer(text, to_field="text", aggregate=True)
-        if not cast(TextField, instance["text"]).tokens:
-            self._LOGGER.warning(f"Empty TextField for `text={text}`!")
+        try:
+            instance = self.backbone.featurizer(text, to_field="text", aggregate=True)
+        except FeaturizeError as error:
+            self._LOGGER.exception(error)
             return None
 
         return instance

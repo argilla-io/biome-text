@@ -16,6 +16,7 @@ from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2VecEncoderConfiguration
@@ -63,16 +64,15 @@ class TextClassification(ClassificationHead):
         text: Union[str, List[str], Dict[str, str]],
         label: Optional[Union[str, List[str]]] = None,
     ) -> Optional[Instance]:
-        instance = self.backbone.featurizer(
-            text,
-            to_field=self.forward_arg_name,
-            aggregate=True,
-            exclude_record_keys=True,
-        )
-        if not cast(TextField, instance[self.forward_arg_name]).tokens:
-            self._LOGGER.warning(
-                f"Empty TextField for `{self.forward_arg_name}={text}`!"
+        try:
+            instance = self.backbone.featurizer(
+                text,
+                to_field=self.forward_arg_name,
+                aggregate=True,
+                exclude_record_keys=True,
             )
+        except FeaturizeError as error:
+            self._LOGGER.exception(error)
             return None
 
         return self._add_label(instance, label, to_field=self.label_name)
