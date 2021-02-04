@@ -570,11 +570,10 @@ class Pipeline:
         ----------
         *args/**kwargs
             These are dynamically updated and correspond to the pipeline's `self.inputs`.
-            You can provide either args/kwargs OR a batch.
+            If provided, the `batch` parameter will be ignored.
         batch
             A list of dictionaries that represents a batch of inputs. The dictionary keys must comply with the
-            `self.inputs` attribute. You can provide either args/kwargs OR a batch. Predicting batches should
-            typically be faster than repeated calls with args/kwargs.
+            `self.inputs` attribute. Predicting batches should typically be faster than repeated calls with args/kwargs.
         add_tokens
             If true, adds a 'tokens' key in the prediction that contains the tokenized input.
         add_attributions
@@ -587,18 +586,6 @@ class Pipeline:
         predictions
             A dictionary or a list of dictionaries containing the predictions and additional information.
         """
-        # the signature of this method gets updated in the self.__init__
-        args_kwargs_names = [
-            f"`{name}`"
-            for name, par in inspect.signature(self.predict).parameters.items()
-            if par.default == inspect.Parameter.empty
-        ]
-
-        if ((args or kwargs) and batch) or not (args or kwargs or batch):
-            raise ValueError(
-                f"Please provide either {' and '.join(args_kwargs_names)}, OR a `batch`"
-            )
-
         if args or kwargs:
             batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
 
