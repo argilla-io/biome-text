@@ -8,7 +8,11 @@ or deploying it directly on Microsoft Azure ML or Amazon SageMaker.
 ## Built-in deployment via FastAPI
 ### Start the REST endpoint
 
-Once we have defined and trained a model, and endpoint with the API REST can be established using the command `biome serve [path to output/model.tar.gz] -p 9999`.
+Once we have defined and trained a model, and endpoint with the API REST can be established using the command
+
+```bash
+biome serve path/to/output/model.tar.gz
+```
 
 If everything is correct, the server process will begin by the application startup, and when it's done, we will receive the following message in the terminal:
 
