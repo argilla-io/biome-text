@@ -78,9 +78,9 @@ class RelationClassification(ClassificationHead):
 
     def featurize(
         self,
-        text: Any,
+        text: Union[str, List[str], Dict[str, str]],
         entities: List[Dict],
-        label: Optional[Union[int, str, List[Union[int, str]]]] = None,
+        label: Optional[Union[str, List[str]]] = None,
     ) -> Optional[Instance]:
 
         instance = self.backbone.featurizer(

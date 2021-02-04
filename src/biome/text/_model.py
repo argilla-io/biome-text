@@ -12,24 +12,14 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Type
-from typing import Union
-from typing import cast
 
 import allennlp
-import numpy
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import Field
 from allennlp.data import Instance
-from allennlp.data import Token
 from allennlp.data import Vocabulary
-from allennlp.data.fields import ListField
-from allennlp.data.fields import MetadataField
-from allennlp.data.fields import SequenceLabelField
-from allennlp.data.fields import TextField
 from allennlp.models.archival import CONFIG_NAME
 
 from . import vocabulary

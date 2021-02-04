@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from typing import Dict
 from typing import List
@@ -19,12 +20,15 @@ from biome.text.backbone import ModelBackbone
 from biome.text.metrics import MultiLabelF1Measure
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
+from biome.text.modules.heads.task_prediction import Attribution
+from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class ClassificationHead(TaskHead):
     """Base abstract class for classification problems"""
 
     task_name = TaskName.text_classification
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(
         self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
@@ -76,6 +80,9 @@ class ClassificationHead(TaskHead):
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
         if not field:
             # We have label info but we cannot build the label field --> discard the instance
+            self._LOGGER.warning(
+                f"Cannot create a label field for {label}, discarding instance."
+            )
             return None
 
         instance.add_field(to_field, field)
@@ -215,3 +222,22 @@ class ClassificationHead(TaskHead):
                     final_metrics.update({"_{}/{}".format(k, label): v})
 
         return final_metrics
+
+    def forward(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        raise NotImplementedError
+
+    def featurize(self, *args, **kwargs) -> Optional[Instance]:
+        raise NotImplementedError
+
+    def _make_task_prediction(
+        self, single_forward_output: Dict[str, numpy.ndarray], instance: Instance
+    ) -> TaskPrediction:
+        raise NotImplementedError
+
+    def _compute_attributions(
+        self,
+        single_forward_output: Dict[str, numpy.ndarray],
+        instance: Instance,
+        **kwargs,
+    ) -> List[Union[Attribution, List[Attribution]]]:
+        raise NotImplementedError

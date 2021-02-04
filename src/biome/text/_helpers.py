@@ -6,10 +6,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import cast
 
-import uvicorn
 from allennlp.common import Params
 from allennlp.common.util import prepare_environment
 from allennlp.common.util import sanitize
@@ -20,7 +18,6 @@ from allennlp.models.archival import CONFIG_NAME
 from allennlp.training import GradientDescentTrainer
 from allennlp.training import Trainer
 from allennlp.training.util import evaluate
-from fastapi import FastAPI
 from torch.utils.data import IterableDataset
 
 from biome.text import Pipeline
@@ -28,41 +25,9 @@ from biome.text import TrainerConfiguration
 from biome.text import helpers
 from biome.text._model import PipelineModel
 from biome.text.dataset import InstancesDataset
-from biome.text.errors import http_error_handling
 from biome.text.training_results import TrainingResults
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _serve(pipeline: Pipeline, port: int):
-    """Serves an pipeline as rest api"""
-
-    def make_app() -> FastAPI:
-        app = FastAPI()
-
-        @app.post("/predict")
-        async def predict(inputs: Dict[str, Any]):
-            with http_error_handling():
-                return sanitize(pipeline.predict(**inputs))
-
-        @app.post("/predict_with_attributions")
-        async def explain(inputs: Dict[str, Any]):
-            with http_error_handling():
-                return sanitize(pipeline.predict(**inputs, add_attributions=True))
-
-        @app.get("/_config")
-        async def config():
-            with http_error_handling():
-                return pipeline.config.as_dict()
-
-        @app.get("/_status")
-        async def status():
-            with http_error_handling():
-                return {"ok": True}
-
-        return app
-
-    uvicorn.run(make_app(), host="0.0.0.0", port=port)
 
 
 class PipelineTrainer:

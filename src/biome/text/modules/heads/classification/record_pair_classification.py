@@ -130,19 +130,19 @@ class RecordPairClassification(ClassificationHead):
 
     def featurize(
         self,
-        record1: Dict[str, Any],
-        record2: Dict[str, Any],
+        record1: Dict[str, str],
+        record2: Dict[str, str],
         label: Optional[str] = None,
     ) -> Optional[Instance]:
         """Tokenizes, indexes and embeds the two records and optionally adds the label
 
         Parameters
         ----------
-        record1 : Dict[str, Any]
+        record1
             First record
-        record2 : Dict[str, Any]
+        record2
             Second record
-        label : Optional[str]
+        label
             Classification label
 
         Returns

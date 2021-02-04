@@ -73,8 +73,9 @@ class Pipeline:
     def _update_prediction_signatures(self):
         """Updates the `self.predict` signature to match the model inputs for interactive work-flows"""
         updated_parameters = [
-            Parameter(name=_input, kind=Parameter.POSITIONAL_OR_KEYWORD)
-            for _input in self.inputs
+            par
+            for name, par in inspect.signature(self.head.featurize).parameters.items()
+            if par.default == Parameter.empty
         ] + [
             par
             for name, par in inspect.signature(self.predict).parameters.items()
@@ -584,8 +585,18 @@ class Pipeline:
         predictions
             A dictionary or a list of dictionaries containing the predictions and additional information.
         """
+        # the signature of this method gets updated in the self.__init__
+        args_kwargs_names = [
+            f"`{name}`"
+            for name, par in inspect.signature(self.predict).parameters.items()
+            if par.default == inspect.Parameter.empty
+        ]
+
         if ((args or kwargs) and batch) or not (args or kwargs or batch):
-            raise ValueError("Please provide either 'arg/kwargs' OR a 'batch'")
+            raise ValueError(
+                f"Please provide either {' and '.join(args_kwargs_names)}, OR a `batch`"
+            )
+
         if args or kwargs:
             batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
 
@@ -676,19 +687,6 @@ class Pipeline:
             )
         finally:
             self._model.to(prior_device if prior_device >= 0 else "cpu")
-
-    def serve(self, port: int = 9998):
-        """Launches a REST prediction service with the current model
-
-        Parameters
-        ----------
-        port: `int`
-            The port on which the prediction service will be running (default: 9998)
-        """
-        from ._helpers import _serve
-
-        self._model = self._model.eval()
-        return _serve(self, port)
 
     def set_head(self, type: Type[TaskHead], **kwargs):
         """Sets a new task head for the pipeline
