@@ -558,9 +558,7 @@ class Pipeline:
         add_attributions: bool = False,
         attributions_kwargs: Optional[Dict] = None,
         **kwargs,
-    ) -> Union[
-        Optional[Dict[str, numpy.ndarray]], List[Optional[Dict[str, numpy.ndarray]]]
-    ]:
+    ) -> Union[Dict[str, numpy.ndarray], List[Optional[Dict[str, numpy.ndarray]]]]:
         """Returns a prediction given some input data based on the current state of the model
 
         The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
@@ -585,6 +583,12 @@ class Pipeline:
         -------
         predictions
             A dictionary or a list of dictionaries containing the predictions and additional information.
+            If a prediction fails for a single input in the batch, its return value will be `None`.
+
+        Raises
+        ------
+        PredictionError
+            Failed to predict the single input or the whole batch
         """
         if args or kwargs:
             batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
@@ -596,8 +600,11 @@ class Pipeline:
         )
 
         predictions = self._model.predict(batch, prediction_config)
+        if not any(predictions):
+            raise PredictionError(f"Failed to make predictions for {batch}")
+
         predictions_dict = [
-            prediction.as_dict() if prediction is not None else prediction
+            prediction.as_dict() if prediction is not None else None
             for prediction in predictions
         ]
 
@@ -892,3 +899,11 @@ class Pipeline:
         raise DeprecationWarning(
             "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
         )
+
+
+class PredictionError(Exception):
+    """Exception for a failed prediction of a single input or a whole batch"""
+
+    # For now this is the only Error in this module. If you want to add further Errors
+    # define a base class as recommended in https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions
+    pass
