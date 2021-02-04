@@ -26,7 +26,7 @@ from biome.text import Pipeline
     "--port",
     "-p",
     type=int,
-    default=8888,
+    default=9999,
     show_default=True,
     help="Port on which to serve the REST API.",
 )
