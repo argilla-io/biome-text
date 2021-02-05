@@ -771,7 +771,7 @@ class Pipeline:
         tracking_uri: Optional[str] = None,
         experiment_id: Optional[int] = None,
         run_name: str = "Log biome.text model",
-    ):
+    ) -> str:
         """Logs the pipeline as MLFlow Model to a MLFlow Tracking server
 
         Parameters
@@ -801,7 +801,7 @@ class Pipeline:
         ... })
         >>> model_uri = pipeline.to_mlflow()
         >>> model = mlflow.pyfunc.load_model(model_uri)
-        >>> preciction: pandas.DataFrame = model.predict(pandas.DataFrame([{"text": "Test this text"}]))
+        >>> prediction: pandas.DataFrame = model.predict(pandas.DataFrame([{"text": "Test this text"}]))
         """
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
