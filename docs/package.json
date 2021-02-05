@@ -15,7 +15,7 @@
     "rename:html": "find $npm_package_env_apipath | renamer --find .html --replace .md",
     "rename": "npm run rename:html && npm run rename:index",
     "build:tutorials": "find docs/documentation/tutorials -iname *.ipynb -maxdepth 1 -exec jupyter nbconvert --to markdown {} \\;",
-    "build:docs": "npm run clean:api && npm run build:api && npm run build:tutorials && yarn rename",
+    "build:docs": "npm run clean:api && npm run build:api && npm run build:tutorials && npm run rename",
     "build:site": "npm run build:docs && vuepress build docs",
     "dev:site": "npm run build:docs && vuepress dev docs",
     "docs:dev": "npm run dev:site",
@@ -25,10 +25,12 @@
     "@goy/vuepress-plugin-svg-icons": "^4.1.0",
     "@vuepress/plugin-active-header-links": "^1.4.1",
     "@vuepress/plugin-back-to-top": "^1.4.1",
-    "vuepress": "^1.4.1",
-    "renamer": "^2.0.0"
+    "renamer": "^2.0.0",
+    "vuepress": "^1.4.1"
   },
   "dependencies": {
+    "axios": ">=0.21.1",
+    "v-click-outside": "^3.1.2",
     "vuepress-bar": "^0.3.0"
   }
 }

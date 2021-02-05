@@ -42,7 +42,7 @@ ${"### "}${f.name} <Badge text="${label}"/>
               params = ', '.join(params)
               params_list = False
       %>
-      ## FUNCTION, METHODS CODE DEFINITION VIEW 
+      ## FUNCTION, METHODS CODE DEFINITION VIEW
       <div class="language-python extra-class">
 <pre class="language-python">
 <code>
@@ -120,7 +120,7 @@ ${"### "}${f.name} <Badge text="${label}"/>
 <div></div>
 
   ${module.docstring | to_html}
-  
+
     % if submodules:
     <h2 class="section-title" id="header-submodules">Sub-modules</h2>
     % for m in submodules:
@@ -161,13 +161,13 @@ ${"### "}${f.name} <Badge text="${label}"/>
 
 <div></div>
 <pre class="title">
- 
+
 ${"## "}${c.name} <Badge text="Class"/>
 </pre>
 
       ## CLASS DEFINITION VIEW
-   
-   
+
+
 <pre class="language-python">
 <code>
 % if params_list:
@@ -181,8 +181,8 @@ ${"## "}${c.name} <Badge text="Class"/>
 % endif
 </code>
 </pre>
-     
-     
+
+
 
       ${show_desc(c)}
 
@@ -215,22 +215,6 @@ ${"### "}${"Subclasses"}
               <li>${link(sub)}</li>
           % endfor
           </ul>
-      % endif
-      % if class_vars:
-
-<pre class="title">
-
-
-${"### Class variables"}
-</pre>
-
-          <dl>
-          % for v in class_vars:
-              <% return_type = get_annotation(v.type_annotation) %>
-              <dt id="${v.refname}"><code class="name">var ${ident(v.name)}${return_type}</code></dt>
-              <dd>${show_desc(v)}</dd>
-          % endfor
-          </dl>
       % endif
       % if smethods:
           <dl>

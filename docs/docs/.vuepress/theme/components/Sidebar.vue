@@ -5,6 +5,7 @@
         <img class="sidebar__img" :src="$withBase('/assets/img/biome.svg')"></img>
       </a>
     </div>
+    <Versions/>
     <NavLinks />
     <slot name="top" />
 
@@ -19,11 +20,12 @@
 <script>
 import SidebarLinks from '@theme/components/SidebarLinks.vue'
 import NavLinks from '@theme/components/NavLinks.vue'
+import Versions from '@theme/components/Versions.vue'
 
 export default {
   name: 'Sidebar',
 
-  components: { SidebarLinks, NavLinks },
+  components: { SidebarLinks, NavLinks, Versions },
 
   props: ['items']
 }
@@ -49,7 +51,7 @@ export default {
       font-size 1.1em
       padding 0.5rem 0 0.5rem 1.5rem
   & > .sidebar-links
-    padding 1.5rem 0
+    padding 0
     & > li > a.sidebar-link
       font-size 1.1em
       line-height 1.7
