@@ -4,13 +4,13 @@
     <br>
 <p>
 <p align="center">
-    <a href="https://travis-ci.com/recognai/biome-text">
-        <img alt="Build" src="https://travis-ci.org/recognai/biome-text.svg?branch=master">
+    <a href="https://github.com/recognai/biome-text/actions">
+        <img alt="CI" src="https://github.com/recognai/biome-text/workflows/CI/badge.svg?branch=master&event=push">
     </a>
     <a href="https://github.com/recognai/biome-text/blob/master/LICENSE.txt">
         <img alt="GitHub" src="https://img.shields.io/github/license/recognai/biome-text.svg?color=blue">
     </a>
-    <a href="https://www.recogn.ai/biome-text/index.html">
+    <a href="https://www.recogn.ai/biome-text/">
         <img alt="Documentation" src="https://img.shields.io/website/http/www.recogn.ai/biome-text/index.html.svg?down_color=red&down_message=offline&up_message=online">
     </a>
     <a href="https://github.com/recognai/biome-text/releases">
@@ -23,7 +23,7 @@
 </h3>
 
 ## Quick Links
-- [Documentation](https://www.recogn.ai/biome-text/documentation/)
+- [Documentation](https://www.recogn.ai/biome-text/)
 
 
 ## Features
@@ -69,9 +69,9 @@ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elas
 
 ## Get started
 
-The best way to see how *biome.text* works is to go through our [first tutorial](https://www.recogn.ai/biome-text/documentation/tutorials/1-Training_a_text_classifier.html).
+The best way to see how *biome.text* works is to go through our [first tutorial](https://www.recogn.ai/biome-text/master/documentation/tutorials/1-Training_a_text_classifier.html).
 
-Please refer to our [documentation](https://www.recogn.ai/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://www.recogn.ai/biome-text/documentation/community/contributing.html) to *biome.text*.
+Please refer to our [documentation](https://www.recogn.ai/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://www.recogn.ai/biome-text/master/documentation/community/contributing.html) to *biome.text*.
 
 ## Licensing
 

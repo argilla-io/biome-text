@@ -26,7 +26,7 @@ from biome.text import Pipeline
     "--port",
     "-p",
     type=int,
-    default=8888,
+    default=9999,
     show_default=True,
     help="Port on which to serve the REST API.",
 )
@@ -110,19 +110,37 @@ def _serve(pipeline: Pipeline, port: int):
             else:
                 return PlainTextResponse(str(exc.detail), status_code=exc.status_code)
 
-        @app.post("/predict")
+        @app.post("/predict", tags=["Pipeline"])
         async def predict(predict_input: PredictInput):
+            """Returns a prediction given some input data
+
+            Parameters
+            ----------
+            - **args/kwargs:** See the Example Value for the Request body below.
+            If provided, the **batch** parameter will be ignored.
+            - **batch:** A list of dictionaries that represents a batch of inputs.
+            The dictionary keys must comply with the **args/kwargs**.
+            Predicting batches should typically be faster than repeated calls with **args/kwargs**.
+            - **add_tokens:** If true, adds a 'tokens' key in the prediction that contains the tokenized input.
+            - **add_attributions:** If true, adds a 'attributions' key that contains attributions of the input to the prediction.
+            - **attributions_kwargs:** This dict is directly passed on to the `TaskHead.compute_attributions()`.
+
+            Returns
+            -------
+            - **predictions:** A dictionary or a list of dictionaries containing the predictions and additional information.
+            """
             with http_error_handling():
                 return sanitize(
                     pipeline.predict(**predict_input.dict(skip_defaults=True))
                 )
 
-        @app.get("/_config")
+        @app.get("/config", tags=["Pipeline"])
         async def config():
+            """The configuration of the pipeline"""
             with http_error_handling():
                 return pipeline.config.as_dict()
 
-        @app.get("/_status")
+        @app.get("/_status", tags=["REST service"])
         async def status():
             with http_error_handling():
                 return {"ok": True}
