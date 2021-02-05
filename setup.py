@@ -6,7 +6,8 @@ import sys
 from typing import Tuple
 
 try:
-    from setuptools import setup, find_namespace_packages
+    from setuptools import find_namespace_packages
+    from setuptools import setup
 except ImportError as error:
     raise ImportError("Make sure you have setuptools >= 40.1.0 installed!") from error
 
@@ -112,7 +113,11 @@ if __name__ == "__main__":
                 for file in glob.glob("src/biome/text/ui/webapp/**/*.*", recursive=True)
             ]
         },
-        entry_points={"console_scripts": ["biome=biome.text.cli:main",]},
+        entry_points={
+            "console_scripts": [
+                "biome=biome.text.cli:main",
+            ]
+        },
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,
     )
