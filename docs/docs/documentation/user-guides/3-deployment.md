@@ -7,6 +7,8 @@ Additionally, you can easily export your pipeline to an
 and take advantage of all its deployment tools, like packaging the model as self-contained Docker image
 with a REST API endpoint  or deploying it directly on Microsoft Azure ML or Amazon SageMaker.
 
+[[toc]]
+
 ## Built-in deployment via FastAPI
 
 The built-in tool uses [FastAPI](https://fastapi.tiangolo.com/) and an [Uvicorn](https://www.uvicorn.org/) server
@@ -138,5 +140,5 @@ curl http://127.0.0.1:5000/invocations -H 'Content-Type: application/json' -d '{
 ```
 
 For more details about how to exploit all MLFlow Model features,
-like deploying them on Microsoft Azure ML or Amazon SageMake, please refer to their
+like deploying them on Microsoft Azure ML or Amazon SageMaker, please refer to their
 [documentation](https://www.mlflow.org/docs/latest/models.html#built-in-deployment-tools).
