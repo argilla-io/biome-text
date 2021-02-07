@@ -63,17 +63,13 @@ class TextClassification(ClassificationHead):
         self,
         text: Union[str, List[str], Dict[str, str]],
         label: Optional[Union[str, List[str]]] = None,
-    ) -> Optional[Instance]:
-        try:
-            instance = self.backbone.featurizer(
-                text,
-                to_field=self.forward_arg_name,
-                aggregate=True,
-                exclude_record_keys=True,
-            )
-        except FeaturizeError as error:
-            self._LOGGER.exception(error)
-            return None
+    ) -> Instance:
+        instance = self.backbone.featurizer(
+            text,
+            to_field=self.forward_arg_name,
+            aggregate=True,
+            exclude_record_keys=True,
+        )
 
         return self._add_label(instance, label, to_field=self.label_name)
 

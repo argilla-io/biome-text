@@ -140,7 +140,7 @@ class TokenClassification(TaskHead):
         text: Union[str, List[str]],
         entities: Optional[List[dict]] = None,
         tags: Optional[Union[List[str], List[int]]] = None,
-    ) -> Optional[Instance]:
+    ) -> Instance:
         """
         Parameters
         ----------
@@ -170,21 +170,16 @@ class TokenClassification(TaskHead):
             )
             # discard misaligned examples for now
             if "-" in tags:
-                self._LOGGER.warning(
+                raise FeaturizeError(
                     f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
-                return None
         # text is already pre-tokenized
         else:
             tokens = [Token(t) for t in text]
 
-        try:
-            instance = self.backbone.featurizer(
-                tokens, to_field="text", tokenize=False, aggregate=True
-            )
-        except FeaturizeError as error:
-            self._LOGGER.exception(error)
-            return None
+        instance = self.backbone.featurizer(
+            tokens, to_field="text", tokenize=False, aggregate=True
+        )
 
         if self.training:
             try:
@@ -197,8 +192,9 @@ class TokenClassification(TaskHead):
                     ),
                 )
             except Exception as exception:
-                self._LOGGER.exception(str(exception) + f". For `({tokens, tags})`")
-                return None
+                raise FeaturizeError(
+                    f"Could not create SequenceLabelField for {(tokens, tags)}"
+                ) from exception
 
         instance.add_field("raw_text", MetadataField(text))
 

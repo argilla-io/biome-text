@@ -82,26 +82,21 @@ class RelationClassification(ClassificationHead):
         text: Union[str, List[str], Dict[str, str]],
         entities: List[Dict],
         label: Optional[Union[str, List[str]]] = None,
-    ) -> Optional[Instance]:
-        try:
-            instance = self.backbone.featurizer(
-                text,
-                to_field=self._TEXT_ARG_NAME_IN_FORWARD,
-                aggregate=True,
-                exclude_record_keys=True,
-            )
-        except FeaturizeError as error:
-            self._LOGGER.exception(error)
-            return None
+    ) -> Instance:
+        instance = self.backbone.featurizer(
+            text,
+            to_field=self._TEXT_ARG_NAME_IN_FORWARD,
+            aggregate=True,
+            exclude_record_keys=True,
+        )
 
         doc = self.backbone.tokenizer.nlp(text)
         entity_tags = tags_from_offsets(doc, entities, self._label_encoding)
 
         if "-" in entity_tags:
-            self._LOGGER.warning(
+            raise FeaturizeError(
                 f"Could not align spans with tokens for following example: '{text}' {entities}"
             )
-            return None
 
         try:
             instance.add_field(
@@ -113,8 +108,9 @@ class RelationClassification(ClassificationHead):
                 ),
             )
         except Exception as error:
-            self._LOGGER.exception(error)
-            return None
+            raise FeaturizeError(
+                f"Could not create SequenceLabelField for {(text, entity_tags)}"
+            ) from error
 
         return self._add_label(
             instance, label, to_field=self._LABEL_ARG_NAME_IN_FORWARD

@@ -134,7 +134,7 @@ class RecordPairClassification(ClassificationHead):
         record1: Dict[str, str],
         record2: Dict[str, str],
         label: Optional[str] = None,
-    ) -> Optional[Instance]:
+    ) -> Instance:
         """Tokenizes, indexes and embeds the two records and optionally adds the label
 
         Parameters
@@ -150,17 +150,17 @@ class RecordPairClassification(ClassificationHead):
         -------
         instance
             AllenNLP instance containing the two records plus optionally a label
+
+        Raises
+        ------
+        FeaturizeError
         """
-        try:
-            record1_instance = self.backbone.featurizer(
-                record1, to_field="record", aggregate=False
-            )
-            record2_instance = self.backbone.featurizer(
-                record2, to_field="record", aggregate=False
-            )
-        except FeaturizeError as error:
-            self._LOGGER.exception(error)
-            return None
+        record1_instance = self.backbone.featurizer(
+            record1, to_field="record", aggregate=False
+        )
+        record2_instance = self.backbone.featurizer(
+            record2, to_field="record", aggregate=False
+        )
 
         instance = Instance(
             {
@@ -168,9 +168,8 @@ class RecordPairClassification(ClassificationHead):
                 self._RECORD2_ARG_NAME_IN_FORWARD: record2_instance.get("record"),
             }
         )
-        instance = self._add_label(instance, label)
 
-        return instance
+        return self._add_label(instance, label)
 
     def forward(
         self,  # type: ignore

@@ -54,14 +54,10 @@ class RecordClassification(DocumentClassification):
 
     def featurize(
         self, label: Optional[Union[str, List[str]]] = None, **inputs
-    ) -> Optional[Instance]:
+    ) -> Instance:
 
         record = {input_key: inputs[input_key] for input_key in self._inputs}
-        try:
-            instance = self.backbone.featurizer(record, to_field=self.forward_arg_name)
-        except FeaturizeError as error:
-            self._LOGGER.exception(error)
-            return None
+        instance = self.backbone.featurizer(record, to_field=self.forward_arg_name)
 
         return self._add_label(instance, label)
 

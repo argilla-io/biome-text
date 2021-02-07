@@ -85,11 +85,7 @@ class LanguageModelling(TaskHead):
             )
 
     def featurize(self, text: str) -> Optional[Instance]:
-        try:
-            instance = self.backbone.featurizer(text, to_field="text", aggregate=True)
-        except FeaturizeError as error:
-            self._LOGGER.exception(error)
-            return None
+        instance = self.backbone.featurizer(text, to_field="text", aggregate=True)
 
         return instance
 
