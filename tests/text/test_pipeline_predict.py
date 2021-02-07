@@ -20,7 +20,7 @@ def test_raise_Prediction_error(pipeline):
         pipeline.predict("")
 
     with pytest.raises(PredictionError):
-        pipeline.predict(batch=[{"not": ""}, {"happening": ""}])
+        pipeline.predict(batch=[{"text": ""}, {"text": ""}])
 
 
 def test_batch_parameter_gets_ignored(pipeline):

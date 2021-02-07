@@ -4,6 +4,7 @@ from biome.text import Pipeline
 from biome.text._model import PipelineModel
 from biome.text.configuration import PredictionConfiguration
 from biome.text.errors import WrongInputError
+from biome.text.featurizer import FeaturizeError
 from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
@@ -62,18 +63,15 @@ def test_return_type(model, monkeypatch):
 
 
 def test_text_to_instance(model, caplog):
-    instance = model.text_to_instance(wrong_kwarg="wrong argument")
-    assert instance is None
+    with pytest.raises(TypeError):
+        model.text_to_instance(wrong_kwarg="wrong argument")
+
+    with pytest.raises(TypeError):
+        model.text_to_instance(label="missing required argument")
+
+    model.text_to_instance(text="")
     assert caplog.record_tuples[0] == (
         "biome.text._model",
-        40,
-        "featurize() got an unexpected keyword argument 'wrong_kwarg'",
-    )
-
-    instance = model.text_to_instance(label="missing required argument")
-    assert instance is None
-    assert caplog.record_tuples[1] == (
-        "biome.text._model",
-        40,
-        "featurize() missing 1 required positional argument: 'text'",
+        30,
+        "The provided input data contains empty strings/tokens: ",
     )
