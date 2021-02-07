@@ -27,8 +27,7 @@ from . import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .configuration import PredictionConfiguration
-from .errors import WrongInputError
-from .errors import WrongValueError
+from .featurizer import FeaturizeError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
 from .modules.heads import TaskPrediction
@@ -176,10 +175,14 @@ class PipelineModel(allennlp.models.Model):
         """Applies the head featurize method"""
         try:
             return self._head.featurize(**inputs)
+        except FeaturizeError as error:
+            # we cannot featurize the input (empty strings, etc.)
+            self._LOGGER.warning(error)
         except TypeError as error:
             # probably wrong input arguments for the head
-            self._LOGGER.exception(error)
-            return None
+            raise TypeError(
+                f"Please check your input arguments, expected: {self.inputs}, actual: {inputs.keys()}"
+            ) from error
 
     def extend_vocabulary(self, vocab: Vocabulary):
         """Extend the model's vocabulary with `vocab`
