@@ -7,6 +7,7 @@ import numpy
 from allennlp.data import Instance
 
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
@@ -53,12 +54,11 @@ class RecordClassification(DocumentClassification):
 
     def featurize(
         self, label: Optional[Union[str, List[str]]] = None, **inputs
-    ) -> Optional[Instance]:
+    ) -> Instance:
 
-        instance = self.backbone.featurizer(
-            {input_key: inputs[input_key] for input_key in self._inputs},
-            to_field=self.forward_arg_name,
-        )
+        record = {input_key: inputs[input_key] for input_key in self._inputs}
+        instance = self.backbone.featurizer(record, to_field=self.forward_arg_name)
+
         return self._add_label(instance, label)
 
     def _make_task_prediction(

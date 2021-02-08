@@ -62,7 +62,7 @@ class Pipeline:
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
     """
 
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, model: PipelineModel, config: PipelineConfiguration):
         self._model = model
@@ -217,7 +217,7 @@ class Pipeline:
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
         if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            self.__LOGGER.warning(
+            self._LOGGER.warning(
                 "At least one vocabulary of your features is still empty! "
                 "The number of trainable parameters usually depends on the size of your vocabulary."
             )
@@ -227,7 +227,7 @@ class Pipeline:
     def num_parameters(self) -> int:
         """Number of parameters present in the model."""
         if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            self.__LOGGER.warning(
+            self._LOGGER.warning(
                 "At least one vocabulary of your features is still empty! "
                 "The number of trainable parameters usually depends on the size of your vocabulary."
             )
@@ -558,7 +558,7 @@ class Pipeline:
         add_attributions: bool = False,
         attributions_kwargs: Optional[Dict] = None,
         **kwargs,
-    ) -> Union[Dict[str, numpy.ndarray], List[Dict[str, numpy.ndarray]]]:
+    ) -> Union[Dict[str, numpy.ndarray], List[Optional[Dict[str, numpy.ndarray]]]]:
         """Returns a prediction given some input data based on the current state of the model
 
         The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
@@ -568,11 +568,10 @@ class Pipeline:
         ----------
         *args/**kwargs
             These are dynamically updated and correspond to the pipeline's `self.inputs`.
-            You can provide either args/kwargs OR a batch.
+            If provided, the `batch` parameter will be ignored.
         batch
             A list of dictionaries that represents a batch of inputs. The dictionary keys must comply with the
-            `self.inputs` attribute. You can provide either args/kwargs OR a batch. Predicting batches should
-            typically be faster than repeated calls with args/kwargs.
+            `self.inputs` attribute. Predicting batches should typically be faster than repeated calls with args/kwargs.
         add_tokens
             If true, adds a 'tokens' key in the prediction that contains the tokenized input.
         add_attributions
@@ -584,19 +583,13 @@ class Pipeline:
         -------
         predictions
             A dictionary or a list of dictionaries containing the predictions and additional information.
+            If a prediction fails for a single input in the batch, its return value will be `None`.
+
+        Raises
+        ------
+        PredictionError
+            Failed to predict the single input or the whole batch
         """
-        # the signature of this method gets updated in the self.__init__
-        args_kwargs_names = [
-            f"`{name}`"
-            for name, par in inspect.signature(self.predict).parameters.items()
-            if par.default == inspect.Parameter.empty
-        ]
-
-        if ((args or kwargs) and batch) or not (args or kwargs or batch):
-            raise ValueError(
-                f"Please provide either {' and '.join(args_kwargs_names)}, OR a `batch`"
-            )
-
         if args or kwargs:
             batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
 
@@ -607,12 +600,15 @@ class Pipeline:
         )
 
         predictions = self._model.predict(batch, prediction_config)
+        if not any(predictions):
+            raise PredictionError(f"Failed to make predictions for {batch}")
 
-        return (
-            predictions[0].as_dict()
-            if (args or kwargs)
-            else [prediction.as_dict() for prediction in predictions]
-        )
+        predictions_dict = [
+            prediction.as_dict() if prediction is not None else None
+            for prediction in predictions
+        ]
+
+        return predictions_dict[0] if (args or kwargs) else predictions_dict
 
     def _map_args_kwargs_to_input(self, *args, **kwargs) -> Dict[str, Any]:
         """Helper function for the `self.predict` method"""
@@ -903,3 +899,11 @@ class Pipeline:
         raise DeprecationWarning(
             "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
         )
+
+
+class PredictionError(Exception):
+    """Exception for a failed prediction of a single input or a whole batch"""
+
+    # For now this is the only Error in this module. If you want to add further Errors
+    # define a base class as recommended in https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions
+    pass

@@ -17,6 +17,7 @@ from allennlp.training.metrics import FBetaMeasure
 from biome.text import helpers
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.metrics import MultiLabelF1Measure
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
@@ -61,12 +62,34 @@ class ClassificationHead(TaskHead):
         instance: Instance,
         label: Union[List[str], List[int], str, int],
         to_field: str = "label",
-    ) -> Optional[Instance]:
-        """Includes the label field for classification into the instance data
+    ) -> Instance:
+        """Adds the label field for classification into the instance data
 
         Helper function for the child's `self.featurize` method.
+
+        Parameters
+        ----------
+        instance
+            Add a label field to this instance
+        label
+            The label data
+        to_field
+            Name space of the field
+
+        Returns
+        -------
+        instance
+            If `label` is not None, return `instance` with the a label field added.
+            Otherwise return just the given `instance`.
+
+        Raises
+        ------
+        FeaturizeError
+            If the label is an empty string or does not match the type:
+            - (str, int) for single label
+            - (list, np.array) for multi label
         """
-        # "if not label:" fails for ndarrays this is why we explicitly check None
+        # "if not label:" fails for ndarrays, this is why we explicitly check for None
         if label is None:
             return instance
 
@@ -80,12 +103,10 @@ class ClassificationHead(TaskHead):
             field = LabelField(label, label_namespace=vocabulary.LABELS_NAMESPACE)
         if not field:
             # We have label info but we cannot build the label field --> discard the instance
-            self._LOGGER.warning(
-                f"Cannot create a label field for {label}, discarding instance."
-            )
-            return None
+            raise FeaturizeError(f"Cannot create label field for `label={label}`!")
 
         instance.add_field(to_field, field)
+
         return instance
 
     def _make_forward_output(
@@ -226,7 +247,7 @@ class ClassificationHead(TaskHead):
     def forward(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         raise NotImplementedError
 
-    def featurize(self, *args, **kwargs) -> Optional[Instance]:
+    def featurize(self, *args, **kwargs) -> Instance:
         raise NotImplementedError
 
     def _make_task_prediction(

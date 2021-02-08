@@ -4,7 +4,7 @@ from biome.text import Pipeline
 from biome.text._model import PipelineModel
 from biome.text.configuration import PredictionConfiguration
 from biome.text.errors import WrongInputError
-from biome.text.errors import WrongValueError
+from biome.text.featurizer import FeaturizeError
 from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
@@ -25,16 +25,28 @@ def test_training_mode_warning(model):
     assert model.training is False
 
 
-def test_value_error(model, monkeypatch):
+def test_forward_pass_error(model, monkeypatch, caplog):
     def mock_text_to_instance(**kwargs):
-        return None
+        return "mock instance"
+
+    def mock_forward_on_instances(*args, **kwargs):
+        raise Exception("mock Exception")
 
     monkeypatch.setattr(model, "text_to_instance", mock_text_to_instance)
+    monkeypatch.setattr(model, "forward_on_instances", mock_forward_on_instances)
 
-    with pytest.raises(WrongValueError):
-        model.predict(
-            [{"text": "Some value that breaks the featurize"}], PredictionConfiguration
-        )
+    predictions = model.predict(
+        [{"text": "Some value that breaks the forward pass"}], PredictionConfiguration
+    )
+
+    assert predictions == [None]
+    assert len(caplog.record_tuples) == 2
+    assert caplog.record_tuples[0] == ("biome.text._model", 40, "mock Exception")
+    assert caplog.record_tuples[1] == (
+        "biome.text._model",
+        30,
+        "Failed to make a forward pass for '[{'text': 'Some value that breaks the forward pass'}]'",
+    )
 
 
 def test_return_type(model, monkeypatch):
@@ -50,8 +62,16 @@ def test_return_type(model, monkeypatch):
     assert all([isinstance(pred, TaskPrediction) for pred in predictions])
 
 
-def test_text_to_instance(model):
-    with pytest.raises(WrongInputError):
+def test_text_to_instance(model, caplog):
+    with pytest.raises(TypeError):
         model.text_to_instance(wrong_kwarg="wrong argument")
-    with pytest.raises(WrongInputError):
+
+    with pytest.raises(TypeError):
         model.text_to_instance(label="missing required argument")
+
+    model.text_to_instance(text="")
+    assert caplog.record_tuples[0] == (
+        "biome.text._model",
+        30,
+        "The provided input data contains empty strings/tokens: ",
+    )

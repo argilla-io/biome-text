@@ -16,6 +16,7 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn.util import get_text_field_mask
 
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.helpers import tags_from_offsets
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import EmbeddingConfiguration
@@ -34,7 +35,7 @@ class RelationClassification(ClassificationHead):
 
     _TEXT_ARG_NAME_IN_FORWARD = "text"
     _LABEL_ARG_NAME_IN_FORWARD = "label"
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -81,8 +82,7 @@ class RelationClassification(ClassificationHead):
         text: Union[str, List[str], Dict[str, str]],
         entities: List[Dict],
         label: Optional[Union[str, List[str]]] = None,
-    ) -> Optional[Instance]:
-
+    ) -> Instance:
         instance = self.backbone.featurizer(
             text,
             to_field=self._TEXT_ARG_NAME_IN_FORWARD,
@@ -94,19 +94,23 @@ class RelationClassification(ClassificationHead):
         entity_tags = tags_from_offsets(doc, entities, self._label_encoding)
 
         if "-" in entity_tags:
-            self.__LOGGER.warning(
+            raise FeaturizeError(
                 f"Could not align spans with tokens for following example: '{text}' {entities}"
             )
-            return None
 
-        instance.add_field(
-            "entities",
-            SequenceLabelField(
-                entity_tags,
-                sequence_field=cast(TextField, instance["text"]),
-                label_namespace=self._entity_tags_namespace,
-            ),
-        )
+        try:
+            instance.add_field(
+                "entities",
+                SequenceLabelField(
+                    entity_tags,
+                    sequence_field=cast(TextField, instance["text"]),
+                    label_namespace=self._entity_tags_namespace,
+                ),
+            )
+        except Exception as error:
+            raise FeaturizeError(
+                f"Could not create SequenceLabelField for {(text, entity_tags)}"
+            ) from error
 
         return self._add_label(
             instance, label, to_field=self._LABEL_ARG_NAME_IN_FORWARD

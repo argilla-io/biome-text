@@ -8,7 +8,6 @@ from biome.text import Pipeline
 from biome.text import TrainerConfiguration
 from biome.text import vocabulary
 from biome.text.modules.heads.task_prediction import Entity
-from biome.text.modules.heads.task_prediction import Token
 from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
 
 

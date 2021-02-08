@@ -26,6 +26,7 @@ from tqdm.auto import tqdm
 
 from biome.text import __version__ as biome__version__
 from biome.text import helpers
+from biome.text.featurizer import FeaturizeError
 from biome.text.helpers import copy_sign_and_docs
 
 if TYPE_CHECKING:
@@ -381,8 +382,8 @@ class Dataset:
 
         return AllennlpDataset(instance_list)
 
-    @staticmethod
     def _build_instance_generator(
+        self,
         pipeline: "Pipeline",
         dataset: datasets.Dataset,
         input_columns: List[Tuple[str, bool]],
@@ -405,15 +406,16 @@ class Dataset:
         # we need a dummy str to comply with AllennlpLazyDataset API
         def instance_generator(dummy: str) -> Iterable[Instance]:
             for row in dataset:
-                instance = pipeline.head.featurize(
-                    **{
-                        key: row.get(key) if optional else row[key]
-                        for key, optional in input_columns
-                    }
-                )
-                # We skip examples for which the head could not create an instance
-                # We leave it to the head to issue a logging.warning for these examples
-                if instance is not None:
+                try:
+                    instance = pipeline.head.featurize(
+                        **{
+                            key: row.get(key) if optional else row[key]
+                            for key, optional in input_columns
+                        }
+                    )
+                except FeaturizeError as error:
+                    self._LOGGER.warning(error)
+                else:
                     yield instance
 
         return instance_generator

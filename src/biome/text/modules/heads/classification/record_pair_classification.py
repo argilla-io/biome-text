@@ -18,6 +18,7 @@ from allennlp.nn import util
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
+from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import BiMpmMatchingConfiguration
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
@@ -133,7 +134,7 @@ class RecordPairClassification(ClassificationHead):
         record1: Dict[str, str],
         record2: Dict[str, str],
         label: Optional[str] = None,
-    ) -> Optional[Instance]:
+    ) -> Instance:
         """Tokenizes, indexes and embeds the two records and optionally adds the label
 
         Parameters
@@ -149,6 +150,10 @@ class RecordPairClassification(ClassificationHead):
         -------
         instance
             AllenNLP instance containing the two records plus optionally a label
+
+        Raises
+        ------
+        FeaturizeError
         """
         record1_instance = self.backbone.featurizer(
             record1, to_field="record", aggregate=False
@@ -156,15 +161,15 @@ class RecordPairClassification(ClassificationHead):
         record2_instance = self.backbone.featurizer(
             record2, to_field="record", aggregate=False
         )
+
         instance = Instance(
             {
                 self._RECORD1_ARG_NAME_IN_FORWARD: record1_instance.get("record"),
                 self._RECORD2_ARG_NAME_IN_FORWARD: record2_instance.get("record"),
             }
         )
-        instance = self._add_label(instance, label)
 
-        return instance
+        return self._add_label(instance, label)
 
     def forward(
         self,  # type: ignore

@@ -13,6 +13,7 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
+from typing import Union
 
 import allennlp
 import torch
@@ -26,8 +27,7 @@ from . import vocabulary
 from .backbone import ModelBackbone
 from .configuration import PipelineConfiguration
 from .configuration import PredictionConfiguration
-from .errors import WrongInputError
-from .errors import WrongValueError
+from .featurizer import FeaturizeError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
 from .modules.heads import TaskPrediction
@@ -85,6 +85,7 @@ class PipelineModel(allennlp.models.Model):
     """
 
     PREDICTION_FILE_NAME = "predictions.json"
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, name: str, head: TaskHead):
         super().__init__(vocab=head.backbone.vocab)
@@ -174,9 +175,14 @@ class PipelineModel(allennlp.models.Model):
         """Applies the head featurize method"""
         try:
             return self._head.featurize(**inputs)
+        except FeaturizeError as error:
+            # we cannot featurize the input (empty strings, etc.)
+            self._LOGGER.warning(error)
         except TypeError as error:
-            # wrong inputs
-            raise WrongInputError(arg_name=error.args[0])
+            # probably wrong input arguments for the head
+            raise TypeError(
+                f"Please check your input arguments, expected: {self.inputs}, actual: {inputs.keys()}"
+            ) from error
 
     def extend_vocabulary(self, vocab: Vocabulary):
         """Extend the model's vocabulary with `vocab`
@@ -295,8 +301,10 @@ class PipelineModel(allennlp.models.Model):
             )
 
     def predict(
-        self, batch: List[Dict[str, Any]], prediction_config: PredictionConfiguration
-    ) -> List[TaskPrediction]:
+        self,
+        batch: List[Dict[str, Union[str, List[str], Dict[str, str]]]],
+        prediction_config: PredictionConfiguration,
+    ) -> List[Optional[TaskPrediction]]:
         """Returns predictions given some input data based on the current state of the model
 
         The keys of the input dicts in the batch must coincide with the `self.inputs` attribute.
@@ -318,18 +326,44 @@ class PipelineModel(allennlp.models.Model):
             self.eval()
 
         instances = [self.text_to_instance(**input_dict) for input_dict in batch]
+        # Filter out None instances, that is when the head could not create an instance out of the input
+        none_indices, not_none_instances = [], []
+        for i, instance in enumerate(instances):
+            if instance is None:
+                none_indices.append(i)
+            else:
+                not_none_instances.append(instance)
+
         try:
-            forward_outputs = self.forward_on_instances(instances)
-            predictions = [
-                self.head.make_task_prediction(
-                    forward_output, instance, prediction_config
-                )
-                for forward_output, instance in zip(forward_outputs, instances)
-            ]
+            forward_outputs = self.forward_on_instances(not_none_instances)
         except Exception as error:
-            raise WrongValueError(
-                f"Failed to make predictions for '{batch}'"
-            ) from error
+            input_examples = [
+                example for i, example in enumerate(batch) if i not in none_indices
+            ]
+            self._LOGGER.exception(error)
+            self._LOGGER.warning(
+                f"Failed to make a forward pass for '{input_examples}'"
+            )
+            return [None] * len(batch)
+
+        predictions = []
+        for forward_output, instance in zip(forward_outputs, not_none_instances):
+            try:
+                predictions.append(
+                    self.head.make_task_prediction(
+                        forward_output, instance, prediction_config
+                    )
+                )
+            except Exception as error:
+                self._LOGGER.exception(error)
+                self._LOGGER.warning(
+                    f"Failed to make a task prediction for '{forward_output, instance}'"
+                )
+                predictions.append(None)
+
+        # Add None for the none instances
+        for index in none_indices:
+            predictions.insert(index, None)
 
         # Log predictions if the prediction logger was initialized
         if hasattr(self, "_prediction_logger"):

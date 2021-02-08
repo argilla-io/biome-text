@@ -98,8 +98,17 @@ class TaskHead(torch.nn.Module, Registrable):
         """Metrics dictionary for training task"""
         raise NotImplementedError
 
-    def featurize(self, *args, **kwargs) -> Optional[Instance]:
-        """Converts incoming data into an Allennlp `Instance`, used for pyTorch tensors generation"""
+    def featurize(self, *args, **kwargs) -> Instance:
+        """Converts incoming data into an Allennlp `Instance`, used for pyTorch tensors generation
+
+        Returns
+        -------
+        instance
+
+        Raises
+        ------
+        FeaturizeError
+        """
         raise NotImplementedError
 
     def make_task_prediction(

@@ -26,6 +26,7 @@ from spacy.vocab import Vocab
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.errors import WrongValueError
+from biome.text.featurizer import FeaturizeError
 from biome.text.helpers import offsets_from_tags
 from biome.text.helpers import spacy_to_allennlp_token
 from biome.text.helpers import span_labels_to_tag_labels
@@ -55,7 +56,7 @@ class TokenClassification(TaskHead):
     feedforward
     """
 
-    __LOGGER = logging.getLogger(__name__)
+    _LOGGER = logging.getLogger(__name__)
 
     task_name = TaskName.token_classification
 
@@ -139,7 +140,7 @@ class TokenClassification(TaskHead):
         text: Union[str, List[str]],
         entities: Optional[List[dict]] = None,
         tags: Optional[Union[List[str], List[int]]] = None,
-    ) -> Optional[Instance]:
+    ) -> Instance:
         """
         Parameters
         ----------
@@ -169,38 +170,34 @@ class TokenClassification(TaskHead):
             )
             # discard misaligned examples for now
             if "-" in tags:
-                self.__LOGGER.warning(
+                raise FeaturizeError(
                     f"Could not align spans with tokens for following example: '{text}' {entities}"
                 )
-                return None
         # text is already pre-tokenized
         else:
             tokens = [Token(t) for t in text]
-
-        instance = self._featurize_tokens(tokens, tags)
-        instance.add_field("raw_text", MetadataField(text))
-
-        return instance
-
-    def _featurize_tokens(
-        self, tokens: List[Token], tags: Union[List[str], List[int]]
-    ) -> Optional[Instance]:
-        """Create an example Instance from token and tags"""
 
         instance = self.backbone.featurizer(
             tokens, to_field="text", tokenize=False, aggregate=True
         )
 
         if self.training:
-            assert tags, f"No tags found when training. Data [{tokens, tags}]"
-            instance.add_field(
-                "tags",
-                SequenceLabelField(
-                    tags,
-                    sequence_field=cast(TextField, instance["text"]),
-                    label_namespace=vocabulary.LABELS_NAMESPACE,
-                ),
-            )
+            try:
+                instance.add_field(
+                    "tags",
+                    SequenceLabelField(
+                        tags,
+                        sequence_field=cast(TextField, instance["text"]),
+                        label_namespace=vocabulary.LABELS_NAMESPACE,
+                    ),
+                )
+            except Exception as exception:
+                raise FeaturizeError(
+                    f"Could not create SequenceLabelField for {(tokens, tags)}"
+                ) from exception
+
+        instance.add_field("raw_text", MetadataField(text))
+
         return instance
 
     def forward(  # type: ignore
