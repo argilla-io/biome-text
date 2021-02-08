@@ -71,7 +71,7 @@ docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elas
 
 The best way to see how *biome.text* works is to go through our [first tutorial](https://www.recogn.ai/biome-text/master/documentation/tutorials/1-Training_a_text_classifier.html).
 
-Please refer to our [documentation](https://www.recogn.ai/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://www.recogn.ai/biome-text/master/documentation/community/contributing.html) to *biome.text*.
+Please refer to our [documentation](https://www.recogn.ai/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://www.recogn.ai/biome-text/v2.0.0/documentation/community/1-contributing.html) to *biome.text*.
 
 ## Licensing
 
