@@ -242,8 +242,8 @@ class ProfNerT(TaskHead):
             trick = (
                 torch.arange(
                     0,
-                    1,
-                    1 / ner_subtokens_mask.numel(),
+                    0.5 - 0.5 / ner_subtokens_mask.numel() / 2,  # avoid rounding errors
+                    0.5 / ner_subtokens_mask.numel(),
                     device=ner_subtokens_mask.device,
                 )  # in this way we avoid equal elements when sorting => no stable sort necessary
                 .flip(-1)  # we want to sort with descending=True in the end
