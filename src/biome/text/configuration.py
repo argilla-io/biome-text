@@ -1,11 +1,9 @@
 import copy
 import dataclasses
-import logging
-from pathlib import Path
+import math
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
@@ -18,11 +16,6 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.data import TokenIndexer
 from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
-from pytorch_lightning import Callback
-from pytorch_lightning.accelerators import Accelerator
-from pytorch_lightning.loggers import LightningLoggerBase
-from pytorch_lightning.plugins import Plugin
-from pytorch_lightning.profiler import BaseProfiler
 
 from biome.text.dataset import Dataset
 
@@ -41,8 +34,6 @@ from .tokenizer import TransformersTokenizer
 
 if TYPE_CHECKING:
     from .pipeline import Pipeline
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class FeaturesConfiguration(FromParams):
@@ -488,6 +479,15 @@ class TrainerConfiguration:
         (or batch, if the scheduler implements the step_batch method).
         If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
         to determine if learning has plateaued.
+    linear_with_warmup
+        If true, use the 'linear_with_warmup' learning rate scheduler. You should also specify `warmup_steps` and
+        `training_size`. This parameter is ignored if a `learning_rate_scheduler` is provided.
+    warmup_steps
+        The number of warmup steps for the `linear_with_warmup` learning rate scheduler.
+        This parameter is ignored if a `learning_rate_scheduler` is provided.
+    training_size
+        The number of examples in your training data set.
+        This parameter is ignored if a `learning_rate_scheduler` is provided.
     momentum_scheduler
         If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
     moving_average
@@ -526,6 +526,9 @@ class TrainerConfiguration:
     grad_norm: Optional[float] = None
     grad_clipping: Optional[float] = None
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
+    linear_with_warmup: bool = False
+    warmup_steps: int = 0
+    training_size: int = 0
     momentum_scheduler: Optional[Dict[str, Any]] = None
     moving_average: Optional[Dict[str, Any]] = None
     use_amp: bool = False
@@ -536,6 +539,20 @@ class TrainerConfiguration:
     batches_per_epoch: Optional[int] = None
     # prepare_environment
     random_seed: Optional[int] = None
+
+    def __post_init__(self):
+        if self.learning_rate_scheduler is None and self.linear_with_warmup:
+            if self.training_size == 0:
+                raise ConfigurationError(
+                    "You set `linear_with_warmup` to True, but did not provide the `training_size` parameter"
+                )
+
+            self.learning_rate_scheduler = {
+                "type": "linear_with_warmup",
+                "num_epochs": self.num_epochs,
+                "num_steps_per_epoch": math.ceil(self.training_size / self.batch_size),
+                "warmup_steps": self.warmup_steps,
+            }
 
     def to_allennlp_trainer(self) -> Dict[str, Any]:
         """Returns a configuration dict formatted for AllenNLP's trainer
