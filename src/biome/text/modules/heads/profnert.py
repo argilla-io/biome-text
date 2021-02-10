@@ -47,7 +47,7 @@ class ProfNerT(TaskHead):
         ner_tags_encoding: str,
         transformers_model: str,
         dropout: float = 0.1,
-        feedforward: Optional[FeedForwardConfiguration] = None,
+        ner_feedforward: Optional[FeedForwardConfiguration] = None,
     ) -> None:
         super().__init__(backbone)
 
@@ -76,15 +76,17 @@ class ProfNerT(TaskHead):
 
         self._classification_loss = torch.nn.CrossEntropyLoss()
 
-        self._feedforward: Optional[FeedForward] = (
+        self._ner_feedforward: Optional[FeedForward] = (
             None
-            if feedforward is None
-            else feedforward.input_dim(self.backbone.encoder.get_output_dim()).compile()
+            if ner_feedforward is None
+            else ner_feedforward.input_dim(
+                self.backbone.encoder.get_output_dim()
+            ).compile()
         )
         self._encoding_output_dim = (
             self.backbone.encoder.get_output_dim()
-            if self._feedforward is None
-            else self._feedforward.get_output_dim()
+            if self._ner_feedforward is None
+            else self._ner_feedforward.get_output_dim()
         )
         self._tag_layer = TimeDistributed(
             torch.nn.Linear(self._encoding_output_dim, len(ner_tags))
@@ -217,8 +219,8 @@ class ProfNerT(TaskHead):
             self._classification_pooler(embedded_tokens, mask)
         )
 
-        if self._feedforward is not None:
-            embedded_tokens = self._feedforward(embedded_tokens)
+        if self._ner_feedforward is not None:
+            embedded_tokens = self._ner_feedforward(embedded_tokens)
         ner_logits = self._tag_layer(embedded_tokens)
 
         viterbi_paths: List[Tuple[List[int], float]] = self._crf.viterbi_tags(

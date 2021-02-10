@@ -50,7 +50,7 @@ def profnert(dataset) -> dict:
             "ner_tags_encoding": "BIO",
             "transformers_model": model_name,
             "dropout": 0.0,
-            "feedforward": {
+            "ner_feedforward": {
                 "activations": ["relu"],
                 "dropout": [0],
                 "hidden_dims": [32],
@@ -87,7 +87,7 @@ def profner(dataset) -> dict:
             "ner_tags": list(set(itertools.chain.from_iterable(dataset["tags"]))),
             "ner_tags_encoding": "BIO",
             "dropout": 0.0,
-            "feedforward": {
+            "ner_feedforward": {
                 "activations": ["relu"],
                 "dropout": [0],
                 "hidden_dims": [32],
