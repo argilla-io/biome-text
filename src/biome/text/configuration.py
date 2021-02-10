@@ -547,13 +547,6 @@ class TrainerConfiguration:
                     "You set `linear_with_warmup` to True, but did not provide the `training_size` parameter"
                 )
 
-            self.learning_rate_scheduler = {
-                "type": "linear_with_warmup",
-                "num_epochs": self.num_epochs,
-                "num_steps_per_epoch": math.ceil(self.training_size / self.batch_size),
-                "warmup_steps": self.warmup_steps,
-            }
-
     def to_allennlp_trainer(self) -> Dict[str, Any]:
         """Returns a configuration dict formatted for AllenNLP's trainer
 
@@ -561,6 +554,14 @@ class TrainerConfiguration:
         -------
         allennlp_trainer_config
         """
+        # doing this in the post_init does not work with ray tune search spaces ...
+        if self.learning_rate_scheduler is None and self.linear_with_warmup:
+            self.learning_rate_scheduler = {
+                "type": "linear_with_warmup",
+                "num_epochs": self.num_epochs,
+                "num_steps_per_epoch": math.ceil(self.training_size / self.batch_size),
+                "warmup_steps": self.warmup_steps,
+            }
         # config for AllenNLP's GradientDescentTrainer
         allennlp_trainer_config = {
             "optimizer": self.optimizer,
