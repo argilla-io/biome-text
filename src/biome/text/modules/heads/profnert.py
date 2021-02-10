@@ -3,11 +3,13 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-from typing import cast
 
 import numpy
+import numpy as np
 import torch
 from allennlp.data import Instance
+from allennlp.data import Token
+from allennlp.data.fields import ArrayField
 from allennlp.data.fields import LabelField
 from allennlp.data.fields import SequenceLabelField
 from allennlp.data.fields import TextField
@@ -19,7 +21,11 @@ from allennlp.nn.util import get_text_field_mask
 from allennlp.training.metrics import CategoricalAccuracy
 from allennlp.training.metrics import FBetaMeasure
 from allennlp.training.metrics import SpanBasedF1Measure
+from torch import BoolTensor
 from torch import Tensor
+from transformers import AutoTokenizer
+from transformers import PreTrainedTokenizer
+from transformers import PreTrainedTokenizerFast
 
 from biome.text.backbone import ModelBackbone
 from biome.text.featurizer import FeaturizeError
@@ -31,7 +37,7 @@ from biome.text.modules.heads.task_prediction import ProfNerPrediction
 from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
-class ProfNer(TaskHead):
+class ProfNerT(TaskHead):
     def __init__(
         self,
         backbone: ModelBackbone,
@@ -39,6 +45,7 @@ class ProfNer(TaskHead):
         classification_pooler: Seq2VecEncoderConfiguration,
         ner_tags: List[str],
         ner_tags_encoding: str,
+        transformers_model: str,
         dropout: float = 0.1,
         feedforward: Optional[FeedForwardConfiguration] = None,
     ) -> None:
@@ -48,6 +55,10 @@ class ProfNer(TaskHead):
             raise ValueError(
                 f"NER tags encoding '{ner_tags_encoding}' not supported. Allowed values are ['BIOUL', 'BIO']"
             )
+
+        self._transformer_tokenizer: Union[
+            PreTrainedTokenizer, PreTrainedTokenizerFast
+        ] = AutoTokenizer.from_pretrained(transformers_model)
 
         self.backbone.vocab.add_tokens_to_namespace(ner_tags, "ner_tags")
         self.backbone.vocab.add_tokens_to_namespace(
@@ -126,18 +137,40 @@ class ProfNer(TaskHead):
         ):
             raise FeaturizeError("You are missing either labels or tags!")
 
-        instance = self.backbone.featurizer(
-            tokens, to_field="tokens", aggregate=True, tokenize=False
+        input_ids = self._transformer_tokenizer(
+            tokens,
+            is_split_into_words=True,
+            return_offsets_mapping=True,
+            return_special_tokens_mask=True,
         )
+        transformer_tokens_str = self._transformer_tokenizer.convert_ids_to_tokens(
+            input_ids["input_ids"]
+        )
+        # We only want to tag the first word piece of the word tokens
+        word_piece_mask = np.array(input_ids["offset_mapping"], dtype=int)[:, 0] == 0
+        ner_tokens_mask = word_piece_mask & ~np.array(
+            input_ids["special_tokens_mask"], dtype=bool
+        )
+
+        instance = self.backbone.featurizer(
+            transformer_tokens_str, to_field="subtokens", aggregate=True, tokenize=False
+        )
+
+        array_field = ArrayField(ner_tokens_mask, padding_value=0, dtype=bool)
+        instance.add_field("ner_subtokens_mask", array_field)
 
         if labels is not None and tags is not None:
             label_field = LabelField(labels, label_namespace="classification_labels")
             instance.add_field("labels", label_field)
 
+            text_field = TextField(
+                [Token(token) for token in tokens],
+                token_indexers={},
+            )
             try:
                 sequence_label_field = SequenceLabelField(
                     tags,
-                    sequence_field=cast(TextField, instance["tokens"]),
+                    sequence_field=text_field,
                     label_namespace="ner_tags",
                 )
             except Exception as error:
@@ -151,7 +184,9 @@ class ProfNer(TaskHead):
 
     def forward(
         self,
-        tokens: Dict[str, Union[Tensor, Dict[str, Tensor]]],
+        subtokens: Dict[str, Union[Tensor, Dict[str, Tensor]]],
+        ner_subtokens_mask: BoolTensor,
+        tokens: Dict[str, Union[Tensor, Dict[str, Tensor]]] = None,
         labels: Tensor = None,
         tags: Tensor = None,
     ):
@@ -159,6 +194,10 @@ class ProfNer(TaskHead):
 
         Parameters
         ----------
+        subtokens
+            Subword tokens produced by the transformers tokenizer
+        ner_subtokens_mask
+            Masks the first subtoken belonging to a word token
         tokens
             Word tokens produced by the spacy tokenizer
         labels
@@ -171,8 +210,8 @@ class ProfNer(TaskHead):
 
         """
         # This is the mask for padded word pieces
-        mask = get_text_field_mask(tokens)
-        embedded_tokens = self._dropout(self.backbone(tokens, mask))
+        mask = get_text_field_mask(subtokens)
+        embedded_tokens = self._dropout(self.backbone(subtokens, mask))
 
         classification_logits = self._classification_layer(
             self._classification_pooler(embedded_tokens, mask)
@@ -183,7 +222,7 @@ class ProfNer(TaskHead):
         ner_logits = self._tag_layer(embedded_tokens)
 
         viterbi_paths: List[Tuple[List[int], float]] = self._crf.viterbi_tags(
-            ner_logits, mask
+            ner_logits, ner_subtokens_mask
         )
 
         output = dict(
@@ -195,13 +234,38 @@ class ProfNer(TaskHead):
             output["loss"] = self._classification_loss(classification_logits, labels)
 
             # NER loss
-            output["loss"] += -1 * self._crf(ner_logits, tags, mask)
+
+            # sort the ner_tokens_mask with all Trues first
+            # pytorch has no stable sort, so we need a little trick
+            trick = (
+                torch.arange(
+                    0,
+                    1,
+                    1 / ner_subtokens_mask.numel(),
+                    device=ner_subtokens_mask.device,
+                )  # in this way we avoid equal elements when sorting => no stable sort necessary
+                .flip(-1)  # we want to sort with descending=True in the end
+                .view(ner_subtokens_mask.size())
+            )
+            tags_mask, mask_indices = (ner_subtokens_mask + trick).sort(descending=True)
+            # retype back to bool and truncate to the size of the tags
+            tags_mask = tags_mask.int().bool()[:, : tags.size(-1)]
+
+            # sort the ner_logits according to the mask indices
+            first_index = torch.arange(
+                ner_logits.size(0), device=ner_logits.device
+            ).unsqueeze(1)
+            ner_logits_sorted = ner_logits[first_index, mask_indices, :]
+            # truncate to the size of the tags
+            ner_logits_sorted = ner_logits_sorted[:, : tags.size(-1)]
+
+            output["loss"] += -1 * self._crf(ner_logits_sorted, tags, tags_mask)
 
             # metrics
             self.metrics["classification_accuracy"](classification_logits, labels)
             self.metrics["classification_micro"](classification_logits, labels)
             self.metrics["classification_macro"](classification_logits, labels)
-            self.metrics["ner_f1"](ner_logits, tags, mask)
+            self.metrics["ner_f1"](ner_logits_sorted, tags, tags_mask)
 
         return output
 
@@ -257,7 +321,7 @@ class ProfNer(TaskHead):
         return metrics
 
 
-class ProfNerConfiguration(ComponentConfiguration[ProfNer]):
+class ProfNerTConfiguration(ComponentConfiguration[ProfNerT]):
     """Configuration for classification head components"""
 
     pass

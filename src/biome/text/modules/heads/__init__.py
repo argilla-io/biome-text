@@ -14,6 +14,8 @@ from .language_modelling import LanguageModelling
 from .language_modelling import LanguageModellingConfiguration
 from .profner import ProfNer
 from .profner import ProfNerConfiguration
+from .profnert import ProfNerT
+from .profnert import ProfNerTConfiguration
 from .task_head import TaskHead
 from .task_head import TaskHeadConfiguration
 from .task_head import TaskName
@@ -29,6 +31,7 @@ for head in [
     LanguageModelling,
     RecordPairClassification,
     RelationClassification,
+    ProfNerT,
     ProfNer,
 ]:
     head.register(overrides=True)

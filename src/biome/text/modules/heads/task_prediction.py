@@ -243,3 +243,25 @@ class LanguageModellingPrediction(TaskPrediction):
     # Is only included if batch size == 1
     loss: Optional[float] = SENTINEL
     tokens: Optional[List[Token]] = SENTINEL
+
+
+@dataclasses.dataclass
+class ProfNerPrediction(TaskPrediction):
+    """Output dataclass for the `ProfNer` head
+
+    Parameters
+    ----------
+    classification_labels
+        Ordered list of predictions, from the label with the highest to the label with the lowest probability.
+    classification_probabilities
+        Ordered list of probabilities, from highest to lowest probability.
+    ner_tags
+        NER tags for the input
+    tokens
+        Tokens of the tokenized input
+    """
+
+    classification_labels: List[str]
+    classification_probabilities: List[float]
+    ner_tags: List[str]
+    tokens: Optional[List[Token]] = SENTINEL
