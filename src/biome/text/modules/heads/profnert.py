@@ -138,10 +138,10 @@ class ProfNerT(TaskHead):
         """
         if not isinstance(tokens, list):
             raise FeaturizeError("Input argument 'tokens' has to be a list of strings")
-        if (labels is not None and tags is None) or (
-            labels is None and tags is not None
-        ):
-            raise FeaturizeError("You are missing either labels or tags!")
+        if labels is not None and tags is None:
+            raise FeaturizeError("You are missing the tags!")
+        if labels is None and tags is not None:
+            raise FeaturizeError("You are missing the labels!")
 
         input_ids = self._transformer_tokenizer(
             tokens,
@@ -152,11 +152,20 @@ class ProfNerT(TaskHead):
         transformer_tokens_str = self._transformer_tokenizer.convert_ids_to_tokens(
             input_ids["input_ids"]
         )
+
         # We only want to tag the first word piece of the word tokens
-        word_piece_mask = np.array(input_ids["offset_mapping"], dtype=int)[:, 0] == 0
-        ner_tokens_mask = word_piece_mask & ~np.array(
-            input_ids["special_tokens_mask"], dtype=bool
-        )
+        ner_tokens_mask_list = []
+        for token in tokens:
+            input_ids = self._transformer_tokenizer(
+                [token], is_split_into_words=True, return_special_tokens_mask=True
+            )
+            mask = ~np.array(input_ids["special_tokens_mask"], dtype=bool)
+            if mask.sum() == 0:
+                raise FeaturizeError(
+                    f"The transformers tokenizer vaporized this token with its laser: {token}"
+                )
+            ner_tokens_mask_list += [True] + [False] * (mask.sum() - 1)
+        ner_tokens_mask = np.array(ner_tokens_mask_list, dtype=bool)
 
         instance = self.backbone.featurizer(
             transformer_tokens_str, to_field="subtokens", aggregate=True, tokenize=False
