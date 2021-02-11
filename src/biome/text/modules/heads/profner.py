@@ -41,6 +41,8 @@ class ProfNer(TaskHead):
         ner_tags_encoding: str,
         dropout: float = 0.1,
         ner_feedforward: Optional[FeedForwardConfiguration] = None,
+        classification_loss_weight: float = 1.0,
+        ner_loss_weight: float = 1.0,
     ) -> None:
         super().__init__(backbone)
 
@@ -64,6 +66,7 @@ class ProfNer(TaskHead):
         )
 
         self._classification_loss = torch.nn.CrossEntropyLoss()
+        self._classification_loss_weight = classification_loss_weight
 
         self._ner_feedforward: Optional[FeedForward] = (
             None
@@ -86,6 +89,7 @@ class ProfNer(TaskHead):
             self.backbone.vocab.get_index_to_token_vocabulary("ner_tags"),
         )
         self._crf = ConditionalRandomField(len(ner_tags), constraints)
+        self._ner_loss_weight = ner_loss_weight
 
         self.metrics = {
             "classification_accuracy": CategoricalAccuracy(),
@@ -198,10 +202,15 @@ class ProfNer(TaskHead):
 
         if labels is not None and tags is not None:
             # Classification loss
-            output["loss"] = self._classification_loss(classification_logits, labels)
+            output["loss"] = (
+                self._classification_loss(classification_logits, labels)
+                * self._classification_loss_weight
+            )
 
             # NER loss
-            output["loss"] += -1 * self._crf(ner_logits, tags, mask)
+            output["loss"] += (
+                -1 * self._crf(ner_logits, tags, mask) * self._ner_loss_weight
+            )
 
             # metrics
             self.metrics["classification_accuracy"](classification_logits, labels)
