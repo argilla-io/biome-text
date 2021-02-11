@@ -133,6 +133,10 @@ class ProfNer(TaskHead):
         )
 
         if labels is not None and tags is not None:
+            if len(tags) != len(tokens):
+                raise FeaturizeError(
+                    f"The number of tags does not match the number of tokens! {tokens} {tags}"
+                )
             label_field = LabelField(labels, label_namespace="classification_labels")
             instance.add_field("labels", label_field)
 

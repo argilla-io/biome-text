@@ -162,6 +162,13 @@ class ProfNerT(TaskHead):
         instance.add_field("ner_subtokens_mask", array_field)
 
         if labels is not None and tags is not None:
+            if len(tags) != ner_tokens_mask.sum():
+                raise FeaturizeError(
+                    f"The number of NER word pieces does not match the number of tags! "
+                    f"{ner_tokens_mask.sum(), len(tags)}"
+                    f"{list(zip(transformer_tokens_str, ner_tokens_mask))}"
+                )
+
             label_field = LabelField(labels, label_namespace="classification_labels")
             instance.add_field("labels", label_field)
 
