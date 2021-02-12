@@ -146,40 +146,50 @@ class ProfNerT(TaskHead):
         input_ids = self._transformer_tokenizer(
             tokens,
             is_split_into_words=True,
-            return_offsets_mapping=True,
             return_special_tokens_mask=True,
         )
         transformer_tokens_str = self._transformer_tokenizer.convert_ids_to_tokens(
             input_ids["input_ids"]
         )
-
-        # We only want to tag the first word piece of the word tokens
-        ner_tokens_mask_list = []
-        for token in tokens:
-            input_ids = self._transformer_tokenizer(
-                [token], is_split_into_words=True, return_special_tokens_mask=True
-            )
-            mask = ~np.array(input_ids["special_tokens_mask"], dtype=bool)
-            if mask.sum() == 0:
-                raise FeaturizeError(
-                    f"The transformers tokenizer vaporized this token with its laser: {token}"
-                )
-            ner_tokens_mask_list += [True] + [False] * (mask.sum() - 1)
-        ner_tokens_mask = np.array(ner_tokens_mask_list, dtype=bool)
-
         instance = self.backbone.featurizer(
             transformer_tokens_str, to_field="subtokens", aggregate=True, tokenize=False
         )
 
-        array_field = ArrayField(ner_tokens_mask, padding_value=0, dtype=bool)
+        # We only want to tag the first word piece of the word tokens -> ner_subtokens_mask
+        ner_subtokens_mask_list = []
+        for token in tokens:
+            token_input_ids = self._transformer_tokenizer(
+                [token], is_split_into_words=True, return_special_tokens_mask=True
+            )
+            spec_tok_mask = ~np.array(
+                token_input_ids["special_tokens_mask"], dtype=bool
+            )
+            if spec_tok_mask.sum() == 0:
+                raise FeaturizeError(
+                    f"The transformers tokenizer vaporized this token with its laser: {token}"
+                )
+            ner_subtokens_mask_list += [True] + [False] * (spec_tok_mask.sum() - 1)
+        special_tokens_idx = [
+            i for i, value in enumerate(input_ids["special_tokens_mask"]) if value == 1
+        ]
+        for idx in special_tokens_idx:
+            ner_subtokens_mask_list.insert(idx, False)
+        if len(transformer_tokens_str) != len(ner_subtokens_mask_list):
+            raise FeaturizeError(
+                "The NER subtoken mask has a different length than the transformer tokens list:"
+                f"{len(ner_subtokens_mask_list), len(transformer_tokens_str)}"
+            )
+        ner_subtokens_mask = np.array(ner_subtokens_mask_list, dtype=bool)
+
+        array_field = ArrayField(ner_subtokens_mask, padding_value=0, dtype=bool)
         instance.add_field("ner_subtokens_mask", array_field)
 
         if labels is not None and tags is not None:
-            if len(tags) != ner_tokens_mask.sum():
+            if len(tags) != ner_subtokens_mask.sum():
                 raise FeaturizeError(
                     f"The number of NER word pieces does not match the number of tags! "
-                    f"{ner_tokens_mask.sum(), len(tags)}"
-                    f"{list(zip(transformer_tokens_str, ner_tokens_mask))}"
+                    f"{ner_subtokens_mask.sum(), len(tags)}"
+                    f"{list(zip(transformer_tokens_str, ner_subtokens_mask))}"
                 )
 
             label_field = LabelField(labels, label_namespace="classification_labels")
