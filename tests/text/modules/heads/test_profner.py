@@ -17,7 +17,10 @@ def dataset() -> Dataset:
             ["Test", "this"],
             ["superlongword", "for", "the", "transformer", "tokenizer"],
         ],
-        "tags": [["O", "O"], ["B-TEST", "O", "B-TEST", "I-TEST", "I-TEST"]],
+        "tags": [
+            ["O", "O"],
+            ["B-PROFESION", "O", "B-PROFESION", "I-PROFESION", "I-PROFESION"],
+        ],
         "labels": ["0", "1"],
     }
 
@@ -27,7 +30,8 @@ def dataset() -> Dataset:
 @pytest.fixture
 def profnert(dataset) -> dict:
     model_name = "sshleifer/tiny-distilbert-base-cased"
-    model_name = "prajjwal1/bert-tiny"
+    # model_name = "dccuchile/bert-base-spanish-wwm-cased"
+    # model_name = "prajjwal1/bert-tiny"
 
     return {
         "name": "test_profnert",
@@ -39,14 +43,20 @@ def profnert(dataset) -> dict:
         },
         "head": {
             "type": "ProfNerT",
-            "classification_labels": dataset.unique("labels"),
+            "classification_labels": ["0", "1"],
             "classification_pooler": {
                 "type": "bert_pooler",
                 "pretrained_model": model_name,
                 "requires_grad": True,
                 "dropout": 0.1,
             },
-            "ner_tags": list(set(itertools.chain.from_iterable(dataset["tags"]))),
+            "ner_tags": [
+                "B-SITUACION_LABORAL",
+                "O",
+                "I-PROFESION",
+                "B-PROFESION",
+                "I-SITUACION_LABORAL",
+            ],
             "ner_tags_encoding": "BIO",
             "transformers_model": model_name,
             "dropout": 0.0,
@@ -77,14 +87,20 @@ def profner(dataset) -> dict:
         },
         "head": {
             "type": "ProfNer",
-            "classification_labels": dataset.unique("labels"),
+            "classification_labels": ["0", "1"],
             "classification_pooler": {
                 "type": "gru",
                 "num_layers": 1,
                 "bidirectional": True,
                 "hidden_size": 64,
             },
-            "ner_tags": list(set(itertools.chain.from_iterable(dataset["tags"]))),
+            "ner_tags": [
+                "B-SITUACION_LABORAL",
+                "O",
+                "I-PROFESION",
+                "B-PROFESION",
+                "I-SITUACION_LABORAL",
+            ],
             "ner_tags_encoding": "BIO",
             "dropout": 0.0,
             "ner_feedforward": {
@@ -103,7 +119,10 @@ def pipeline_dict(request, profner, profnert):
 
 
 def test_profner(pipeline_dict: dict, dataset: Dataset, tmp_path):
-    print(pipeline_dict)
+    # dataset = Dataset.from_json("/home/david//recognai/projects/ProfNER/profner/preprocessing_inference/train_v1.json")
+    # dataset.rename_column_("tags_bio", "tags")
+    # dataset.rename_column_("classification_label", "labels")
+    #
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.train(output=str(tmp_path / "test_output"), training=dataset)
     predictions = pipeline.predict(
@@ -114,13 +133,3 @@ def test_profner(pipeline_dict: dict, dataset: Dataset, tmp_path):
         add_tokens=True,
     )
     print(predictions)
-
-
-def test_null():
-    tf = TextField("", {})
-    instance = Instance({"tf": tf})
-    vocab = Vocabulary.from_instances([instance])
-    batch = Batch([instance])
-    batch.index_instances(vocab)
-
-    print(batch.as_tensor_dict())
