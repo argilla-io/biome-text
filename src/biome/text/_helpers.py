@@ -1,6 +1,7 @@
 import copy
 import json
 import logging
+import math
 import os
 from typing import Any
 from typing import Dict
@@ -9,6 +10,7 @@ from typing import Optional
 from typing import cast
 
 from allennlp.common import Params
+from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import prepare_environment
 from allennlp.common.util import sanitize
 from allennlp.data import PyTorchDataLoader
@@ -104,6 +106,12 @@ class PipelineTrainer:
             if dataset is not None:
                 dataset.index_with(self._pipeline.backbone.vocab)
 
+        if self._trainer_config.learning_rate_scheduler is None and (
+            self._trainer_config.warmup_steps != 0
+            or self._trainer_config.linear_decay is True
+        ):
+            self._setup_linear_decay_with_warmup()
+
         trainer_params = Params(
             helpers.sanitize_for_params(self._trainer_config.to_allennlp_trainer())
         )
@@ -135,6 +143,34 @@ class PipelineTrainer:
             params=trainer_params,
             epoch_callbacks=self._epoch_callbacks,
         )
+
+    def _setup_linear_decay_with_warmup(self):
+        """Setting up the linear_decay_with_warmup learning rate scheduler"""
+        if self._trainer_config.linear_decay:
+            try:
+                num_steps_per_epoch = math.ceil(
+                    len(self._training) / self._trainer_config.batch_size
+                )
+            except TypeError as error:
+                if self._trainer_config.training_size is None:
+                    raise ConfigurationError(
+                        "If you want the learning rate to linearly decay with a lazily loaded training dataset, "
+                        "you need to provide the size of the dataset!"
+                    ) from error
+                else:
+                    num_steps_per_epoch = math.ceil(
+                        self._trainer_config.training_size
+                        / self._trainer_config.batch_size
+                    )
+        else:
+            num_steps_per_epoch = int(1e15)
+
+        self._trainer_config.learning_rate_scheduler = {
+            "type": "linear_with_warmup",
+            "num_epochs": self._trainer_config.num_epochs,
+            "num_steps_per_epoch": num_steps_per_epoch,
+            "warmup_steps": self._trainer_config.warmup_steps,
+        }
 
     def test_evaluation(self) -> Dict[str, Any]:
         """
