@@ -479,15 +479,14 @@ class TrainerConfiguration:
         (or batch, if the scheduler implements the step_batch method).
         If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
         to determine if learning has plateaued.
-    linear_with_warmup
-        If true, use the 'linear_with_warmup' learning rate scheduler. You should also specify `warmup_steps` and
-        `training_size`. This parameter is ignored if a `learning_rate_scheduler` is provided.
     warmup_steps
-        The number of warmup steps for the `linear_with_warmup` learning rate scheduler.
+        The number of warmup steps. This parameter is ignored if a `learning_rate_scheduler` is provided.
+    linear_decay
+        If true, linearly decrease the learning rate to 0 until the end of the training. See also `training_size` below!
         This parameter is ignored if a `learning_rate_scheduler` is provided.
     training_size
-        The number of examples in your training data set.
-        This parameter is ignored if a `learning_rate_scheduler` is provided.
+        If you set `linear_decay` to true and work with lazily loaded training data,
+        you need to provide the number of examples in your training data.
     momentum_scheduler
         If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
     moving_average
@@ -526,9 +525,9 @@ class TrainerConfiguration:
     grad_norm: Optional[float] = None
     grad_clipping: Optional[float] = None
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
-    linear_with_warmup: bool = False
     warmup_steps: int = 0
-    training_size: int = 0
+    linear_decay: bool = False
+    training_size: Optional[int] = None
     momentum_scheduler: Optional[Dict[str, Any]] = None
     moving_average: Optional[Dict[str, Any]] = None
     use_amp: bool = False
@@ -539,20 +538,6 @@ class TrainerConfiguration:
     batches_per_epoch: Optional[int] = None
     # prepare_environment
     random_seed: Optional[int] = None
-
-    def __post_init__(self):
-        if self.learning_rate_scheduler is None and self.linear_with_warmup:
-            if self.training_size == 0:
-                raise ConfigurationError(
-                    "You set `linear_with_warmup` to True, but did not provide the `training_size` parameter"
-                )
-
-            self.learning_rate_scheduler = {
-                "type": "linear_with_warmup",
-                "num_epochs": self.num_epochs,
-                "num_steps_per_epoch": math.ceil(self.training_size / self.batch_size),
-                "warmup_steps": self.warmup_steps,
-            }
 
     def to_allennlp_trainer(self) -> Dict[str, Any]:
         """Returns a configuration dict formatted for AllenNLP's trainer
