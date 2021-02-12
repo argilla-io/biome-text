@@ -180,7 +180,6 @@ class ProfNer(TaskHead):
         -------
 
         """
-        # This is the mask for padded word pieces
         mask = get_text_field_mask(tokens)
         embedded_tokens = self._dropout(self.backbone(tokens, mask))
 
@@ -249,8 +248,6 @@ class ProfNer(TaskHead):
             classification_probabilities=classification_probabilities,
             ner_tags=ner_tags,
         )
-
-        pass
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         metrics = {

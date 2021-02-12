@@ -270,7 +270,7 @@ class ProfNerT(TaskHead):
 
             # NER loss
 
-            # sort the ner_tokens_mask with all Trues first
+            # sort the ner_subtokens_mask with all Trues first
             # pytorch has no stable sort, so we need a little trick
             trick = (
                 torch.arange(
@@ -337,8 +337,6 @@ class ProfNerT(TaskHead):
             classification_probabilities=classification_probabilities,
             ner_tags=ner_tags,
         )
-
-        pass
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         metrics = {
