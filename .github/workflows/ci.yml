@@ -47,11 +47,11 @@ jobs:
         run: pre-commit run --all-files
       - name: Run Tests 📈
         run: make test
-#      - name: Prepare Docs for Versioning 🥓
-#        working-directory: ./docs
-#        run: |
-#          chmod +x ./prepare_versioned_build.sh
-#          bash ./prepare_versioned_build.sh
+      - name: Prepare Docs for Versioning 🥓
+        working-directory: ./docs
+        run: |
+          chmod +x ./prepare_versioned_build.sh
+          bash ./prepare_versioned_build.sh
       - name: Build Docs 📘
         # build and zip the docs
         run: |
