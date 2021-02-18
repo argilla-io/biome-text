@@ -364,6 +364,7 @@ class Dataset:
                     pipeline, self.dataset, input_columns
                 ),
                 file_path="dummy",
+                vocab=pipeline.vocab,
             )
 
         fingerprint = self._create_fingerprint_for_instance_list(pipeline)
@@ -380,7 +381,7 @@ class Dataset:
             instance_list = [instance for instance in tqdm_prog]
             self._cache_instance_list(instance_list, fingerprint)
 
-        return AllennlpDataset(instance_list)
+        return AllennlpDataset(instance_list, vocab=pipeline.vocab)
 
     def _build_instance_generator(
         self,
