@@ -101,4 +101,4 @@ Under the hood the versioning of our package is managed by [`setuptools_scm`](ht
 that basically works with the git tags in a repo.
 
 **Docs**: In order for the Algolia Search to work, you need to add the new version number of the docs to our
-algolia [config file](https://github.com/algolia/docsearch-configs/blob/master/configs/recogn_biome-text.json).
+algolia [config file](https://github.com/algolia/docsearch-configs/blob/master/configs/recogn_biome-text.json) and submit a PR.
