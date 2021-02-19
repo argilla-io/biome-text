@@ -28,6 +28,7 @@ from allennlp.common.util import sanitize
 from allennlp.data import Batch
 from allennlp.data import Instance
 from allennlp.data import Vocabulary
+from allennlp.models.model import _DEFAULT_WEIGHTS
 from allennlp.nn import util
 
 from . import vocabulary
@@ -38,8 +39,6 @@ from .featurizer import FeaturizeError
 from .helpers import split_signature_params_by_predicate
 from .modules.heads import TaskHead
 from .modules.heads import TaskPrediction
-
-_DEFAULT_WEIGHTS = "best.th"
 
 
 class _HashDict(dict):
@@ -378,21 +377,18 @@ class PipelineModel(pl.LightningModule, Registrable):
 
         return predictions
 
-    # copied from allennlp.Model
-
     def extend_embedder_vocab(
         self, embedding_sources_mapping: Dict[str, str] = None
     ) -> None:
-        """
-        Iterates through all embedding modules in the model and assures it can embed
-        with the extended vocab. This is required in fine-tuning or transfer learning
-        scenarios where model was trained with original vocabulary but during
-        fine-tuning/transfer-learning, it will have it work with extended vocabulary
+        """Iterates through all embedding modules and assures it can embed the extended vocab.
+
+        This is required in fine-tuning or transfer learning scenarios where the model was trained with
+        the original vocabulary, but during fine-tuning/transfer-learning, the vocabulary was extended
         (original + new-data vocabulary).
 
-        # Parameters
-
-        embedding_sources_mapping : `Dict[str, str]`, optional (default = `None`)
+        Parameters
+        ----------
+        embedding_sources_mapping
             Mapping from model_path to pretrained-file path of the embedding
             modules. If pretrained-file used at time of embedding initialization
             isn't available now, user should pass this mapping. Model path is
@@ -412,10 +408,11 @@ class PipelineModel(pl.LightningModule, Registrable):
                 )
 
     def get_regularization_penalty(self) -> Optional[torch.Tensor]:
+        """Needed by the AllenNLP trainer.
+
+        We have not implemented gegularization in our PipelineModel at the moment, so this method does nothing.
         """
-        The AllenNLP trainer needs this method
-        """
-        return None
+        pass
 
     @classmethod
     def load(
@@ -425,9 +422,23 @@ class PipelineModel(pl.LightningModule, Registrable):
         weights_file: Optional[Union[str, PathLike]] = None,
         cuda_device: int = -1,
     ) -> "PipelineModel":
-        """
-        Instantiates an already-trained model, based on the experiment
-        configuration and some optional overrides.
+        """Instantiates an already-trained model, based on the experiment configuration and some optional overrides.
+
+        Parameters
+        ----------
+        config
+            The configuration of the model
+        serialization_dir
+            Path to the directory where the model is serialized
+        weights_file
+            File with the weights of the model.
+            By default we load the _DEFAULT_WEIGHTS file inside the serialization dir
+        cuda_device
+            Device on which to put the model
+
+        Returns
+        -------
+        pipeline_model
         """
         weights_file = weights_file or os.path.join(serialization_dir, _DEFAULT_WEIGHTS)
 
@@ -507,19 +518,18 @@ class PipelineModel(pl.LightningModule, Registrable):
     ) -> List[Dict[str, numpy.ndarray]]:
         """
         Takes a list of `Instances`, converts that text into arrays using this model's `Vocabulary`,
-        passes those arrays through `self.forward()` and `self.make_output_human_readable()` (which
-        by default does nothing) and returns the result.  Before returning the result, we convert
-        any `torch.Tensors` into numpy arrays and separate the batched output into a list of
-        individual dicts per instance. Note that typically this will be faster on a GPU (and
-        conditionally, on a CPU) than repeated calls to `forward_on_instance`.
+        passes those arrays through `self.forward()` and returns the result.
 
-        # Parameters
+        Before returning the result, we convert any `torch.Tensors` into numpy arrays and
+        separate the batched output into a list of individual dicts per instance.
 
-        instances : `List[Instance]`, required
+        Parameters
+        ----------
+        instances
             The instances to run the model on.
 
-        # Returns
-
+        Returns
+        -------
         A list of the models output for each instance.
         """
         batch_size = len(instances)
@@ -558,9 +568,9 @@ class PipelineModel(pl.LightningModule, Registrable):
         This method checks the device of the model parameters to determine the cuda_device
         this model should be run on for predictions.  If there are no parameters, it returns -1.
 
-        # Returns
-
-        The cuda device this model should run on for predictions.
+        Returns
+        -------
+        cuda_device_or_cpu
         """
         devices = {util.get_device_of(param) for param in self.parameters()}
 
