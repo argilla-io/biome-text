@@ -14,6 +14,7 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Set
 from typing import Type
 from typing import Union
 
@@ -104,6 +105,8 @@ class PipelineModel(pl.LightningModule, Registrable):
         self.set_head(head)
 
         self.file_path: Optional[str] = None
+
+        self._warn_for_unseparable_batches: Set[str] = set()
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -410,9 +413,18 @@ class PipelineModel(pl.LightningModule, Registrable):
     def get_regularization_penalty(self) -> Optional[torch.Tensor]:
         """Needed by the AllenNLP trainer.
 
-        We have not implemented gegularization in our PipelineModel at the moment, so this method does nothing.
+        We have not implemented regularization in our PipelineModel at the moment, so this method does nothing.
         """
         pass
+
+    def make_output_human_readable(
+        self, output_dict: Dict[str, torch.Tensor]
+    ) -> Dict[str, torch.Tensor]:
+        """Needed by the AllenNLP evaluate method.
+
+        This can go away once we have an evaluate using the Lightning Trainer.
+        """
+        return output_dict
 
     @classmethod
     def load(
