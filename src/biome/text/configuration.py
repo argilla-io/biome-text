@@ -852,7 +852,7 @@ class LTrainerConfiguration:
         Configuration for an [AllenNLP/PyTorch optimizer](https://docs.allennlp.org/main/api/training/optimizers/)
         that is constructed via the AllenNLP configuration framework.
         For a simple AdamW optimizer this would look like this:
-        >>> {"type": "adamw", "lr": 0.001, "weight_decay": 0.02}
+        >>> optimizer={"type": "adamw", "lr": 0.001, "weight_decay": 0.02}
 
     reload_dataloaders_every_epoch
         Set to True to reload dataloaders every epoch.
