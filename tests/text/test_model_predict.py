@@ -39,9 +39,9 @@ def test_forward_pass_error(model, monkeypatch, caplog):
 
     assert predictions == [None]
     assert len(caplog.record_tuples) == 2
-    assert caplog.record_tuples[0] == ("biome.text._model", 40, "mock Exception")
+    assert caplog.record_tuples[0] == ("biome.text.model", 40, "mock Exception")
     assert caplog.record_tuples[1] == (
-        "biome.text._model",
+        "biome.text.model",
         30,
         "Failed to make a forward pass for '[{'text': 'Some value that breaks the forward pass'}]'",
     )
@@ -69,7 +69,7 @@ def test_text_to_instance(model, caplog):
 
     model.text_to_instance(text="")
     assert caplog.record_tuples[0] == (
-        "biome.text._model",
+        "biome.text.model",
         30,
         "The provided input data contains empty strings/tokens: ",
     )
