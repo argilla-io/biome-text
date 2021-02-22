@@ -1,10 +1,8 @@
 import pytest
 
 from biome.text import Pipeline
-from biome.text._model import PipelineModel
 from biome.text.configuration import PredictionConfiguration
-from biome.text.errors import WrongInputError
-from biome.text.featurizer import FeaturizeError
+from biome.text.model import PipelineModel
 from biome.text.modules.heads.task_prediction import TaskPrediction
 
 

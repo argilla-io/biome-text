@@ -23,8 +23,8 @@ from torch.utils.data import IterableDataset
 from biome.text import Pipeline
 from biome.text import TrainerConfiguration
 from biome.text import helpers
-from biome.text._model import PipelineModel
 from biome.text.dataset import InstancesDataset
+from biome.text.model import PipelineModel
 from biome.text.training_results import TrainingResults
 
 _LOGGER = logging.getLogger(__name__)
