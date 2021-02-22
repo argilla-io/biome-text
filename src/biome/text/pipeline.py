@@ -31,7 +31,6 @@ from allennlp.models.archival import archive_model
 from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
-from biome.text._model import PipelineModel
 from biome.text.backbone import ModelBackbone
 from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
@@ -46,6 +45,7 @@ from biome.text.features import WordFeatures
 from biome.text.helpers import update_method_signature
 from biome.text.loggers import BaseTrainLogger
 from biome.text.loggers import add_default_wandb_logger_if_needed
+from biome.text.model import PipelineModel
 from biome.text.modules.heads import TaskHead
 from biome.text.modules.heads import TaskHeadConfiguration
 from biome.text.training_results import TrainingResults
@@ -204,6 +204,11 @@ class Pipeline:
     def config(self) -> PipelineConfiguration:
         """Gets the pipeline configuration"""
         return self._config
+
+    @property
+    def model(self) -> PipelineModel:
+        """Gets the underlying model"""
+        return self._model
 
     @property
     def type_name(self) -> str:
@@ -436,6 +441,47 @@ class Pipeline:
 
         finally:
             self.__restore_training_logging()
+
+    def create_vocab(
+        self,
+        vocab_config: VocabularyConfiguration,
+        lazy: bool = False,
+    ):
+        """Creates the vocab for the pipeline.
+
+        NOTE: The trainer calls this method for you. You can use this method in case you want
+        to create the vocab outside of the training/test process.
+
+        Parameters
+        ----------
+        vocab_config
+            Configurations for the vocab creation
+        lazy
+            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
+        """
+        # The transformers feature comes with its own vocab, no need to prepare anything if it is the only feature
+        if self.config.features.configured_namespaces == [
+            TransformersFeatures.namespace
+        ]:
+            return
+
+        # If the vocab is empty, we assume this is an untrained pipeline
+        # and we want to raise an error if the weights file is not found.
+        # Extending the vocab with a non-existent weights file only throws a warning.
+        try:
+            assert is_url_or_existing_file(Path(self.config.features.word.weights_file))
+        except AssertionError:
+            if vocabulary.is_empty(self.vocab, [WordFeatures.namespace]):
+                raise FileNotFoundError(
+                    f"Cannot find the weights file {self.config.features.word.weights_file}"
+                )
+        # no word feature, or weights_file is None
+        except (AttributeError, TypeError):
+            pass
+
+        vocab = vocab_config.build_vocab(pipeline=self, lazy=lazy)
+        # If the vocab is the same, this is just a no-op
+        self._model.extend_vocabulary(vocab)
 
     def _prepare_vocab(
         self,
