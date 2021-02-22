@@ -21,12 +21,12 @@ from biome.text.training_results import TrainingResults
 class Trainer:
     def __init__(
         self,
-        trainer_config: LTrainerConfiguration,
+        config: LTrainerConfiguration,
     ):
-        self._trainer_config = copy.deepcopy(trainer_config)
+        self._config = copy.deepcopy(config)
 
         # remove non pl.Trainer arguments
-        trainer_kwargs = asdict(self._trainer_config)
+        trainer_kwargs = asdict(self._config)
         for kwarg in ["num_epochs", "optimizer", "data_bucketing", "batch_size"]:
             del trainer_kwargs[kwarg]
 
@@ -47,16 +47,16 @@ class Trainer:
         -------
         data_loader
         """
-        is_bucketing = self._trainer_config.data_bucketing and not isinstance(
+        is_bucketing = self._config.data_bucketing and not isinstance(
             instance_dataset, IterableDataset
         )
 
         return PyTorchDataLoader(
             instance_dataset,
-            batch_size=1 if is_bucketing else self._trainer_config.batch_size,
+            batch_size=1 if is_bucketing else self._config.batch_size,
             batch_sampler=BucketBatchSampler(
                 data_source=instance_dataset,
-                batch_size=self._trainer_config.batch_size,
+                batch_size=self._config.batch_size,
             )
             if is_bucketing
             else None,
@@ -112,15 +112,13 @@ class Trainer:
             Params(
                 {
                     "model_parameters": pipeline.model.named_parameters(),
-                    **self._trainer_config.optimizer,
+                    **self._config.optimizer,
                 }
             )
         )
 
-        training_result: TrainingResults = self.trainer.fit(
+        self.trainer.fit(
             pipeline.model,
             train_dataloader=train_dataloader,
             val_dataloaders=valid_dataloader,
         )
-
-        return training_result
