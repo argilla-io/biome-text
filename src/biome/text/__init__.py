@@ -40,6 +40,7 @@ from .configuration import TrainerConfiguration
 from .configuration import VocabularyConfiguration
 from .dataset import Dataset
 from .pipeline import Pipeline
+from .trainer import Trainer
 
 warnings.showwarning = warn_explicit
 logging.basicConfig()
