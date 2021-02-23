@@ -97,7 +97,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
         self.file_path: Optional[str] = None
 
-        self.optimizer = None
+        self.optimizer: torch.optim.Optimizer = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""

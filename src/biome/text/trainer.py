@@ -1,4 +1,5 @@
 import copy
+import logging
 from dataclasses import asdict
 from typing import Optional
 from typing import Union
@@ -17,6 +18,8 @@ from biome.text.dataset import InstancesDataset
 from biome.text.pipeline import Pipeline
 from biome.text.training_results import TrainingResults
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class Trainer:
     def __init__(
@@ -31,36 +34,6 @@ class Trainer:
             del trainer_kwargs[kwarg]
 
         self.trainer = pl.Trainer(**trainer_kwargs)
-
-    def create_dataloader(
-        self,
-        instance_dataset: InstancesDataset,
-    ) -> PyTorchDataLoader:
-        """Returns a pytorch DataLoader for AllenNLP
-
-        Parameters
-        ----------
-        instance_dataset
-            The dataset for the DataLoader
-
-        Returns
-        -------
-        data_loader
-        """
-        is_bucketing = self._config.data_bucketing and not isinstance(
-            instance_dataset, IterableDataset
-        )
-
-        return PyTorchDataLoader(
-            instance_dataset,
-            batch_size=1 if is_bucketing else self._config.batch_size,
-            batch_sampler=BucketBatchSampler(
-                data_source=instance_dataset,
-                batch_size=self._config.batch_size,
-            )
-            if is_bucketing
-            else None,
-        )
 
     def fit(
         self,
@@ -98,11 +71,17 @@ class Trainer:
             pipeline.create_vocab(vocab_config=vocab_config, lazy=lazy)
 
         # create dataloaders
-        train_dataloader = self.create_dataloader(
-            train_dataset.to_instances(pipeline, lazy=lazy)
+        train_dataloader = create_dataloader(
+            train_dataset.to_instances(pipeline, lazy=lazy),
+            batch_size=self._config.batch_size,
+            data_bucketing=self._config.data_bucketing,
         )
         valid_dataloader = (
-            self.create_dataloader(valid_dataset.to_instances(pipeline, lazy=lazy))
+            create_dataloader(
+                valid_dataset.to_instances(pipeline, lazy=lazy),
+                batch_size=self._config.batch_size,
+                data_bucketing=self._config.data_bucketing,
+            )
             if valid_dataset is not None
             else None
         )
@@ -122,3 +101,37 @@ class Trainer:
             train_dataloader=train_dataloader,
             val_dataloaders=valid_dataloader,
         )
+
+
+def create_dataloader(
+    instance_dataset: InstancesDataset,
+    batch_size: int = 16,
+    data_bucketing: bool = False,
+) -> PyTorchDataLoader:
+    """Returns a pytorch DataLoader for AllenNLP instances
+
+    Parameters
+    ----------
+    instance_dataset
+        The dataset of instances for the DataLoader
+
+    Returns
+    -------
+    data_loader
+    """
+    if data_bucketing and isinstance(instance_dataset, IterableDataset):
+        _LOGGER.warning(
+            "'data_bucketing' is not supported for lazily loaded data. We will deactivate it."
+        )
+        data_bucketing = False
+
+    return PyTorchDataLoader(
+        instance_dataset,
+        batch_size=1 if data_bucketing else self._config.batch_size,
+        batch_sampler=BucketBatchSampler(
+            data_source=instance_dataset,
+            batch_size=self._config.batch_size,
+        )
+        if data_bucketing
+        else None,
+    )
