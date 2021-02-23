@@ -15,20 +15,19 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 from typing import Union
+from typing import cast
 
 import mlflow
 import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common import Params
-from allennlp.common.file_utils import cached_path
 from allennlp.common.file_utils import is_url_or_existing_file
 from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Vocabulary
-from allennlp.models.archival import CONFIG_NAME
+from allennlp.models import load_archive
+from allennlp.models.archival import Archive
 from allennlp.models.archival import archive_model
-from allennlp.models.archival import extracted_archive
-from allennlp.models.archival import get_weights_path
 from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
@@ -54,8 +53,6 @@ from biome.text.training_results import TrainingResults
 logging.getLogger("allennlp").setLevel(logging.ERROR)
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class Pipeline:
     """Manages NLP models configuration and actions.
@@ -64,6 +61,8 @@ class Pipeline:
 
     Use instantiated Pipelines for training from scratch, fine-tuning, predicting, serving, or exploring predictions.
     """
+
+    _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, model: PipelineModel, config: PipelineConfiguration):
         self._model = model
@@ -156,8 +155,18 @@ class Pipeline:
         pipeline
             A pretrained pipeline
         """
-        model, config = _load_model_and_config_from_archive(path)
+        archive = load_archive(
+            path,
+            # Necessary for AllenNLP>=1.2.0 that requires a dataset_reader config key
+            # We choose the "interleaving" type since it is the most light weight one.
+            overrides={"dataset_reader": {"type": "interleaving", "readers": {}}},
+        )
+        model = cls._model_from_archive(archive)
         model.file_path = str(path)
+        config = cls._config_from_archive(archive)
+
+        if not isinstance(model, PipelineModel):
+            raise TypeError(f"Cannot load model. Wrong format of {model}")
 
         return cls(model, config)
 
@@ -208,7 +217,7 @@ class Pipeline:
         At training time, this number can change when freezing/unfreezing certain parameter groups.
         """
         if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            _LOGGER.warning(
+            self._LOGGER.warning(
                 "At least one vocabulary of your features is still empty! "
                 "The number of trainable parameters usually depends on the size of your vocabulary."
             )
@@ -218,7 +227,7 @@ class Pipeline:
     def num_parameters(self) -> int:
         """Number of parameters present in the model."""
         if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            _LOGGER.warning(
+            self._LOGGER.warning(
                 "At least one vocabulary of your features is still empty! "
                 "The number of trainable parameters usually depends on the size of your vocabulary."
             )
@@ -844,6 +853,17 @@ class Pipeline:
                     model.vocab
                 )
 
+    @staticmethod
+    def _model_from_archive(archive: Archive) -> PipelineModel:
+        if not isinstance(archive.model, PipelineModel):
+            raise ValueError(f"Wrong pipeline model: {archive.model}")
+        return cast(PipelineModel, archive.model)
+
+    @staticmethod
+    def _config_from_archive(archive: Archive) -> PipelineConfiguration:
+        config = archive.config["model"]["config"]
+        return PipelineConfiguration.from_params(config)
+
     # deprecated methods:
 
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
@@ -879,72 +899,6 @@ class Pipeline:
         raise DeprecationWarning(
             "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
         )
-
-
-def _load_model_and_config_from_archive(
-    archive_file: Union[str, Path],
-    cuda_device: int = -1,
-    overrides: Union[str, Dict[str, Any]] = "",
-    weights_file: str = None,
-) -> Tuple[PipelineModel, PipelineConfiguration]:
-    """
-    Instantiates a PipelineConfiguration and a PipelineModel from an archived `tar.gz` file.
-
-    Parameters
-    ----------
-    archive_file
-        The archive file to load the pipeline from.
-    cuda_device
-        If `cuda_device` is >= 0, the pipeline model will be loaded onto the
-        corresponding GPU. Otherwise it will be loaded onto the CPU.
-    overrides
-        JSON overrides to apply to the unarchived `Params` object.
-    weights_file
-        The weights file to use.  If unspecified, weights.th in the archive_file will be used.
-
-    Returns
-    -------
-    pipeline_model, pipeline_config
-    """
-    # redirect to the cache, if necessary
-    resolved_archive_file = cached_path(archive_file)
-
-    if resolved_archive_file == archive_file:
-        _LOGGER.info(f"loading archive file {archive_file}")
-    else:
-        _LOGGER.info(
-            f"loading archive file {archive_file} from cache at {resolved_archive_file}"
-        )
-
-    tempdir = None
-    try:
-        if os.path.isdir(resolved_archive_file):
-            serialization_dir = resolved_archive_file
-        else:
-            with extracted_archive(resolved_archive_file, cleanup=False) as tempdir:
-                serialization_dir = tempdir
-
-        if weights_file:
-            weights_path = weights_file
-        else:
-            weights_path = get_weights_path(serialization_dir)
-
-        # Load config
-        config = Params.from_file(
-            os.path.join(serialization_dir, CONFIG_NAME), overrides
-        )
-
-        pipeline_model = PipelineModel.load(
-            config.duplicate(), serialization_dir, weights_path, cuda_device
-        )
-
-        pipeline_config = PipelineConfiguration.from_params(config["model"]["config"])
-    finally:
-        if tempdir is not None:
-            _LOGGER.info(f"removing temporary unarchived model dir at {tempdir}")
-            shutil.rmtree(tempdir, ignore_errors=True)
-
-    return pipeline_model, pipeline_config
 
 
 class PredictionError(Exception):
