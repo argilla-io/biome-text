@@ -127,10 +127,10 @@ def create_dataloader(
 
     return PyTorchDataLoader(
         instance_dataset,
-        batch_size=1 if data_bucketing else self._config.batch_size,
+        batch_size=1 if data_bucketing else batch_size,
         batch_sampler=BucketBatchSampler(
             data_source=instance_dataset,
-            batch_size=self._config.batch_size,
+            batch_size=batch_size,
         )
         if data_bucketing
         else None,
