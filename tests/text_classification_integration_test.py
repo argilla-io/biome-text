@@ -131,6 +131,10 @@ def test_text_classification(
         validation=valid_ds,
         vocab_config=vocab_config,
     )
+
+    evaluation = pl.evaluate(valid_ds)
+    assert evaluation["loss"] == pytest.approx(0.873307535648346, abs=0.003)
+
     assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
     assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
 

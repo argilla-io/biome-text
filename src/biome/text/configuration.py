@@ -1,9 +1,11 @@
 import copy
 import dataclasses
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
@@ -16,6 +18,11 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.data import TokenIndexer
 from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
+from pytorch_lightning import Callback
+from pytorch_lightning.accelerators import Accelerator
+from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.plugins import Plugin
+from pytorch_lightning.profiler import BaseProfiler
 
 from biome.text.dataset import Dataset
 
@@ -34,6 +41,8 @@ from .tokenizer import TransformersTokenizer
 
 if TYPE_CHECKING:
     from .pipeline import Pipeline
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FeaturesConfiguration(FromParams):
@@ -279,7 +288,6 @@ class PipelineConfiguration(FromParams):
         The core text seq2seq `encoder` of our model using a `Seq2SeqEncoderConfiguration`
     """
 
-    __LOGGER = logging.getLogger(__name__)
     # To be able to skip the configuration checks when testing
     _SKIP_CHECKS = False
 

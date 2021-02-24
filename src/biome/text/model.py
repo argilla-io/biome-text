@@ -16,6 +16,7 @@ from typing import Type
 from typing import Union
 
 import allennlp
+import pytorch_lightning as pl
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
@@ -53,7 +54,7 @@ class _HashList(list):
         return pickle.dumps(self).__hash__()
 
 
-class PipelineModel(allennlp.models.Model):
+class PipelineModel(allennlp.models.Model, pl.LightningModule):
     """
     This class represents pipeline model implementation for connect biome.text concepts with
     allennlp implementation details
@@ -95,6 +96,8 @@ class PipelineModel(allennlp.models.Model):
         self.set_head(head)
 
         self.file_path: Optional[str] = None
+
+        self.optimizer: torch.optim.Optimizer = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -165,7 +168,7 @@ class PipelineModel(allennlp.models.Model):
 
     def forward(self, *args, **kwargs) -> Dict[str, torch.Tensor]:
         """The main forward method just wraps the head forward method"""
-        return self._head.forward(*args, **kwargs)
+        return self._head(*args, **kwargs)
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         """Fetch metrics defined in head layer"""
@@ -308,6 +311,7 @@ class PipelineModel(allennlp.models.Model):
         """Returns predictions given some input data based on the current state of the model
 
         The keys of the input dicts in the batch must coincide with the `self.inputs` attribute.
+        TODO: Comply with LightningModule API + Trainer API (means move instance creation logic to Pipeline)
 
         Parameters
         ----------
@@ -370,6 +374,52 @@ class PipelineModel(allennlp.models.Model):
             self._log_predictions(batch, predictions)
 
         return predictions
+
+    def training_step(self, batch, batch_idx) -> Dict:
+        output = self(**batch)
+        self.log("loss", output["loss"], on_step=True, prog_bar=False, on_epoch=False)
+
+        metrics = self.get_metrics()
+        for key, val in metrics.items():
+            pbar = False if key.startswith("_") else True
+            self.log(key, val, on_step=True, prog_bar=pbar, on_epoch=False)
+
+        return output
+
+    def training_epoch_end(self, outputs: List[Any]) -> None:
+        metrics = self.get_metrics(reset=True)
+        for key, val in metrics.items():
+            self.log(key, val, on_step=False, prog_bar=False, on_epoch=True)
+
+    def validation_step(self, batch, batch_idx) -> Dict:
+        output = self(**batch)
+        self.get_metrics()
+
+        return output
+
+    def validation_epoch_end(self, outputs: List[Any]) -> None:
+        averaged_epoch_loss = sum([output["loss"] for output in outputs]) / len(outputs)
+        self.log(
+            "valid_loss",
+            averaged_epoch_loss,
+            on_step=False,
+            prog_bar=True,
+            on_epoch=True,
+        )
+
+        metrics = self.get_metrics(reset=True)
+        for key, val in metrics.items():
+            pbar = False if key.startswith("_") else True
+            self.log(
+                ("valid_" if pbar else "valid") + key,
+                val,
+                on_step=False,
+                prog_bar=pbar,
+                on_epoch=True,
+            )
+
+    def configure_optimizers(self):
+        return self.optimizer
 
 
 allennlp.models.Model.register(PipelineModel.__name__, exist_ok=True)(PipelineModel)

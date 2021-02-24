@@ -51,6 +51,7 @@ if __name__ == "__main__":
             "lxml~=4.6.2",
             "mlflow~=1.13.1",
             "pandas~=1.1.0",
+            "pytorch-lightning==1.2.0",
             "ray[tune]~=1.0.0",
             "spacy~=2.3.0",
             "tqdm>=4.49.0",
