@@ -1,4 +1,3 @@
-import json
 import random
 from typing import Tuple
 
@@ -11,7 +10,6 @@ from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text import VocabularyConfiguration
 from biome.text.configuration import CharFeatures
-from biome.text.configuration import LTrainerConfiguration
 from biome.text.configuration import WordFeatures
 
 
@@ -92,20 +90,7 @@ def pipeline_dict() -> dict:
     return pipeline_dictionary
 
 
-@pytest.fixture
-def trainer_config() -> LTrainerConfiguration:
-    """Returns the trainer dictionary"""
-
-    return LTrainerConfiguration(
-        batch_size=64,
-        optimizer={"type": "adam", "lr": 0.01},
-        max_epochs=5,
-    )
-
-
-def test_text_classification(
-    tmp_path, pipeline_dict, trainer_config, train_valid_dataset
-):
+def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     """Apart from a well specified training, this also tests the vocab creation!"""
 
     random.seed(42)
@@ -117,7 +102,11 @@ def test_text_classification(
     pl = Pipeline.from_config(pipeline_dict)
     train_ds = train_valid_dataset[0]
     valid_ds = train_valid_dataset[1]
-    trainer = Trainer(trainer_config)
+    trainer = Trainer(
+        batch_size=64,
+        optimizer={"type": "adam", "lr": 0.01},
+        max_epochs=5,
+    )
 
     vocab_config = VocabularyConfiguration(
         datasets=[train_ds], max_vocab_size={"word": 50}

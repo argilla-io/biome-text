@@ -1,4 +1,8 @@
 import logging
+from pathlib import Path
+from typing import Dict
+from typing import Iterable
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -7,6 +11,11 @@ from allennlp.common import Params
 from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
+from pytorch_lightning import Callback
+from pytorch_lightning.accelerators import Accelerator
+from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.plugins import Plugin
+from pytorch_lightning.profiler import BaseProfiler
 from torch.utils.data import IterableDataset
 
 from biome.text.configuration import VocabularyConfiguration
@@ -157,9 +166,6 @@ class Trainer:
     min_steps
         Force training for at least these number of steps. Disabled by default (None).
 
-    num_epochs
-        Deprecated, please use `max_epochs`.
-
     num_nodes
         number of GPU nodes for distributed training.
 
@@ -173,8 +179,8 @@ class Trainer:
     optimizer
         Configuration for an [AllenNLP/PyTorch optimizer](https://docs.allennlp.org/main/api/training/optimizers/)
         that is constructed via the AllenNLP configuration framework.
-        For a simple AdamW optimizer this would look like this:
-        >>> optimizer={"type": "adamw", "lr": 0.001, "weight_decay": 0.02}
+        The default is:
+        >>> optimizer={"type": "adam", "lr": 0.001}
 
     reload_dataloaders_every_epoch
         Set to True to reload dataloaders every epoch.
@@ -295,20 +301,19 @@ class Trainer:
         # non lightning trainer parameters,
         batch_size: int = 16,
         data_bucketing: bool = False,
-        optimizer: Dict[str, Any] = dataclasses.field(
-            default_factory=lambda: {"type": "adam", "lr": 0.001}
-        ),
+        optimizer: Optional[Dict] = None,
     ):
         lightning_trainer_kwargs = {
             key: value
-            for key, value in locals()
-            if key not in ["optimizer", "data_bucketing", "batch_size"]
+            for key, value in locals().items()
+            # filter non Lightening Trainer kwargs
+            if key not in ["self", "optimizer", "data_bucketing", "batch_size"]
         }
         self.trainer = pl.Trainer(**lightning_trainer_kwargs)
 
         self._batch_size = batch_size
         self._data_bucketing = data_bucketing
-        self._optimizer = optimizer
+        self._optimizer = optimizer or {"type": "adam", "lr": 0.001}
 
     def fit(
         self,
