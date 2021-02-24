@@ -247,15 +247,17 @@ class TuneExperiment(tune.Experiment):
         train_ds = Dataset.load_from_disk(config["train_dataset_path"])
         valid_ds = Dataset.load_from_disk(config["valid_dataset_path"])
 
-        train_loggers = [
-            MlflowLogger(
-                experiment_name=config["name"],
-                run_name=reporter.trial_name,
-                ray_trial_id=reporter.trial_id,
-                ray_logdir=reporter.logdir,
-            ),
-            TuneMetricsLogger(),
-        ]
+        train_loggers = []
+        if not mlflow_tracking_uri == "":
+            train_loggers += [
+                MlflowLogger(
+                    experiment_name=config["name"],
+                    run_name=reporter.trial_name,
+                    ray_trial_id=reporter.trial_id,
+                    ray_logdir=reporter.logdir,
+                )
+            ]
+        train_loggers += [TuneMetricsLogger()]
         if is_wandb_installed_and_logged_in():
             train_loggers = [WandBLogger(project_name=config["name"])] + train_loggers
 
