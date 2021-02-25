@@ -52,7 +52,7 @@ if __name__ == "__main__":
             "mlflow~=1.13.1",
             "pandas~=1.1.0",
             "pytorch-lightning==1.2.0",
-            "ray[tune]~=1.0.0",
+            "ray[tune]~=1.2.0",
             "spacy~=2.3.0",
             "tqdm>=4.49.0",
             "uvicorn~=0.11.0",
