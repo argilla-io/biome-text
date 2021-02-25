@@ -410,8 +410,11 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         metrics = self.get_metrics(reset=True)
         for key, val in metrics.items():
             pbar = False if key.startswith("_") else True
+            prefix = "valid_" if pbar else "valid"
+            if key.startswith("valid_"):
+                prefix = ""
             self.log(
-                ("valid_" if pbar else "valid") + key,
+                prefix + key,
                 val,
                 on_step=False,
                 prog_bar=pbar,

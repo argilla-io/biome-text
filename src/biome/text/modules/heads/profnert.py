@@ -109,6 +109,12 @@ class ProfNerT(TaskHead):
             "ner_f1": SpanBasedF1Measure(
                 self.backbone.vocab, "ner_tags", label_encoding=ner_tags_encoding
             ),
+            "valid_classification_accuracy": CategoricalAccuracy(),
+            "valid_classification_micro": FBetaMeasure(average="micro"),
+            "valid_classification_macro": FBetaMeasure(average="macro"),
+            "valid_ner_f1": SpanBasedF1Measure(
+                self.backbone.vocab, "ner_tags", label_encoding=ner_tags_encoding
+            ),
         }
 
     def featurize(
@@ -301,10 +307,22 @@ class ProfNerT(TaskHead):
             )
 
             # metrics
-            self.metrics["classification_accuracy"](classification_logits, labels)
-            self.metrics["classification_micro"](classification_logits, labels)
-            self.metrics["classification_macro"](classification_logits, labels)
-            self.metrics["ner_f1"](ner_logits_sorted, tags, tags_mask)
+            if self.training:
+                self.metrics["classification_accuracy"](classification_logits, labels)
+                self.metrics["classification_micro"](classification_logits, labels)
+                self.metrics["classification_macro"](classification_logits, labels)
+                self.metrics["ner_f1"](ner_logits_sorted, tags, tags_mask)
+            else:
+                self.metrics["valid_classification_accuracy"](
+                    classification_logits, labels
+                )
+                self.metrics["valid_classification_micro"](
+                    classification_logits, labels
+                )
+                self.metrics["valid_classification_macro"](
+                    classification_logits, labels
+                )
+                self.metrics["valid_ner_f1"](ner_logits_sorted, tags, tags_mask)
 
         return output
 
@@ -339,21 +357,38 @@ class ProfNerT(TaskHead):
         )
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        metrics = {
-            "classification/accuracy": self.metrics[
-                "classification_accuracy"
-            ].get_metric(reset)
-        }
-        for key, value in (
-            self.metrics["classification_micro"].get_metric(reset).items()
-        ):
-            metrics.update({f"classification/micro_{key}": value})
-        for key, value in (
-            self.metrics["classification_macro"].get_metric(reset).items()
-        ):
-            metrics.update({f"classification/macro_{key}": value})
-        for key, value in self.metrics["ner_f1"].get_metric(reset).items():
-            metrics.update({f"ner/{key}": value})
+        if self.training:
+            metrics = {
+                "classification/accuracy": self.metrics[
+                    "classification_accuracy"
+                ].get_metric(reset)
+            }
+            for key, value in (
+                self.metrics["classification_micro"].get_metric(reset).items()
+            ):
+                metrics.update({f"classification/micro_{key}": value})
+            for key, value in (
+                self.metrics["classification_macro"].get_metric(reset).items()
+            ):
+                metrics.update({f"classification/macro_{key}": value})
+            for key, value in self.metrics["ner_f1"].get_metric(reset).items():
+                metrics.update({f"ner/{key}": value})
+        else:
+            metrics = {
+                "valid_classification/accuracy": self.metrics[
+                    "valid_classification_accuracy"
+                ].get_metric(reset)
+            }
+            for key, value in (
+                self.metrics["valid_classification_micro"].get_metric(reset).items()
+            ):
+                metrics.update({f"valid_classification/micro_{key}": value})
+            for key, value in (
+                self.metrics["valid_classification_macro"].get_metric(reset).items()
+            ):
+                metrics.update({f"valid_classification/macro_{key}": value})
+            for key, value in self.metrics["valid_ner_f1"].get_metric(reset).items():
+                metrics.update({f"valid_ner/{key}": value})
 
         return metrics
 
