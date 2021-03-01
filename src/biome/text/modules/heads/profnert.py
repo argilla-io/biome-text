@@ -306,12 +306,17 @@ class ProfNerT(TaskHead):
                 * self._ner_loss_weight
             )
 
+            ner_logits_for_metrics = ner_logits_sorted * 0.0
+            for batch_id, instance_tags in enumerate(viterbi_paths):
+                for token_id, tag_id in enumerate(instance_tags[0]):
+                    ner_logits_for_metrics[batch_id, token_id, tag_id] = 1
+
             # metrics
             if self.training:
                 self.metrics["classification_accuracy"](classification_logits, labels)
                 self.metrics["classification_micro"](classification_logits, labels)
                 self.metrics["classification_macro"](classification_logits, labels)
-                self.metrics["ner_f1"](ner_logits_sorted, tags, tags_mask)
+                self.metrics["ner_f1"](ner_logits_for_metrics, tags, tags_mask)
             else:
                 self.metrics["valid_classification_accuracy"](
                     classification_logits, labels
@@ -322,7 +327,7 @@ class ProfNerT(TaskHead):
                 self.metrics["valid_classification_macro"](
                     classification_logits, labels
                 )
-                self.metrics["valid_ner_f1"](ner_logits_sorted, tags, tags_mask)
+                self.metrics["valid_ner_f1"](ner_logits_for_metrics, tags, tags_mask)
 
         return output
 
