@@ -217,7 +217,7 @@ class ProfNer(TaskHead):
                 -1 * self._crf(ner_logits, tags, mask) * self._ner_loss_weight
             )
 
-            ner_logits_for_metrics = ner_logits * 0.0
+            ner_logits_for_metrics = torch.zeros_like(ner_logits)
             for batch_id, instance_tags in enumerate(viterbi_paths):
                 for token_id, tag_id in enumerate(instance_tags[0]):
                     ner_logits_for_metrics[batch_id, token_id, tag_id] = 1
