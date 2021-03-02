@@ -227,7 +227,7 @@ class ProfNer(TaskHead):
                 self.metrics["classification_accuracy"](classification_logits, labels)
                 self.metrics["classification_micro"](classification_logits, labels)
                 self.metrics["classification_macro"](classification_logits, labels)
-                self.metrics["ner_f1"](ner_logits_for_metrics, tags, tags_mask)
+                self.metrics["ner_f1"](ner_logits_for_metrics, tags, mask)
             else:
                 self.metrics["valid_classification_accuracy"](
                     classification_logits, labels
@@ -238,7 +238,7 @@ class ProfNer(TaskHead):
                 self.metrics["valid_classification_macro"](
                     classification_logits, labels
                 )
-                self.metrics["valid_ner_f1"](ner_logits_for_metrics, tags, tags_mask)
+                self.metrics["valid_ner_f1"](ner_logits_for_metrics, tags, mask)
 
         return output
 
