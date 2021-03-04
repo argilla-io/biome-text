@@ -39,7 +39,6 @@ from biome.text import Pipeline
 )
 @click.option(
     "--host",
-    "-h",
     type=str,
     default="0.0.0.0",
     help="Host of the underlying uvicorn server",
