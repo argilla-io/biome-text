@@ -37,7 +37,14 @@ from biome.text import Pipeline
     default=None,
     help="Path to log raw predictions from the service.",
 )
-def serve(pipeline_path: str, port: int, predictions_dir: str) -> None:
+@click.option(
+    "--host",
+    "-h",
+    type=str,
+    default="0.0.0.0",
+    help="Host of the underlying uvicorn server",
+)
+def serve(pipeline_path: str, port: int, predictions_dir: str, host: str) -> None:
     """Serves the pipeline predictions as a REST API
 
     PIPELINE_PATH is the path to a pretrained pipeline (model.tar.gz file).
@@ -48,10 +55,10 @@ def serve(pipeline_path: str, port: int, predictions_dir: str) -> None:
     if predictions_dir:
         pipeline.init_prediction_logger(predictions_dir)
 
-    return _serve(pipeline, port)
+    return _serve(pipeline, port, host)
 
 
-def _serve(pipeline: Pipeline, port: int):
+def _serve(pipeline: Pipeline, port: int = 9999, host: str = "0.0.0.0"):
     """Serves an pipeline as rest api"""
     predict_parameters = inspect.signature(pipeline.predict).parameters
     model_parameters = {
@@ -147,4 +154,4 @@ def _serve(pipeline: Pipeline, port: int):
 
         return app
 
-    uvicorn.run(make_app(), host="0.0.0.0", port=port)
+    uvicorn.run(make_app(), host=host, port=port)
