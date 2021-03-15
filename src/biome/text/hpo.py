@@ -73,6 +73,10 @@ class TuneExperiment(tune.Experiment):
         By default we construct following string: 'HPO on %date (%time)'
     trainable
         A custom trainable function that takes as input the `TuneExperiment.config` dict.
+    mlflow
+        If True (default), logs HPO to MLFlow.
+    wandb
+        If True (default), logs HPO to WandB.
     **kwargs
         The rest of the kwargs are passed on to `tune.Experiment.__init__`.
         They must not contain the 'name', 'run' or the 'config' key,
@@ -114,6 +118,8 @@ class TuneExperiment(tune.Experiment):
         vocab: Optional[Vocabulary] = None,
         name: Optional[str] = None,
         trainable: Optional[Callable] = None,
+        mlflow: bool = True,
+        wandb: bool = True,
         **kwargs,
     ):
         if (
@@ -140,6 +146,9 @@ class TuneExperiment(tune.Experiment):
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
 
         self.trainable = trainable or self._default_trainable
+
+        self._mlflow = mlflow
+        self._wandb = wandb
 
         super().__init__(
             name=self._name, run=self.trainable, config=self.config, **kwargs
@@ -217,7 +226,9 @@ class TuneExperiment(tune.Experiment):
             "trainer_config": self._trainer_config,
             "train_dataset_path": self._train_dataset_path,
             "valid_dataset_path": self._valid_dataset_path,
+            "mlflow": self._mlflow,
             "mlflow_tracking_uri": mlflow.get_tracking_uri(),
+            "wandb": self._wandb,
             "vocab_path": self._vocab_path,
             "name": self._name,
         }
@@ -230,7 +241,6 @@ class TuneExperiment(tune.Experiment):
         - Create the pipeline (optionally with a provided vocab)
         - Set up a MLFlow and WandB logger
         - Set up a TuneMetrics logger that reports all metrics back to ray tune after each epoch
-        - Create the vocab if necessary
         - Execute the training
         """
         pipeline = Pipeline.from_config(
@@ -241,22 +251,22 @@ class TuneExperiment(tune.Experiment):
             **helpers.sanitize_for_params(config["trainer_config"])
         )
 
-        mlflow_tracking_uri = config["mlflow_tracking_uri"]
-        mlflow.set_tracking_uri(mlflow_tracking_uri)
-
         train_ds = Dataset.load_from_disk(config["train_dataset_path"])
         valid_ds = Dataset.load_from_disk(config["valid_dataset_path"])
 
-        train_loggers = [
-            MlflowLogger(
-                experiment_name=config["name"],
-                run_name=reporter.trial_name,
-                ray_trial_id=reporter.trial_id,
-                ray_logdir=reporter.logdir,
-            ),
-            TuneMetricsLogger(),
-        ]
-        if is_wandb_installed_and_logged_in():
+        train_loggers = [TuneMetricsLogger()]
+        if config["mlflow"]:
+            mlflow_tracking_uri = config["mlflow_tracking_uri"]
+            mlflow.set_tracking_uri(mlflow_tracking_uri)
+            train_loggers = [
+                MlflowLogger(
+                    experiment_name=config["name"],
+                    run_name=reporter.trial_name,
+                    ray_trial_id=reporter.trial_id,
+                    ray_logdir=reporter.logdir,
+                )
+            ] + train_loggers
+        if config["wandb"] and is_wandb_installed_and_logged_in():
             train_loggers = [WandBLogger(project_name=config["name"])] + train_loggers
 
         pipeline.train(

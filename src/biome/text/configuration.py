@@ -1,11 +1,8 @@
 import copy
 import dataclasses
-import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
-from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import Type
@@ -18,11 +15,6 @@ from allennlp.common.checks import ConfigurationError
 from allennlp.data import TokenIndexer
 from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
-from pytorch_lightning import Callback
-from pytorch_lightning.accelerators import Accelerator
-from pytorch_lightning.loggers import LightningLoggerBase
-from pytorch_lightning.plugins import Plugin
-from pytorch_lightning.profiler import BaseProfiler
 
 from biome.text.dataset import Dataset
 
@@ -41,8 +33,6 @@ from .tokenizer import TransformersTokenizer
 
 if TYPE_CHECKING:
     from .pipeline import Pipeline
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class FeaturesConfiguration(FromParams):
@@ -488,6 +478,14 @@ class TrainerConfiguration:
         (or batch, if the scheduler implements the step_batch method).
         If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
         to determine if learning has plateaued.
+    warmup_steps
+        The number of warmup steps. This parameter is ignored if a `learning_rate_scheduler` is provided.
+    linear_decay
+        If true, linearly decrease the learning rate to 0 until the end of the training. See also `training_size` below!
+        This parameter is ignored if a `learning_rate_scheduler` is provided.
+    training_size
+        If you set `linear_decay` to true and work with lazily loaded training data,
+        you need to provide the number of examples in your training data.
     momentum_scheduler
         If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
     moving_average
@@ -526,6 +524,9 @@ class TrainerConfiguration:
     grad_norm: Optional[float] = None
     grad_clipping: Optional[float] = None
     learning_rate_scheduler: Optional[Dict[str, Any]] = None
+    warmup_steps: int = 0
+    linear_decay: bool = False
+    training_size: Optional[int] = None
     momentum_scheduler: Optional[Dict[str, Any]] = None
     moving_average: Optional[Dict[str, Any]] = None
     use_amp: bool = False

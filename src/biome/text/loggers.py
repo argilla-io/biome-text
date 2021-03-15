@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import os
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -205,6 +206,7 @@ class WandBLogger(BaseTrainLogger):
     ----------
     project_name
         Name of your WandB project
+        The environment variable 'WANDB_PROJECT' will override this value.
     run_name
         Name of your run
     tags
@@ -220,7 +222,7 @@ class WandBLogger(BaseTrainLogger):
                 "Run `wandb login` or `import wandb; wandb.login()` or set the WANDB_API_KEY env variable."
             )
 
-        self.project_name = project_name
+        self.project_name = os.environ.get("WANDB_PROJECT") or project_name
         self.run_name = run_name
         self.tags = tags
 
