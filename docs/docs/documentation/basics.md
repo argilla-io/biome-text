@@ -210,17 +210,11 @@ The arguments for the [Pipeline.predict()](../api/biome/text/pipeline.md#predict
 pipeline.predict(subject='Hi!', body='Hi, hope you are well..')
 ```
 
-### Explain
-Another thing we can do with a trained pipeline is to use the [Pipeline.explain()](../api/biome/text/pipeline.md#explain) method to get the attribution of each token by means of [integrated gradients](https://arxiv.org/abs/1703.01365) for those heads that support it:
-```python
-pipeline.explain(text='Good movie indeed!')
-```
-
-### Serve
-Pipeline uses the awesome [FastAPI](https://fastapi.tiangolo.com/) library to give you a simple REST endpoint with the [Pipeline.serve()](../api/biome/text/pipeline.md#serve) method, which provides methods aligned with your input features (e.g., a method accepting `subject` and `body` parameters):
+Some of our heads support attributing the input to the prediction by means of integrated gradients.
+Following will add an `attributions` key in the prediction dictionary:
 
 ```python
-pipeline.serve(port=9090)
+pipeline.predict(subject='Hi!', body='Hi, hope you are well..', add_attributions=True)
 ```
 
 ### Explore
@@ -271,6 +265,14 @@ training_results = pipeline.train(
 Here we just use the [Pipeline.set_head()](../api/biome/text/pipeline.md#set-head) method to set a new task head which classifies film categories instead of review sentiment.
 
 The more common "pre-training a language model + fine-tuning on downstream tasks" is also supported by using a [LanguageModelling](../api/biome/text/modules/heads/language_modelling.md#languagemodelling) head for pre-training.
+
+### Serve
+*biome.text* uses the awesome [FastAPI](https://fastapi.tiangolo.com/) library to give you a simple REST endpoint with the [biome serve](../api/biome/text/cli/serve.md) CLI command, which provides methods aligned with your input features (e.g., a method accepting `subject` and `body` parameters).
+In a terminal just type in:
+```terminal
+biome serve path/to/your/model.tar.gz
+```
+
 
 
 ## Next steps
