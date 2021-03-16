@@ -400,7 +400,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
     def validation_epoch_end(self, outputs: List[Any]) -> None:
         averaged_epoch_loss = sum([output["loss"] for output in outputs]) / len(outputs)
         self.log(
-            "valid_loss",
+            "validation_loss",
             averaged_epoch_loss,
             on_step=False,
             prog_bar=True,
@@ -411,7 +411,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         for key, val in metrics.items():
             pbar = False if key.startswith("_") else True
             self.log(
-                ("valid_" if pbar else "valid") + key,
+                ("validation_" if pbar else "validation") + key,
                 val,
                 on_step=False,
                 prog_bar=pbar,
