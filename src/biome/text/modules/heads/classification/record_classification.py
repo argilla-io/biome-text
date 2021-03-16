@@ -7,7 +7,6 @@ import numpy
 from allennlp.data import Instance
 
 from biome.text.backbone import ModelBackbone
-from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
@@ -36,7 +35,7 @@ class RecordClassification(DocumentClassification):
         multilabel: Optional[bool] = False,
     ) -> None:
 
-        super(RecordClassification, self).__init__(
+        super().__init__(
             backbone,
             labels=labels,
             tokens_pooler=tokens_pooler,

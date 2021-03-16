@@ -18,7 +18,6 @@ from allennlp.nn import util
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
-from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import BiMpmMatchingConfiguration
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
@@ -83,7 +82,7 @@ class RecordPairClassification(ClassificationHead):
         dropout: float = 0.1,
         initializer: InitializerApplicator = InitializerApplicator(),
     ):
-        super(RecordPairClassification, self).__init__(backbone, labels)
+        super().__init__(backbone, labels)
 
         # This is needed for the TrainerConfig to choose the right 'sorting_keys'
         self.backbone.encoder = TimeDistributedEncoder(self.backbone.encoder)
