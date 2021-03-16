@@ -1,73 +1,44 @@
+import copy
+from typing import Any
 from typing import Dict
 
-import torch
+from allennlp.common import Params
 from allennlp.training.metrics import Metric
 
 
-class MultiLabelF1Measure(Metric):
+class Metrics:
+    """Stores two dictionaries of identical metrics, one for training and one for validation.
+
+    Parameters
+    ----------
+    **kwargs
+        The key defines the name of the metric, the value must be a dictionary that can be used to instantiate a
+        child class of `allennlp.training.metrics.Metric` via its `from_params` method.
+
+    Examples
+    --------
+    >>> from allennlp.training.metrics import Metric
+    >>> metrics = Metrics(accuracy={"type": "categorical_accuracy"}, f1={"type": "fbeta"})
+    >>> for metric in metrics.get_dict(is_train=False).values():
+    ...     assert isinstance(metric, Metric)
     """
-    Computes overall F1 for multilabel classification tasks.
-    Predictions sent to the __call__ function are logits and it turns them into 0 or 1s.
-    Used for `classification heads` with the `multilabel` parameter enabled.
-    """
 
-    def __init__(self) -> None:
-        self._tp = 0.0
-        self._fp = 0.0
-        self._fn = 0.0
+    def __init__(self, **kwargs: Dict[str, Any]):
+        self.training_metrics = {}
+        self.validation_metrics = {}
+        for name, metric_kwargs in kwargs.items():
+            # We need a special logic for the vocabulary, we do not want to deep copy it,
+            # and it cannot be used in Params
+            vocab = metric_kwargs.pop("vocabulary", None)
+            self.training_metrics[name] = Metric.from_params(
+                Params(copy.deepcopy(metric_kwargs)),
+                **{} if vocab is None else {"vocabulary": vocab}
+            )
+            self.validation_metrics[name] = Metric.from_params(
+                Params(metric_kwargs), **{} if vocab is None else {"vocabulary": vocab}
+            )
 
-    def __call__(
-        self, predictions: torch.LongTensor, gold_labels: torch.LongTensor, **kwargs
-    ):
-        """
-        Parameters
-        ----------
-        predictions : ``torch.Tensor``, required.
-            A tensor with logits of shape (batch_size, ..., num_labels).
-        gold_labels : ``torch.Tensor``, required.
-            A tensor of 0 and 1 predictions of shape (batch_size, ..., num_labels).
-            :param **kwargs:
-        """
-        # turn logits into one-hot predictions
-        predictions = (predictions.data > 0.0).long()
-        self._tp += (predictions * gold_labels).sum().item()
-        self._fp += (predictions * (1 - gold_labels)).sum().item()
-        self._fn += ((1 - predictions) * gold_labels).sum().item()
-
-    def get_metric(self, reset: bool = False) -> Dict[str, float]:
-        """
-        Parameters
-        ----------
-        reset
-            If True, reset the metrics after getting them
-
-        Returns
-        -------
-        metrics_dict
-            A Dict with:
-            - precision : `float`
-            - recall : `float`
-            - f1-measure : `float`
-        """
-        predicted_positives = self._tp + self._fp
-        actual_positives = self._tp + self._fn
-
-        precision = self._tp / predicted_positives if predicted_positives > 0 else 0
-        recall = self._tp / actual_positives if actual_positives > 0 else 0
-
-        f1 = (
-            2 * precision * recall / (precision + recall)
-            if precision + recall > 0
-            else 0
-        )
-
-        if reset:
-            self.reset()
-
-        return {"precision": precision, "recall": recall, "fscore": f1}
-
-    def reset(self):
-        """Resets the metrics"""
-        self._tp = 0.0
-        self._fp = 0.0
-        self._fn = 0.0
+    def get_dict(self, is_train: bool = True) -> Dict[str, Metric]:
+        if is_train:
+            return self.validation_metrics
+        return self.training_metrics
