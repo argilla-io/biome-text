@@ -3,27 +3,23 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Tuple
-from typing import cast
 
 import numpy
 import torch
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Instance
 from allennlp.data import TextFieldTensors
-from allennlp.data.fields import TextField
 from allennlp.modules import SoftmaxLoss
 from allennlp.nn.util import get_text_field_mask
 from allennlp.nn.util import get_token_ids_from_text_field_tensors
-from allennlp.training.metrics import Perplexity
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.metrics import Metrics
 from biome.text.modules.configuration import ComponentConfiguration
-
-from ...featurizer import FeaturizeError
-from .task_head import TaskHead
-from .task_head import TaskName
-from .task_prediction import LanguageModellingPrediction
+from biome.text.modules.heads.task_head import TaskHead
+from biome.text.modules.heads.task_head import TaskName
+from biome.text.modules.heads.task_prediction import LanguageModellingPrediction
 
 
 class LanguageModelling(TaskHead):
@@ -69,7 +65,7 @@ class LanguageModelling(TaskHead):
         else:
             self._dropout = lambda x: x
 
-        self.metrics = {"perplexity": Perplexity()}
+        self._metrics = Metrics(perplexity={"type": "perplexity"})
 
         self._loss = SoftmaxLoss(
             num_words=vocabulary.words_vocab_size(self.backbone.vocab),
@@ -135,7 +131,7 @@ class LanguageModelling(TaskHead):
         else:
             average_loss = torch.tensor(0.0)
 
-        for metric in self.metrics.values():
+        for metric in self._metrics.get_dict(is_train=self.training).values():
             # Perplexity needs the value to be on the cpu
             metric(average_loss.to("cpu"))
 
@@ -148,7 +144,9 @@ class LanguageModelling(TaskHead):
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         return {
             metric_name: metric.get_metric(reset)
-            for metric_name, metric in self.metrics.items()
+            for metric_name, metric in self._metrics.get_dict(
+                is_train=self.training
+            ).items()
         }
 
     def _compute_loss(
