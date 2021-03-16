@@ -11,14 +11,12 @@ import torch
 from allennlp.data import Instance
 from allennlp.data.fields import LabelField
 from allennlp.data.fields import MultiLabelField
-from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.training.metrics import FBetaMeasure
 
 from biome.text import helpers
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.featurizer import FeaturizeError
-from biome.text.metrics import MultiLabelF1Measure
+from biome.text.metrics import Metrics
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
 from biome.text.modules.heads.task_prediction import Attribution
@@ -34,7 +32,7 @@ class ClassificationHead(TaskHead):
     def __init__(
         self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
     ):
-        super(ClassificationHead, self).__init__(backbone)
+        super().__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
 
         # label related configurations
@@ -42,20 +40,23 @@ class ClassificationHead(TaskHead):
 
         # metrics and loss
         if self._multilabel:
-            self.metrics = {"macro": MultiLabelF1Measure()}
             self._loss = torch.nn.BCEWithLogitsLoss()
-        else:
-            self.metrics = {"accuracy": CategoricalAccuracy()}
-            self.metrics.update(
-                {
-                    "micro": FBetaMeasure(average="micro"),
-                    "macro": FBetaMeasure(average="macro"),
-                    "per_label": FBetaMeasure(
-                        labels=[i for i in range(0, len(labels))]
-                    ),
-                }
+            self._metrics = Metrics(
+                micro={"type": "fbeta_multi_label", "average": "micro"},
+                macro={"type": "fbeta_multi_label", "average": "macro"},
+                per_label={
+                    "type": "fbeta_multi_label",
+                    "labels": [i for i in range(len(labels))],
+                },
             )
+        else:
             self._loss = torch.nn.CrossEntropyLoss()
+            self._metrics = Metrics(
+                accuracy={"type": "categorical_accuracy"},
+                micro={"type": "fbeta", "average": "micro"},
+                macro={"type": "fbeta", "average": "macro"},
+                per_label={"type": "fbeta", "labels": [i for i in range(len(labels))]},
+            )
 
     def _add_label(
         self,
@@ -128,7 +129,7 @@ class ClassificationHead(TaskHead):
         self, logits: torch.Tensor, label: torch.IntTensor
     ) -> float:
         """Helper function for the `self._make_forward_output` method."""
-        for metric in self.metrics.values():
+        for metric in self._metrics.get_dict(is_train=self.training).values():
             metric(logits, label)
 
         if self._multilabel:
@@ -223,19 +224,18 @@ class ClassificationHead(TaskHead):
         -------
         A dictionary with all metric names and values.
         """
-        final_metrics = {}
-        if "accuracy" in self.metrics.keys():
-            final_metrics.update(
-                {"accuracy": self.metrics["accuracy"].get_metric(reset)}
-            )
+        print("is_train", self.training)
+        metrics, final_metrics = self._metrics.get_dict(is_train=self.training), {}
+        if "accuracy" in metrics.keys():
+            final_metrics.update({"accuracy": metrics["accuracy"].get_metric(reset)})
 
         for metric_name in ["micro", "macro"]:
-            if metric_name in self.metrics.keys():
-                for k, v in self.metrics[metric_name].get_metric(reset).items():
+            if metric_name in metrics.keys():
+                for k, v in metrics[metric_name].get_metric(reset).items():
                     final_metrics.update({"{}/{}".format(metric_name, k): v})
 
-        if "per_label" in self.metrics.keys():
-            for k, values in self.metrics["per_label"].get_metric(reset).items():
+        if "per_label" in metrics.keys():
+            for k, values in metrics["per_label"].get_metric(reset).items():
                 for i, v in enumerate(values):
                     label = vocabulary.label_for_index(self.backbone.vocab, i)
                     # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
