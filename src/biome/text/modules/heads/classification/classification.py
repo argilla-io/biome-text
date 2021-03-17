@@ -224,7 +224,6 @@ class ClassificationHead(TaskHead):
         -------
         A dictionary with all metric names and values.
         """
-        print("is_train", self.training)
         metrics, final_metrics = self._metrics.get_dict(is_train=self.training), {}
         if "accuracy" in metrics.keys():
             final_metrics.update({"accuracy": metrics["accuracy"].get_metric(reset)})
