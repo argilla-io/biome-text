@@ -377,19 +377,36 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
     def training_step(self, batch, batch_idx) -> Dict:
         output = self(**batch)
-        self.log("loss", output["loss"], on_step=True, prog_bar=False, on_epoch=False)
+        self.log(
+            "training_loss",
+            output["loss"],
+            on_step=True,
+            prog_bar=False,
+            on_epoch=False,
+        )
 
         metrics = self.get_metrics()
         for key, val in metrics.items():
-            pbar = False if key.startswith("_") else True
-            self.log(key, val, on_step=True, prog_bar=pbar, on_epoch=False)
+            self.log(
+                ("training" if key.startswith("_") else "training_") + key,
+                val,
+                on_step=True,
+                prog_bar=not key.startswith("_"),
+                on_epoch=False,
+            )
 
         return output
 
     def training_epoch_end(self, outputs: List[Any]) -> None:
         metrics = self.get_metrics(reset=True)
         for key, val in metrics.items():
-            self.log(key, val, on_step=False, prog_bar=False, on_epoch=True)
+            self.log(
+                ("training" if key.startswith("_") else "training_") + key,
+                val,
+                on_step=False,
+                prog_bar=False,
+                on_epoch=True,
+            )
 
     def validation_step(self, batch, batch_idx) -> Dict:
         output = self(**batch)
@@ -409,12 +426,11 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
         metrics = self.get_metrics(reset=True)
         for key, val in metrics.items():
-            pbar = False if key.startswith("_") else True
             self.log(
-                ("validation_" if pbar else "validation") + key,
+                ("validation" if key.startswith("_") else "validation_") + key,
                 val,
                 on_step=False,
-                prog_bar=pbar,
+                prog_bar=not key.startswith("_"),
                 on_epoch=True,
             )
 
