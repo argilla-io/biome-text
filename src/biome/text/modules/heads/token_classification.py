@@ -18,8 +18,6 @@ from allennlp.modules import FeedForward
 from allennlp.modules import TimeDistributed
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.training.metrics import SpanBasedF1Measure
 from spacy.tokens.doc import Doc
 from spacy.vocab import Vocab
 
@@ -114,7 +112,9 @@ class TokenClassification(TaskHead):
             self.num_labels, constraints, include_start_end_transitions=True
         )
 
-        metrics = dict(
+        # There is no top_k option for the f1 metric, it will always only take into account the first choice
+        # If you want to use top_k in the accuracy, you have to change the way we convert the CRF output to logits!
+        self._metrics = Metrics(
             accuracy={"type": "categorical_accuracy"},
             f1={
                 "type": "span_f1",
@@ -123,16 +123,6 @@ class TokenClassification(TaskHead):
                 "label_encoding": self._label_encoding,
             },
         )
-        if self.top_k > 1:
-            metrics.update(
-                {
-                    f"accuracy_{self.top_k}": {
-                        "type": "categorical_accuracy",
-                        "top_k": self.top_k,
-                    }
-                }
-            )
-        self._metrics = Metrics(**metrics)
 
     @property
     def span_labels(self) -> List[str]:

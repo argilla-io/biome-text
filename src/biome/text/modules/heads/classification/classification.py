@@ -225,21 +225,23 @@ class ClassificationHead(TaskHead):
         A dictionary with all metric names and values.
         """
         metrics, final_metrics = self._metrics.get_dict(is_train=self.training), {}
-        if "accuracy" in metrics.keys():
-            final_metrics.update({"accuracy": metrics["accuracy"].get_metric(reset)})
-
-        for metric_name in ["micro", "macro"]:
-            if metric_name in metrics.keys():
-                for k, v in metrics[metric_name].get_metric(reset).items():
-                    final_metrics.update({"{}/{}".format(metric_name, k): v})
-
-        if "per_label" in metrics.keys():
-            for k, values in metrics["per_label"].get_metric(reset).items():
-                for i, v in enumerate(values):
-                    label = vocabulary.label_for_index(self.backbone.vocab, i)
-                    # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
-                    label = helpers.sanitize_metric_name(label)
-                    final_metrics.update({"_{}/{}".format(k, label): v})
+        for name, metric in metrics.items():
+            if name == "accuracy":
+                final_metrics.update({"accuracy": metric.get_metric(reset)})
+            elif name in ["macro", "micro"]:
+                final_metrics.update(
+                    {
+                        f"{name}/{key}": value
+                        for key, value in metric.get_metric(reset).items()
+                    }
+                )
+            elif name == "per_label":
+                for key, values in metric.get_metric(reset).items():
+                    for i, value in enumerate(values):
+                        label = vocabulary.label_for_index(self.backbone.vocab, i)
+                        # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
+                        label = helpers.sanitize_metric_name(label)
+                        final_metrics.update({f"_{key}/{label}": value})
 
         return final_metrics
 
