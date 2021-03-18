@@ -394,6 +394,11 @@ def create_dataloader(
     ----------
     instance_dataset
         The dataset of instances for the DataLoader
+    batch_size
+        Batch size
+    data_bucketing
+        If True, tries to sort batches with respect to the maximum input lengths per batch.
+        Not supported for lazily loaded data!
 
     Returns
     -------

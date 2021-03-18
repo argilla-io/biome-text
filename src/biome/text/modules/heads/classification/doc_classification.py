@@ -17,7 +17,6 @@ from allennlp.nn.util import get_text_field_mask
 from captum.attr import IntegratedGradients
 
 from biome.text.backbone import ModelBackbone
-from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.configuration import Seq2SeqEncoderConfiguration
@@ -48,9 +47,7 @@ class DocumentClassification(ClassificationHead):
         multilabel: bool = False,
     ) -> None:
 
-        super(DocumentClassification, self).__init__(
-            backbone, labels=labels, multilabel=multilabel
-        )
+        super().__init__(backbone, labels=labels, multilabel=multilabel)
 
         self.backbone.encoder = TimeDistributedEncoder(backbone.encoder)
 

@@ -43,7 +43,7 @@ class TextClassification(ClassificationHead):
         multilabel: bool = False,
     ) -> None:
 
-        super(TextClassification, self).__init__(backbone, labels, multilabel)
+        super().__init__(backbone, labels, multilabel)
 
         self.pooler = (
             pooler.input_dim(self.backbone.encoder.get_output_dim()).compile()

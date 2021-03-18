@@ -2,6 +2,7 @@ from typing import Dict
 
 import pandas as pd
 import pytest
+from allennlp.data import Batch
 
 from biome.text import Dataset
 from biome.text import Pipeline
@@ -135,3 +136,33 @@ def test_preserve_pretokenization(
     tokens = ["test", "this", "pre tokenized", "text"]
     prediction = pipeline.predict(tokens)
     assert len(prediction["tags"][0]) == len(tokens)
+
+
+def test_metrics(pipeline_dict):
+    pipeline = Pipeline.from_config(pipeline_dict)
+    instance = pipeline.head.featurize(text="test this".split(), tags=["U-NER", "O"])
+    batch = Batch([instance])
+    batch.index_instances(pipeline.vocab)
+
+    pipeline.head.forward(**batch.as_tensor_dict())
+    # validation metric should have never been called
+    assert pipeline.head._metrics.get_dict()["accuracy"].total_count == 2
+    assert pipeline.head._metrics.get_dict(is_train=False)["accuracy"].total_count == 0
+
+    train_metrics = pipeline.head.get_metrics(reset=True)
+    expected_metric_names = ["accuracy"] + [
+        f"{metric}-{label}"
+        for metric in ["precision", "recall", "f1-measure"]
+        for label in ["NER", "overall"]
+    ]
+    print(train_metrics)
+    assert all(name in train_metrics for name in expected_metric_names)
+
+    pipeline.head.training = False
+    pipeline.head.forward(**batch.as_tensor_dict())
+    # training metric should have never been called after its reset
+    assert pipeline.head._metrics.get_dict()["accuracy"].total_count == 0
+    assert pipeline.head._metrics.get_dict(is_train=False)["accuracy"].total_count == 2
+
+    valid_metrics = pipeline.head.get_metrics()
+    assert all(name in valid_metrics for name in expected_metric_names)

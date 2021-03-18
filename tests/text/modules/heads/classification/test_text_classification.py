@@ -1,4 +1,5 @@
 import pytest
+from allennlp.data import Batch
 from numpy.testing import assert_allclose
 
 from biome.text import Pipeline
@@ -50,3 +51,39 @@ def test_compute_attributions(pipeline):
     assert all([attr.field == "text" for attr in attributions])
     assert all([isinstance(attr.attribution, float) for attr in attributions])
     assert attributions[1].start == 5 and attributions[1].end == 9
+
+
+def test_metrics(pipeline):
+    instance = pipeline.head.featurize(text="test this", label="a")
+    batch = Batch([instance])
+    batch.index_instances(pipeline.vocab)
+
+    pipeline.head.forward(**batch.as_tensor_dict())
+    # validation metric should have never been called
+    assert pipeline.head._metrics.get_dict()["accuracy"].total_count == 1
+    assert pipeline.head._metrics.get_dict(is_train=False)["accuracy"].total_count == 0
+
+    train_metrics = pipeline.head.get_metrics(reset=True)
+    expected_metric_names = (
+        ["accuracy"]
+        + [
+            f"{label}/{metric}"
+            for label in ["micro", "macro"]
+            for metric in ["precision", "recall", "fscore"]
+        ]
+        + [
+            f"_{metric}/{label}"
+            for metric in ["precision", "recall", "fscore"]
+            for label in ["a", "b", "c", "d", "e", "f"]
+        ]
+    )
+    assert all(name in train_metrics for name in expected_metric_names)
+
+    pipeline.head.training = False
+    pipeline.head.forward(**batch.as_tensor_dict())
+    # training metric should have never been called after its reset
+    assert pipeline.head._metrics.get_dict()["accuracy"].total_count == 0
+    assert pipeline.head._metrics.get_dict(is_train=False)["accuracy"].total_count == 1
+
+    valid_metrics = pipeline.head.get_metrics()
+    assert all(name in valid_metrics for name in expected_metric_names)

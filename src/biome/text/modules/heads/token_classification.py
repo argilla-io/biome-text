@@ -18,8 +18,6 @@ from allennlp.modules import FeedForward
 from allennlp.modules import TimeDistributed
 from allennlp.modules.conditional_random_field import allowed_transitions
 from allennlp.nn.util import get_text_field_mask
-from allennlp.training.metrics import CategoricalAccuracy
-from allennlp.training.metrics import SpanBasedF1Measure
 from spacy.tokens.doc import Doc
 from spacy.vocab import Vocab
 
@@ -31,6 +29,7 @@ from biome.text.helpers import offsets_from_tags
 from biome.text.helpers import spacy_to_allennlp_token
 from biome.text.helpers import span_labels_to_tag_labels
 from biome.text.helpers import tags_from_offsets
+from biome.text.metrics import Metrics
 from biome.text.modules.configuration import ComponentConfiguration
 from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.heads.task_head import TaskHead
@@ -69,7 +68,7 @@ class TokenClassification(TaskHead):
         dropout: Optional[float] = 0.0,
         feedforward: Optional[FeedForwardConfiguration] = None,
     ) -> None:
-        super(TokenClassification, self).__init__(backbone)
+        super().__init__(backbone)
 
         if label_encoding not in ["BIOUL", "BIO"]:
             raise WrongValueError(
@@ -113,19 +112,17 @@ class TokenClassification(TaskHead):
             self.num_labels, constraints, include_start_end_transitions=True
         )
 
-        self.metrics = {"accuracy": CategoricalAccuracy()}
-        if self.top_k > 1:
-            self.metrics.update(
-                {f"accuracy_{self.top_k}": CategoricalAccuracy(top_k=self.top_k)}
-            )
-        self.f1_metric = SpanBasedF1Measure(
-            self.backbone.vocab,
-            tag_namespace=vocabulary.LABELS_NAMESPACE,
-            label_encoding=self._label_encoding,
+        # There is no top_k option for the f1 metric, it will always only take into account the first choice
+        # If you want to use top_k in the accuracy, you have to change the way we convert the CRF output to logits!
+        self._metrics = Metrics(
+            accuracy={"type": "categorical_accuracy"},
+            f1={
+                "type": "span_f1",
+                "vocabulary": self.backbone.vocab,
+                "tag_namespace": vocabulary.LABELS_NAMESPACE,
+                "label_encoding": self._label_encoding,
+            },
         )
-
-        self.__all_metrics = [self.f1_metric]
-        self.__all_metrics.extend(self.metrics.values())
 
     @property
     def span_labels(self) -> List[str]:
@@ -233,7 +230,7 @@ class TokenClassification(TaskHead):
 
         if tags is not None:
             output["loss"] = self._loss(logits, tags, mask)
-            for metric in self.__all_metrics:
+            for metric in self._metrics.get_dict(is_train=self.training).values():
                 metric(class_probabilities, tags, mask)
 
         return output
@@ -286,12 +283,15 @@ class TokenClassification(TaskHead):
         ]
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        metrics = {
-            metric_name: metric.get_metric(reset)
-            for metric_name, metric in self.metrics.items()
-            if metric_name != "f1"
-        }
-        metrics.update(self.f1_metric.get_metric(reset=reset))
+        metrics: Dict[str, float] = {}
+        for name, metric in self._metrics.get_dict(is_train=self.training).items():
+            metric_value = metric.get_metric(reset=reset)
+            try:
+                metrics.update(metric_value)
+            # AllenNLP's CategoricalAccuracy does not comply with AllenNLP's Metric API
+            except TypeError:
+                metrics[name] = metric_value
+
         return metrics
 
 
