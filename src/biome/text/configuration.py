@@ -16,8 +16,6 @@ from allennlp.data import TokenIndexer
 from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
 
-from biome.text.dataset import Dataset
-
 from .features import CharFeatures
 from .features import TransformersFeatures
 from .features import WordFeatures
@@ -30,9 +28,6 @@ from .modules.heads.task_head import TaskHeadConfiguration
 from .modules.heads.token_classification import TokenClassification
 from .tokenizer import Tokenizer
 from .tokenizer import TransformersTokenizer
-
-if TYPE_CHECKING:
-    from .pipeline import Pipeline
 
 
 class FeaturesConfiguration(FromParams):
@@ -574,8 +569,6 @@ class VocabularyConfiguration:
 
     Parameters
     ----------
-    include_validation_data
-        If True, include the validation data when creating the vocabulary. Default: False
     max_vocab_size
         If you want to cap the number of tokens in your vocabulary, you can do so with this
         parameter.  If you specify a single integer, every namespace will have its vocabulary fixed
@@ -601,7 +594,6 @@ class VocabularyConfiguration:
         even if they are not present in the `datasets`
     """
 
-    include_validation_data: bool = False
     max_vocab_size: Union[int, Dict[str, int]] = None
     min_count: Dict[str, int] = None
     min_pretrained_embeddings: Dict[str, int] = None
