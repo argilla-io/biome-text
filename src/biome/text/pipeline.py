@@ -9,6 +9,7 @@ from inspect import Parameter
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -300,10 +301,9 @@ class Pipeline:
         training_data
             The training data
         vocab_config
-            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
-            If 'default' (str), we will use the default configuration
-            `VocabularyConfiguration(datasets=[training_data])`.
-            If None, we will leave the pipeline's vocabulary untouched.
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
+            If 'default' (str), we will use the default configuration `VocabularyConfiguration()`.
+            If None, we will leave the pipeline's vocabulary untouched. Default: 'default'.
         lazy
             If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
 
@@ -315,15 +315,19 @@ class Pipeline:
         """
         from biome.text._helpers import create_trainer_for_finding_lr
 
-        self._prepare_vocab(
-            vocab_config=vocab_config, training_data=training_data, lazy=lazy
-        )
+        training_data = training_data.to_instances(pipeline=self, lazy=lazy)
 
-        if isinstance(training_data, Dataset):
-            training_data: AllennlpLazyDataset = training_data.to_instances(
-                pipeline=self,
-                lazy=lazy,
+        # create vocab
+        if vocab_config is not None:
+            self.create_vocab(
+                [training_data],
+                config=vocab_config if vocab_config != "default" else None,
             )
+        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
+            raise EmptyVocabError(
+                "All your features need a non-empty vocabulary for a learning rate scan!"
+            )
+
         training_data.index_with(self._model.vocab)
 
         trainer = create_trainer_for_finding_lr(
@@ -359,6 +363,7 @@ class Pipeline:
         validation: Optional[Dataset] = None,
         test: Optional[Dataset] = None,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
+        include_valid_data_in_vocab: bool = False,
         loggers: List[BaseTrainLogger] = None,
         lazy: bool = False,
         restore: bool = False,
@@ -379,9 +384,12 @@ class Pipeline:
         test
             The test Dataset (optional)
         vocab_config
-            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
-            If 'default' (str), we will use the default configuration `VocabularyConfiguration(datasets=[training])`.
-            If None, we will leave the pipeline's vocabulary untouched.
+            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
+            If 'default' (str), we will use the default configuration `VocabularyConfiguration()`.
+            If None, we will leave the pipeline's vocabulary untouched. Default: 'default'.
+        include_valid_data_in_vocab
+            If True, take the validation data into account when creating the vocabulary (apart from the training data).
+            Has no effect if `vocab_config` is None. Default: False.
         loggers
             A list of loggers that execute a callback before the training, after each epoch,
             and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
@@ -409,19 +417,30 @@ class Pipeline:
         try:
             self.__configure_training_logging(output, quiet)
 
-            self._prepare_vocab(
-                vocabulary_folder=os.path.join(output, "vocabulary")
-                if restore
-                else None,
-                vocab_config=vocab_config,
-                training_data=training,
-                lazy=lazy,
-            )
+            # create instances
+            datasets = {"training": training.to_instances(self, lazy=lazy)}
+            if validation:
+                datasets["validation"] = validation.to_instances(self, lazy=lazy)
+            if test:
+                datasets["test"] = test.to_instances(self, lazy=lazy)
 
-            datasets = {"training": training, "validation": validation, "test": test}
-            for name, dataset in datasets.items():
-                if isinstance(dataset, Dataset):
-                    datasets[name] = dataset.to_instances(pipeline=self, lazy=lazy)
+            # create vocab
+            if restore:
+                self._restore_vocab(os.path.join(output, "vocabulary"))
+            elif vocab_config is not None:
+                vocab_datasets = [datasets["training"]]
+                if datasets.get("validation") and include_valid_data_in_vocab:
+                    vocab_datasets += [datasets["validation"]]
+                self.create_vocab(
+                    vocab_datasets,
+                    config=vocab_config if vocab_config != "default" else None,
+                )
+            if vocabulary.is_empty(
+                self.vocab, self.config.features.configured_namespaces
+            ):
+                raise EmptyVocabError(
+                    "All your features need a non-empty vocabulary for a training!"
+                )
 
             loggers = loggers or []
             loggers = add_default_wandb_logger_if_needed(loggers)
@@ -444,74 +463,60 @@ class Pipeline:
 
     def create_vocab(
         self,
-        vocab_config: VocabularyConfiguration,
-        lazy: bool = False,
-    ):
-        """Creates the vocab for the pipeline.
+        instance_datasets: Iterable[InstanceDataset],
+        config: Optional[VocabularyConfiguration] = None,
+    ) -> Vocabulary:
+        """Creates and updates the vocab of the pipeline.
 
         NOTE: The trainer calls this method for you. You can use this method in case you want
         to create the vocab outside of the training/test process.
 
         Parameters
         ----------
-        vocab_config
-            Configurations for the vocab creation
-        lazy
-            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
+        instance_datasets
+            A list of instance datasets from which to create the vocabulary.
+        config
+            Configurations for the vocab creation.
+            If None (default), we will take the default configuration `VocabularyConfiguration()`.
+
+        Examples
+        --------
+        >>> from biome.text import Pipeline, Dataset
+        >>> pl = Pipeline.from_config(
+        ...     {"name": "example", "head":{"type": "TextClassification", "labels": ["pos", "neg"]}}
+        ... )
+        >>> dataset = Dataset.from_dict({"text": ["Just an example"], "label": ["pos"]})
+        >>> instance_dataset = dataset.to_instances(pl)
+        >>> vocab = pl.create_vocab([instance_dataset])
         """
-        # The transformers feature comes with its own vocab, no need to prepare anything if it is the only feature
+        # The transformers feature comes with its own vocab, no need to create anything if it is the only feature
         if self.config.features.configured_namespaces == [
             TransformersFeatures.namespace
         ]:
-            return
+            return self.vocab
 
-        # If the vocab is empty, we assume this is an untrained pipeline
-        # and we want to raise an error if the weights file is not found.
-        # Extending the vocab with a non-existent weights file only throws a warning.
-        try:
-            assert is_url_or_existing_file(Path(self.config.features.word.weights_file))
-        except AssertionError:
-            if vocabulary.is_empty(self.vocab, [WordFeatures.namespace]):
-                raise FileNotFoundError(
-                    f"Cannot find the weights file {self.config.features.word.weights_file}"
-                )
-        # no word feature, or weights_file is None
-        except (AttributeError, TypeError):
-            pass
+        self._check_for_word_vector_weights_file()
 
-        vocab = vocab_config.build_vocab(pipeline=self, lazy=lazy)
+        config = config or VocabularyConfiguration()
+
+        vocab = Vocabulary.from_instances(
+            instances=(
+                instance for dataset in instance_datasets for instance in dataset
+            ),
+            max_vocab_size=config.max_vocab_size,
+            min_count=config.min_count,
+            pretrained_files=config.pretrained_files,
+            only_include_pretrained_words=config.only_include_pretrained_words,
+            min_pretrained_embeddings=config.min_pretrained_embeddings,
+            tokens_to_add=config.tokens_to_add,
+        )
+
         # If the vocab is the same, this is just a no-op
         self._model.extend_vocabulary(vocab)
 
-    def _prepare_vocab(
-        self,
-        vocabulary_folder: Optional[str] = None,
-        vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
-        training_data: Optional[Dataset] = None,
-        lazy: bool = False,
-    ):
-        """Prepare and set the vocab for a training or learning rate scan.
+        return vocab
 
-        Parameters
-        ----------
-        vocabulary_folder
-            If specified, load the vocab from this folder
-        vocab_config
-            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary if necessary.
-            If 'default' (str), we will use the default configuration
-            `VocabularyConfiguration(datasets=[training_data])`.
-            If None, we will leave the pipeline's vocabulary untouched.
-        training_data
-            The training data in case we need to construct the default config
-        lazy
-            If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
-        """
-        # The transformers feature comes with its own vocab, no need to prepare anything if it is the only feature
-        if self.config.features.configured_namespaces == [
-            TransformersFeatures.namespace
-        ]:
-            return
-
+    def _check_for_word_vector_weights_file(self):
         # If the vocab is empty, we assume this is an untrained pipeline
         # and we want to raise an error if the weights file is not found.
         # Extending the vocab with a non-existent weights file only throws a warning.
@@ -526,23 +531,19 @@ class Pipeline:
         except (AttributeError, TypeError):
             pass
 
-        if vocabulary_folder is not None:
-            self._model.extend_vocabulary(Vocabulary.from_files(vocabulary_folder))
-            vocab_config = None
+    def _restore_vocab(self, folder: str) -> Vocabulary:
+        # The transformers feature comes with its own vocab, no need to restore anything if it is the only feature
+        if self.config.features.configured_namespaces == [
+            TransformersFeatures.namespace
+        ]:
+            return self.vocab
 
-        vocab_config = (
-            VocabularyConfiguration(datasets=[training_data])
-            if vocab_config == "default"
-            else vocab_config
-        )
-        if vocab_config is not None:
-            vocab = vocab_config.build_vocab(pipeline=self, lazy=lazy)
-            self._model.extend_vocabulary(vocab)
+        self._check_for_word_vector_weights_file()
 
-        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            raise EmptyVocabError(
-                "All your features need a non-empty vocabulary for a training!"
-            )
+        vocab = Vocabulary.from_files(folder)
+        self._model.extend_vocabulary(vocab)
+
+        return vocab
 
     @staticmethod
     def __restore_training_logging():

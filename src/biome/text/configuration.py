@@ -566,26 +566,29 @@ class TrainerConfiguration:
         return allennlp_trainer_config
 
 
+@dataclasses.dataclass
 class VocabularyConfiguration:
-    """Configures a `Vocabulary` before it gets created from the data
-
-    Use this to configure a Vocabulary using specific arguments from `allennlp.data.Vocabulary`
+    """Configurations for creating the vocabulary
 
     See [AllenNLP Vocabulary docs](https://docs.allennlp.org/master/api/data/vocabulary/#vocabulary])
 
     Parameters
     ----------
-    datasets
-        List of datasets from which to create the vocabulary
-    min_count
-        Minimum number of appearances of a token to be included in the vocabulary.
-        The key in the dictionary refers to the namespace of the input feature
+    include_validation_data
+        If True, include the validation data when creating the vocabulary. Default: False
     max_vocab_size
         If you want to cap the number of tokens in your vocabulary, you can do so with this
         parameter.  If you specify a single integer, every namespace will have its vocabulary fixed
         to be no larger than this.  If you specify a dictionary, then each namespace in the
         `counter` can have a separate maximum vocabulary size. Any missing key will have a value
         of `None`, which means no cap on the vocabulary size.
+    min_count
+        Minimum number of appearances of a token to be included in the vocabulary.
+        The key in the dictionary refers to the namespace of the input feature
+    min_pretrained_embeddings
+        Minimum number of lines to keep from pretrained_files, even for tokens not appearing in the sources.
+    only_include_pretrained_words
+        Only include tokens present in pretrained_files
     pretrained_files
         If provided, this map specifies the path to optional pretrained embedding files for each
         namespace. This can be used to either restrict the vocabulary to only words which appear
@@ -593,62 +596,18 @@ class VocabularyConfiguration:
         regardless of their count, depending on the value of `only_include_pretrained_words`.
         Words which appear in the pretrained embedding file but not in the data are NOT included
         in the Vocabulary.
-    only_include_pretrained_words
-        Only include tokens present in pretrained_files
     tokens_to_add
         A list of tokens to add to the corresponding namespace of the vocabulary,
         even if they are not present in the `datasets`
-    min_pretrained_embeddings
-        Minimum number of lines to keep from pretrained_files, even for tokens not appearing in the sources.
     """
 
-    def __init__(
-        self,
-        datasets: List[Dataset],
-        min_count: Dict[str, int] = None,
-        max_vocab_size: Union[int, Dict[str, int]] = None,
-        pretrained_files: Optional[Dict[str, str]] = None,
-        only_include_pretrained_words: bool = False,
-        tokens_to_add: Dict[str, List[str]] = None,
-        min_pretrained_embeddings: Dict[str, int] = None,
-    ):
-        self.datasets = datasets
-        self.pretrained_files = pretrained_files
-        self.min_count = min_count
-        self.max_vocab_size = max_vocab_size
-        self.only_include_pretrained_words = only_include_pretrained_words
-        self.tokens_to_add = tokens_to_add
-        self.min_pretrained_embeddings = min_pretrained_embeddings
-
-    def build_vocab(self, pipeline: "Pipeline", lazy: bool = False) -> Vocabulary:
-        """Build the configured vocabulary
-
-        Parameters
-        ----------
-        pipeline
-            The pipeline used to create the instances from which the vocabulary is built.
-        lazy
-            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
-
-        Returns
-        -------
-        vocab
-        """
-        vocab = Vocabulary.from_instances(
-            instances=(
-                instance
-                for dataset in self.datasets
-                for instance in dataset.to_instances(pipeline, lazy=lazy)
-            ),
-            max_vocab_size=self.max_vocab_size,
-            min_count=self.min_count,
-            pretrained_files=self.pretrained_files,
-            only_include_pretrained_words=self.only_include_pretrained_words,
-            min_pretrained_embeddings=self.min_pretrained_embeddings,
-            tokens_to_add=self.tokens_to_add,
-        )
-
-        return vocab
+    include_validation_data: bool = False
+    max_vocab_size: Union[int, Dict[str, int]] = None
+    min_count: Dict[str, int] = None
+    min_pretrained_embeddings: Dict[str, int] = None
+    only_include_pretrained_words: bool = False
+    pretrained_files: Optional[Dict[str, str]] = None
+    tokens_to_add: Dict[str, List[str]] = None
 
 
 @dataclasses.dataclass
