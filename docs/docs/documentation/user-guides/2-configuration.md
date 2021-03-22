@@ -240,6 +240,7 @@ However, when providing a learning rate scheduler it is advised to set the `pati
 
 The creation of the vocabulary is managed automatically by *biome.text* and for most use cases the default settings are perfectly fine.
 If you want to do something more specific with your vocabulary you can provide a [`VocabularyConfiguration`](../../api/biome/text/configuration.md#vocabularyconfiguration) object to the `Pipeline.train()` method.
+By default the `Pipeline.train()` method only takes into account your training data for the creation of the vocabulary, but you can also include the validation data by specifying `include_valid_data_in_vocab=True`.
 
 ### Limit vocab to pretrained word vectors
 
@@ -248,16 +249,11 @@ from biome.text import Dataset, VocabularyConfiguration
 train_ds = Dataset.from_dict({"text": ["test text"], "label": ["test_label"]})
 
 vocab_config = VocabularyConfiguration(
-    datasets=[train_ds],
     pretrained_files={"word": "path/to/pretrained_words.txt"},
     only_include_pretrained_words=True,
 )
 ```
-
 In this example we limit the vocabulary to words that are listed in a file with pretrained word vectors.
-
-A `VocabularyConfiguration` must always include a list of `Dataset`s from which the vocabulary is created.
-By default, this list only includes the training data provided to the `Pipeline.train()` method.
 
 The `pretrained_files` parameter is a mapping in form of a dictionary, in which the key indicates the namespace of the feature for which the pretrained file is valid.
 This parameter enables a few other parameters, such as the `only_include_pretrained_words` that allows you to only include words in the vocabulary that are present in your data **and** in the pretrained files.
