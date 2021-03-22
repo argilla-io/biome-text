@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Dict
 from typing import Iterable
@@ -13,7 +14,10 @@ from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
 from pytorch_lightning.accelerators import Accelerator
+from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.plugins import Plugin
 from pytorch_lightning.profiler import BaseProfiler
 from torch.utils.data import IterableDataset
@@ -22,6 +26,17 @@ from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstancesDataset
 from biome.text.pipeline import Pipeline
+
+# We do not require wandb
+_HAS_WANDB = False
+try:
+    import wandb
+except ImportError:
+    pass
+else:
+    wandb.ensure_configured()
+    _HAS_WANDB = True
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,6 +57,15 @@ class Trainer:
 
     accumulate_grad_batches
         Accumulates grads every k batches or as set up in the dict.
+
+    add_csv_logger
+        Adds a default CSV logger if `logger` is not False. Default: True
+
+    add_tensorboard_logger
+        Adds a default Tensorboard logger if `logger` is not False. Default: True
+
+    add_wandb_logger
+        Adds a default WandB logger if `logger` is not False and wandb is installed. Default: True
 
     amp_backend
         The mixed precision backend to use ("native" or "apex")
@@ -90,7 +114,7 @@ class Trainer:
 
     default_root_dir
         Default path for logs and weights when no logger/ckpt_callback passed.
-        Default: ``os.getcwd()``.
+        Default: `./training_logs`.
         Can be remote file paths such as `s3://mybucket/path` or 'hdfs://path/'
 
     deterministic
@@ -126,6 +150,8 @@ class Trainer:
 
     logger
         Logger (or iterable collection of loggers) for experiment tracking.
+        If not False, we will add some loggers by default, see `add_[csv, tensorboard, wandb]_logger`.
+        Default: True
 
     prepare_data_per_node
         If True, each LOCAL_RANK=0 will call prepare data.
@@ -179,8 +205,7 @@ class Trainer:
     optimizer
         Configuration for an [AllenNLP/PyTorch optimizer](https://docs.allennlp.org/main/api/training/optimizers/)
         that is constructed via the AllenNLP configuration framework.
-        The default is:
-        >>> optimizer={"type": "adam", "lr": 0.001}
+        Default: `{"type": "adam", "lr": 0.001}`
 
     reload_dataloaders_every_epoch
         Set to True to reload dataloaders every epoch.
@@ -299,27 +324,98 @@ class Trainer:
         multiple_trainloader_mode: str = "max_size_cycle",
         stochastic_weight_avg: bool = False,
         # non lightning trainer parameters,
+        add_csv_logger: bool = True,
+        add_tensorboard_logger: bool = True,
+        add_wandb_logger: bool = True,
         batch_size: int = 16,
         data_bucketing: bool = False,
         optimizer: Optional[Dict] = None,
     ):
-        lightning_trainer_kwargs = {
+        default_root_dir = default_root_dir or os.path.join(
+            os.getcwd(), "training_logs"
+        )
+        self._lightning_trainer_kwargs = {
             key: value
             for key, value in locals().items()
             # filter non Lightening Trainer kwargs
-            if key not in ["self", "optimizer", "data_bucketing", "batch_size"]
+            if key
+            not in [
+                "self",
+                "add_csv_logger",
+                "add_tensorboard_logger",
+                "add_wandb_logger",
+                "batch_size",
+                "data_bucketing",
+                "optimizer",
+            ]
         }
-        self.trainer = pl.Trainer(**lightning_trainer_kwargs)
+        # these configurations will be logged to wandb
+        self._trainer_config = {
+            "batch_size": batch_size,
+            "data_bucketing": data_bucketing,
+            "optimizer": optimizer or {"type": "adam", "lr": 0.001},
+        }
 
-        self._batch_size = batch_size
-        self._data_bucketing = data_bucketing
-        self._optimizer = optimizer or {"type": "adam", "lr": 0.001}
+        self._add_csv_logger = add_csv_logger
+        self._add_tensorboard_logger = add_tensorboard_logger
+        self._add_wandb_logger = add_wandb_logger
+
+        # the wandb logger holds a special place in our heart
+        self._wandb_logger: Optional[WandbLogger] = None
+
+        if logger is not False:
+            self._lightning_trainer_kwargs["logger"] = self._add_default_loggers()
+
+        self.trainer = pl.Trainer(**self._lightning_trainer_kwargs)
+
+    def _add_default_loggers(self) -> List[LightningLoggerBase]:
+        """Adds default loggers for the lightning trainer"""
+        loggers = self._lightning_trainer_kwargs["logger"]
+        if loggers is True:
+            loggers = []
+        elif isinstance(loggers, LightningLoggerBase):
+            loggers = [loggers]
+
+        def loggers_include(logger_type) -> bool:
+            return any([isinstance(logger, logger_type) for logger in loggers])
+
+        if self._add_csv_logger and not loggers_include(CSVLogger):
+            loggers.append(
+                CSVLogger(
+                    save_dir=self._lightning_trainer_kwargs["default_root_dir"]
+                    or os.getcwd(),
+                    name="csv",
+                )
+            )
+        if self._add_tensorboard_logger and not loggers_include(TensorBoardLogger):
+            loggers.append(
+                TensorBoardLogger(
+                    save_dir=self._lightning_trainer_kwargs["default_root_dir"]
+                    or os.getcwd(),
+                    name="tensorboard",
+                )
+            )
+        if self._add_wandb_logger and _HAS_WANDB and not loggers_include(WandbLogger):
+            save_dir = self._lightning_trainer_kwargs["default_root_dir"] or os.getcwd()
+            self._wandb_logger = WandbLogger(save_dir=save_dir, project="biome")
+            loggers.append(self._wandb_logger)
+        elif loggers_include(WandbLogger):
+            self._wandb_logger = [
+                logger for logger in loggers if isinstance(logger, WandbLogger)
+            ][0]
+        # somehow the wandb dir does not get created, i think this is a bug on pl side, have to check it out
+        if self._wandb_logger is not None and not os.path.isdir(
+            os.path.join(self._wandb_logger.save_dir, "wandb")
+        ):
+            os.makedirs(os.path.join(self._wandb_logger.save_dir, "wandb"))
+
+        return loggers
 
     def fit(
         self,
         pipeline: Pipeline,
         train_dataset: Dataset,
-        valid_dataset: Dataset,
+        valid_dataset: Optional[Dataset] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
         lazy: bool = False,
     ):
@@ -353,14 +449,14 @@ class Trainer:
         # create dataloaders
         train_dataloader = create_dataloader(
             train_dataset.to_instances(pipeline, lazy=lazy),
-            batch_size=self._batch_size,
-            data_bucketing=self._data_bucketing,
+            batch_size=self._trainer_config["batch_size"],
+            data_bucketing=self._trainer_config["data_bucketing"],
         )
         valid_dataloader = (
             create_dataloader(
                 valid_dataset.to_instances(pipeline, lazy=lazy),
-                batch_size=self._batch_size,
-                data_bucketing=self._data_bucketing,
+                batch_size=self._trainer_config["batch_size"],
+                data_bucketing=self._trainer_config["data_bucketing"],
             )
             if valid_dataset is not None
             else None
@@ -371,10 +467,18 @@ class Trainer:
             Params(
                 {
                     "model_parameters": pipeline.model.named_parameters(),
-                    **self._optimizer,
+                    **self._trainer_config["optimizer"],
                 }
             )
         )
+
+        # log config to wandb
+        if self._wandb_logger is not None:
+            config = {
+                "pipeline": pipeline.config.as_dict(),
+                "trainer": self._trainer_config,
+            }
+            self._wandb_logger.experiment.config.update(config)
 
         self.trainer.fit(
             pipeline.model,
