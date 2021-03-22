@@ -22,14 +22,6 @@ from biome.text.configuration import WordFeatures
 
 
 @pytest.fixture
-def change_to_tmp_working_dir(tmp_path) -> Path:
-    cwd = os.getcwd()
-    os.chdir(tmp_path)
-    yield tmp_path
-    os.chdir(cwd)
-
-
-@pytest.fixture
 def train_valid_dataset(resources_data_path) -> Tuple[Dataset, Dataset]:
     """Returns both training and validation datasets"""
 
@@ -182,9 +174,7 @@ def test_default_root_dir(change_to_tmp_working_dir):
         ),
     ],
 )
-def test_add_default_loggers(input_kwargs, expected_loggers, tmp_path, monkeypatch):
-    monkeypatch.setenv("WANDB_MODE", "disabled")
-
+def test_add_default_loggers(input_kwargs, expected_loggers, tmp_path):
     trainer = Trainer(**input_kwargs, default_root_dir=str(tmp_path))
     if input_kwargs.get("logger") is not False:
         assert isinstance(trainer.trainer.logger, LoggerCollection)
