@@ -1,14 +1,12 @@
+import os
 from pathlib import Path
 
 import pytest
 
-from biome.text import loggers
-
 
 def pytest_configure(config):
-    # In case you have wandb installed, there is an issue with tests:
-    # https://github.com/wandb/client/issues/1138
-    loggers._HAS_WANDB = False
+    # It's really hard to do testing with wandb enabled ...
+    os.environ["WANDB_MODE"] = "disabled"
 
 
 @pytest.fixture
@@ -38,3 +36,11 @@ def configurations_path() -> Path:
         / "user-guides"
         / "2-configuration.md"
     )
+
+
+@pytest.fixture
+def change_to_tmp_working_dir(tmp_path) -> Path:
+    cwd = os.getcwd()
+    os.chdir(tmp_path)
+    yield tmp_path
+    os.chdir(cwd)

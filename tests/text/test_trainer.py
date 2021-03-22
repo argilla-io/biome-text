@@ -1,9 +1,17 @@
+import os
 import random
+import tempfile
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
 import pytest
 import torch
+from pytorch_lightning.loggers import CSVLogger
+from pytorch_lightning.loggers import LoggerCollection
+from pytorch_lightning.loggers import MLFlowLogger
+from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import WandbLogger
 
 from biome.text import Dataset
 from biome.text import Pipeline
@@ -106,6 +114,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
         batch_size=64,
         optimizer={"type": "adam", "lr": 0.01},
         max_epochs=5,
+        default_root_dir=str(tmp_path),
     )
 
     vocab_config = VocabularyConfiguration(
@@ -127,3 +136,67 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     evaluation = pl.evaluate(valid_ds)
 
     assert evaluation["loss"] == pytest.approx(0.8217981046438217, abs=0.003)
+
+
+def test_default_root_dir(change_to_tmp_working_dir):
+    trainer = Trainer()
+    assert trainer.trainer.default_root_dir == str(
+        change_to_tmp_working_dir / "training_logs"
+    )
+
+
+@pytest.mark.parametrize(
+    "input_kwargs,expected_loggers",
+    [
+        ({}, ["csv", "tensorboard", "wandb"]),
+        ({"logger": False}, []),
+        (
+            {
+                "logger": MLFlowLogger(
+                    tracking_uri=os.path.join(tempfile.gettempdir(), "mlruns")
+                ),
+                "add_wandb_logger": False,
+            },
+            ["csv", "tensorboard", "mlflow"],
+        ),
+        (
+            {
+                "logger": [
+                    MLFlowLogger(
+                        tracking_uri=os.path.join(tempfile.gettempdir(), "mlruns")
+                    ),
+                    CSVLogger(save_dir=tempfile.gettempdir()),
+                ],
+                "add_wandb_logger": False,
+                "add_tensorboard_logger": False,
+            },
+            ["csv", "mlflow"],
+        ),
+    ],
+)
+def test_add_default_loggers(input_kwargs, expected_loggers, tmp_path):
+    trainer = Trainer(**input_kwargs, default_root_dir=str(tmp_path))
+    if input_kwargs.get("logger") is not False:
+        assert isinstance(trainer.trainer.logger, LoggerCollection)
+        assert len(trainer.trainer.logger.experiment) == len(expected_loggers)
+    else:
+        assert trainer._lightning_trainer_kwargs["logger"] is False
+
+    def loggers_include(logger_type) -> bool:
+        return any(
+            [
+                isinstance(logger, logger_type)
+                for logger in trainer._lightning_trainer_kwargs["logger"]
+            ]
+        )
+
+    for logger in expected_loggers:
+        if logger == "csv":
+            assert loggers_include(CSVLogger)
+        if logger == "tensorboard":
+            assert loggers_include(TensorBoardLogger)
+        if logger == "wandb":
+            assert loggers_include(WandbLogger)
+            assert (tmp_path / "wandb").is_dir()
+        if logger == "mlflow":
+            assert loggers_include(MLFlowLogger)

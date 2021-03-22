@@ -89,11 +89,24 @@ class TestWandBLogger:
         WandBLogger(run_name="test_run", tags=["test_tag"])
         assert capsys.readouterr().err.startswith("wandb")
 
-    def test_wandb_logger_init_train(self, monkeypatch, pipeline):
+    def test_wandb_logger_init_train(
+        self, monkeypatch, pipeline, change_to_tmp_working_dir
+    ):
+        # It's impossible to test wandb ... but these tests will soon go away when we have our lightning trainer ready
+        class MockRun:
+            def __init__(self, name, tags, dir, project, *args, **kwargs):
+                self.name = name
+                self.tags = tags
+                self.dir = dir
+                self.project = project
+
+        def mock_wandb_init(*args, **kwargs):
+            return MockRun(*args, **kwargs)
+
         import wandb
 
-        monkeypatch.setenv("WANDB_API_KEY", "mock_api_key")
-        monkeypatch.setenv("WANDB_MODE", "dryrun")
+        monkeypatch.setattr(wandb, "init", mock_wandb_init)
+        monkeypatch.setenv("WANDB_PROJECT", "mock_project")
 
         wandb.ensure_configured()
         logger = WandBLogger(run_name="test_run", tags=["test_tag"])
@@ -107,3 +120,4 @@ class TestWandBLogger:
         assert logger._run.name == "test_run"
         assert logger._run.tags[0] == "test_tag"
         assert logger._run.dir.startswith(".wandb")
+        assert logger._run.project == "mock_project"
