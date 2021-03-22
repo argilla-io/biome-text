@@ -105,12 +105,14 @@ def test_extending_vocab_with_weights_file(
     )
 
 
-def test_raise_filenotfound_error(pipeline_config, deactivate_pipeline_trainer):
+def test_raise_filenotfound_error(
+    pipeline_config, deactivate_pipeline_trainer, dataset
+):
     Path(pipeline_config["features"]["word"]["weights_file"]).unlink()
     pipeline = Pipeline.from_config(pipeline_config)
 
     with pytest.raises(FileNotFoundError):
         pipeline.train(
             output="dummy",
-            training=cast(Dataset, None),
+            training=dataset,
         )

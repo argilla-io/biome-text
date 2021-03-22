@@ -65,7 +65,7 @@ def test_tune_exp_save_dataset_and_vocab(
     dataset, pipeline_config, trainer_config, monkeypatch
 ):
     pl = Pipeline.from_config(pipeline_config)
-    vocab = VocabularyConfiguration(datasets=[dataset]).build_vocab(pipeline=pl)
+    vocab = pl.create_vocab([dataset.to_instances(pl)])
 
     my_exp = TuneExperiment(
         pipeline_config=pipeline_config,
