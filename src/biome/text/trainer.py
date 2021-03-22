@@ -24,7 +24,7 @@ from torch.utils.data import IterableDataset
 
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
-from biome.text.dataset import InstancesDataset
+from biome.text.dataset import InstanceDataset
 from biome.text.pipeline import Pipeline
 
 # We do not require wandb
@@ -488,7 +488,7 @@ class Trainer:
 
 
 def create_dataloader(
-    instance_dataset: InstancesDataset,
+    instance_dataset: InstanceDataset,
     batch_size: int = 16,
     data_bucketing: bool = False,
 ) -> PyTorchDataLoader:

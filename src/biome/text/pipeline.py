@@ -38,7 +38,7 @@ from biome.text.configuration import PredictionConfiguration
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
-from biome.text.dataset import InstancesDataset
+from biome.text.dataset import InstanceDataset
 from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.features import WordFeatures
@@ -281,7 +281,7 @@ class Pipeline:
         self,
         trainer_config: TrainerConfiguration,
         find_lr_config: FindLRConfiguration,
-        training_data: Union[Dataset, InstancesDataset],
+        training_data: Dataset,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
         lazy: bool = False,
     ):
@@ -354,10 +354,10 @@ class Pipeline:
     def train(
         self,
         output: str,
-        training: Union[Dataset, InstancesDataset],
+        training: Dataset,
         trainer: Optional[TrainerConfiguration] = None,
-        validation: Optional[Union[Dataset, InstancesDataset]] = None,
-        test: Optional[Union[Dataset, InstancesDataset]] = None,
+        validation: Optional[Dataset] = None,
+        test: Optional[Dataset] = None,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
         loggers: List[BaseTrainLogger] = None,
         lazy: bool = False,
