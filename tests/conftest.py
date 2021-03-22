@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -38,3 +39,11 @@ def configurations_path() -> Path:
         / "user-guides"
         / "2-configuration.md"
     )
+
+
+@pytest.fixture
+def change_to_tmp_working_dir(tmp_path) -> Path:
+    cwd = os.getcwd()
+    os.chdir(tmp_path)
+    yield tmp_path
+    os.chdir(cwd)
