@@ -45,6 +45,7 @@ from biome.text.features import WordFeatures
 from biome.text.helpers import update_method_signature
 from biome.text.loggers import BaseTrainLogger
 from biome.text.loggers import add_default_wandb_logger_if_needed
+from biome.text.mlflow_model import BiomeTextModel
 from biome.text.model import PipelineModel
 from biome.text.modules.heads import TaskHead
 from biome.text.modules.heads import TaskHeadConfiguration
@@ -816,7 +817,9 @@ class Pipeline:
         self,
         tracking_uri: Optional[str] = None,
         experiment_id: Optional[int] = None,
-        run_name: str = "Log biome.text model",
+        run_name: str = "log_biometext_model",
+        input_example: Optional[Dict] = None,
+        conda_env: Optional[Dict] = None,
     ) -> str:
         """Logs the pipeline as MLFlow Model to a MLFlow Tracking server
 
@@ -830,7 +833,17 @@ class Pipeline:
             `MLFLOW_EXPERIMENT_NAME` environment variable, `MLFLOW_EXPERIMENT_ID` environment variable,
             or the default experiment as defined by the tracking server.
         run_name
-            The name of the MLFlow run logging the model
+            The name of the MLFlow run logging the model. Default: 'log_biometext_model'.
+        input_example
+            You can provide an input example in the form of a dictionary. For example, for a TextClassification head
+            this would be `{"text": "This is an input example"}`.
+        conda_env
+            This conda environment is used when serving the model via `mlflow models serve`. Default:
+            conda_env = {
+                "name": "mlflow-dev",
+                "channels": ["defaults", "conda-forge"],
+                "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
+            }
 
         Returns
         -------
@@ -853,25 +866,31 @@ class Pipeline:
             mlflow.set_tracking_uri(tracking_uri)
 
         # This conda environment is only needed when serving the model later on with `mlflow models serve`
-        conda_env = {
+        conda_env = conda_env or {
             "name": "mlflow-dev",
             "channels": ["defaults", "conda-forge"],
             "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
         }
 
         with tempfile.TemporaryDirectory() as tmpdir_name:
-            file_path = self.save(directory=tmpdir_name)
+            file_path = Path(self.save(directory=tmpdir_name))
 
             with mlflow.start_run(
                 experiment_id=experiment_id, run_name=run_name
             ) as run:
+                mlflow.log_artifact(str(file_path), "biometext_pipeline")
                 mlflow.pyfunc.log_model(
-                    artifact_path="BiomeTextModel",
-                    loader_module="biome.text.mlflow_model",
-                    data_path=file_path,
+                    artifact_path="mlflow_model",
+                    python_model=BiomeTextModel(),
+                    artifacts={
+                        BiomeTextModel.ARTIFACT_CONTEXT: mlflow.get_artifact_uri(
+                            f"biometext_pipeline/{file_path.name}"
+                        )
+                    },
+                    input_example=input_example,
                     conda_env=conda_env,
                 )
-                model_uri = os.path.join(run.info.artifact_uri, "BiomeTextModel")
+                model_uri = os.path.join(run.info.artifact_uri, "mlflow_model")
 
         return model_uri
 
