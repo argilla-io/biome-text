@@ -25,7 +25,7 @@ def test_to_mlflow(pipeline, tmp_path):
     )
 
     df = mlflow.search_runs(experiment_ids=["0"])
-    assert len(df) == 1 and df["tags.mlflow.runName"][0] == "Log biome.text model"
+    assert len(df) == 1 and df["tags.mlflow.runName"][0] == "log_biometext_model"
 
     # load MLFlow model and make predictions
     model = mlflow.pyfunc.load_model(model_uri=model_uri)

@@ -114,8 +114,8 @@ class Trainer:
 
     default_root_dir
         Default path for logs and weights when no logger/ckpt_callback passed.
-        Default: `./training_logs`.
-        Can be remote file paths such as `s3://mybucket/path` or 'hdfs://path/'
+        Can be remote file paths such as 's3://mybucket/path' or 'hdfs://path/'
+        Default: './training_logs'.
 
     deterministic
         If true enables cudnn.deterministic.
@@ -438,7 +438,7 @@ class Trainer:
             If True, take the validation data into account when creating the vocabulary (apart from the training data).
             Has no effect if `vocab_config` is None. Default: False.
         lazy
-            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
+            If True, instances are lazily loaded from disk, otherwise they are loaded into memory. Default: False.
         """
         # create instances
         train_instances = train_dataset.to_instances(pipeline, lazy=lazy)

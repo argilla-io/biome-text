@@ -1,25 +1,27 @@
-"""Docstring for the mlflow_model.py module
-
-This module is only used by MLFlow internally for loading a Pipeline as MLFlow model from an MLFlow Tracking server.
-"""
-
+import mlflow
 import pandas as pd
 
-from biome.text import Pipeline
 
+class BiomeTextModel(mlflow.pyfunc.PythonModel):
+    """A custom MLflow model with the 'python_function' flavor for biome.text pipelines.
 
-class BiomeTextModel:
-    def __init__(self, pipeline: Pipeline):
-        self.pipeline = pipeline
+    This class is used by the `Pipeline.to_mlflow()` method.
+    """
 
-    def predict(self, dataframe: pd.DataFrame):
+    ARTIFACT_CONTEXT = "model"
+
+    def __init__(self):
+        self.pipeline = None
+
+    def load_context(self, context):
+        from biome.text import Pipeline
+
+        self.pipeline = Pipeline.from_pretrained(
+            context.artifacts[self.ARTIFACT_CONTEXT]
+        )
+
+    def predict(self, context, dataframe: pd.DataFrame):
         batch = dataframe.to_dict(orient="records")
         predictions = self.pipeline.predict(batch=batch)
 
         return pd.DataFrame(predictions)
-
-
-def _load_pyfunc(path: str):
-    pipeline = Pipeline.from_pretrained(path)
-
-    return BiomeTextModel(pipeline)
