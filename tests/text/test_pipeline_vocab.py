@@ -86,8 +86,9 @@ def test_specific_vocab_config(
 ):
     pipeline.train(
         output=str(tmp_path / "vocab_test_output"),
-        training=valid_dataset,
-        vocab_config=VocabularyConfiguration(datasets=[train_dataset, valid_dataset]),
+        training=train_dataset,
+        validation=valid_dataset,
+        include_valid_data_in_vocab=True,
     )
     assert pipeline.vocab.get_vocab_size(WordFeatures.namespace) == 16
     assert pipeline.vocab.get_vocab_size(CharFeatures.namespace) == 19
@@ -121,7 +122,9 @@ def test_not_touching_vocab(
     assert pipeline.vocab.get_vocab_size(CharFeatures.namespace) == 12
 
 
-def test_restore_vocab(pipeline, train_dataset, tmp_path, deactivate_pipeline_trainer):
+def test_restore_vocab(
+    pipeline, train_dataset, valid_dataset, tmp_path, deactivate_pipeline_trainer
+):
     output = tmp_path / "test_restore_vocab_output"
     pipeline.train(
         output=str(output),

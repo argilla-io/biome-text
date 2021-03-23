@@ -117,9 +117,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
         default_root_dir=str(tmp_path),
     )
 
-    vocab_config = VocabularyConfiguration(
-        datasets=[train_ds], max_vocab_size={"word": 50}
-    )
+    vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
 
     trainer.fit(
         pipeline=pl,

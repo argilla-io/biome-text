@@ -24,7 +24,7 @@ from torch.utils.data import IterableDataset
 
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
-from biome.text.dataset import InstancesDataset
+from biome.text.dataset import InstanceDataset
 from biome.text.pipeline import Pipeline
 
 # We do not require wandb
@@ -417,6 +417,7 @@ class Trainer:
         train_dataset: Dataset,
         valid_dataset: Optional[Dataset] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
+        include_valid_data_in_vocab: bool = False,
         lazy: bool = False,
     ):
         """Train the pipeline
@@ -431,24 +432,35 @@ class Trainer:
             The validation dataset
         vocab_config
             A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
-            If 'default' (str), we will use the default configuration
-            `VocabularyConfiguration(datasets=[training_data])`.
-            If None, we will leave the pipeline's vocabulary untouched.
+            If 'default' (str), we will use the default configuration `VocabularyConfiguration()`.
+            If None, we will leave the pipeline's vocabulary untouched. Default: 'default'.
+        include_valid_data_in_vocab
+            If True, take the validation data into account when creating the vocabulary (apart from the training data).
+            Has no effect if `vocab_config` is None. Default: False.
         lazy
             If True, instances are lazily loaded from disk, otherwise they are loaded into memory. Default: False.
         """
+        # create instances
+        train_instances = train_dataset.to_instances(pipeline, lazy=lazy)
+        valid_instances = (
+            None
+            if valid_dataset is None
+            else valid_dataset.to_instances(pipeline, lazy=lazy)
+        )
+
         # create vocab
         vocab_config = (
-            VocabularyConfiguration(datasets=[train_dataset])
-            if vocab_config == "default"
-            else vocab_config
+            VocabularyConfiguration() if vocab_config == "default" else vocab_config
         )
         if vocab_config is not None:
-            pipeline.create_vocab(vocab_config=vocab_config, lazy=lazy)
+            vocab_datasets = [train_instances]
+            if valid_instances is not None and include_valid_data_in_vocab:
+                vocab_datasets += [valid_instances]
+            pipeline.create_vocab(vocab_datasets, config=vocab_config)
 
         # create dataloaders
         train_dataloader = create_dataloader(
-            train_dataset.to_instances(pipeline, lazy=lazy),
+            train_instances,
             batch_size=self._trainer_config["batch_size"],
             data_bucketing=self._trainer_config["data_bucketing"],
         )
@@ -488,7 +500,7 @@ class Trainer:
 
 
 def create_dataloader(
-    instance_dataset: InstancesDataset,
+    instance_dataset: InstanceDataset,
     batch_size: int = 16,
     data_bucketing: bool = False,
 ) -> PyTorchDataLoader:

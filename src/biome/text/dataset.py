@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from biome.text.pipeline import Pipeline
 
-InstancesDataset = Union[AllennlpDataset, AllennlpLazyDataset]
+InstanceDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
 
 class Dataset:
@@ -339,7 +339,7 @@ class Dataset:
 
     def to_instances(
         self, pipeline: "Pipeline", lazy: bool = False, use_cache: bool = True
-    ) -> InstancesDataset:
+    ) -> InstanceDataset:
         """Convert input to instances for the pipeline
 
         Parameters

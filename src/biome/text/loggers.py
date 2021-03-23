@@ -13,7 +13,7 @@ from mlflow.entities import Experiment
 from mlflow.tracking import MlflowClient
 from mlflow.utils import mlflow_tags
 
-from biome.text.dataset import InstancesDataset
+from biome.text.dataset import InstanceDataset
 from biome.text.training_results import TrainingResults
 
 # We do not require wandb
@@ -39,9 +39,9 @@ class BaseTrainLogger(EpochCallback):
         self,
         pipeline: "Pipeline",
         trainer_configuration: "TrainerConfiguration",
-        training: InstancesDataset,
-        validation: Optional[InstancesDataset] = None,
-        test: Optional[InstancesDataset] = None,
+        training: InstanceDataset,
+        validation: Optional[InstanceDataset] = None,
+        test: Optional[InstanceDataset] = None,
     ):
         """Init train logging
 
@@ -157,9 +157,9 @@ class MlflowLogger(BaseTrainLogger):
         self,
         pipeline: "Pipeline",
         trainer_configuration: "TrainerConfiguration",
-        training: InstancesDataset,
-        validation: Optional[InstancesDataset] = None,
-        test: Optional[InstancesDataset] = None,
+        training: InstanceDataset,
+        validation: Optional[InstanceDataset] = None,
+        test: Optional[InstanceDataset] = None,
     ):
         from pandas import json_normalize
 
@@ -232,9 +232,9 @@ class WandBLogger(BaseTrainLogger):
         self,
         pipeline: "Pipeline",
         trainer_configuration: "TrainerConfiguration",
-        training: InstancesDataset,
-        validation: Optional[InstancesDataset] = None,
-        test: Optional[InstancesDataset] = None,
+        training: InstanceDataset,
+        validation: Optional[InstanceDataset] = None,
+        test: Optional[InstanceDataset] = None,
     ):
         config = {
             "pipeline": pipeline.config.as_dict(),
