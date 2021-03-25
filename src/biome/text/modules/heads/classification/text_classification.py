@@ -40,9 +40,10 @@ class TextClassification(ClassificationHead):
         pooler: Optional[Seq2VecEncoderConfiguration] = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
+        class_weights: List[float] = None,
     ) -> None:
 
-        super().__init__(backbone, labels, multilabel)
+        super().__init__(backbone, labels, multilabel, class_weights=class_weights)
 
         self.pooler = (
             pooler.input_dim(self.backbone.encoder.get_output_dim()).compile()

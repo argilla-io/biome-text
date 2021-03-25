@@ -30,7 +30,11 @@ class ClassificationHead(TaskHead):
     _LOGGER = logging.getLogger(__name__)
 
     def __init__(
-        self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
+        self,
+        backbone: ModelBackbone,
+        labels: List[str],
+        multilabel: bool = False,
+        class_weights: List[float] = None,
     ):
         super().__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
@@ -40,7 +44,9 @@ class ClassificationHead(TaskHead):
 
         # metrics and loss
         if self._multilabel:
-            self._loss = torch.nn.BCEWithLogitsLoss()
+            self._loss = torch.nn.BCEWithLogitsLoss(
+                weight=torch.FloatTensor(class_weights)
+            )
             self._metrics = Metrics(
                 micro={"type": "fbeta_multi_label", "average": "micro"},
                 macro={"type": "fbeta_multi_label", "average": "macro"},
@@ -50,7 +56,9 @@ class ClassificationHead(TaskHead):
                 },
             )
         else:
-            self._loss = torch.nn.CrossEntropyLoss()
+            self._loss = torch.nn.CrossEntropyLoss(
+                weight=torch.FloatTensor(class_weights)
+            )
             self._metrics = Metrics(
                 accuracy={"type": "categorical_accuracy"},
                 micro={"type": "fbeta", "average": "micro"},
