@@ -43,10 +43,10 @@ class ClassificationHead(TaskHead):
         self._multilabel = multilabel
 
         # metrics and loss
+        if class_weights != None:
+            class_weights = torch.FloatTensor(class_weights)
         if self._multilabel:
-            self._loss = torch.nn.BCEWithLogitsLoss(
-                weight=torch.FloatTensor(class_weights)
-            )
+            self._loss = torch.nn.BCEWithLogitsLoss(weight=class_weights)
             self._metrics = Metrics(
                 micro={"type": "fbeta_multi_label", "average": "micro"},
                 macro={"type": "fbeta_multi_label", "average": "macro"},
@@ -56,9 +56,7 @@ class ClassificationHead(TaskHead):
                 },
             )
         else:
-            self._loss = torch.nn.CrossEntropyLoss(
-                weight=torch.FloatTensor(class_weights)
-            )
+            self._loss = torch.nn.CrossEntropyLoss(weight=class_weights)
             self._metrics = Metrics(
                 accuracy={"type": "categorical_accuracy"},
                 micro={"type": "fbeta", "average": "micro"},
