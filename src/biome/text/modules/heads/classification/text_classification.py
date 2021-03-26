@@ -40,7 +40,7 @@ class TextClassification(ClassificationHead):
         pooler: Optional[Seq2VecEncoderConfiguration] = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
-        class_weights: List[float] = None,
+        class_weights: Optional[Union[List[float], dict]] = None,
     ) -> None:
 
         super().__init__(backbone, labels, multilabel, class_weights=class_weights)

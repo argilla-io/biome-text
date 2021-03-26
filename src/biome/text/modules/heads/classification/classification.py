@@ -34,7 +34,7 @@ class ClassificationHead(TaskHead):
         backbone: ModelBackbone,
         labels: List[str],
         multilabel: bool = False,
-        class_weights: List[float] = None,
+        class_weights: Optional[Union[List[float], dict]] = None,
     ):
         super().__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
@@ -44,7 +44,16 @@ class ClassificationHead(TaskHead):
 
         # metrics and loss
         if class_weights != None:
-            class_weights = torch.FloatTensor(class_weights)
+            if isinstance(class_weights, list):
+                class_weights = torch.FloatTensor(class_weights)
+            elif isinstance(class_weights, dict):
+                classes = [
+                    vocabulary.label_for_index(self.backbone.vocab, i)
+                    for i in range(len(self.labels))
+                ]
+                class_weights = torch.FloatTensor(
+                    [class_weights[label] for label in classes]
+                )
         if self._multilabel:
             self._loss = torch.nn.BCEWithLogitsLoss(weight=class_weights)
             self._metrics = Metrics(
