@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 import glob
 
-from pip import __version__ as pip_version
-from pkg_resources import parse_version
 from setuptools import setup
 
 try:
@@ -11,17 +9,8 @@ try:
 except ImportError as error:
     raise ImportError("Make sure you have setuptools >= 40.1.0 installed!") from error
 
-# We require a fairly new version to make use of the new dependency resolver!
-REQUIRED_PIP_VERSION = "20.3.0"
-
 
 if __name__ == "__main__":
-    if parse_version(pip_version) <= parse_version(REQUIRED_PIP_VERSION):
-        raise OSError(
-            f"Minimal required pip version is {REQUIRED_PIP_VERSION}, found: {pip_version}\n"
-            "Please upgrade pip: pip install --upgrade pip"
-        )
-
     setup(
         name="biome-text",
         use_scm_version=True,
