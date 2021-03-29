@@ -24,13 +24,28 @@ from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class ClassificationHead(TaskHead):
-    """Base abstract class for classification problems"""
+    """Base abstract class for classification problems
+
+    Parameters
+    ----------
+    labels
+        A list of labels for your classification task
+    multilabel
+        Is this a multi label classification task? Default: False
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
+    """
 
     task_name = TaskName.text_classification
     _LOGGER = logging.getLogger(__name__)
 
     def __init__(
-        self, backbone: ModelBackbone, labels: List[str], multilabel: bool = False
+        self,
+        backbone: ModelBackbone,
+        labels: List[str],
+        multilabel: bool = False,
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ):
         super().__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
@@ -39,8 +54,14 @@ class ClassificationHead(TaskHead):
         self._multilabel = multilabel
 
         # metrics and loss
+        if isinstance(label_weights, list):
+            label_weights = torch.tensor(label_weights, dtype=torch.float32)
+        elif isinstance(label_weights, dict):
+            label_weights = torch.tensor(
+                [label_weights[label] for label in labels], dtype=torch.float32
+            )
         if self._multilabel:
-            self._loss = torch.nn.BCEWithLogitsLoss()
+            self._loss = torch.nn.BCEWithLogitsLoss(weight=label_weights)
             self._metrics = Metrics(
                 micro={"type": "fbeta_multi_label", "average": "micro"},
                 macro={"type": "fbeta_multi_label", "average": "macro"},
@@ -50,7 +71,7 @@ class ClassificationHead(TaskHead):
                 },
             )
         else:
-            self._loss = torch.nn.CrossEntropyLoss()
+            self._loss = torch.nn.CrossEntropyLoss(weight=label_weights)
             self._metrics = Metrics(
                 accuracy={"type": "categorical_accuracy"},
                 micro={"type": "fbeta", "average": "micro"},

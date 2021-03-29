@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from typing import cast
 
 import numpy
@@ -46,7 +47,7 @@ class RecordPairClassification(ClassificationHead):
     backbone
         Takes care of the embedding and optionally of the language encoding
     labels
-        List of labels
+        A list of labels for your classification task.
     field_encoder
         Encodes a data field, contextualized within the field
     record_encoder
@@ -64,6 +65,9 @@ class RecordPairClassification(ClassificationHead):
         Dropout percentage to use.
     initializer
         If provided, will be used to initialize the model parameters.
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
     """
 
     _RECORD1_ARG_NAME_IN_FORWARD = "record1"
@@ -81,8 +85,9 @@ class RecordPairClassification(ClassificationHead):
         matcher_backward: BiMpmMatchingConfiguration = None,
         dropout: float = 0.1,
         initializer: InitializerApplicator = InitializerApplicator(),
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ):
-        super().__init__(backbone, labels)
+        super().__init__(backbone, labels, label_weights=label_weights)
 
         # This is needed for the TrainerConfig to choose the right 'sorting_keys'
         self.backbone.encoder = TimeDistributedEncoder(self.backbone.encoder)
