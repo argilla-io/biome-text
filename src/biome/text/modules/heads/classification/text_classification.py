@@ -30,16 +30,19 @@ class TextClassification(ClassificationHead):
 
     Parameters
     ----------
+    backbone
+        The backbone of your model. Must not be provided when initiating with `Pipeline.from_config`.
     labels
-
+        A list of labels for your classification task.
     pooler
-
+        The pooler of the output sequence from the backbone model. Default: `BagOfEmbeddingsEncoder`.
     feedforward
-
+        An optional feedforward layer applied to the output of the pooler. Default: None.
     multilabel
-
-    class_weights
-
+        Is this a multi label classification task? Default: False
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
     """
 
     label_name = "label"

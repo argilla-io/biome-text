@@ -31,6 +31,26 @@ class DocumentClassification(ClassificationHead):
     """
     Task head for document text classification. It's quite similar to text
     classification but including the doc2vec transformation layers
+
+    Parameters
+    ----------
+    backbone
+        The backbone of your model. Must not be provided when initiating with `Pipeline.from_config`.
+    labels
+        A list of labels for your classification task.
+    token_pooler
+        The pooler at token level to provide one vector per sentence. Default: `BagOfEmbeddingsEncoder`.
+    sentence_encoder
+        An optional sequence to sequence encoder that contextualizes the sentence representations. Default: None.
+    sentence_pooler
+        The pooler at sentence level to provide a vector for the document. Default: `BagOfEmbeddingsEncoder`.
+    feedforward
+        An optional feedforward layer applied to the output of the sentence pooler. Default: None.
+    multilabel
+        Is this a multi label classification task? Default: False
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
     """
 
     forward_arg_name = "text"

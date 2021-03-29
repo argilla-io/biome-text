@@ -31,6 +31,26 @@ from biome.text.modules.heads.task_prediction import RelationClassificationPredi
 class RelationClassification(ClassificationHead):
     """
     Task head for relation classification
+
+    Parameters
+    ----------
+    backbone
+        The backbone of your model. Must not be provided when initiating with `Pipeline.from_config`.
+    labels
+        A list of labels for your classification task.
+    entities_embedder
+        The embedder for the entity tags.
+    entity_encoding
+        The encoding scheme of the entity tags. Default: BIOUL.
+    pooler
+        The pooler of the output sequence from the backbone model. Default: `BagOfEmbeddingsEncoder`.
+    feedforward
+        An optional feedforward layer applied to the output of the pooler. Default: None.
+    multilabel
+        Is this a multi label classification task? Default: False
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
     """
 
     _TEXT_ARG_NAME_IN_FORWARD = "text"

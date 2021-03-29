@@ -29,11 +29,12 @@ class ClassificationHead(TaskHead):
     Parameters
     ----------
     labels
-
+        A list of labels for your classification task
     multilabel
-
-    class_weights
-
+        Is this a multi label classification task? Default: False
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
     """
 
     task_name = TaskName.text_classification

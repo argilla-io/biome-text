@@ -21,6 +21,26 @@ class RecordClassification(DocumentClassification):
     Accepts a variable data inputs and apply featuring over defined record keys.
 
     This head applies a doc2vec architecture from a structured record data input
+
+    Parameters
+    ----------
+    backbone
+        The backbone of your model. Must not be provided when initiating with `Pipeline.from_config`.
+    labels
+        A list of labels for your classification task.
+    token_pooler
+        The pooler at token level to provide one vector per record field. Default: `BagOfEmbeddingsEncoder`.
+    fields_encoder
+        An optional sequence to sequence encoder that contextualizes the record field representations. Default: None.
+    fields_pooler
+        The pooler at sentence level to provide a vector for the whole record. Default: `BagOfEmbeddingsEncoder`.
+    feedforward
+        An optional feedforward layer applied to the output of the fields pooler. Default: None.
+    multilabel
+        Is this a multi label classification task? Default: False
+    label_weights
+        A list of weights for each label. The weights must be in the same order as the `labels`.
+        You can also provide a dictionary that maps the label to its weight. Default: None.
     """
 
     def __init__(
