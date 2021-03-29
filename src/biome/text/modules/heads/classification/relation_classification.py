@@ -42,6 +42,7 @@ class RelationClassification(ClassificationHead):
         backbone: ModelBackbone,
         labels: List[str],
         entities_embedder: EmbeddingConfiguration,
+        entity_encoding: Optional[str] = "BIOUL",
         pooler: Optional[Seq2VecEncoderConfiguration] = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
