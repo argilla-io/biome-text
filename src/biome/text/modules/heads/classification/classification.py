@@ -24,7 +24,17 @@ from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class ClassificationHead(TaskHead):
-    """Base abstract class for classification problems"""
+    """Base abstract class for classification problems
+
+    Parameters
+    ----------
+    labels
+
+    multilabel
+
+    class_weights
+
+    """
 
     task_name = TaskName.text_classification
     _LOGGER = logging.getLogger(__name__)

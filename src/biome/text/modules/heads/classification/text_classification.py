@@ -27,6 +27,19 @@ from biome.text.modules.heads.task_prediction import TextClassificationPredictio
 class TextClassification(ClassificationHead):
     """
     Task head for text classification
+
+    Parameters
+    ----------
+    labels
+
+    pooler
+
+    feedforward
+
+    multilabel
+
+    class_weights
+
     """
 
     label_name = "label"
