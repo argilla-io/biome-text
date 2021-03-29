@@ -81,8 +81,9 @@ class RecordPairClassification(ClassificationHead):
         matcher_backward: BiMpmMatchingConfiguration = None,
         dropout: float = 0.1,
         initializer: InitializerApplicator = InitializerApplicator(),
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ):
-        super().__init__(backbone, labels)
+        super().__init__(backbone, labels, label_weights=label_weights)
 
         # This is needed for the TrainerConfig to choose the right 'sorting_keys'
         self.backbone.encoder = TimeDistributedEncoder(self.backbone.encoder)

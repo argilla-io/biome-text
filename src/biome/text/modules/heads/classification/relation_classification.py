@@ -45,11 +45,16 @@ class RelationClassification(ClassificationHead):
         pooler: Optional[Seq2VecEncoderConfiguration] = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
-        entity_encoding: Optional[str] = "BIOUL"
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
         # self_attention: Optional[MultiheadSelfAttentionEncoder] = None
     ) -> None:
 
-        super().__init__(backbone=backbone, labels=labels, multilabel=multilabel)
+        super().__init__(
+            backbone=backbone,
+            labels=labels,
+            multilabel=multilabel,
+            label_weights=label_weights,
+        )
 
         self._label_encoding = entity_encoding
         self._entity_tags_namespace = "entities"

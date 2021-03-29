@@ -33,6 +33,7 @@ class RecordClassification(DocumentClassification):
         fields_pooler: Optional[Seq2VecEncoderConfiguration] = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: Optional[bool] = False,
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ) -> None:
 
         super().__init__(
@@ -43,6 +44,7 @@ class RecordClassification(DocumentClassification):
             sentences_pooler=fields_pooler,
             feedforward=feedforward,
             multilabel=multilabel,
+            label_weights=label_weights,
         )
 
         self._inputs = record_keys

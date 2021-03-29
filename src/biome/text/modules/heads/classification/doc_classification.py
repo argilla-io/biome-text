@@ -45,9 +45,15 @@ class DocumentClassification(ClassificationHead):
         sentences_pooler: Seq2VecEncoderConfiguration = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ) -> None:
 
-        super().__init__(backbone, labels=labels, multilabel=multilabel)
+        super().__init__(
+            backbone,
+            labels=labels,
+            multilabel=multilabel,
+            label_weights=label_weights,
+        )
 
         self.backbone.encoder = TimeDistributedEncoder(backbone.encoder)
 
