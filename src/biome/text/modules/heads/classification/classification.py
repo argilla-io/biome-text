@@ -44,7 +44,7 @@ class ClassificationHead(TaskHead):
         backbone: ModelBackbone,
         labels: List[str],
         multilabel: bool = False,
-        class_weights: Optional[Union[List[float], dict]] = None,
+        label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ):
         super().__init__(backbone)
         vocabulary.set_labels(self.backbone.vocab, labels)
@@ -53,14 +53,14 @@ class ClassificationHead(TaskHead):
         self._multilabel = multilabel
 
         # metrics and loss
-        if isinstance(class_weights, list):
-            class_weights = torch.tensor(class_weights, dtype=torch.float32)
-        elif isinstance(class_weights, dict):
-            class_weights = torch.tensor(
-                [class_weights[label] for label in labels], dtype=torch.float32
+        if isinstance(label_weights, list):
+            label_weights = torch.tensor(label_weights, dtype=torch.float32)
+        elif isinstance(label_weights, dict):
+            label_weights = torch.tensor(
+                [label_weights[label] for label in labels], dtype=torch.float32
             )
         if self._multilabel:
-            self._loss = torch.nn.BCEWithLogitsLoss(weight=class_weights)
+            self._loss = torch.nn.BCEWithLogitsLoss(weight=label_weights)
             self._metrics = Metrics(
                 micro={"type": "fbeta_multi_label", "average": "micro"},
                 macro={"type": "fbeta_multi_label", "average": "macro"},
@@ -70,7 +70,7 @@ class ClassificationHead(TaskHead):
                 },
             )
         else:
-            self._loss = torch.nn.CrossEntropyLoss(weight=class_weights)
+            self._loss = torch.nn.CrossEntropyLoss(weight=label_weights)
             self._metrics = Metrics(
                 accuracy={"type": "categorical_accuracy"},
                 micro={"type": "fbeta", "average": "micro"},
