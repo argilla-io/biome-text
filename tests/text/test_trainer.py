@@ -1,7 +1,6 @@
 import os
 import random
 import tempfile
-from pathlib import Path
 from typing import Tuple
 
 import numpy as np
@@ -18,6 +17,7 @@ from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text import VocabularyConfiguration
 from biome.text.configuration import CharFeatures
+from biome.text.configuration import LightningTrainerConfiguration
 from biome.text.configuration import WordFeatures
 
 
@@ -37,9 +37,7 @@ def train_valid_dataset(resources_data_path) -> Tuple[Dataset, Dataset]:
 
 @pytest.fixture
 def pipeline_dict() -> dict:
-    """Pipeline config dict. You need to update the labels!"""
-
-    pipeline_dictionary = {
+    return {
         "name": "german_business_names",
         "features": {
             "word": {"embedding_dim": 16, "lowercase_tokens": True},
@@ -95,8 +93,6 @@ def pipeline_dict() -> dict:
         },
     }
 
-    return pipeline_dictionary
-
 
 def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     """Apart from a well specified training, this also tests the vocab creation!"""
@@ -110,21 +106,24 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     pl = Pipeline.from_config(pipeline_dict)
     train_ds = train_valid_dataset[0]
     valid_ds = train_valid_dataset[1]
-    trainer = Trainer(
+
+    vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
+    trainer_config = LightningTrainerConfiguration(
         batch_size=64,
         optimizer={"type": "adam", "lr": 0.01},
         max_epochs=5,
         default_root_dir=str(tmp_path),
     )
 
-    vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
-
-    trainer.fit(
+    trainer = Trainer(
         pipeline=pl,
         train_dataset=train_ds,
         valid_dataset=valid_ds,
+        trainer_config=trainer_config,
         vocab_config=vocab_config,
     )
+
+    trainer.fit()
 
     assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
     assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
@@ -136,11 +135,23 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     assert evaluation["loss"] == pytest.approx(0.8217981046438217, abs=0.003)
 
 
-def test_default_root_dir(change_to_tmp_working_dir):
-    trainer = Trainer()
+def test_default_root_dir(
+    change_to_tmp_working_dir, pipeline_dict, train_valid_dataset
+):
+    pl = Pipeline.from_config(pipeline_dict)
+    trainer = Trainer(pl, train_dataset=train_valid_dataset[0])
     assert trainer.trainer.default_root_dir == str(
         change_to_tmp_working_dir / "training_logs"
     )
+
+
+def test_deep_copy_of_trainer_config(pipeline_dict, train_valid_dataset):
+    pl = Pipeline.from_config(pipeline_dict)
+    trainer_config = LightningTrainerConfiguration()
+    trainer = Trainer(
+        pl, train_dataset=train_valid_dataset[0], trainer_config=trainer_config
+    )
+    assert trainer_config is not trainer._trainer_config
 
 
 @pytest.mark.parametrize(
@@ -172,19 +183,28 @@ def test_default_root_dir(change_to_tmp_working_dir):
         ),
     ],
 )
-def test_add_default_loggers(input_kwargs, expected_loggers, tmp_path):
-    trainer = Trainer(**input_kwargs, default_root_dir=str(tmp_path))
+def test_add_default_loggers(
+    input_kwargs, expected_loggers, pipeline_dict, train_valid_dataset, tmp_path
+):
+    trainer_config = LightningTrainerConfiguration(
+        **input_kwargs, default_root_dir=str(tmp_path)
+    )
+    trainer = Trainer(
+        Pipeline.from_config(pipeline_dict),
+        train_dataset=train_valid_dataset[0],
+        trainer_config=trainer_config,
+    )
     if input_kwargs.get("logger") is not False:
         assert isinstance(trainer.trainer.logger, LoggerCollection)
         assert len(trainer.trainer.logger.experiment) == len(expected_loggers)
     else:
-        assert trainer._lightning_trainer_kwargs["logger"] is False
+        assert trainer._trainer_config.logger is False
 
     def loggers_include(logger_type) -> bool:
         return any(
             [
                 isinstance(logger, logger_type)
-                for logger in trainer._lightning_trainer_kwargs["logger"]
+                for logger in trainer._trainer_config.logger
             ]
         )
 
