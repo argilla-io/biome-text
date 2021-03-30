@@ -84,11 +84,13 @@ def test_default_vocab(
 def test_specific_vocab_config(
     pipeline, train_dataset, valid_dataset, deactivate_pipeline_trainer, tmp_path
 ):
+    vocab_config = VocabularyConfiguration(include_valid_data=True)
+
     pipeline.train(
         output=str(tmp_path / "vocab_test_output"),
         training=train_dataset,
         validation=valid_dataset,
-        include_valid_data_in_vocab=True,
+        vocab_config=vocab_config,
     )
     assert pipeline.vocab.get_vocab_size(WordFeatures.namespace) == 16
     assert pipeline.vocab.get_vocab_size(CharFeatures.namespace) == 19
