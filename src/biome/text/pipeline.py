@@ -364,7 +364,6 @@ class Pipeline:
         validation: Optional[Dataset] = None,
         test: Optional[Dataset] = None,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
-        include_valid_data_in_vocab: bool = False,
         loggers: List[BaseTrainLogger] = None,
         lazy: bool = False,
         restore: bool = False,
@@ -388,9 +387,6 @@ class Pipeline:
             A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
             If 'default' (str), we will use the default configuration `VocabularyConfiguration()`.
             If None, we will leave the pipeline's vocabulary untouched. Default: 'default'.
-        include_valid_data_in_vocab
-            If True, take the validation data into account when creating the vocabulary (apart from the training data).
-            Has no effect if `vocab_config` is None. Default: False.
         loggers
             A list of loggers that execute a callback before the training, after each epoch,
             and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
@@ -429,13 +425,15 @@ class Pipeline:
             if restore:
                 self._restore_vocab(os.path.join(output, "vocabulary"))
             elif vocab_config is not None:
-                vocab_datasets = [datasets["training"]]
-                if datasets.get("validation") and include_valid_data_in_vocab:
-                    vocab_datasets += [datasets["validation"]]
-                self.create_vocab(
-                    vocab_datasets,
-                    config=vocab_config if vocab_config != "default" else None,
+                vocab_config = (
+                    VocabularyConfiguration()
+                    if vocab_config == "default"
+                    else vocab_config
                 )
+                vocab_datasets = [datasets["training"]]
+                if datasets.get("validation") and vocab_config.include_valid_data:
+                    vocab_datasets += [datasets["validation"]]
+                self.create_vocab(vocab_datasets, config=vocab_config)
             if vocabulary.is_empty(
                 self.vocab, self.config.features.configured_namespaces
             ):
@@ -470,15 +468,14 @@ class Pipeline:
         """Creates and updates the vocab of the pipeline.
 
         NOTE: The trainer calls this method for you. You can use this method in case you want
-        to create the vocab outside of the training/test process.
+        to create the vocab outside of the training process.
 
         Parameters
         ----------
         instance_datasets
             A list of instance datasets from which to create the vocabulary.
         config
-            Configurations for the vocab creation.
-            If None (default), we will take the default configuration `VocabularyConfiguration()`.
+            Configurations for the vocab creation. Default: `VocabularyConfiguration()`.
 
         Examples
         --------
