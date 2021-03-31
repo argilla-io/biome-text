@@ -85,6 +85,8 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
     """
 
     PREDICTION_FILE_NAME = "predictions.json"
+    TRAINING_METRICS_PREFIX = "training"
+    VALIDATION_METRICS_PREFIX = "validation"
     _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, config: Dict, vocab: Optional[Vocabulary] = None):
@@ -397,8 +399,12 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
     def training_epoch_end(self, outputs: List[Any]) -> None:
         metrics = self.get_metrics(reset=True)
         for key, val in metrics.items():
+            if key.startswith("_"):
+                metric_name = self.TRAINING_METRICS_PREFIX + key
+            else:
+                metric_name = self.TRAINING_METRICS_PREFIX + "_" + key
             self.log(
-                ("training" if key.startswith("_") else "training_") + key,
+                metric_name,
                 val,
                 on_step=False,
                 prog_bar=False,
@@ -423,8 +429,12 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
         metrics = self.get_metrics(reset=True)
         for key, val in metrics.items():
+            if key.startswith("_"):
+                metric_name = self.VALIDATION_METRICS_PREFIX + key
+            else:
+                metric_name = self.VALIDATION_METRICS_PREFIX + "_" + key
             self.log(
-                ("validation" if key.startswith("_") else "validation_") + key,
+                metric_name,
                 val,
                 on_step=False,
                 prog_bar=not key.startswith("_"),
