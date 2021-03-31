@@ -2,6 +2,7 @@ import copy
 import os
 from dataclasses import dataclass
 from dataclasses import field
+from dataclasses import fields
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -948,3 +949,7 @@ class LightningTrainerConfiguration:
     optimizer: Dict[str, Any] = field(
         default_factory=lambda: {"type": "adam", "lr": 0.001}
     )
+
+    def as_dict(self) -> Dict:
+        """Returns the dataclass as dict without a deepcopy, in contrast to `dataclasses.asdict`"""
+        return {fld.name: getattr(self, fld.name) for fld in fields(self)}
