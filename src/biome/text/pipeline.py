@@ -22,9 +22,7 @@ import mlflow
 import numpy
 import torch
 from allennlp.commands.find_learning_rate import search_learning_rate
-from allennlp.common import Params
 from allennlp.common.file_utils import is_url_or_existing_file
-from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
@@ -129,19 +127,20 @@ class Pipeline:
         pipeline
             A configured pipeline
         """
-        if isinstance(config, dict):
-            config = PipelineConfiguration.from_dict(config)
+        if isinstance(config, PipelineConfiguration):
+            config = config.as_dict()
 
-        model = PipelineModel.from_params(
-            Params({"config": config}),
+        model = PipelineModel(
+            config=config,
             vocab=Vocabulary.from_files(vocab_path) if vocab_path is not None else None,
         )
+
         if not isinstance(model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {model}")
 
         cls._add_transformers_vocab_if_needed(model)
 
-        return cls(model, config)
+        return cls(model, PipelineConfiguration.from_dict(config))
 
     @classmethod
     def from_pretrained(cls, path: Union[str, Path]) -> "Pipeline":
@@ -765,9 +764,7 @@ class Pipeline:
 
     def copy(self) -> "Pipeline":
         """Returns a copy of the pipeline"""
-        model = PipelineModel.from_params(
-            Params({"config": self.config}), vocab=copy.deepcopy(self.vocab)
-        )
+        model = PipelineModel(self._config.as_dict(), vocab=copy.deepcopy(self.vocab))
         config = copy.deepcopy(self._config)
 
         pipeline_copy = Pipeline(model, config)
