@@ -123,7 +123,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
         vocab_config=vocab_config,
     )
 
-    trainer.fit()
+    trainer.fit(tmp_path / "output")
 
     assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
     assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
@@ -133,6 +133,8 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     evaluation = pl.evaluate(valid_ds)
 
     assert evaluation["loss"] == pytest.approx(0.8217981046438217, abs=0.003)
+
+    Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 
 
 def test_default_root_dir(
