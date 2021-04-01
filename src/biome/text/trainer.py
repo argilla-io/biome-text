@@ -194,13 +194,15 @@ class Trainer:
 
         return callbacks
 
-    def fit(self, output_dir: Union[str, Path] = None, exist_ok: bool = False):
+    def fit(
+        self, output_dir: Optional[Union[str, Path]] = None, exist_ok: bool = False
+    ):
         """Train the pipeline
         Parameters
         ----------
         output_dir
-            If specified, copy the best/final checkpoint and vocab to this directory. Default: None.
-        exists_ok
+            If specified, save the trained pipeline to this directory. Default: None.
+        exist_ok
             If True, overwrite the content of `output_dir`. Default: False.
         """
         try:
@@ -276,7 +278,7 @@ class Trainer:
             if self._model_checkpoint:
                 self._load_best_weights()
             if output_dir:
-                self._save_to_output(output_dir)
+                self._pipeline.save(output_dir)
 
     def _load_best_weights(self):
         """Load weights from the best model checkpoint"""
@@ -286,14 +288,6 @@ class Trainer:
                 checkpoint_path, map_location=lambda storage, loc: storage
             )
             self._pipeline.model.load_state_dict(checkpoint["state_dict"])
-
-    def _save_to_output(self, output_dir: Path):
-        raise NotImplementedError
-
-    # Cases:
-    # - model_checkpoint configured with monitor
-    # - model_checkpoint configured without monitor
-    # - no model_checkpoint
 
 
 class ModelCheckpointWithVocab(ModelCheckpoint):
