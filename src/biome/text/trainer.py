@@ -109,6 +109,9 @@ class Trainer:
             "batch_size",
             "data_bucketing",
             "optimizer",
+            "monitor",
+            "monitor_mode",
+            "save_top_k_checkpoints",
         ]
         self.trainer = pl.Trainer(
             **{
