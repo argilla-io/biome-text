@@ -721,9 +721,9 @@ class LightningTrainerConfiguration:
         Add a callback or list of callbacks.
 
     checkpoint_callback
-        If ``True``, enable checkpointing.
-        It will configure a default ModelCheckpoint callback if there is no user-defined ModelCheckpoint in
-        :paramref:`~pytorch_lightning.trainer.trainer.Trainer.callbacks`. Default: ``True``.
+        If True, enable checkpointing.
+        It will configure a default `ModelCheckpointWithVocab` callback if there is no user-defined ModelCheckpoint in
+        `callbacks`. Default: True.
 
     check_val_every_n_epoch
         Check val every n train epochs.
@@ -809,7 +809,15 @@ class LightningTrainerConfiguration:
         Stop training after this number of steps. Disabled by default (None).
 
     min_steps
-        Force training for at least these number of steps. Disabled by default (None).
+        Force training for at least these number of steps. Disabled by default (None)
+
+    monitor
+        Metric to monitor. Will be used to load the best weights after the training.
+        Has no effect if `checkpoint_callback` is False. Default: 'validation_loss'.
+
+    monitor_mode
+        Either 'min' or 'max'. If `save_top_k_checkpoints != 0`, the decision to overwrite the current save file is made
+        based on either the maximization or the minimization of the monitored metric. Default: 'min'.
 
     num_nodes
         number of GPU nodes for distributed training.
@@ -881,6 +889,11 @@ class LightningTrainerConfiguration:
         and smaller datasets reload when running out of their data. In 'min_size' mode, all the datasets
         reload when reaching the minimum length of datasets.
 
+    save_top_k_checkpoints
+        If `save_top_k_checkpoints == k`, the best k models according to the metric monitored will be saved.
+        If `save_top_k_checkpoints == 0`, no models are saved. If `save_top_k_checkpoints == -1`, all models are saved.
+        Has no effect if `checkpoint_callback` is False. Default: 1.
+
     stochastic_weight_avg
         Whether to use `Stochastic Weight Averaging (SWA)
         <https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/>_`
@@ -951,6 +964,9 @@ class LightningTrainerConfiguration:
     optimizer: Dict[str, Any] = field(
         default_factory=lambda: {"type": "adam", "lr": 0.001}
     )
+    monitor: str = "validation_loss"
+    monitor_mode: str = "min"
+    save_top_k_checkpoints: int = 1
 
     def as_dict(self) -> Dict:
         """Returns the dataclass as dict without a deepcopy, in contrast to `dataclasses.asdict`"""

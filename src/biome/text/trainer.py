@@ -178,13 +178,15 @@ class Trainer:
             ]
 
         if not get_callbacks_of_type(ModelCheckpoint):
-            monitor = (
-                f"{self._pipeline.model.VALIDATION_METRICS_PREFIX}_loss"
+            monitor = self._trainer_config.monitor if self._valid_dataset else None
+            mode = self._trainer_config.monitor_mode
+            save_top_k = (
+                self._trainer_config.save_top_k_checkpoints
                 if self._valid_dataset
-                else f"{self._pipeline.model.TRAINING_METRICS_PREFIX}_loss"
+                else None
             )
             self._model_checkpoint = ModelCheckpointWithVocab(
-                save_top_k=1, monitor=monitor, mode="min"
+                save_top_k=save_top_k, monitor=monitor, mode=mode
             )
             callbacks.append(self._model_checkpoint)
         else:
