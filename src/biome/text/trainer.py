@@ -47,8 +47,8 @@ _LOGGER = logging.getLogger(__name__)
 class Trainer:
     """A class for training a `biome.text.Pipeline`.
 
-    It is basically a light wrapper around the awesome Pytorch Lightning Trainer to facilitate the interaction
-    with our pipelines.
+    It is basically a light wrapper around the awesome Pytorch Lightning Trainer to define custom defaults and
+    facilitate the interaction with our pipelines.
 
     Parameters
     ----------
@@ -284,6 +284,7 @@ class Trainer:
         """Load weights from the best model checkpoint"""
         checkpoint_path = self._model_checkpoint.best_model_path
         if checkpoint_path:
+            _LOGGER.info("Loading best weights ...")
             checkpoint = pl_load(
                 checkpoint_path, map_location=lambda storage, loc: storage
             )
