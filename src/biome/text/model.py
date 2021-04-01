@@ -12,7 +12,6 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Type
 from typing import Union
 
 import allennlp
@@ -64,10 +63,10 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
     Parameters
     ----------
-    name
-        Name of the pipeline model
-    head
-        TaskHead of the pipeline model
+    config
+        Configuration of the pipeline
+    vocab
+        The vocabulary of the pipeline. If None, an empty vocabulary will be created (default).
 
     Attributes
     ----------
@@ -88,16 +87,32 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
     PREDICTION_FILE_NAME = "predictions.json"
     _LOGGER = logging.getLogger(__name__)
 
-    def __init__(self, name: str, head: TaskHead):
-        super().__init__(vocab=head.backbone.vocab)
+    def __init__(self, config: Dict, vocab: Optional[Vocabulary] = None):
+        super().__init__(vocab=vocab or vocabulary.create_empty_vocabulary())
 
-        self.name = name
+        # saves the config in the pl checkpoints
+        self.save_hyperparameters("config")
+
+        config = PipelineConfiguration.from_dict(config)
+        tokenizer = config.build_tokenizer()
+        featurizer = config.features.compile_featurizer(tokenizer)
+        embedder = config.build_embedder(self.vocab)
+        head = config.head.compile(
+            backbone=ModelBackbone(
+                self.vocab,
+                featurizer=featurizer,
+                embedder=embedder,
+                encoder=config.encoder,
+            )
+        )
+
+        self.name = config.name
         self._head = None
         self.set_head(head)
 
         self.file_path: Optional[str] = None
 
-        self.optimizer: torch.optim.Optimizer = None
+        self.optimizer: Optional[torch.optim.Optimizer] = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -111,7 +126,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
     @classmethod
     def from_params(
-        cls: Type["PipelineModel"],
+        cls: "PipelineModel",
         params: Params,
         vocab: Optional[Vocabulary] = None,
         **extras,
@@ -135,26 +150,8 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         pipeline_model
         """
 
-        config = params.pop("config")
-        if not isinstance(config, PipelineConfiguration):
-            config = PipelineConfiguration.from_params(config)
-
-        vocab = vocab or vocabulary.create_empty_vocabulary()
-        tokenizer = config.build_tokenizer()
-        featurizer = config.features.compile_featurizer(tokenizer)
-        embedder = config.build_embedder(vocab)
-
-        return cls(
-            name=config.name,
-            head=config.head.compile(
-                backbone=ModelBackbone(
-                    vocab,
-                    featurizer=featurizer,
-                    embedder=embedder,
-                    encoder=config.encoder,
-                )
-            ),
-        )
+        config = params.pop("config", keep_as_dict=True)
+        return cls(config=config, vocab=vocab)
 
     @property
     def head(self) -> TaskHead:
