@@ -23,14 +23,14 @@ from allennlp.data import Instance
 from allennlp.data import Vocabulary
 from allennlp.models.archival import CONFIG_NAME
 
-from . import vocabulary
-from .backbone import ModelBackbone
-from .configuration import PipelineConfiguration
-from .configuration import PredictionConfiguration
-from .featurizer import FeaturizeError
-from .helpers import split_signature_params_by_predicate
-from .modules.heads import TaskHead
-from .modules.heads import TaskPrediction
+from biome.text import vocabulary
+from biome.text.backbone import ModelBackbone
+from biome.text.configuration import PipelineConfiguration
+from biome.text.configuration import PredictionConfiguration
+from biome.text.featurizer import FeaturizeError
+from biome.text.helpers import split_signature_params_by_predicate
+from biome.text.modules.heads import TaskHead
+from biome.text.modules.heads import TaskPrediction
 
 
 class _HashDict(dict):

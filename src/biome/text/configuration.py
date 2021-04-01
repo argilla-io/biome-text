@@ -25,18 +25,20 @@ from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.plugins import Plugin
 from pytorch_lightning.profiler import BaseProfiler
 
-from .features import CharFeatures
-from .features import TransformersFeatures
-from .features import WordFeatures
-from .featurizer import InputFeaturizer
-from .helpers import sanitize_for_params
-from .helpers import save_dict_as_yaml
-from .modules.encoders import Encoder
-from .modules.heads.classification.relation_classification import RelationClassification
-from .modules.heads.task_head import TaskHeadConfiguration
-from .modules.heads.token_classification import TokenClassification
-from .tokenizer import Tokenizer
-from .tokenizer import TransformersTokenizer
+from biome.text.features import CharFeatures
+from biome.text.features import TransformersFeatures
+from biome.text.features import WordFeatures
+from biome.text.featurizer import InputFeaturizer
+from biome.text.helpers import sanitize_for_params
+from biome.text.helpers import save_dict_as_yaml
+from biome.text.modules.encoders import Encoder
+from biome.text.modules.heads.classification.relation_classification import (
+    RelationClassification,
+)
+from biome.text.modules.heads.task_head import TaskHeadConfiguration
+from biome.text.modules.heads.token_classification import TokenClassification
+from biome.text.tokenizer import Tokenizer
+from biome.text.tokenizer import TransformersTokenizer
 
 
 class FeaturesConfiguration(FromParams):
