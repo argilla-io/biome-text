@@ -670,12 +670,12 @@ class LightningTrainerConfiguration:
 
     Parameters
     ----------
-    accelerator
-        Previously known as distributed_backend (dp, ddp, ddp2, etc...).
-        Can also take in an accelerator object for custom hardware.
-
     accumulate_grad_batches
         Accumulates grads every k batches or as set up in the dict.
+
+    add_early_stopping
+        Adds a default `EarlyStopping` callback. To configure it, see `patience`, `monitor` and `monitor_mode`.
+        Default: True
 
     add_csv_logger
         Adds a default CSV logger if `logger` is not False. Default: True
@@ -685,12 +685,6 @@ class LightningTrainerConfiguration:
 
     add_wandb_logger
         Adds a default WandB logger if `logger` is not False and wandb is installed. Default: True
-
-    amp_backend
-        The mixed precision backend to use ("native" or "apex")
-
-    amp_level
-        The optimization level to use (O1, O2, etc...).
 
     auto_lr_find
         If set to True, will make trainer.tune() run a learning rate finder,
@@ -705,25 +699,16 @@ class LightningTrainerConfiguration:
         Additionally, can be set to either `power` that estimates the batch size through
         a power search or `binsearch` that estimates the batch size through a binary search.
 
-    auto_select_gpus
-        If enabled and `gpus` is an integer, pick available
-        gpus automatically. This is especially useful when
-        GPUs are configured to be in "exclusive mode", such
-        that only one process at a time can access them.
-
     batch_size
         Size of the batch.
-
-    benchmark
-        If true enables cudnn.benchmark.
 
     callbacks
         Add a callback or list of callbacks.
 
     checkpoint_callback
-        If True, enable checkpointing.
-        It will configure a default `ModelCheckpointWithVocab` callback if there is no user-defined ModelCheckpoint in
-        `callbacks`. Default: True.
+        Adds a default `ModelCheckpointWithVocab` callback if there is no user-defined ModelCheckpoint in
+        `callbacks`. To configure it, see `save_top_k_checkpoints`, `monitor` and `monitor_mode`.
+        Default: True.
 
     check_val_every_n_epoch
         Check val every n train epochs.
@@ -735,9 +720,6 @@ class LightningTrainerConfiguration:
         Default path for logs and weights when no logger/ckpt_callback passed.
         Can be remote file paths such as 's3://mybucket/path' or 'hdfs://path/'
         Default: './training_logs'.
-
-    deterministic
-        If true enables cudnn.deterministic.
 
     fast_dev_run
         runs n if set to ``n`` (int) else 1 if set to ``True`` batch(es)
@@ -764,38 +746,10 @@ class LightningTrainerConfiguration:
     log_every_n_steps
         How often to log within steps (defaults to every 50 steps).
 
-    log_gpu_memory
-        None, 'min_max', 'all'. Might slow performance
-
     logger
         Logger (or iterable collection of loggers) for experiment tracking.
         If not False, we will add some loggers by default, see `add_[csv, tensorboard, wandb]_logger`.
         Default: True
-
-    prepare_data_per_node
-        If True, each LOCAL_RANK=0 will call prepare data.
-        Otherwise only NODE_RANK=0, LOCAL_RANK=0 will prepare data
-
-    process_position
-        orders the progress bar when running multiple models on same machine.
-
-    progress_bar_refresh_rate
-        How often to refresh progress bar (in steps). Value ``0`` disables progress bar.
-        Ignored when a custom progress bar is passed to :paramref:`~Trainer.callbacks`. Default: None, means
-        a suitable value will be chosen based on the environment (terminal, Google COLAB, etc.).
-
-    profiler
-        To profile individual steps during training and assist in identifying bottlenecks. Passing bool
-        value is deprecated in v1.1 and will be removed in v1.3.
-
-    overfit_batches
-        Overfit a percent of training data (float) or a set number of batches (int). Default: 0.0
-
-    plugins
-        Plugins allow modification of core behavior like ddp and amp, and enable custom lightning plugins.
-
-    precision
-        Full precision (32), half precision (16). Can be used on CPU, GPU or TPUs.
 
     max_epochs
         Stop training once this number of epochs is reached. Disabled by default (None).
@@ -819,12 +773,6 @@ class LightningTrainerConfiguration:
         Either 'min' or 'max'. If `save_top_k_checkpoints != 0`, the decision to overwrite the current save file is made
         based on either the maximization or the minimization of the monitored metric. Default: 'min'.
 
-    num_nodes
-        number of GPU nodes for distributed training.
-
-    num_processes
-        number of processes for distributed training with distributed_backend="ddp_cpu"
-
     num_sanity_val_steps
         Sanity check runs n validation batches before starting the training routine.
         Set it to `-1` to run all batches in all validation dataloaders. Default: 2
@@ -834,60 +782,21 @@ class LightningTrainerConfiguration:
         that is constructed via the AllenNLP configuration framework.
         Default: `{"type": "adam", "lr": 0.001}`
 
-    reload_dataloaders_every_epoch
-        Set to True to reload dataloaders every epoch.
+    overfit_batches
+        Overfit a percent of training data (float) or a set number of batches (int). Default: 0.0
 
-    replace_sampler_ddp
-        Explicitly enables or disables sampler replacement. If not specified this
-        will toggled automatically when DDP is used. By default it will add ``shuffle=True`` for
-        train sampler and ``shuffle=False`` for val/test sampler. If you want to customize it,
-        you can set ``replace_sampler_ddp=False`` and add your own distributed sampler.
+    precision
+        Full precision (32), half precision (16). Can be used on CPU, GPU or TPUs.
+
+    progress_bar_refresh_rate
+        How often to refresh progress bar (in steps). Value ``0`` disables progress bar.
+        Ignored when a custom progress bar is passed to :paramref:`~Trainer.callbacks`. Default: None, means
+        a suitable value will be chosen based on the environment (terminal, Google COLAB, etc.).
 
     resume_from_checkpoint
         Path/URL of the checkpoint from which training is resumed. If there is
         no checkpoint file at the path, start from scratch. If resuming from mid-epoch checkpoint,
         training will start from the beginning of the next epoch.
-
-    sync_batchnorm
-        Synchronize batch norm layers between process groups/whole world.
-
-    terminate_on_nan
-        If set to True, will terminate training (by raising a `ValueError`) at the
-        end of each training batch, if any of the parameters or the loss are NaN or +/-inf.
-
-    tpu_cores
-        How many TPU cores to train on (1 or 8) / Single TPU to train on [1]
-
-    track_grad_norm
-        -1 no tracking. Otherwise tracks that p-norm. May be set to 'inf' infinity-norm.
-
-    truncated_bptt_steps
-        Truncated back prop breaks performs backprop every k steps of much longer
-        sequence.
-
-    val_check_interval
-        How often to check the validation set. Use float to check within a training epoch,
-        use int to check every n steps (batches).
-
-    weights_summary
-        Prints a summary of the weights when training begins.
-
-    weights_save_path
-        Where to save weights if specified. Will override default_root_dir
-        for checkpoints only. Use this if for whatever reason you need the checkpoints
-        stored in a different place than the logs written in `default_root_dir`.
-        Can be remote file paths such as `s3://mybucket/path` or 'hdfs://path/'
-        Defaults to `default_root_dir`.
-
-    move_metrics_to_cpu
-        Whether to force internal logged metrics to be moved to cpu.
-        This can save some gpu memory, but can make training slower. Use with attention.
-
-    multiple_trainloader_mode
-        How to loop over the datasets when there are multiple train loaders.
-        In 'max_size_cycle' mode, the trainer ends one epoch when the largest dataset is traversed,
-        and smaller datasets reload when running out of their data. In 'min_size' mode, all the datasets
-        reload when reaching the minimum length of datasets.
 
     save_top_k_checkpoints
         If `save_top_k_checkpoints == k`, the best k models according to the metric monitored will be saved.
@@ -897,77 +806,99 @@ class LightningTrainerConfiguration:
     stochastic_weight_avg
         Whether to use `Stochastic Weight Averaging (SWA)
         <https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/>_`
+
+    terminate_on_nan
+        If set to True, will terminate training (by raising a `ValueError`) at the
+        end of each training batch, if any of the parameters or the loss are NaN or +/-inf.
+
+    val_check_interval
+        How often to check the validation set. Use float to check within a training epoch,
+        use int to check every n steps (batches).
+
+    weights_save_path
+        Where to save weights if specified. Will override default_root_dir
+        for checkpoints only. Use this if for whatever reason you need the checkpoints
+        stored in a different place than the logs written in `default_root_dir`.
+        Can be remote file paths such as `s3://mybucket/path` or 'hdfs://path/'
+        Defaults to `default_root_dir`.
+
+    extra_lightning_params
+        This dictionary is passed on as kwargs to the Pytorch Lightning Trainer init method.
     """
 
-    logger: Union[LightningLoggerBase, Iterable[LightningLoggerBase], bool] = True
-    checkpoint_callback: bool = True
+    accumulate_grad_batches: Union[int, Dict[int, int], List[list]] = 1
+    auto_lr_find: Union[bool, str] = False
+    auto_scale_batch_size: Union[str, bool] = False
     callbacks: Optional[Union[List[Callback], Callback]] = None
+    check_val_every_n_epoch: int = 1
+    checkpoint_callback: bool = True
     default_root_dir: str = field(
         default_factory=lambda: os.path.join(os.getcwd(), "training_logs")
     )
-    gradient_clip_val: float = 0
-    process_position: int = 0
-    num_nodes: int = 1
-    num_processes: int = 1
-    gpus: Optional[Union[List[int], str, int]] = None
-    auto_select_gpus: bool = False
-    tpu_cores: Optional[Union[List[int], str, int]] = None
-    log_gpu_memory: Optional[str] = None
-    progress_bar_refresh_rate: Optional[int] = None
-    overfit_batches: Union[int, float] = 0.0
-    track_grad_norm: Union[int, float, str] = -1
-    check_val_every_n_epoch: int = 1
     fast_dev_run: Union[int, bool] = False
-    accumulate_grad_batches: Union[int, Dict[int, int], List[list]] = 1
+    flush_logs_every_n_steps: int = 100
+    gpus: Optional[Union[List[int], str, int]] = None
+    gradient_clip_val: float = 0
+    limit_train_batches: Union[int, float] = 1.0
+    limit_val_batches: Union[int, float] = 1.0
+    limit_test_batches: Union[int, float] = 1.0
+    log_every_n_steps: int = 50
+    logger: Union[LightningLoggerBase, Iterable[LightningLoggerBase], bool] = True
     max_epochs: Optional[int] = None
     min_epochs: Optional[int] = None
     max_steps: Optional[int] = None
     min_steps: Optional[int] = None
-    limit_train_batches: Union[int, float] = 1.0
-    limit_val_batches: Union[int, float] = 1.0
-    limit_test_batches: Union[int, float] = 1.0
-    limit_predict_batches: Union[int, float] = 1.0
-    val_check_interval: Union[int, float] = 1.0
-    flush_logs_every_n_steps: int = 100
-    log_every_n_steps: int = 50
-    accelerator: Optional[Union[str, Accelerator]] = None
-    sync_batchnorm: bool = False
-    precision: int = 32
-    weights_summary: Optional[str] = "top"
-    weights_save_path: Optional[str] = None
     num_sanity_val_steps: int = 2
-    truncated_bptt_steps: Optional[int] = None
+    overfit_batches: Union[int, float] = 0.0
+    precision: int = 32
+    progress_bar_refresh_rate: Optional[int] = None
     resume_from_checkpoint: Optional[Union[Path, str]] = None
-    profiler: Optional[Union[BaseProfiler, bool, str]] = None
-    benchmark: bool = False
-    deterministic: bool = False
-    reload_dataloaders_every_epoch: bool = False
-    auto_lr_find: Union[bool, str] = False
-    replace_sampler_ddp: bool = True
-    terminate_on_nan: bool = False
-    auto_scale_batch_size: Union[str, bool] = False
-    prepare_data_per_node: bool = True
-    plugins: Optional[Union[Plugin, str, list]] = None
-    amp_backend: str = "native"
-    amp_level: str = "O2"
-    distributed_backend: Optional[str] = None
-    automatic_optimization: Optional[bool] = None
-    move_metrics_to_cpu: bool = False
-    multiple_trainloader_mode: str = "max_size_cycle"
     stochastic_weight_avg: bool = False
+    terminate_on_nan: bool = False
+    val_check_interval: Union[int, float] = 1.0
+    weights_save_path: Optional[str] = None
     # non lightning trainer parameters
+    add_early_stopping: bool = True
     add_csv_logger: bool = True
     add_tensorboard_logger: bool = True
     add_wandb_logger: bool = True
     batch_size: int = 16
     data_bucketing: bool = False
+    monitor: str = "validation_loss"
+    monitor_mode: str = "min"
     optimizer: Dict[str, Any] = field(
         default_factory=lambda: {"type": "adam", "lr": 0.001}
     )
-    monitor: str = "validation_loss"
-    monitor_mode: str = "min"
+    patience: int = 3
     save_top_k_checkpoints: int = 1
+    extra_lightning_params: Dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> Dict:
         """Returns the dataclass as dict without a deepcopy, in contrast to `dataclasses.asdict`"""
         return {fld.name: getattr(self, fld.name) for fld in fields(self)}
+
+    @property
+    def lightning_params(self) -> Dict[str, Any]:
+        non_lightning_params = [
+            "add_early_stopping",
+            "add_csv_logger",
+            "add_tensorboard_logger",
+            "add_wandb_logger",
+            "batch_size",
+            "data_bucketing",
+            "monitor",
+            "monitor_mode",
+            "optimizer",
+            "patience",
+            "save_top_k_checkpoints",
+            "extra_lightning_params",
+        ]
+
+        lightning_params = {
+            key: value
+            for key, value in self.as_dict().items()
+            if key not in non_lightning_params
+        }
+        lightning_params.update(self.extra_lightning_params)
+
+        return lightning_params

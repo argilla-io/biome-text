@@ -13,6 +13,7 @@ from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
+from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.loggers import LightningLoggerBase
@@ -95,31 +96,12 @@ class Trainer:
         self._wandb_logger: Optional[WandbLogger] = None
         self._model_checkpoint: Optional[ModelCheckpoint] = None
 
-        # add default loggers/callbacks
+        # add default callbacks/loggers
+        self._trainer_config.callbacks = self._add_default_callbacks()
         if self._trainer_config.logger is not False:
             self._trainer_config.logger = self._add_default_loggers()
-        if self._trainer_config.checkpoint_callback is not False:
-            self._trainer_config.callbacks = self._add_default_callbacks()
 
-        non_lightning_kwargs = [
-            "add_csv_logger",
-            "add_tensorboard_logger",
-            "add_wandb_logger",
-            "batch_size",
-            "batch_size",
-            "data_bucketing",
-            "optimizer",
-            "monitor",
-            "monitor_mode",
-            "save_top_k_checkpoints",
-        ]
-        self.trainer = pl.Trainer(
-            **{
-                key: value
-                for key, value in self._trainer_config.as_dict().items()
-                if key not in non_lightning_kwargs
-            }
-        )
+        self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
     def _add_default_loggers(self) -> List[LightningLoggerBase]:
         """Adds default loggers for the lightning trainer"""
@@ -132,6 +114,7 @@ class Trainer:
         def get_loggers_of_type(logger_type) -> List[LightningLoggerBase]:
             return [logger for logger in loggers if isinstance(logger, logger_type)]
 
+        # csv
         if self._trainer_config.add_csv_logger and not get_loggers_of_type(CSVLogger):
             loggers.append(
                 CSVLogger(
@@ -139,6 +122,8 @@ class Trainer:
                     name="csv",
                 )
             )
+
+        # tensorboard
         if self._trainer_config.add_tensorboard_logger and not get_loggers_of_type(
             TensorBoardLogger
         ):
@@ -148,6 +133,8 @@ class Trainer:
                     name="tensorboard",
                 )
             )
+
+        # wandb
         if (
             self._trainer_config.add_wandb_logger
             and _HAS_WANDB
@@ -159,7 +146,6 @@ class Trainer:
             loggers.append(self._wandb_logger)
         elif get_loggers_of_type(WandbLogger):
             self._wandb_logger = get_loggers_of_type(WandbLogger)[0]
-
         # somehow the wandb dir does not get created, i think this is a bug on pl side, have to check it out
         if self._wandb_logger is not None and not os.path.isdir(
             os.path.join(self._wandb_logger.save_dir, "wandb")
@@ -180,7 +166,10 @@ class Trainer:
                 if isinstance(callback, callback_type)
             ]
 
-        if not get_callbacks_of_type(ModelCheckpoint):
+        # model checkpoint
+        if self._trainer_config.checkpoint_callback and not get_callbacks_of_type(
+            ModelCheckpoint
+        ):
             monitor = self._trainer_config.monitor if self._valid_dataset else None
             mode = self._trainer_config.monitor_mode
             save_top_k = (
@@ -192,8 +181,22 @@ class Trainer:
                 save_top_k=save_top_k, monitor=monitor, mode=mode
             )
             callbacks.append(self._model_checkpoint)
-        else:
+        elif get_callbacks_of_type(ModelCheckpoint):
             self._model_checkpoint = get_callbacks_of_type(ModelCheckpoint)[0]
+
+        # early stopping
+        if (
+            self._trainer_config.add_early_stopping
+            and self._valid_dataset is not None
+            and not get_callbacks_of_type(EarlyStopping)
+        ):
+            callbacks.append(
+                EarlyStopping(
+                    monitor=self._trainer_config.monitor,
+                    mode=self._trainer_config.monitor_mode,
+                    patience=self._trainer_config.patience,
+                )
+            )
 
         return callbacks
 
