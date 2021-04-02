@@ -1,6 +1,8 @@
 import logging
 import os
 from dataclasses import asdict
+from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import List
 from typing import Optional
 from typing import Union
@@ -11,10 +13,12 @@ from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.utilities.cloud_io import load as pl_load
 from torch.utils.data import IterableDataset
 
 from biome.text.configuration import LightningTrainerConfiguration
@@ -22,6 +26,9 @@ from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
 from biome.text.pipeline import Pipeline
+
+if TYPE_CHECKING:
+    from biome.text.model import PipelineModel
 
 # We do not require wandb
 _HAS_WANDB = False
@@ -40,8 +47,8 @@ _LOGGER = logging.getLogger(__name__)
 class Trainer:
     """A class for training a `biome.text.Pipeline`.
 
-    It is basically a light wrapper around the awesome Pytorch Lightning Trainer to facilitate the interaction
-    with our pipelines.
+    It is basically a light wrapper around the awesome Pytorch Lightning Trainer to define custom defaults and
+    facilitate the interaction with our pipelines.
 
     Parameters
     ----------
@@ -84,11 +91,15 @@ class Trainer:
         )
         self._lazy = lazy
 
-        # the wandb logger holds a special place in our heart
+        # we give some special attention to these loggers/callbacks
         self._wandb_logger: Optional[WandbLogger] = None
+        self._model_checkpoint: Optional[ModelCheckpoint] = None
 
+        # add default loggers/callbacks
         if self._trainer_config.logger is not False:
             self._trainer_config.logger = self._add_default_loggers()
+        if self._trainer_config.checkpoint_callback is not False:
+            self._trainer_config.callbacks = self._add_default_callbacks()
 
         non_lightning_kwargs = [
             "add_csv_logger",
@@ -98,11 +109,14 @@ class Trainer:
             "batch_size",
             "data_bucketing",
             "optimizer",
+            "monitor",
+            "monitor_mode",
+            "save_top_k_checkpoints",
         ]
         self.trainer = pl.Trainer(
             **{
                 key: value
-                for key, value in asdict(self._trainer_config).items()
+                for key, value in self._trainer_config.as_dict().items()
                 if key not in non_lightning_kwargs
             }
         )
@@ -115,17 +129,17 @@ class Trainer:
         elif isinstance(loggers, LightningLoggerBase):
             loggers = [loggers]
 
-        def loggers_include(logger_type) -> bool:
-            return any([isinstance(logger, logger_type) for logger in loggers])
+        def get_loggers_of_type(logger_type) -> List[LightningLoggerBase]:
+            return [logger for logger in loggers if isinstance(logger, logger_type)]
 
-        if self._trainer_config.add_csv_logger and not loggers_include(CSVLogger):
+        if self._trainer_config.add_csv_logger and not get_loggers_of_type(CSVLogger):
             loggers.append(
                 CSVLogger(
                     save_dir=self._trainer_config.default_root_dir or os.getcwd(),
                     name="csv",
                 )
             )
-        if self._trainer_config.add_tensorboard_logger and not loggers_include(
+        if self._trainer_config.add_tensorboard_logger and not get_loggers_of_type(
             TensorBoardLogger
         ):
             loggers.append(
@@ -137,16 +151,15 @@ class Trainer:
         if (
             self._trainer_config.add_wandb_logger
             and _HAS_WANDB
-            and not loggers_include(WandbLogger)
+            and not get_loggers_of_type(WandbLogger)
         ):
             self._wandb_logger = WandbLogger(
                 save_dir=self._trainer_config.default_root_dir, project="biome"
             )
             loggers.append(self._wandb_logger)
-        elif loggers_include(WandbLogger):
-            self._wandb_logger = [
-                logger for logger in loggers if isinstance(logger, WandbLogger)
-            ][0]
+        elif get_loggers_of_type(WandbLogger):
+            self._wandb_logger = get_loggers_of_type(WandbLogger)[0]
+
         # somehow the wandb dir does not get created, i think this is a bug on pl side, have to check it out
         if self._wandb_logger is not None and not os.path.isdir(
             os.path.join(self._wandb_logger.save_dir, "wandb")
@@ -155,8 +168,53 @@ class Trainer:
 
         return loggers
 
-    def fit(self):
-        """Train the pipeline"""
+    def _add_default_callbacks(self) -> List[Callback]:
+        callbacks = self._trainer_config.callbacks or []
+        if isinstance(callbacks, Callback):
+            callbacks = [callbacks]
+
+        def get_callbacks_of_type(callback_type) -> List[Callback]:
+            return [
+                callback
+                for callback in callbacks
+                if isinstance(callback, callback_type)
+            ]
+
+        if not get_callbacks_of_type(ModelCheckpoint):
+            monitor = self._trainer_config.monitor if self._valid_dataset else None
+            mode = self._trainer_config.monitor_mode
+            save_top_k = (
+                self._trainer_config.save_top_k_checkpoints
+                if self._valid_dataset
+                else None
+            )
+            self._model_checkpoint = ModelCheckpointWithVocab(
+                save_top_k=save_top_k, monitor=monitor, mode=mode
+            )
+            callbacks.append(self._model_checkpoint)
+        else:
+            self._model_checkpoint = get_callbacks_of_type(ModelCheckpoint)[0]
+
+        return callbacks
+
+    def fit(
+        self, output_dir: Optional[Union[str, Path]] = None, exist_ok: bool = False
+    ):
+        """Train the pipeline
+        Parameters
+        ----------
+        output_dir
+            If specified, save the trained pipeline to this directory. Default: None.
+        exist_ok
+            If True, overwrite the content of `output_dir`. Default: False.
+        """
+        try:
+            output_dir = Path(output_dir)
+        except TypeError:
+            pass
+        else:
+            output_dir.mkdir(exist_ok=exist_ok)
+
         # create instances
         train_instances = self._train_dataset.to_instances(
             self._pipeline, lazy=self._lazy
@@ -209,15 +267,38 @@ class Trainer:
         if self._wandb_logger is not None:
             config = {
                 "pipeline": self._pipeline.config.as_dict(),
-                "trainer": asdict(self._trainer_config),
+                "trainer": self._trainer_config.as_dict(),
             }
             self._wandb_logger.experiment.config.update(config)
 
-        self.trainer.fit(
-            self._pipeline.model,
-            train_dataloader=train_dataloader,
-            val_dataloaders=valid_dataloader,
-        )
+        try:
+            self.trainer.fit(
+                self._pipeline.model,
+                train_dataloader=train_dataloader,
+                val_dataloaders=valid_dataloader,
+            )
+        finally:
+            if self._model_checkpoint:
+                self._load_best_weights()
+            if output_dir:
+                self._pipeline.save(output_dir)
+
+    def _load_best_weights(self):
+        """Load weights from the best model checkpoint"""
+        checkpoint_path = self._model_checkpoint.best_model_path
+        if checkpoint_path:
+            _LOGGER.info("Loading best weights ...")
+            checkpoint = pl_load(
+                checkpoint_path, map_location=lambda storage, loc: storage
+            )
+            self._pipeline.model.load_state_dict(checkpoint["state_dict"])
+
+
+class ModelCheckpointWithVocab(ModelCheckpoint):
+    def on_pretrain_routine_start(self, trainer, pl_module: "PipelineModel"):
+        super().on_pretrain_routine_start(trainer, pl_module)
+        if os.path.isdir(self.dirpath):
+            pl_module.vocab.save_to_files(os.path.join(self.dirpath, "vocabulary"))
 
 
 def create_dataloader(
