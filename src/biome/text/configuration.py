@@ -785,6 +785,9 @@ class LightningTrainerConfiguration:
     overfit_batches
         Overfit a percent of training data (float) or a set number of batches (int). Default: 0.0
 
+    patience
+        Number of validation checks with no improvement after which training will be stopped. Default: 3.
+
     precision
         Full precision (32), half precision (16). Can be used on CPU, GPU or TPUs.
 
