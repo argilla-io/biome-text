@@ -27,6 +27,7 @@ from transformers import AutoTokenizer
 from transformers import PreTrainedTokenizer
 from transformers import PreTrainedTokenizerFast
 
+from biome.text import helpers
 from biome.text.backbone import ModelBackbone
 from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import ComponentConfiguration
@@ -322,6 +323,7 @@ class ProfNerT(TaskHead):
                 self.metrics["classification_accuracy"](classification_logits, labels)
                 self.metrics["classification_micro"](classification_logits, labels)
                 self.metrics["classification_macro"](classification_logits, labels)
+                self.metrics["classification_label"](classification_logits, labels)
                 self.metrics["ner_f1"](ner_logits_for_metrics, tags, tags_mask)
             else:
                 self.metrics["valid_classification_accuracy"](
@@ -331,6 +333,9 @@ class ProfNerT(TaskHead):
                     classification_logits, labels
                 )
                 self.metrics["valid_classification_macro"](
+                    classification_logits, labels
+                )
+                self.metrics["valid_classification_label"](
                     classification_logits, labels
                 )
                 self.metrics["valid_ner_f1"](ner_logits_for_metrics, tags, tags_mask)
@@ -382,6 +387,16 @@ class ProfNerT(TaskHead):
                 self.metrics["classification_macro"].get_metric(reset).items()
             ):
                 metrics.update({f"classification/macro_{key}": value})
+            for key, values in (
+                self.metrics["classification_label"].get_metric(reset).items()
+            ):
+                for i, v in enumerate(values):
+                    label = self.backbone.vocab.get_token_from_index(
+                        i, "classification_labels"
+                    )
+                    # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
+                    label = helpers.sanitize_metric_name(label)
+                    metrics.update({"_{}/{}".format(key, label): v})
             for key, value in self.metrics["ner_f1"].get_metric(reset).items():
                 metrics.update({f"ner/{key}": value})
         else:
@@ -398,6 +413,16 @@ class ProfNerT(TaskHead):
                 self.metrics["valid_classification_macro"].get_metric(reset).items()
             ):
                 metrics.update({f"valid_classification/macro_{key}": value})
+            for key, values in (
+                self.metrics["valid_classification_label"].get_metric(reset).items()
+            ):
+                for i, v in enumerate(values):
+                    label = self.backbone.vocab.get_token_from_index(
+                        i, "classification_labels"
+                    )
+                    # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
+                    label = helpers.sanitize_metric_name(label)
+                    metrics.update({"valid_{}/{}".format(key, label): v})
             for key, value in self.metrics["valid_ner_f1"].get_metric(reset).items():
                 metrics.update({f"valid_ner/{key}": value})
 
