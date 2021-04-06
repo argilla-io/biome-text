@@ -95,12 +95,18 @@ class ProfNer(TaskHead):
             "classification_accuracy": CategoricalAccuracy(),
             "classification_micro": FBetaMeasure(average="micro"),
             "classification_macro": FBetaMeasure(average="macro"),
+            "classification_label": FBetaMeasure(
+                labels=list(range(len(classification_labels)))
+            ),
             "ner_f1": SpanBasedF1Measure(
                 self.backbone.vocab, "ner_tags", label_encoding=ner_tags_encoding
             ),
             "valid_classification_accuracy": CategoricalAccuracy(),
             "valid_classification_micro": FBetaMeasure(average="micro"),
             "valid_classification_macro": FBetaMeasure(average="macro"),
+            "valid_classification_label": FBetaMeasure(
+                labels=list(range(len(classification_labels)))
+            ),
             "valid_ner_f1": SpanBasedF1Measure(
                 self.backbone.vocab, "ner_tags", label_encoding=ner_tags_encoding
             ),
