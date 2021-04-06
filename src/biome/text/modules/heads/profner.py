@@ -22,7 +22,6 @@ from allennlp.training.metrics import SpanBasedF1Measure
 from torch import Tensor
 
 from biome.text import helpers
-from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.featurizer import FeaturizeError
 from biome.text.modules.configuration import ComponentConfiguration
@@ -303,7 +302,9 @@ class ProfNer(TaskHead):
                 self.metrics["classification_label"].get_metric(reset).items()
             ):
                 for i, v in enumerate(values):
-                    label = vocabulary.label_for_index(self.backbone.vocab, i)
+                    label = self.backbone.vocab.get_token_from_index(
+                        i, "classification_labels"
+                    )
                     # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
                     label = helpers.sanitize_metric_name(label)
                     metrics.update({"_{}/{}".format(key, label): v})
@@ -327,7 +328,9 @@ class ProfNer(TaskHead):
                 self.metrics["valid_classification_label"].get_metric(reset).items()
             ):
                 for i, v in enumerate(values):
-                    label = vocabulary.label_for_index(self.backbone.vocab, i)
+                    label = self.backbone.vocab.get_token_from_index(
+                        i, "classification_labels"
+                    )
                     # sanitize label using same patterns as tensorboardX to avoid summary writer warnings
                     label = helpers.sanitize_metric_name(label)
                     metrics.update({"valid_{}/{}".format(key, label): v})
