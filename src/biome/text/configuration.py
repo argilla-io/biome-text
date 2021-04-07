@@ -729,7 +729,8 @@ class LightningTrainerConfiguration:
         How often to flush logs to disk (defaults to every 100 steps).
 
     gpus
-        number of gpus to train on (int) or which GPUs to train on (list or str) applied per node
+        number of gpus to train on (int) or which GPUs to train on (list or str) applied per node.
+        If None (default), we will use one GPU if available.
 
     gradient_clip_val
         0 means don't clip.

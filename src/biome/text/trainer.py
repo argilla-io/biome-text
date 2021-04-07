@@ -8,6 +8,7 @@ from typing import Optional
 from typing import Union
 
 import pytorch_lightning as pl
+import torch
 from allennlp.common import Params
 from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
@@ -96,10 +97,12 @@ class Trainer:
         self._wandb_logger: Optional[WandbLogger] = None
         self._model_checkpoint: Optional[ModelCheckpoint] = None
 
-        # add default callbacks/loggers
+        # add default callbacks/loggers/gpu
         self._trainer_config.callbacks = self._add_default_callbacks()
         if self._trainer_config.logger is not False:
             self._trainer_config.logger = self._add_default_loggers()
+        if self._trainer_config.gpus is None and torch.cuda.is_available():
+            self._trainer_config.gpus = 1
 
         self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
