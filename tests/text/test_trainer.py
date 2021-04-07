@@ -113,6 +113,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
         optimizer={"type": "adam", "lr": 0.01},
         max_epochs=5,
         default_root_dir=str(tmp_path),
+        gpus=0,  # turn off gpus even if available
     )
 
     trainer = Trainer(
