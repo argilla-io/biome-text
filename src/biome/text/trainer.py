@@ -349,6 +349,7 @@ class Trainer:
             }
             self._wandb_logger.experiment.config.update(config)
 
+        # training
         try:
             self.trainer.fit(
                 self._pipeline.model,
