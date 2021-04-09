@@ -125,12 +125,15 @@ class Trainer:
             self._trainer_config.warmup_steps is None
             and self._trainer_config.lr_decay is None
         ):
-            self._pipeline.model.lr_scheduler = self._add_lr_scheduler()
+            self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
 
         self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
     def _add_default_loggers(self) -> List[LightningLoggerBase]:
-        """Adds default loggers for the lightning trainer"""
+        """Adds optional default loggers and returns the extended list
+
+        Added loggers: CSV, TensorBoard, WandB
+        """
         loggers = self._trainer_config.logger
         if loggers is True:
             loggers = []
@@ -181,6 +184,10 @@ class Trainer:
         return loggers
 
     def _add_default_callbacks(self) -> List[Callback]:
+        """Adds optional default callbacks and returns the extended list
+
+        Added callbacks: ModelCheckpoint, EarlyStopping, LearningRateMonitor
+        """
         callbacks = self._trainer_config.callbacks or []
         if isinstance(callbacks, Callback):
             callbacks = [callbacks]
@@ -232,7 +239,11 @@ class Trainer:
 
         return callbacks
 
-    def _add_lr_scheduler(self) -> Dict:
+    def _create_lr_scheduler(self) -> Dict:
+        """Returns one of three default schedulers
+
+        Possibilities: constant/linear/cosine schedule with or without warmup
+        """
         steps_per_epoch = math.ceil(
             len(self._train_dataset) / self._trainer_config.batch_size
         )
@@ -277,6 +288,7 @@ class Trainer:
         self, output_dir: Optional[Union[str, Path]] = None, exist_ok: bool = False
     ):
         """Train the pipeline
+
         Parameters
         ----------
         output_dir
