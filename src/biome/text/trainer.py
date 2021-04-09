@@ -122,7 +122,7 @@ class Trainer:
 
         # create lr scheduler
         if not (
-            self._trainer_config.warmup_steps is None
+            self._trainer_config.warmup_steps == 0
             and self._trainer_config.lr_decay is None
         ):
             self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
