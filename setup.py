@@ -39,10 +39,13 @@ if __name__ == "__main__":
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
             "mlflow~=1.13.1",
-            "pandas~=1.1.0",
+            "numpy",
+            "pandas",
             "pytorch-lightning==1.2.0",
             "ray[tune]~=1.2.0",
             "spacy~=2.3.0",
+            "torch",  # the version is defined by allennlp
+            "transformers",  # the version is defined by allennlp
             "tqdm>=4.49.0",
             "uvicorn~=0.11.0",
         ],

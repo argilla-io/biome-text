@@ -1,8 +1,10 @@
 import logging
+import math
 import os
 from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -15,6 +17,7 @@ from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
 from pytorch_lightning.callbacks import EarlyStopping
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.loggers import LightningLoggerBase
@@ -22,6 +25,9 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.cloud_io import load as pl_load
 from torch.utils.data import IterableDataset
+from transformers.optimization import get_constant_schedule_with_warmup
+from transformers.optimization import get_cosine_schedule_with_warmup
+from transformers.optimization import get_linear_schedule_with_warmup
 
 from biome.text.configuration import LightningTrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
@@ -104,10 +110,30 @@ class Trainer:
         if self._trainer_config.gpus is None and torch.cuda.is_available():
             self._trainer_config.gpus = 1
 
+        # create optimizer
+        self._pipeline.model.optimizer = Optimizer.from_params(
+            Params(
+                {
+                    "model_parameters": self._pipeline.model.named_parameters(),
+                    **self._trainer_config.optimizer,
+                }
+            )
+        )
+
+        # create lr scheduler
+        if not (
+            self._trainer_config.warmup_steps == 0
+            and self._trainer_config.lr_decay is None
+        ):
+            self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
+
         self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
     def _add_default_loggers(self) -> List[LightningLoggerBase]:
-        """Adds default loggers for the lightning trainer"""
+        """Adds optional default loggers and returns the extended list
+
+        Added loggers: CSV, TensorBoard, WandB
+        """
         loggers = self._trainer_config.logger
         if loggers is True:
             loggers = []
@@ -158,6 +184,10 @@ class Trainer:
         return loggers
 
     def _add_default_callbacks(self) -> List[Callback]:
+        """Adds optional default callbacks and returns the extended list
+
+        Added callbacks: ModelCheckpoint, EarlyStopping, LearningRateMonitor
+        """
         callbacks = self._trainer_config.callbacks or []
         if isinstance(callbacks, Callback):
             callbacks = [callbacks]
@@ -201,16 +231,68 @@ class Trainer:
                 )
             )
 
+        # lr monitor
+        if self._trainer_config.add_lr_monitor and not get_callbacks_of_type(
+            LearningRateMonitor
+        ):
+            callbacks.append(LearningRateMonitor(logging_interval="step"))
+
         return callbacks
 
+    def _create_lr_scheduler(self) -> Dict:
+        """Returns one of three default schedulers
+
+        Possibilities: constant/linear/cosine schedule with or without warmup
+        """
+        steps_per_epoch = math.ceil(
+            len(self._train_dataset) / self._trainer_config.batch_size
+        )
+        try:
+            training_steps = min(
+                self._trainer_config.max_steps,
+                self._trainer_config.max_epochs * steps_per_epoch,
+            )
+        # One or both of the max_* is None:
+        except TypeError:
+            training_steps = (
+                self._trainer_config.max_steps
+                or self._trainer_config.max_epochs * steps_per_epoch
+                or 1000 * steps_per_epoch  # default of the lightning trainer
+            )
+
+        if self._trainer_config.lr_decay == "linear":
+            scheduler = get_linear_schedule_with_warmup(
+                optimizer=self._pipeline.model.optimizer,
+                num_warmup_steps=self._trainer_config.warmup_steps,
+                num_training_steps=training_steps,
+            )
+        elif self._trainer_config.lr_decay == "cosine":
+            scheduler = get_cosine_schedule_with_warmup(
+                optimizer=self._pipeline.model.optimizer,
+                num_warmup_steps=self._trainer_config.warmup_steps,
+                num_training_steps=training_steps,
+            )
+        else:
+            scheduler = get_constant_schedule_with_warmup(
+                optimizer=self._pipeline.model.optimizer,
+                num_warmup_steps=self._trainer_config.warmup_steps,
+            )
+
+        return {
+            "scheduler": scheduler,
+            "interval": "step",
+            "name": "learning_rate",
+        }
+
     def fit(
-        self, output_dir: Optional[Union[str, Path]] = None, exist_ok: bool = False
+        self, output_dir: Optional[Union[str, Path]] = "output", exist_ok: bool = False
     ):
         """Train the pipeline
+
         Parameters
         ----------
         output_dir
-            If specified, save the trained pipeline to this directory. Default: None.
+            If specified, save the trained pipeline to this directory. Default: 'output'.
         exist_ok
             If True, overwrite the content of `output_dir`. Default: False.
         """
@@ -259,16 +341,6 @@ class Trainer:
             else None
         )
 
-        # create optimizer
-        self._pipeline.model.optimizer = Optimizer.from_params(
-            Params(
-                {
-                    "model_parameters": self._pipeline.model.named_parameters(),
-                    **self._trainer_config.optimizer,
-                }
-            )
-        )
-
         # log config to wandb
         if self._wandb_logger is not None:
             config = {
@@ -277,6 +349,7 @@ class Trainer:
             }
             self._wandb_logger.experiment.config.update(config)
 
+        # training
         try:
             self.trainer.fit(
                 self._pipeline.model,

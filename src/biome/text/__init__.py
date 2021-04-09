@@ -35,6 +35,7 @@ try:
 except ModuleNotFoundError:
     pass
 
+from .configuration import LightningTrainerConfiguration
 from .configuration import PipelineConfiguration
 from .configuration import TrainerConfiguration
 from .configuration import VocabularyConfiguration

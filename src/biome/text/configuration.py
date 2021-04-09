@@ -680,6 +680,9 @@ class LightningTrainerConfiguration:
     add_csv_logger
         Adds a default CSV logger if `logger` is not False. Default: True
 
+    add_lr_monitor
+        Adds a default `LearningRateMonitor(logging_interval="step")` to the callbacks. Default: True
+
     add_tensorboard_logger
         Adds a default Tensorboard logger if `logger` is not False. Default: True
 
@@ -752,6 +755,26 @@ class LightningTrainerConfiguration:
         If not False, we will add some loggers by default, see `add_[csv, tensorboard, wandb]_logger`.
         Default: True
 
+    lr_decay
+        Either 'linear' or 'cosine'. After an optional warmup, decay the learning rate in the specified manner.
+        Default None
+
+        You can use more sophisticated schedulers by first instantiating the Trainer and then manually specifying a
+        scheduler, for example:
+        ```python
+        from torch.optim.lr_scheduler import ReduceLROnPlateau
+        pipeline = Pipeline.from_config(...)
+        trainer = Trainer(...)
+        pipeline.model.lr_scheduler = {
+            "scheduler": ReduceLROnPlateau(pipeline.model.optimizer, ...),
+            "monitor": "validation_loss",
+            "strict": True,
+        }
+        trainer.fit()
+        ```
+        See also https://pytorch-lightning.readthedocs.io/en/stable/common/optimizers.html#learning-rate-scheduling
+        If specifying a scheduler manually, `lr_decay` and `warmup_steps` will have no effect.
+
     max_epochs
         Stop training once this number of epochs is reached. Disabled by default (None).
         If both max_epochs and max_steps are not specified, defaults to ``max_epochs`` = 1000.
@@ -767,12 +790,14 @@ class LightningTrainerConfiguration:
         Force training for at least these number of steps. Disabled by default (None)
 
     monitor
-        Metric to monitor. Will be used to load the best weights after the training.
-        Has no effect if `checkpoint_callback` is False. Default: 'validation_loss'.
+        Metric to monitor. Will be used to load the best weights after the training (`checkpoint_callback` must be True)
+        or stop the training early (`add_early_stopping` must be True). Default: 'validation_loss'.
 
     monitor_mode
         Either 'min' or 'max'. If `save_top_k_checkpoints != 0`, the decision to overwrite the current save file is made
-        based on either the maximization or the minimization of the monitored metric. Default: 'min'.
+        based on either the maximization or the minimization of the monitored metric (`checkpoint_callback` must be
+        True). It also configures the default early stopping callback (`add_early_stopping` must be True).
+        Default: 'min'
 
     num_sanity_val_steps
         Sanity check runs n validation batches before starting the training routine.
@@ -819,6 +844,11 @@ class LightningTrainerConfiguration:
         How often to check the validation set. Use float to check within a training epoch,
         use int to check every n steps (batches).
 
+    warmup_steps
+        Number of steps for the warmup phase. In this initial phase the learning rate will be increased linearly from
+        zero until the learning rate specified in the optimizer. See also `lr_decay` for more sophisticated schedulers.
+        Default: 0
+
     weights_save_path
         Where to save weights if specified. Will override default_root_dir
         for checkpoints only. Use this if for whatever reason you need the checkpoints
@@ -864,10 +894,12 @@ class LightningTrainerConfiguration:
     # non lightning trainer parameters
     add_early_stopping: bool = True
     add_csv_logger: bool = True
+    add_lr_monitor: bool = True
     add_tensorboard_logger: bool = True
     add_wandb_logger: bool = True
     batch_size: int = 16
     data_bucketing: bool = False
+    lr_decay: Optional[str] = None
     monitor: str = "validation_loss"
     monitor_mode: str = "min"
     optimizer: Dict[str, Any] = field(
@@ -875,6 +907,7 @@ class LightningTrainerConfiguration:
     )
     patience: int = 3
     save_top_k_checkpoints: int = 1
+    warmup_steps: int = 0
     extra_lightning_params: Dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> Dict:
@@ -886,15 +919,18 @@ class LightningTrainerConfiguration:
         non_lightning_params = [
             "add_early_stopping",
             "add_csv_logger",
+            "add_lr_monitor",
             "add_tensorboard_logger",
             "add_wandb_logger",
             "batch_size",
             "data_bucketing",
+            "lr_decay",
             "monitor",
             "monitor_mode",
             "optimizer",
             "patience",
             "save_top_k_checkpoints",
+            "warmup_steps",
             "extra_lightning_params",
         ]
 

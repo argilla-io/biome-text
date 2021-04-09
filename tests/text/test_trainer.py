@@ -97,11 +97,9 @@ def pipeline_dict() -> dict:
 def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     """Apart from a well specified training, this also tests the vocab creation!"""
 
-    random.seed(42)
-    np.random.seed(422)
-    torch.manual_seed(4222)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(4222)
+    random.seed(43)
+    np.random.seed(43)
+    torch.manual_seed(43)
 
     pl = Pipeline.from_config(pipeline_dict)
     train_ds = train_valid_dataset[0]
@@ -133,7 +131,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
 
     evaluation = pl.evaluate(valid_ds)
 
-    assert evaluation["loss"] == pytest.approx(0.8217981046438217, abs=0.003)
+    assert evaluation["loss"] == pytest.approx(0.9922929322719574, abs=0.003)
 
     Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 
