@@ -285,14 +285,14 @@ class Trainer:
         }
 
     def fit(
-        self, output_dir: Optional[Union[str, Path]] = None, exist_ok: bool = False
+        self, output_dir: Optional[Union[str, Path]] = "output", exist_ok: bool = False
     ):
         """Train the pipeline
 
         Parameters
         ----------
         output_dir
-            If specified, save the trained pipeline to this directory. Default: None.
+            If specified, save the trained pipeline to this directory. Default: 'output'.
         exist_ok
             If True, overwrite the content of `output_dir`. Default: False.
         """
