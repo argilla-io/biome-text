@@ -115,6 +115,9 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         self.file_path: Optional[str] = None
 
         self.optimizer: Optional[torch.optim.Optimizer] = None
+        # The lr_scheduler dict follows the Lightning format:
+        # https://pytorch-lightning.readthedocs.io/en/stable/common/optimizers.html#learning-rate-scheduling
+        self.lr_scheduler: Optional[Dict] = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -442,7 +445,9 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             )
 
     def configure_optimizers(self):
-        return self.optimizer
+        if self.lr_scheduler is None:
+            return self.optimizer
+        return [self.optimizer], [self.lr_scheduler]
 
 
 allennlp.models.Model.register(PipelineModel.__name__, exist_ok=True)(PipelineModel)
