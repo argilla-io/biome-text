@@ -790,12 +790,14 @@ class LightningTrainerConfiguration:
         Force training for at least these number of steps. Disabled by default (None)
 
     monitor
-        Metric to monitor. Will be used to load the best weights after the training.
-        Has no effect if `checkpoint_callback` is False. Default: 'validation_loss'.
+        Metric to monitor. Will be used to load the best weights after the training (`checkpoint_callback` must be True)
+        or stop the training early (`add_early_stopping` must be True). Default: 'validation_loss'.
 
     monitor_mode
         Either 'min' or 'max'. If `save_top_k_checkpoints != 0`, the decision to overwrite the current save file is made
-        based on either the maximization or the minimization of the monitored metric. Default: 'min'.
+        based on either the maximization or the minimization of the monitored metric (`checkpoint_callback` must be
+        True). It also configures the default early stopping callback (`add_early_stopping` must be True).
+        Default: 'min'
 
     num_sanity_val_steps
         Sanity check runs n validation batches before starting the training routine.
