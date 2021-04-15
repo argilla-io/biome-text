@@ -172,7 +172,8 @@ class Trainer:
             and not get_loggers_of_type(WandbLogger)
         ):
             self._wandb_logger = WandbLogger(
-                save_dir=self._trainer_config.default_root_dir, project="biome"
+                save_dir=self._trainer_config.default_root_dir,
+                project=os.environ.get("WANDB_PROJECT", "biome"),
             )
             loggers.append(self._wandb_logger)
         elif get_loggers_of_type(WandbLogger):
