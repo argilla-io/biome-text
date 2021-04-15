@@ -127,6 +127,13 @@ class CharFeatures(Features):
     @property
     def config(self) -> Dict:
         """Returns the config in AllenNLP format"""
+        if self.encoder["type"] == "cnn":
+            min_padding_length = max(self.encoder.get("ngram_filter_sizes", [5]))
+        elif self.encoder["type"] in ["gru", "lstm"]:
+            min_padding_length = 1
+        else:
+            min_padding_length = 0
+
         config = {
             "indexer": {
                 "type": "characters",
@@ -134,8 +141,8 @@ class CharFeatures(Features):
                 "character_tokenizer": {
                     "lowercase_characters": self.lowercase_characters
                 },
+                "min_padding_length": min_padding_length,
             },
-            #         "character_tokenizer": {"lowercase_characters": True},
             "embedder": {
                 "type": "character_encoding",
                 "embedding": {
