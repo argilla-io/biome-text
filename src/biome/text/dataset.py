@@ -499,10 +499,10 @@ class Dataset:
                 Path(self.dataset.cache_files[0]["filename"]).parent
                 / f"{fingerprint}.{self._CACHED_INSTANCE_LIST_EXTENSION}"
             )
-            with cache_path.open("wb") as file:
-                self._LOGGER.info(f"Caching instances to {cache_path})")
+            with cache_path.open("xb") as file:
+                self._LOGGER.warning(f"Caching instances to {cache_path})")
                 pickle.dump(instance_list, file)
-        except (IndexError, KeyError, FileNotFoundError):
+        except (IndexError, KeyError, FileNotFoundError, FileExistsError):
             pass
 
     @copy_sign_and_docs(datasets.Dataset.cleanup_cache_files)
