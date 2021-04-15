@@ -346,11 +346,11 @@ class Trainer:
         )
         valid_dataloader = (
             create_dataloader(
-                self._valid_dataset.to_instances(self._pipeline, lazy=self._lazy),
+                valid_instances,
                 batch_size=self._trainer_config.batch_size,
                 data_bucketing=self._trainer_config.data_bucketing,
             )
-            if self._valid_dataset is not None
+            if valid_instances is not None
             else None
         )
 
