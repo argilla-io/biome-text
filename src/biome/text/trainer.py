@@ -1,5 +1,6 @@
 import logging
 import math
+import multiprocessing
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -416,4 +417,5 @@ def create_dataloader(
         )
         if data_bucketing
         else None,
+        num_workers=multiprocessing.cpu_count(),
     )
