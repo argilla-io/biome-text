@@ -74,14 +74,15 @@ class Trainer:
         If `"default"` (str), we will use the default configuration `VocabularyConfiguration()`.
         If None, we will leave the pipeline's vocabulary untouched. Default: `"default"`.
     lazy
-        If True, instances are lazily loaded from disk, otherwise they are loaded into memory. Default: False.
+        If True, instances are lazily loaded from disk, otherwise they are loaded into memory.
+        Ignored when passing in `InstanceDataset`s. Default: False.
     """
 
     def __init__(
         self,
         pipeline: Pipeline,
-        train_dataset: Dataset,
-        valid_dataset: Optional[Dataset] = None,
+        train_dataset: Union[Dataset, InstanceDataset],
+        valid_dataset: Optional[Union[Dataset, InstanceDataset]] = None,
         trainer_config: Optional[LightningTrainerConfiguration] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
         lazy: bool = False,
@@ -310,14 +311,19 @@ class Trainer:
             output_dir.mkdir(exist_ok=exist_ok)
 
         # create instances
-        train_instances = self._train_dataset.to_instances(
-            self._pipeline, lazy=self._lazy
-        )
-        valid_instances = (
-            None
-            if self._valid_dataset is None
-            else self._valid_dataset.to_instances(self._pipeline, lazy=self._lazy)
-        )
+        if isinstance(self._train_dataset, Dataset):
+            train_instances = self._train_dataset.to_instances(
+                self._pipeline, lazy=self._lazy
+            )
+        else:
+            train_instances = self._train_dataset
+
+        if isinstance(self._valid_dataset, Dataset):
+            valid_instances = self._valid_dataset.to_instances(
+                self._pipeline, lazy=self._lazy
+            )
+        else:
+            valid_instances = self._valid_dataset
 
         # create vocab
         vocab_config = (
