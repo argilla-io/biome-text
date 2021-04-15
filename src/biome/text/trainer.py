@@ -233,6 +233,11 @@ class Trainer:
             )
 
         # lr monitor
+        if self._trainer_config.add_lr_monitor is None and (
+            self._trainer_config.warmup_steps != 0
+            or self._trainer_config.lr_decay is not None
+        ):
+            self._trainer_config.add_lr_monitor = True
         if self._trainer_config.add_lr_monitor and not get_callbacks_of_type(
             LearningRateMonitor
         ):
