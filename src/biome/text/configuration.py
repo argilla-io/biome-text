@@ -681,7 +681,8 @@ class LightningTrainerConfiguration:
         Adds a default CSV logger if `logger` is not False. Default: True
 
     add_lr_monitor
-        Adds a default `LearningRateMonitor(logging_interval="step")` to the callbacks. Default: True
+        Adds a default `LearningRateMonitor(logging_interval="step")` to the callbacks.
+        By default (None), we will set this to true if you use either `warmup_steps` and/or `lr_decay`.
 
     add_tensorboard_logger
         Adds a default Tensorboard logger if `logger` is not False. Default: True
@@ -894,7 +895,7 @@ class LightningTrainerConfiguration:
     # non lightning trainer parameters
     add_early_stopping: bool = True
     add_csv_logger: bool = True
-    add_lr_monitor: bool = True
+    add_lr_monitor: Optional[bool] = None
     add_tensorboard_logger: bool = True
     add_wandb_logger: bool = True
     batch_size: int = 16
