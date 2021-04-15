@@ -2,8 +2,8 @@ import mlflow
 import pytest
 from ray import tune
 
+from biome.text import LightningTrainerConfiguration
 from biome.text import Pipeline
-from biome.text import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.hpo import TuneExperiment
 
@@ -106,3 +106,26 @@ def test_tune_exp_custom_trainable(
     assert my_exp.name == "custom trainable"
     assert my_exp.trainable == my_trainable
     assert my_exp._run_identifier == "my_trainable"
+
+
+def test_tune_experiment_lightning_trainable(dataset, pipeline_config, monkeypatch):
+    # avoid logging to wandb
+    monkeypatch.setenv("WANDB_MODE", "disabled")
+
+    pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
+    trainer_config = LightningTrainerConfiguration(
+        batch_size=2,
+        max_epochs=1,
+        optimizer={"type": "adamw", "lr": tune.loguniform(0.001, 0.01)},
+    )
+
+    my_exp = TuneExperiment(
+        pipeline_config=pipeline_config,
+        trainer_config=trainer_config,
+        train_dataset=dataset,
+        valid_dataset=dataset,
+        num_samples=1,
+    )
+
+    analysis = tune.run(my_exp)
+    assert len(analysis.trials) == 1
