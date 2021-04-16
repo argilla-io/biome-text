@@ -108,15 +108,16 @@ class TuneExperiment(tune.Experiment):
     --------
     A minimal usage would be:
 
-    >>> from biome.text import Dataset
+    >>> from biome.text import Dataset, LightningTrainerConfiguration
     >>> from ray import tune
     >>> pipeline_config = {
     ...     "name": "tune_experiment_example",
     ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
     ... }
-    >>> trainer_config = {
-    ...     "optimizer": {"type": "adam", "lr": tune.loguniform(1e-3, 1e-2)}
-    ... }
+    >>> trainer_config = LightningTrainerConfiguration(
+    ...     optimizer={"type": "adam", "lr": tune.loguniform(1e-3, 1e-2)},
+    ...     progress_bar_refresh_rate=0
+    ... )
     >>> train_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
     >>> valid_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
     >>> my_exp = TuneExperiment(pipeline_config, trainer_config, train_dataset, valid_dataset, num_samples=10)
