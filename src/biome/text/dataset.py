@@ -500,7 +500,7 @@ class Dataset:
                 / f"{fingerprint}.{self._CACHED_INSTANCE_LIST_EXTENSION}"
             )
             with cache_path.open("xb") as file:
-                self._LOGGER.warning(f"Caching instances to {cache_path})")
+                self._LOGGER.info(f"Caching instances to {cache_path})")
                 pickle.dump(instance_list, file)
         except (IndexError, KeyError, FileNotFoundError, FileExistsError):
             pass
