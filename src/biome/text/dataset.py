@@ -338,7 +338,11 @@ class Dataset:
         return self.dataset.format
 
     def to_instances(
-        self, pipeline: "Pipeline", lazy: bool = False, use_cache: bool = True
+        self,
+        pipeline: "Pipeline",
+        lazy: bool = False,
+        use_cache: bool = True,
+        disable_tqdm: bool = False,
     ) -> InstanceDataset:
         """Convert input to instances for the pipeline
 
@@ -347,9 +351,11 @@ class Dataset:
         pipeline
             The pipeline for which to create the instances.
         lazy
-            If true, instances are lazily loaded from disk, otherwise they are loaded into memory.
+            If True, instances are lazily loaded from disk, otherwise they are loaded into memory.
         use_cache
-            If true, we will try to reuse cached instances. Ignored when `lazy=True`.
+            If True, we will try to reuse cached instances. Ignored when `lazy=True`.
+        disable_tqdm
+            If True, disable the tqdm progress bar. Default: False
 
         Returns
         -------
@@ -377,6 +383,7 @@ class Dataset:
                 instance_generator,
                 desc="Loading instances into memory",
                 total=len(self.dataset),
+                disable=disable_tqdm,
             )
             instance_list = [instance for instance in tqdm_prog]
             self._cache_instance_list(instance_list, fingerprint)
@@ -492,10 +499,10 @@ class Dataset:
                 Path(self.dataset.cache_files[0]["filename"]).parent
                 / f"{fingerprint}.{self._CACHED_INSTANCE_LIST_EXTENSION}"
             )
-            with cache_path.open("wb") as file:
+            with cache_path.open("xb") as file:
                 self._LOGGER.info(f"Caching instances to {cache_path})")
                 pickle.dump(instance_list, file)
-        except (IndexError, KeyError, FileNotFoundError):
+        except (IndexError, KeyError, FileNotFoundError, FileExistsError):
             pass
 
     @copy_sign_and_docs(datasets.Dataset.cleanup_cache_files)

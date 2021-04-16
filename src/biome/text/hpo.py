@@ -2,18 +2,26 @@
 This module includes all components related to an HPO experiment execution.
 It tries to allow for a simple integration with the HPO library 'Ray Tune'.
 """
+import logging
 import tempfile
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
+from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
 import mlflow
 from allennlp.data import Vocabulary
+from pytorch_lightning import Callback
 from ray import tune
+from ray.tune.integration.pytorch_lightning import TuneReportCallback
 
+from biome.text import LightningTrainerConfiguration
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
 from biome.text import helpers
 from biome.text.dataset import Dataset
@@ -22,6 +30,8 @@ from biome.text.loggers import BaseTrainLogger
 from biome.text.loggers import MlflowLogger
 from biome.text.loggers import WandBLogger
 from biome.text.loggers import is_wandb_installed_and_logged_in
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class TuneMetricsLogger(BaseTrainLogger):
@@ -65,6 +75,11 @@ class TuneExperiment(tune.Experiment):
         Training dataset
     valid_dataset
         Validation dataset
+    metrics
+        Metrics to report to Tune. If this is a list, each item describes the metric key reported to PyTorch Lightning,
+        and it will be reported under the same name to Tune. If this is a dict, each key will be the name reported to
+        Tune and the respective value will be the metric key reported to PyTorch Lightning.
+        By default (None), all metrics from Pytorch Lightnint will be reported to Tune with the same name.
     vocab
         If you want to share the same vocabulary between the trials you can provide it here
     name
@@ -93,15 +108,16 @@ class TuneExperiment(tune.Experiment):
     --------
     A minimal usage would be:
 
-    >>> from biome.text import Dataset
+    >>> from biome.text import Dataset, LightningTrainerConfiguration
     >>> from ray import tune
     >>> pipeline_config = {
     ...     "name": "tune_experiment_example",
     ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
     ... }
-    >>> trainer_config = {
-    ...     "optimizer": {"type": "adam", "lr": tune.loguniform(1e-3, 1e-2)}
-    ... }
+    >>> trainer_config = LightningTrainerConfiguration(
+    ...     optimizer={"type": "adam", "lr": tune.loguniform(1e-3, 1e-2)},
+    ...     progress_bar_refresh_rate=0
+    ... )
     >>> train_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
     >>> valid_dataset = Dataset.from_dict({"text": ["test", "this"], "label": ["a", "b"]})
     >>> my_exp = TuneExperiment(pipeline_config, trainer_config, train_dataset, valid_dataset, num_samples=10)
@@ -112,9 +128,10 @@ class TuneExperiment(tune.Experiment):
     def __init__(
         self,
         pipeline_config: dict,
-        trainer_config: dict,
+        trainer_config: Union[dict, LightningTrainerConfiguration],
         train_dataset: Dataset,
         valid_dataset: Dataset,
+        metrics: Union[None, str, List[str], Dict[str, str]] = None,
         vocab: Optional[Vocabulary] = None,
         name: Optional[str] = None,
         trainable: Optional[Callable] = None,
@@ -139,16 +156,25 @@ class TuneExperiment(tune.Experiment):
         self._valid_dataset_path = self._save_dataset_to_disk(valid_dataset)
 
         self._pipeline_config = pipeline_config
-        self._trainer_config = trainer_config or {}
+        if isinstance(trainer_config, LightningTrainerConfiguration):
+            self._trainer_config = asdict(trainer_config)
+            self.trainable = trainable or self._lightning_trainable
+        else:
+            _LOGGER.warning(
+                "Training with the AllenNLP trainer will be removed in the next version, "
+                "please use a `LightningTrainerConfiguration` in the `trainer_config`."
+            )
+            self._trainer_config = trainer_config or {}
+            self.trainable = trainable or self._default_trainable
+
         self._vocab_path = (
             self._save_vocab_to_disk(vocab) if vocab is not None else None
         )
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
 
-        self.trainable = trainable or self._default_trainable
-
         self._mlflow = mlflow
         self._wandb = wandb
+        self._metrics = metrics
 
         super().__init__(
             name=self._name, run=self.trainable, config=self.config, **kwargs
@@ -231,10 +257,11 @@ class TuneExperiment(tune.Experiment):
             "wandb": self._wandb,
             "vocab_path": self._vocab_path,
             "name": self._name,
+            "metrics": self._metrics,
         }
 
     @staticmethod
-    def _default_trainable(config, reporter):
+    def _default_trainable(config, reporter, checkpoint_dir=None):
         """A default trainable function used by `tune.run`
 
         It performs the most straight forward training loop with the provided `config`:
@@ -277,6 +304,43 @@ class TuneExperiment(tune.Experiment):
             loggers=train_loggers,
             vocab_config=None if config["vocab_path"] else "default",
         )
+
+    @staticmethod
+    def _lightning_trainable(config, checkpoint_dir=None):
+        """A default trainable function used by `tune.run`
+
+        It performs the most straight forward training loop with the provided `config`:
+        - Create the pipeline (optionally with a provided vocab)
+        - Set up a TuneMetrics logger that reports all metrics back to ray tune after each epoch
+        - Execute the training
+        """
+        pipeline = Pipeline.from_config(
+            config["pipeline_config"], vocab_path=config["vocab_path"]
+        )
+
+        trainer_config = LightningTrainerConfiguration(**config["trainer_config"])
+
+        tune_callback = TuneReportCallback(metrics=config["metrics"])
+        if trainer_config.callbacks is None:
+            trainer_config.callbacks = [tune_callback]
+        if isinstance(trainer_config.callbacks, Callback):
+            trainer_config.callbacks = [trainer_config.callbacks, tune_callback]
+        elif isinstance(trainer_config.callbacks, list):
+            trainer_config.callbacks.append(tune_callback)
+
+        train_ds = Dataset.load_from_disk(config["train_dataset_path"])
+        valid_ds = Dataset.load_from_disk(config["valid_dataset_path"])
+        train_instances = train_ds.to_instances(pipeline=pipeline, disable_tqdm=True)
+        valid_instances = valid_ds.to_instances(pipeline=pipeline, disable_tqdm=True)
+
+        trainer = Trainer(
+            pipeline=pipeline,
+            train_dataset=train_instances,
+            valid_dataset=valid_instances,
+            trainer_config=trainer_config,
+            vocab_config=None if config["vocab_path"] else "default",
+        )
+        trainer.fit()
 
     def __del__(self):
         """Cleans up the created tmp dirs for the datasets and vocab"""

@@ -74,14 +74,15 @@ class Trainer:
         If `"default"` (str), we will use the default configuration `VocabularyConfiguration()`.
         If None, we will leave the pipeline's vocabulary untouched. Default: `"default"`.
     lazy
-        If True, instances are lazily loaded from disk, otherwise they are loaded into memory. Default: False.
+        If True, instances are lazily loaded from disk, otherwise they are loaded into memory.
+        Ignored when passing in `InstanceDataset`s. Default: False.
     """
 
     def __init__(
         self,
         pipeline: Pipeline,
-        train_dataset: Dataset,
-        valid_dataset: Optional[Dataset] = None,
+        train_dataset: Union[Dataset, InstanceDataset],
+        valid_dataset: Optional[Union[Dataset, InstanceDataset]] = None,
         trainer_config: Optional[LightningTrainerConfiguration] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
         lazy: bool = False,
@@ -171,7 +172,8 @@ class Trainer:
             and not get_loggers_of_type(WandbLogger)
         ):
             self._wandb_logger = WandbLogger(
-                save_dir=self._trainer_config.default_root_dir, project="biome"
+                save_dir=self._trainer_config.default_root_dir,
+                project=os.environ.get("WANDB_PROJECT", "biome"),
             )
             loggers.append(self._wandb_logger)
         elif get_loggers_of_type(WandbLogger):
@@ -310,14 +312,19 @@ class Trainer:
             output_dir.mkdir(exist_ok=exist_ok)
 
         # create instances
-        train_instances = self._train_dataset.to_instances(
-            self._pipeline, lazy=self._lazy
-        )
-        valid_instances = (
-            None
-            if self._valid_dataset is None
-            else self._valid_dataset.to_instances(self._pipeline, lazy=self._lazy)
-        )
+        if isinstance(self._train_dataset, Dataset):
+            train_instances = self._train_dataset.to_instances(
+                self._pipeline, lazy=self._lazy
+            )
+        else:
+            train_instances = self._train_dataset
+
+        if isinstance(self._valid_dataset, Dataset):
+            valid_instances = self._valid_dataset.to_instances(
+                self._pipeline, lazy=self._lazy
+            )
+        else:
+            valid_instances = self._valid_dataset
 
         # create vocab
         vocab_config = (
@@ -339,11 +346,11 @@ class Trainer:
         )
         valid_dataloader = (
             create_dataloader(
-                self._valid_dataset.to_instances(self._pipeline, lazy=self._lazy),
+                valid_instances,
                 batch_size=self._trainer_config.batch_size,
                 data_bucketing=self._trainer_config.data_bucketing,
             )
-            if self._valid_dataset is not None
+            if valid_instances is not None
             else None
         )
 
@@ -367,6 +374,8 @@ class Trainer:
                 self._load_best_weights()
             if output_dir:
                 self._pipeline.save(output_dir)
+            if self._wandb_logger is not None:
+                self._wandb_logger.experiment.finish()
 
     def _load_best_weights(self):
         """Load weights from the best model checkpoint"""
