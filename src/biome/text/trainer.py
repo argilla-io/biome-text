@@ -1,5 +1,6 @@
 import logging
 import math
+import multiprocessing
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -232,6 +233,11 @@ class Trainer:
             )
 
         # lr monitor
+        if self._trainer_config.add_lr_monitor is None and (
+            self._trainer_config.warmup_steps != 0
+            or self._trainer_config.lr_decay is not None
+        ):
+            self._trainer_config.add_lr_monitor = True
         if self._trainer_config.add_lr_monitor and not get_callbacks_of_type(
             LearningRateMonitor
         ):
@@ -416,4 +422,5 @@ def create_dataloader(
         )
         if data_bucketing
         else None,
+        num_workers=multiprocessing.cpu_count(),
     )

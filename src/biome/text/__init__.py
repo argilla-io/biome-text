@@ -1,6 +1,4 @@
 import logging
-import warnings
-from warnings import warn_explicit
 
 import pkg_resources
 
@@ -43,5 +41,4 @@ from .dataset import Dataset
 from .pipeline import Pipeline
 from .trainer import Trainer
 
-warnings.showwarning = warn_explicit
 logging.basicConfig()
