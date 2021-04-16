@@ -374,6 +374,8 @@ class Trainer:
                 self._load_best_weights()
             if output_dir:
                 self._pipeline.save(output_dir)
+            if self._wandb_logger is not None:
+                self._wandb_logger.experiment.finish()
 
     def _load_best_weights(self):
         """Load weights from the best model checkpoint"""
