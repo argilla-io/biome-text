@@ -342,6 +342,7 @@ class Dataset:
         pipeline: "Pipeline",
         lazy: bool = False,
         use_cache: bool = True,
+        tqdm_desc: Optional[str] = "Loading instances",
         disable_tqdm: bool = False,
     ) -> InstanceDataset:
         """Convert input to instances for the pipeline
@@ -354,6 +355,8 @@ class Dataset:
             If True, instances are lazily loaded from disk, otherwise they are loaded into memory.
         use_cache
             If True, we will try to reuse cached instances. Ignored when `lazy=True`.
+        tqdm_desc
+            Description for the tqdm progress bar. Default: "Loading instances".
         disable_tqdm
             If True, disable the tqdm progress bar. Default: False
 
@@ -381,7 +384,7 @@ class Dataset:
             )("dummy")
             tqdm_prog = tqdm(
                 instance_generator,
-                desc="Loading instances into memory",
+                desc=tqdm_desc,
                 total=len(self.dataset),
                 disable=disable_tqdm,
             )
