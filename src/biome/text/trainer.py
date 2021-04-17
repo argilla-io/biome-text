@@ -142,7 +142,7 @@ class Trainer:
         if self._trainer_config.gpus is None and torch.cuda.is_available():
             self._trainer_config.gpus = 1
 
-        # create optimizer, has to come AFTER the vocab creation!
+        # create optimizer, has to come AFTER creating the vocab!
         self._pipeline.model.optimizer = Optimizer.from_params(
             Params(
                 {
@@ -152,7 +152,7 @@ class Trainer:
             )
         )
 
-        # create lr scheduler, has to come AFTER optimizer creation!
+        # create lr scheduler, has to come AFTER creating the optimizer!
         if not (
             self._trainer_config.warmup_steps == 0
             and self._trainer_config.lr_decay is None
