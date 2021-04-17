@@ -12,6 +12,7 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import allennlp
@@ -118,6 +119,11 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         # The lr_scheduler dict follows the Lightning format:
         # https://pytorch-lightning.readthedocs.io/en/stable/common/optimizers.html#learning-rate-scheduling
         self.lr_scheduler: Optional[Dict] = None
+
+        self.best_metrics: Optional[Dict[str, torch.Tensor]] = None
+        # This is set by our trainer to figure out the best_metrics
+        # The first entry is the metric to monitor, the second one the mode (either min or max)
+        self.monitor_mode: Optional[Tuple[str, str]] = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -376,6 +382,10 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             self._log_predictions(batch, predictions)
 
         return predictions
+
+    def on_fit_start(self) -> None:
+        # Reset metrics
+        self.best_metrics = None
 
     def training_step(self, batch, batch_idx) -> Dict:
         output = self(**batch)
