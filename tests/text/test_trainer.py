@@ -131,7 +131,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
 
     evaluation = pl.evaluate(valid_ds)
 
-    assert evaluation["loss"] == pytest.approx(0.9922929322719574, abs=0.003)
+    assert evaluation["loss"] == pytest.approx(0.8479013895988464, abs=0.003)
 
     Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 

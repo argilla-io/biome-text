@@ -88,8 +88,6 @@ class Trainer:
         lazy: bool = False,
     ):
         self._pipeline = pipeline
-        self._train_dataset = train_dataset
-        self._valid_dataset = valid_dataset
         # since we will make changes to the config, better to make a copy -> asdict returns a deep copy
         self._trainer_config = (
             LightningTrainerConfiguration(**asdict(trainer_config))
@@ -100,6 +98,38 @@ class Trainer:
             VocabularyConfiguration() if vocab_config == "default" else vocab_config
         )
         self._lazy = lazy
+
+        # create instances
+        if isinstance(train_dataset, Dataset):
+            self._train_instances = train_dataset.to_instances(
+                self._pipeline, lazy=self._lazy, tqdm_desc="Loading training instances"
+            )
+        else:
+            self._train_instances = train_dataset
+
+        if isinstance(valid_dataset, Dataset):
+            self._valid_instances = valid_dataset.to_instances(
+                self._pipeline,
+                lazy=self._lazy,
+                tqdm_desc="Loading validation instances",
+            )
+        else:
+            self._valid_instances = valid_dataset
+
+        # create vocab
+        vocab_config = (
+            VocabularyConfiguration()
+            if self._vocab_config == "default"
+            else self._vocab_config
+        )
+        if vocab_config is not None:
+            vocab_datasets = [self._train_instances]
+            if (
+                self._valid_instances is not None
+                and self._vocab_config.include_valid_data
+            ):
+                vocab_datasets += [self._valid_instances]
+            self._pipeline.create_vocab(vocab_datasets, config=vocab_config)
 
         # we give some special attention to these loggers/callbacks
         self._wandb_logger: Optional[WandbLogger] = None
@@ -112,7 +142,7 @@ class Trainer:
         if self._trainer_config.gpus is None and torch.cuda.is_available():
             self._trainer_config.gpus = 1
 
-        # create optimizer
+        # create optimizer, has to come AFTER creating the vocab!
         self._pipeline.model.optimizer = Optimizer.from_params(
             Params(
                 {
@@ -122,7 +152,7 @@ class Trainer:
             )
         )
 
-        # create lr scheduler
+        # create lr scheduler, has to come AFTER creating the optimizer!
         if not (
             self._trainer_config.warmup_steps == 0
             and self._trainer_config.lr_decay is None
@@ -206,11 +236,11 @@ class Trainer:
         if self._trainer_config.checkpoint_callback and not get_callbacks_of_type(
             ModelCheckpoint
         ):
-            monitor = self._trainer_config.monitor if self._valid_dataset else None
+            monitor = self._trainer_config.monitor if self._valid_instances else None
             mode = self._trainer_config.monitor_mode
             save_top_k = (
                 self._trainer_config.save_top_k_checkpoints
-                if self._valid_dataset
+                if self._valid_instances
                 else None
             )
             self._model_checkpoint = ModelCheckpointWithVocab(
@@ -223,7 +253,7 @@ class Trainer:
         # early stopping
         if (
             self._trainer_config.add_early_stopping
-            and self._valid_dataset is not None
+            and self._valid_instances is not None
             and not get_callbacks_of_type(EarlyStopping)
         ):
             callbacks.append(
@@ -253,7 +283,7 @@ class Trainer:
         Possibilities: constant/linear/cosine schedule with or without warmup
         """
         steps_per_epoch = math.ceil(
-            len(self._train_dataset) / self._trainer_config.batch_size
+            len(self._train_instances) / self._trainer_config.batch_size
         )
         try:
             training_steps = min(
@@ -311,46 +341,19 @@ class Trainer:
         else:
             output_dir.mkdir(exist_ok=exist_ok)
 
-        # create instances
-        if isinstance(self._train_dataset, Dataset):
-            train_instances = self._train_dataset.to_instances(
-                self._pipeline, lazy=self._lazy
-            )
-        else:
-            train_instances = self._train_dataset
-
-        if isinstance(self._valid_dataset, Dataset):
-            valid_instances = self._valid_dataset.to_instances(
-                self._pipeline, lazy=self._lazy
-            )
-        else:
-            valid_instances = self._valid_dataset
-
-        # create vocab
-        vocab_config = (
-            VocabularyConfiguration()
-            if self._vocab_config == "default"
-            else self._vocab_config
-        )
-        if vocab_config is not None:
-            vocab_datasets = [train_instances]
-            if valid_instances is not None and self._vocab_config.include_valid_data:
-                vocab_datasets += [valid_instances]
-            self._pipeline.create_vocab(vocab_datasets, config=vocab_config)
-
         # create dataloaders
         train_dataloader = create_dataloader(
-            train_instances,
+            self._train_instances,
             batch_size=self._trainer_config.batch_size,
             data_bucketing=self._trainer_config.data_bucketing,
         )
         valid_dataloader = (
             create_dataloader(
-                valid_instances,
+                self._valid_instances,
                 batch_size=self._trainer_config.batch_size,
                 data_bucketing=self._trainer_config.data_bucketing,
             )
-            if valid_instances is not None
+            if self._valid_instances is not None
             else None
         )
 
@@ -381,7 +384,7 @@ class Trainer:
         """Load weights from the best model checkpoint"""
         checkpoint_path = self._model_checkpoint.best_model_path
         if checkpoint_path:
-            _LOGGER.info("Loading best weights ...")
+            _LOGGER.debug("Loading best weights")
             checkpoint = pl_load(
                 checkpoint_path, map_location=lambda storage, loc: storage
             )
