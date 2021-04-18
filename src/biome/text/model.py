@@ -122,8 +122,10 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
 
         self.best_metrics: Optional[Dict[str, torch.Tensor]] = None
         # This is set by our trainer to figure out the best_metrics
-        # The first entry is the metric to monitor, the second one the mode (either min or max)
-        self.monitor_mode: Optional[Tuple[str, str]] = None
+        # what metric to monitor?
+        self.monitor: Optional[str] = None
+        # shall the metric increase ("max") or decrease ("min")?
+        self.monitor_mode: Optional[str] = None
 
     def _update_head_related_attributes(self):
         """Updates the inputs/outputs and default mapping attributes, calculated from model head"""
@@ -453,6 +455,27 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
                 prog_bar=not key.startswith("_"),
                 on_epoch=True,
             )
+
+        # log best metrics
+        logged_metrics = {
+            key: value
+            for key, value in self.trainer.logged_metrics.items()
+            if key.startswith(self.VALIDATION_METRICS_PREFIX)
+        }
+        if self.best_metrics is None:
+            self.best_metrics = logged_metrics
+        elif (
+            self.monitor_mode == "max"
+            and self.best_metrics[self.monitor] < logged_metrics[self.monitor]
+        ):
+            self.best_metrics = logged_metrics
+        elif (
+            self.monitor_mode == "min"
+            and self.best_metrics[self.monitor] > logged_metrics[self.monitor]
+        ):
+            self.best_metrics = logged_metrics
+
+        self.log_dict(self.best_metrics, on_step=False, prog_bar=False, on_epoch=True)
 
     def configure_optimizers(self):
         if self.lr_scheduler is None:

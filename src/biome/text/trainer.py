@@ -159,6 +159,12 @@ class Trainer:
         ):
             self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
 
+        # set monitor and mode for best validation metrics
+        self._pipeline.model.monitor_and_mode = (
+            self._trainer_config.monitor,
+            self._trainer_config.monitor_mode,
+        )
+
         self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
     def _add_default_loggers(self) -> List[LightningLoggerBase]:
