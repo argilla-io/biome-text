@@ -12,7 +12,6 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import allennlp
@@ -433,6 +432,9 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         return output
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
+        # we keep track of the logged metrics to figure out the best metrics
+        logged_metrics = {}
+
         averaged_epoch_loss = sum([output["loss"] for output in outputs]) / len(outputs)
         self.log(
             f"{self.VALIDATION_METRICS_PREFIX}_loss",
@@ -441,6 +443,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             prog_bar=True,
             on_epoch=True,
         )
+        logged_metrics[f"{self.VALIDATION_METRICS_PREFIX}_loss"] = averaged_epoch_loss
 
         metrics = self.get_metrics(reset=True)
         for key, val in metrics.items():
@@ -455,13 +458,9 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
                 prog_bar=not key.startswith("_"),
                 on_epoch=True,
             )
+            logged_metrics[metric_name] = val
 
         # log best metrics
-        logged_metrics = {
-            key: value
-            for key, value in self.trainer.logged_metrics.items()
-            if key.startswith(self.VALIDATION_METRICS_PREFIX)
-        }
         if self.best_metrics is None:
             self.best_metrics = logged_metrics
         elif (
@@ -475,7 +474,12 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         ):
             self.best_metrics = logged_metrics
 
-        self.log_dict(self.best_metrics, on_step=False, prog_bar=False, on_epoch=True)
+        self.log_dict(
+            {f"best_{key}": value for key, value in self.best_metrics.items()},
+            on_step=False,
+            prog_bar=False,
+            on_epoch=True,
+        )
 
     def configure_optimizers(self):
         if self.lr_scheduler is None:
