@@ -461,6 +461,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             logged_metrics[metric_name] = val
 
         # log best metrics
+        logged_metrics["epoch"] = self.current_epoch
         if self.best_metrics is None:
             self.best_metrics = logged_metrics
         elif (
