@@ -17,7 +17,7 @@ from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text import VocabularyConfiguration
 from biome.text.configuration import CharFeatures
-from biome.text.configuration import LightningTrainerConfiguration
+from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import WordFeatures
 
 
@@ -106,7 +106,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     valid_ds = train_valid_dataset[1]
 
     vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
-    trainer_config = LightningTrainerConfiguration(
+    trainer_config = TrainerConfiguration(
         batch_size=64,
         optimizer={"type": "adam", "lr": 0.01},
         max_epochs=5,
@@ -148,7 +148,7 @@ def test_default_root_dir(
 
 def test_deep_copy_of_trainer_config(pipeline_dict, train_valid_dataset):
     pl = Pipeline.from_config(pipeline_dict)
-    trainer_config = LightningTrainerConfiguration()
+    trainer_config = TrainerConfiguration()
     trainer = Trainer(
         pl, train_dataset=train_valid_dataset[0], trainer_config=trainer_config
     )
@@ -187,7 +187,7 @@ def test_deep_copy_of_trainer_config(pipeline_dict, train_valid_dataset):
 def test_add_default_loggers(
     input_kwargs, expected_loggers, pipeline_dict, train_valid_dataset, tmp_path
 ):
-    trainer_config = LightningTrainerConfiguration(
+    trainer_config = TrainerConfiguration(
         **input_kwargs, default_root_dir=str(tmp_path)
     )
     trainer = Trainer(

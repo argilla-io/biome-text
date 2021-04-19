@@ -4,10 +4,10 @@ import os
 import pytest
 import torch
 
+from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import PipelineConfiguration
-from biome.text import TrainerConfiguration
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.heads import TextClassification
 from biome.text.modules.heads import TextClassificationConfiguration
@@ -45,7 +45,7 @@ def pipeline() -> Pipeline:
 def test_training_with_data_bucketing(
     pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    configuration = TrainerConfiguration(
+    configuration = AllenNLPTrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5, cuda_device=-1
     )
 
@@ -69,7 +69,7 @@ def test_training_with_data_bucketing(
 def test_training_from_pretrained_with_head_replace(
     pipeline: Pipeline, dataset: Dataset, tmp_path: str
 ):
-    configuration = TrainerConfiguration(
+    configuration = AllenNLPTrainerConfiguration(
         data_bucketing=True,
         batch_size=2,
         num_epochs=5,
@@ -95,7 +95,7 @@ def test_training_from_pretrained_with_head_replace(
 
 
 def test_training_with_logging(pipeline: Pipeline, dataset: Dataset, tmp_path: str):
-    configuration = TrainerConfiguration(
+    configuration = AllenNLPTrainerConfiguration(
         data_bucketing=True, batch_size=2, num_epochs=5, cuda_device=-1
     )
     output_dir = os.path.join(tmp_path, "output")

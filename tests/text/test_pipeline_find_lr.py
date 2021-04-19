@@ -5,9 +5,8 @@ from numpy.testing import assert_allclose
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text.configuration import AllenNLPTrainerConfiguration
 from biome.text.configuration import FindLRConfiguration
-from biome.text.configuration import TrainerConfiguration
-from biome.text.configuration import VocabularyConfiguration
 
 
 @pytest.fixture
@@ -77,9 +76,9 @@ def pipeline_dict() -> dict:
 
 
 @pytest.fixture
-def trainer_config() -> TrainerConfiguration:
+def trainer_config() -> AllenNLPTrainerConfiguration:
     """Returns the trainer configuration"""
-    return TrainerConfiguration(
+    return AllenNLPTrainerConfiguration(
         batch_size=64, num_epochs=5, optimizer={"type": "adam", "lr": 0.01}
     )
 

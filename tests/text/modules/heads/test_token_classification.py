@@ -6,6 +6,7 @@ from allennlp.data import Batch
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
 from biome.text import vocabulary
 from biome.text.modules.heads.task_prediction import Entity
@@ -48,15 +49,10 @@ def pipeline_dict() -> Dict:
 
 
 @pytest.fixture
-def trainer_dict() -> Dict:
-    trainer_dict = {
-        "num_epochs": 1,
-        "batch_size": 1,
-        "optimizer": {"type": "adam", "lr": 0.01},
-        "cuda_device": -1,
-    }
-
-    return trainer_dict
+def trainer_config() -> TrainerConfiguration:
+    return TrainerConfiguration(
+        max_epochs=1, batch_size=1, optimizer={"type": "adam", "lr": 0.01}, gpus=0
+    )
 
 
 def test_tokenization_with_blank_tokens(pipeline_dict):
@@ -65,7 +61,7 @@ def test_tokenization_with_blank_tokens(pipeline_dict):
     assert len(predictions["tags"][0]) == 4
 
 
-def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_config, tmp_path):
     pipeline = Pipeline.from_config(pipeline_dict)
 
     assert pipeline.output == ["entities", "tags"]
@@ -73,11 +69,10 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
     assert pipeline.head.span_labels == ["NER"]
     assert pipeline.head.labels == ["B-NER", "I-NER", "U-NER", "L-NER", "O"]
 
-    pipeline.train(
-        output=str(tmp_path / "ner_experiment"),
-        trainer=TrainerConfiguration(**trainer_dict),
-        training=training_dataset,
+    trainer = Trainer(
+        pipeline=pipeline, train_dataset=training_dataset, trainer_config=trainer_config
     )
+    trainer.fit(tmp_path / "ner_experiment")
 
 
 class TestMakeTaskPrediction:
@@ -129,9 +124,7 @@ class TestMakeTaskPrediction:
         return pipeline.head._make_task_prediction(single_forward_output, None)
 
 
-def test_preserve_pretokenization(
-    pipeline_dict, training_dataset, trainer_dict, tmp_path
-):
+def test_preserve_pretokenization(pipeline_dict):
     pipeline = Pipeline.from_config(pipeline_dict)
     tokens = ["test", "this", "pre tokenized", "text"]
     prediction = pipeline.predict(tokens)

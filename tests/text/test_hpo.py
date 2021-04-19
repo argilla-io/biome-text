@@ -2,8 +2,8 @@ import mlflow
 import pytest
 from ray import tune
 
-from biome.text import LightningTrainerConfiguration
 from biome.text import Pipeline
+from biome.text import TrainerConfiguration
 from biome.text.dataset import Dataset
 from biome.text.hpo import TuneExperiment
 
@@ -37,7 +37,7 @@ def test_tune_exp_default_trainable(
     dataset, pipeline_config, trainer_config, monkeypatch
 ):
     # avoid logging to wandb
-    monkeypatch.setenv("WANDB_MODE", "dryrun")
+    monkeypatch.setenv("WANDB_MODE", "offline")
 
     pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
     trainer_config["optimizer"]["lr"] = tune.loguniform(0.001, 0.01)
@@ -52,7 +52,7 @@ def test_tune_exp_default_trainable(
 
     assert my_exp._name.startswith("HPO on")
     assert my_exp.name == my_exp._name
-    assert my_exp._run_identifier == "_default_trainable"
+    assert my_exp._run_identifier == "_allennlp_trainable"
 
     analysis = tune.run(my_exp)
     assert len(analysis.trials) == 1
@@ -113,7 +113,7 @@ def test_tune_experiment_lightning_trainable(dataset, pipeline_config, monkeypat
     monkeypatch.setenv("WANDB_MODE", "disabled")
 
     pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
-    trainer_config = LightningTrainerConfiguration(
+    trainer_config = TrainerConfiguration(
         batch_size=2,
         max_epochs=1,
         optimizer={"type": "adamw", "lr": tune.loguniform(0.001, 0.01)},

@@ -4,6 +4,7 @@ import pytest
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
 
 
@@ -65,18 +66,14 @@ def pipeline_dict() -> Dict:
 
 
 @pytest.fixture
-def trainer_dict() -> Dict:
-    """Creating the trainer dictionary"""
-
-    trainer_dict = {
-        "num_epochs": 1,
-        "optimizer": {"type": "adamw", "lr": 0.002},
-    }
-
-    return trainer_dict
+def trainer_config() -> TrainerConfiguration:
+    return TrainerConfiguration(
+        max_epochs=1,
+        optimizer={"type": "adamw", "lr": 0.002},
+    )
 
 
-def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_config, tmp_path):
     """Testing a classifier made from scratch"""
 
     pipeline = Pipeline.from_config(pipeline_dict)
@@ -88,12 +85,13 @@ def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
         ],
     )
 
-    pipeline.train(
-        output=str(tmp_path / "relation_classifier"),
-        trainer=TrainerConfiguration(**trainer_dict),
-        training=training_dataset,
-        validation=training_dataset,
+    trainer = Trainer(
+        pipeline=pipeline,
+        train_dataset=training_dataset,
+        valid_dataset=training_dataset,
+        trainer_config=trainer_config,
     )
+    trainer.fit(tmp_path / "relation_classifier")
 
     # test loading
-    Pipeline.from_pretrained(str(tmp_path / "relation_classifier"))
+    Pipeline.from_pretrained(tmp_path / "relation_classifier" / "model.tar.gz")

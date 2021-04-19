@@ -1,9 +1,9 @@
 import pytest
 import torch
 
+from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Dataset
 from biome.text import Pipeline
-from biome.text import TrainerConfiguration
 
 
 @pytest.fixture(scope="module")
@@ -29,7 +29,7 @@ def pipeline(dataset) -> Pipeline:
     torch.cuda.device_count() < 1, reason="Using AMP requires a cuda device"
 )
 def test_use_amp(dataset, pipeline, tmp_path, capsys):
-    trainer_config = TrainerConfiguration(
+    trainer_config = AllenNLPTrainerConfiguration(
         num_epochs=1,
         batch_size=2,
         use_amp=True,
