@@ -19,7 +19,7 @@ from pytorch_lightning import Callback
 from ray import tune
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 
-from biome.text import LightningTrainerConfiguration
+from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text import TrainerConfiguration
@@ -108,13 +108,13 @@ class TuneExperiment(tune.Experiment):
     --------
     A minimal usage would be:
 
-    >>> from biome.text import Dataset, LightningTrainerConfiguration
+    >>> from biome.text import Dataset, TrainerConfiguration
     >>> from ray import tune
     >>> pipeline_config = {
     ...     "name": "tune_experiment_example",
     ...     "head": {"type": "TextClassification", "labels": ["a", "b"]},
     ... }
-    >>> trainer_config = LightningTrainerConfiguration(
+    >>> trainer_config = TrainerConfiguration(
     ...     optimizer={"type": "adam", "lr": tune.loguniform(1e-3, 1e-2)},
     ...     progress_bar_refresh_rate=0
     ... )
@@ -128,7 +128,7 @@ class TuneExperiment(tune.Experiment):
     def __init__(
         self,
         pipeline_config: dict,
-        trainer_config: Union[dict, LightningTrainerConfiguration],
+        trainer_config: Union[dict, TrainerConfiguration],
         train_dataset: Dataset,
         valid_dataset: Dataset,
         metrics: Union[None, str, List[str], Dict[str, str]] = None,
@@ -156,15 +156,15 @@ class TuneExperiment(tune.Experiment):
         self._valid_dataset_path = self._save_dataset_to_disk(valid_dataset)
 
         self._pipeline_config = pipeline_config
-        if isinstance(trainer_config, LightningTrainerConfiguration):
-            self._trainer_config = asdict(trainer_config)
-            self.trainable = trainable or self._lightning_trainable
-        else:
+        if isinstance(trainer_config, dict):
             _LOGGER.warning(
                 "Training with the AllenNLP trainer will be removed in the next version, "
-                "please use a `LightningTrainerConfiguration` in the `trainer_config`."
+                "please use a `biome.text.TrainerConfiguration` in the `trainer_config`."
             )
             self._trainer_config = trainer_config or {}
+            self.trainable = trainable or self._allennlp_trainable
+        else:
+            self._trainer_config = asdict(trainer_config)
             self.trainable = trainable or self._default_trainable
 
         self._vocab_path = (
@@ -261,7 +261,7 @@ class TuneExperiment(tune.Experiment):
         }
 
     @staticmethod
-    def _default_trainable(config, reporter, checkpoint_dir=None):
+    def _allennlp_trainable(config, reporter, checkpoint_dir=None):
         """A default trainable function used by `tune.run`
 
         It performs the most straight forward training loop with the provided `config`:
@@ -274,7 +274,7 @@ class TuneExperiment(tune.Experiment):
             config["pipeline_config"], vocab_path=config["vocab_path"]
         )
 
-        trainer_config = TrainerConfiguration(
+        trainer_config = AllenNLPTrainerConfiguration(
             **helpers.sanitize_for_params(config["trainer_config"])
         )
 
@@ -306,7 +306,7 @@ class TuneExperiment(tune.Experiment):
         )
 
     @staticmethod
-    def _lightning_trainable(config, checkpoint_dir=None):
+    def _default_trainable(config, checkpoint_dir=None):
         """A default trainable function used by `tune.run`
 
         It performs the most straight forward training loop with the provided `config`:
@@ -318,7 +318,7 @@ class TuneExperiment(tune.Experiment):
             config["pipeline_config"], vocab_path=config["vocab_path"]
         )
 
-        trainer_config = LightningTrainerConfiguration(**config["trainer_config"])
+        trainer_config = TrainerConfiguration(**config["trainer_config"])
 
         tune_callback = TuneReportCallback(metrics=config["metrics"])
         if trainer_config.callbacks is None:

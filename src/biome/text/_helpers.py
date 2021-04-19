@@ -22,8 +22,8 @@ from allennlp.training import Trainer
 from allennlp.training.util import evaluate
 from torch.utils.data import IterableDataset
 
+from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Pipeline
-from biome.text import TrainerConfiguration
 from biome.text import helpers
 from biome.text.dataset import InstanceDataset
 from biome.text.model import PipelineModel
@@ -62,7 +62,7 @@ class PipelineTrainer:
     def __init__(
         self,
         pipeline: Pipeline,
-        trainer_config: TrainerConfiguration,
+        trainer_config: AllenNLPTrainerConfiguration,
         output_dir: str,
         training: InstanceDataset,
         validation: Optional[InstanceDataset] = None,
@@ -312,7 +312,7 @@ def create_dataloader(
 
 def create_trainer_for_finding_lr(
     model: PipelineModel,
-    trainer_config: TrainerConfiguration,
+    trainer_config: AllenNLPTrainerConfiguration,
     training_data: InstanceDataset,
 ) -> GradientDescentTrainer:
     """Returns an AllenNLP Trainer used for the learning rate scan.

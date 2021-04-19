@@ -23,7 +23,7 @@ _ALLENNLP_LOGGER.setLevel("WARNING")
 # configure 'elasticsearch' logging
 logging.getLogger("elasticsearch").setLevel("ERROR")
 
-from .configuration import LightningTrainerConfiguration
+from .configuration import AllenNLPTrainerConfiguration
 from .configuration import PipelineConfiguration
 from .configuration import TrainerConfiguration
 from .configuration import VocabularyConfiguration

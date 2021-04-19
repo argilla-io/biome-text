@@ -32,7 +32,7 @@ from transformers.optimization import get_constant_schedule_with_warmup
 from transformers.optimization import get_cosine_schedule_with_warmup
 from transformers.optimization import get_linear_schedule_with_warmup
 
-from biome.text.configuration import LightningTrainerConfiguration
+from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
@@ -85,16 +85,16 @@ class Trainer:
         pipeline: Pipeline,
         train_dataset: Union[Dataset, InstanceDataset],
         valid_dataset: Optional[Union[Dataset, InstanceDataset]] = None,
-        trainer_config: Optional[LightningTrainerConfiguration] = None,
+        trainer_config: Optional[TrainerConfiguration] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
         lazy: bool = False,
     ):
         self._pipeline = pipeline
         # since we will make changes to the config, better to make a copy -> asdict returns a deep copy
         self._trainer_config = (
-            LightningTrainerConfiguration(**asdict(trainer_config))
+            TrainerConfiguration(**asdict(trainer_config))
             if trainer_config is not None
-            else LightningTrainerConfiguration()
+            else TrainerConfiguration()
         )
         self._vocab_config: Optional[VocabularyConfiguration] = (
             VocabularyConfiguration() if vocab_config == "default" else vocab_config

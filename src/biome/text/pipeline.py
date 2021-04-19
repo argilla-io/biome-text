@@ -31,10 +31,10 @@ from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.configuration import AllenNLPTrainerConfiguration
 from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
 from biome.text.configuration import PredictionConfiguration
-from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
@@ -277,7 +277,7 @@ class Pipeline:
 
     def find_lr(
         self,
-        trainer_config: TrainerConfiguration,
+        trainer_config: AllenNLPTrainerConfiguration,
         find_lr_config: FindLRConfiguration,
         training_data: Dataset,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
@@ -356,7 +356,7 @@ class Pipeline:
         self,
         output: str,
         training: Dataset,
-        trainer: Optional[TrainerConfiguration] = None,
+        trainer: Optional[AllenNLPTrainerConfiguration] = None,
         validation: Optional[Dataset] = None,
         test: Optional[Dataset] = None,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
@@ -402,7 +402,7 @@ class Pipeline:
         """
         from ._helpers import PipelineTrainer
 
-        trainer = trainer or TrainerConfiguration()
+        trainer = trainer or AllenNLPTrainerConfiguration()
 
         if not restore and os.path.isdir(output):
             shutil.rmtree(output)

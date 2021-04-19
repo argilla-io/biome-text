@@ -1,4 +1,5 @@
 import copy
+import logging
 import os
 from dataclasses import dataclass
 from dataclasses import field
@@ -20,10 +21,7 @@ from allennlp.data import TokenIndexer
 from allennlp.data import Vocabulary
 from allennlp.modules import TextFieldEmbedder
 from pytorch_lightning import Callback
-from pytorch_lightning.accelerators import Accelerator
 from pytorch_lightning.loggers import LightningLoggerBase
-from pytorch_lightning.plugins import Plugin
-from pytorch_lightning.profiler import BaseProfiler
 
 from biome.text.features import CharFeatures
 from biome.text.features import TransformersFeatures
@@ -39,6 +37,8 @@ from biome.text.modules.heads.task_head import TaskHeadConfiguration
 from biome.text.modules.heads.token_classification import TokenClassification
 from biome.text.tokenizer import Tokenizer
 from biome.text.tokenizer import TransformersTokenizer
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class FeaturesConfiguration(FromParams):
@@ -448,8 +448,8 @@ class PipelineConfiguration(FromParams):
 
 
 @dataclass
-class TrainerConfiguration:
-    """Configures the training of a pipeline
+class AllenNLPTrainerConfiguration:
+    """Configures the training of a pipeline with the AllenNLP Trainer
 
     It is passed on to the `Pipeline.train` method. Doc strings mainly provided by
     [AllenNLP](https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects)
@@ -541,6 +541,11 @@ class TrainerConfiguration:
     batches_per_epoch: Optional[int] = None
     # prepare_environment
     random_seed: Optional[int] = None
+
+    _LOGGER.warning(
+        "The `AllenNLPTrainerConfiguration` class is deprecated and will be removed in the next release. "
+        "Please use the `biome.text.TrainerConfiguration` class with the `biome.text.Trainer` instead!"
+    )
 
     def to_allennlp_trainer(self) -> Dict[str, Any]:
         """Returns a configuration dict formatted for AllenNLP's trainer
@@ -661,7 +666,7 @@ class PredictionConfiguration:
 
 
 @dataclass
-class LightningTrainerConfiguration:
+class TrainerConfiguration:
     """Configuration for our Lightning Trainer
 
     The docs are mainly a copy from the
@@ -910,6 +915,12 @@ class LightningTrainerConfiguration:
     save_top_k_checkpoints: int = 1
     warmup_steps: int = 0
     extra_lightning_params: Dict[str, Any] = field(default_factory=dict)
+
+    _LOGGER.warning(
+        "The `TrainerConfiguration` class is now used with the `biome.text.Trainer`. If you are still "
+        "using the `pipeline.train` method, please use the `biome.text.AllenNLPTrainerConfiguration` class "
+        "instead."
+    )
 
     def as_dict(self) -> Dict:
         """Returns the dataclass as dict without a deepcopy, in contrast to `dataclasses.asdict`"""
