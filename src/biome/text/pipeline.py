@@ -367,6 +367,9 @@ class Pipeline:
     ) -> TrainingResults:
         """Launches a training run with the specified configurations and data sources
 
+        DEPRECATED: This method is deprecated and will be removed in the next release.
+        Please use the `biome.text.Trainer` instead.
+
         Parameters
         ----------
         output
@@ -400,6 +403,10 @@ class Pipeline:
         training_results
             Training results including the generated model path and the related metrics
         """
+        self._LOGGER.warning(
+            "The `Pipeline.train()` method is deprecated and will be removed in the next release. "
+            "Please use the `biome.text.Trainer` instead."
+        )
         from ._helpers import PipelineTrainer
 
         trainer = trainer or AllenNLPTrainerConfiguration()

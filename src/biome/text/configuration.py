@@ -542,11 +542,6 @@ class AllenNLPTrainerConfiguration:
     # prepare_environment
     random_seed: Optional[int] = None
 
-    _LOGGER.warning(
-        "The `AllenNLPTrainerConfiguration` class is deprecated and will be removed in the next release. "
-        "Please use the `biome.text.TrainerConfiguration` class with the `biome.text.Trainer` instead!"
-    )
-
     def to_allennlp_trainer(self) -> Dict[str, Any]:
         """Returns a configuration dict formatted for AllenNLP's trainer
 
@@ -667,7 +662,7 @@ class PredictionConfiguration:
 
 @dataclass
 class TrainerConfiguration:
-    """Configuration for our Lightning Trainer
+    """Configuration for the `biome.text.Trainer`.
 
     The docs are mainly a copy from the
     [Lightning Trainer API](https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.trainer.trainer.html#pytorch_lightning.trainer.trainer.Trainer)
@@ -917,9 +912,10 @@ class TrainerConfiguration:
     extra_lightning_params: Dict[str, Any] = field(default_factory=dict)
 
     _LOGGER.warning(
-        "The `TrainerConfiguration` class is now used with the `biome.text.Trainer`. If you are still "
-        "using the `pipeline.train` method, please use the `biome.text.AllenNLPTrainerConfiguration` class "
-        "instead."
+        "The former `TrainerConfiguration` class is now called `AllenNLPTrainerConfiguration` and is deprecated. "
+        "The current `TrainerConfiguration` is for configuring the new `biome.text.Trainer`. If you are still using "
+        "the `Pipeline.train()` method (deprecated), please use the `biome.text.AllenNLPTrainerConfiguration` to "
+        "configure it."
     )
 
     def as_dict(self) -> Dict:
