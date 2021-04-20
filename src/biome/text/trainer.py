@@ -1,3 +1,4 @@
+import json
 import logging
 import math
 import multiprocessing
@@ -13,6 +14,7 @@ from typing import Union
 import pytorch_lightning as pl
 import torch
 from allennlp.common import Params
+from allennlp.common.util import sanitize
 from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
@@ -158,6 +160,10 @@ class Trainer:
             and self._trainer_config.lr_decay is None
         ):
             self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
+
+        # set monitor and mode for best validation metrics
+        self._pipeline.model.monitor = self._trainer_config.monitor
+        self._pipeline.model.monitor_mode = self._trainer_config.monitor_mode
 
         self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
@@ -337,7 +343,7 @@ class Trainer:
         try:
             output_dir = Path(output_dir)
         except TypeError:
-            pass
+            output_dir = None
         else:
             output_dir.mkdir(exist_ok=exist_ok)
 
@@ -377,6 +383,8 @@ class Trainer:
                 self._load_best_weights()
             if output_dir:
                 self._pipeline.save(output_dir)
+                with (output_dir / "metrics.json").open("w") as file:
+                    json.dump(sanitize(self.trainer.logged_metrics), file)
             if self._wandb_logger is not None:
                 self._wandb_logger.experiment.finish()
 
