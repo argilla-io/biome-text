@@ -212,6 +212,45 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         # updates head specific things
         self._head.on_vocab_update()
 
+    def extend_embedder_vocab(
+        self, embedding_sources_mapping: Dict[str, str] = None
+    ) -> None:
+        """
+        Iterates through all embedding modules in the model and assures it can embed
+        with the extended vocab. This is required in fine-tuning or transfer learning
+        scenarios where model was trained with original vocabulary but during
+        fine-tuning/transfer-learning, it will have it work with extended vocabulary
+        (original + new-data vocabulary).
+
+        # Parameters
+
+        embedding_sources_mapping : `Dict[str, str]`, optional (default = `None`)
+            Mapping from model_path to pretrained-file path of the embedding
+            modules. If pretrained-file used at time of embedding initialization
+            isn't available now, user should pass this mapping. Model path is
+            path traversing the model attributes upto this embedding module.
+            Eg. "_text_field_embedder.token_embedder_tokens".
+        """
+        # self.named_modules() gives all sub-modules (including nested children)
+        # The path nesting is already separated by ".": eg. parent_module_name.child_module_name
+        embedding_sources_mapping = embedding_sources_mapping or {}
+        for model_path, module in self.named_modules():
+            if hasattr(module, "extend_vocab"):
+                pretrained_file = embedding_sources_mapping.get(model_path)
+                # Show useful information when reading from a pretrained file, kind of an ugly hack
+                if module._pretrained_file is not None:
+                    original_logging_level = logging.getLogger("allennlp").level
+                    logging.getLogger("allennlp").setLevel("INFO")
+
+                module.extend_vocab(
+                    self.vocab,
+                    extension_pretrained_file=pretrained_file,
+                    model_path=model_path,
+                )
+
+                if module._pretrained_file is not None:
+                    logging.getLogger("allennlp").setLevel(original_logging_level)
+
     @property
     def inputs(self) -> List[str]:
         """The model inputs. Corresponding to head.featurize required argument names"""

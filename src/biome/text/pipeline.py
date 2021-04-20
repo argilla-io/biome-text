@@ -50,9 +50,6 @@ from biome.text.modules.heads import TaskHead
 from biome.text.modules.heads import TaskHeadConfiguration
 from biome.text.training_results import TrainingResults
 
-logging.getLogger("allennlp").setLevel(logging.ERROR)
-logging.getLogger("elasticsearch").setLevel(logging.ERROR)
-
 
 class Pipeline:
     """Manages NLP models configuration and actions.
