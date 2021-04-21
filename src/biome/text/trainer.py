@@ -159,6 +159,8 @@ class Trainer:
             and self._trainer_config.lr_decay is None
         ):
             self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
+        else:
+            self._pipeline.model.lr_scheduler = None
 
         # set monitor and mode for best validation metrics
         self._pipeline.model.monitor = self._trainer_config.monitor
