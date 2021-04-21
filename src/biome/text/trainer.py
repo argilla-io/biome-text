@@ -334,6 +334,8 @@ class Trainer:
     ):
         """Train the pipeline
 
+        At the end of the training the pipeline will load the weights from the best checkpoint.
+
         Parameters
         ----------
         output_dir
