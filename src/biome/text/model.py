@@ -471,6 +471,10 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         return output
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
+        # we do not want to log any metrics for the sanity check
+        if self.trainer.sanity_checking:
+            return
+
         # we keep track of the logged metrics to figure out the best metrics
         logged_metrics = {}
 
