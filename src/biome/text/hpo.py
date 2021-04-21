@@ -3,6 +3,7 @@ This module includes all components related to an HPO experiment execution.
 It tries to allow for a simple integration with the HPO library 'Ray Tune'.
 """
 import logging
+import os
 import tempfile
 from dataclasses import asdict
 from datetime import datetime
@@ -83,8 +84,7 @@ class TuneExperiment(tune.Experiment):
     vocab
         If you want to share the same vocabulary between the trials you can provide it here
     name
-        Used for the `tune.Experiment.name`, the project name in the WandB logger
-        and for the experiment name in the MLFlow logger.
+        Used as project name for the WandB logger and for the experiment name in the MLFlow logger.
         By default we construct following string: 'HPO on %date (%time)'
     trainable
         A custom trainable function that takes as input the `TuneExperiment.config` dict.
@@ -171,6 +171,8 @@ class TuneExperiment(tune.Experiment):
             self._save_vocab_to_disk(vocab) if vocab is not None else None
         )
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
+        if not os.environ.get("WANDB_PROJECT"):
+            os.environ["WANDB_PROJECT"] = self._name
 
         self._mlflow = mlflow
         self._wandb = wandb
@@ -297,7 +299,7 @@ class TuneExperiment(tune.Experiment):
             train_loggers = [WandBLogger(project_name=config["name"])] + train_loggers
 
         pipeline.train(
-            output="training",
+            output="output",
             training=train_ds,
             validation=valid_ds,
             trainer=trainer_config,
