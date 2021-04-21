@@ -1,7 +1,6 @@
 import json
 import logging
 import math
-import multiprocessing
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -352,12 +351,14 @@ class Trainer:
             self._train_instances,
             batch_size=self._trainer_config.batch_size,
             data_bucketing=self._trainer_config.data_bucketing,
+            num_workers=self._trainer_config.num_workers_for_dataloader,
         )
         valid_dataloader = (
             create_dataloader(
                 self._valid_instances,
                 batch_size=self._trainer_config.batch_size,
                 data_bucketing=self._trainer_config.data_bucketing,
+                num_workers=self._trainer_config.num_workers_for_dataloader,
             )
             if self._valid_instances is not None
             else None
@@ -410,6 +411,7 @@ def create_dataloader(
     instance_dataset: InstanceDataset,
     batch_size: int = 16,
     data_bucketing: bool = False,
+    num_workers: int = 0,
 ) -> PyTorchDataLoader:
     """Returns a pytorch DataLoader for AllenNLP instances
 
@@ -422,6 +424,9 @@ def create_dataloader(
     data_bucketing
         If True, tries to sort batches with respect to the maximum input lengths per batch.
         Not supported for lazily loaded data!
+    num_workers
+        How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
+        Default: 0
 
     Returns
     -------
@@ -442,5 +447,5 @@ def create_dataloader(
         )
         if data_bucketing
         else None,
-        num_workers=multiprocessing.cpu_count(),
+        num_workers=num_workers,
     )

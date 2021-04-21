@@ -800,6 +800,10 @@ class TrainerConfiguration:
         True). It also configures the default early stopping callback (`add_early_stopping` must be True).
         Default: 'min'
 
+    num_workers_for_dataloader
+        How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
+        Default: 0
+
     num_sanity_val_steps
         Sanity check runs n validation batches before starting the training routine.
         Set it to `-1` to run all batches in all validation dataloaders. Default: 2
@@ -903,6 +907,7 @@ class TrainerConfiguration:
     lr_decay: Optional[str] = None
     monitor: str = "validation_loss"
     monitor_mode: str = "min"
+    num_workers_for_dataloader: int = 0
     optimizer: Dict[str, Any] = field(
         default_factory=lambda: {"type": "adam", "lr": 0.001}
     )
@@ -935,6 +940,7 @@ class TrainerConfiguration:
             "lr_decay",
             "monitor",
             "monitor_mode",
+            "num_workers_for_dataloader",
             "optimizer",
             "patience",
             "save_top_k_checkpoints",
