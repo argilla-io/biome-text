@@ -69,7 +69,7 @@ class Trainer:
     valid_dataset
         The validation dataset. Default: `None`.
     trainer_config
-        The configuration of the trainer. Default: `LightningTrainerConfiguration()`.
+        The configuration of the trainer. Default: `TrainerConfiguration()`.
     vocab_config
         A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
         If `"default"` (str), we will use the default configuration `VocabularyConfiguration()`.
