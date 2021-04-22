@@ -7,9 +7,9 @@ import mlflow
 import pytest
 from mlflow.utils import mlflow_tags
 
+from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Pipeline
 from biome.text import PipelineConfiguration
-from biome.text import TrainerConfiguration
 from biome.text.loggers import MlflowLogger
 from biome.text.loggers import WandBLogger
 from biome.text.modules.heads import TaskHeadConfiguration
@@ -33,7 +33,7 @@ def test_mlflow_logger(pipeline):
         experiment_name="test-experiment", run_name="test_run", tag1="my-tag"
     )
 
-    trainer = TrainerConfiguration()
+    trainer = AllenNLPTrainerConfiguration()
 
     logger.init_train(pipeline, trainer, training=None)
     for epoch in range(0, 10):
@@ -113,7 +113,7 @@ class TestWandBLogger:
 
         logger.init_train(
             pipeline=pipeline,
-            trainer_configuration=TrainerConfiguration(),
+            trainer_configuration=AllenNLPTrainerConfiguration(),
             training=None,
         )
 

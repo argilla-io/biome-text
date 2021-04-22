@@ -1,7 +1,6 @@
 import json
 import logging
 import math
-import multiprocessing
 import os
 from dataclasses import asdict
 from pathlib import Path
@@ -32,7 +31,7 @@ from transformers.optimization import get_constant_schedule_with_warmup
 from transformers.optimization import get_cosine_schedule_with_warmup
 from transformers.optimization import get_linear_schedule_with_warmup
 
-from biome.text.configuration import LightningTrainerConfiguration
+from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
@@ -70,7 +69,7 @@ class Trainer:
     valid_dataset
         The validation dataset. Default: `None`.
     trainer_config
-        The configuration of the trainer. Default: `LightningTrainerConfiguration()`.
+        The configuration of the trainer. Default: `TrainerConfiguration()`.
     vocab_config
         A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
         If `"default"` (str), we will use the default configuration `VocabularyConfiguration()`.
@@ -85,16 +84,16 @@ class Trainer:
         pipeline: Pipeline,
         train_dataset: Union[Dataset, InstanceDataset],
         valid_dataset: Optional[Union[Dataset, InstanceDataset]] = None,
-        trainer_config: Optional[LightningTrainerConfiguration] = None,
+        trainer_config: Optional[TrainerConfiguration] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
         lazy: bool = False,
     ):
         self._pipeline = pipeline
         # since we will make changes to the config, better to make a copy -> asdict returns a deep copy
         self._trainer_config = (
-            LightningTrainerConfiguration(**asdict(trainer_config))
+            TrainerConfiguration(**asdict(trainer_config))
             if trainer_config is not None
-            else LightningTrainerConfiguration()
+            else TrainerConfiguration()
         )
         self._vocab_config: Optional[VocabularyConfiguration] = (
             VocabularyConfiguration() if vocab_config == "default" else vocab_config
@@ -160,6 +159,8 @@ class Trainer:
             and self._trainer_config.lr_decay is None
         ):
             self._pipeline.model.lr_scheduler = self._create_lr_scheduler()
+        else:
+            self._pipeline.model.lr_scheduler = None
 
         # set monitor and mode for best validation metrics
         self._pipeline.model.monitor = self._trainer_config.monitor
@@ -333,6 +334,8 @@ class Trainer:
     ):
         """Train the pipeline
 
+        At the end of the training the pipeline will load the weights from the best checkpoint.
+
         Parameters
         ----------
         output_dir
@@ -352,12 +355,14 @@ class Trainer:
             self._train_instances,
             batch_size=self._trainer_config.batch_size,
             data_bucketing=self._trainer_config.data_bucketing,
+            num_workers=self._trainer_config.num_workers_for_dataloader,
         )
         valid_dataloader = (
             create_dataloader(
                 self._valid_instances,
                 batch_size=self._trainer_config.batch_size,
                 data_bucketing=self._trainer_config.data_bucketing,
+                num_workers=self._trainer_config.num_workers_for_dataloader,
             )
             if self._valid_instances is not None
             else None
@@ -410,6 +415,7 @@ def create_dataloader(
     instance_dataset: InstanceDataset,
     batch_size: int = 16,
     data_bucketing: bool = False,
+    num_workers: int = 0,
 ) -> PyTorchDataLoader:
     """Returns a pytorch DataLoader for AllenNLP instances
 
@@ -422,6 +428,9 @@ def create_dataloader(
     data_bucketing
         If True, tries to sort batches with respect to the maximum input lengths per batch.
         Not supported for lazily loaded data!
+    num_workers
+        How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
+        Default: 0
 
     Returns
     -------
@@ -442,5 +451,5 @@ def create_dataloader(
         )
         if data_bucketing
         else None,
-        num_workers=multiprocessing.cpu_count(),
+        num_workers=num_workers,
     )

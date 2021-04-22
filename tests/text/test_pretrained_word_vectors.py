@@ -1,6 +1,4 @@
-import logging
 from pathlib import Path
-from typing import cast
 
 import pytest
 import torch
@@ -8,6 +6,7 @@ from torch.testing import assert_allclose
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
 
 
@@ -50,11 +49,13 @@ def test_create_pipeline_with_weights_file(pipeline_config, dataset, tmp_path):
     pipeline = Pipeline.from_config(pipeline_config)
 
     output = tmp_path / "pretrained_word_vector_output"
-    pipeline.train(
-        output=str(output),
-        training=dataset,
-        trainer=TrainerConfiguration(num_epochs=1, cuda_device=-1),
+    trainer = Trainer(
+        pipeline=pipeline,
+        train_dataset=dataset,
+        trainer_config=TrainerConfiguration(max_epochs=1, gpus=0),
     )
+    trainer.fit(output)
+
     instance = pipeline.head.featurize("test")
     instance.index_fields(pipeline.vocab)
 

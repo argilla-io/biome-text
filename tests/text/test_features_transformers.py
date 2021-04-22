@@ -5,8 +5,8 @@ from numpy.testing import assert_allclose
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
-from biome.text import VocabularyConfiguration
 from biome.text.features import TransformersFeatures
 
 
@@ -58,25 +58,22 @@ def pipeline_dict() -> dict:
 
 
 @pytest.fixture
-def trainer_dict() -> dict:
-    """Creation of trainer dictionary"""
-
-    return {
-        "batch_size": 16,
-        "num_epochs": 1,
-        "optimizer": {
+def trainer_config() -> TrainerConfiguration:
+    return TrainerConfiguration(
+        batch_size=16,
+        max_epochs=1,
+        optimizer={
             "type": "adam",
             "lr": 0.0001,
         },
-        "cuda_device": -1,
-    }
+        gpus=0,
+    )
 
 
-def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset):
+def test_pure_transformers(tmp_path, pipeline_dict, trainer_config, train_dataset):
     """Testing a Transformer training process and a model load"""
 
     pl = Pipeline.from_config(pipeline_dict)
-    trainer = TrainerConfiguration(**trainer_dict)
 
     # Check a fixed vocabulary size for the model
     assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
@@ -84,7 +81,10 @@ def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset)
     pl.predict(text="test")
 
     output = tmp_path / "output"
-    pl.train(output=str(output), trainer=trainer, training=train_dataset)
+    trainer = Trainer(
+        pipeline=pl, train_dataset=train_dataset, trainer_config=trainer_config
+    )
+    trainer.fit(output_dir=output)
 
     # Test vocabulary from a pretrained file
     pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
@@ -93,7 +93,7 @@ def test_pure_transformers(tmp_path, pipeline_dict, trainer_dict, train_dataset)
     assert pl.backbone.vocab.get_vocab_size("transformers") == 28996
 
 
-def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_dataset):
+def test_transformers_and_word(tmp_path, pipeline_dict, trainer_config, train_dataset):
     """Testing Transformer pipeline with an added word feature layer"""
     # Changing the pipeline to delete the BERT pooler and add a word feature
     del pipeline_dict["head"]["pooler"]
@@ -105,8 +105,10 @@ def test_transformers_and_word(tmp_path, pipeline_dict, trainer_dict, train_data
     pl.predict(text="test")
 
     output = tmp_path / "output"
-    trainer = TrainerConfiguration(**trainer_dict)
-    pl.train(output=str(output), trainer=trainer, training=train_dataset)
+    trainer = Trainer(
+        pipeline=pl, train_dataset=train_dataset, trainer_config=trainer_config
+    )
+    trainer.fit(output_dir=output)
 
     # Check a fixed vocabulary size for the transformer and the word feature
     assert pl.backbone.vocab.get_vocab_size("transformers") == 28996

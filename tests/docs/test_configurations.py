@@ -2,12 +2,15 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 
+import pytorch_lightning
 import torch.nn as nn
 from allennlp.common import Params
 from allennlp.training.learning_rate_schedulers import LearningRateScheduler
 from allennlp.training.optimizers import Optimizer
 
+from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
 from biome.text import VocabularyConfiguration
 
@@ -51,19 +54,21 @@ def test_pipeline_configs(configurations_path):
 
 def test_trainer_configs(configurations_path):
     configs = _read_configs(configurations_path, "Trainer")
+    pipeline = Pipeline.from_config(
+        {
+            "name": "test",
+            "head": {"type": "TextClassification", "labels": ["pos", "neg"]},
+        }
+    )
+    dataset = Dataset.from_dict({"text": ["test"], "label": ["pos"]})
     linear = nn.Linear(2, 2)
     for config_name, config in configs.items():
         assert isinstance(config, TrainerConfiguration)
 
-        # TODO: Maybe these checks could go directly in the `TrainerConfiguration` class
-        optimizer_dict = {
-            "model_parameters": linear.named_parameters(),
-            **config.optimizer,
-        }
-        optimizer = Optimizer.from_params(Params(optimizer_dict))
-
-        lrs_dict = {"optimizer": optimizer, **config.learning_rate_scheduler}
-        LearningRateScheduler.from_params(Params(lrs_dict))
+        trainer = Trainer(
+            pipeline=pipeline, train_dataset=dataset, trainer_config=config
+        )
+        assert isinstance(trainer.trainer, pytorch_lightning.Trainer)
 
 
 def test_vocab_configs(configurations_path):

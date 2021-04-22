@@ -4,6 +4,7 @@ import pytest
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import TrainerConfiguration
 from biome.text.modules.heads.task_prediction import Attribution
 
@@ -143,28 +144,24 @@ def pipeline_dict() -> Dict:
 
 
 @pytest.fixture
-def trainer_dict() -> Dict:
-    """Creating the trainer dictionary"""
-
-    trainer_dict = {
-        "num_epochs": 1,
-        "optimizer": {"type": "adam", "amsgrad": True, "lr": 0.002},
-    }
-
-    return trainer_dict
+def trainer_config() -> TrainerConfiguration:
+    return TrainerConfiguration(
+        max_epochs=1, optimizer={"type": "adam", "amsgrad": True, "lr": 0.002}
+    )
 
 
-def test_train(pipeline_dict, training_dataset, trainer_dict, tmp_path):
+def test_train(pipeline_dict, training_dataset, trainer_config, tmp_path):
     """Testing the correct working of prediction, vocab creating and training"""
     pipeline = Pipeline.from_config(pipeline_dict)
     pipeline.predict(record1={"first_name": "Hans"}, record2={"first_name": "Hansel"})
 
-    pipeline.train(
-        output=str(tmp_path / "record_bimpm_experiment"),
-        trainer=TrainerConfiguration(**trainer_dict),
-        training=training_dataset,
-        validation=training_dataset,
+    trainer = Trainer(
+        pipeline=pipeline,
+        train_dataset=training_dataset,
+        valid_dataset=training_dataset,
+        trainer_config=trainer_config,
     )
+    trainer.fit(tmp_path / "record_bimpm_experiment")
 
 
 def test_attributions(pipeline_dict, training_dataset):

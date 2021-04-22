@@ -31,10 +31,10 @@ from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
+from biome.text.configuration import AllenNLPTrainerConfiguration
 from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
 from biome.text.configuration import PredictionConfiguration
-from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
@@ -277,7 +277,7 @@ class Pipeline:
 
     def find_lr(
         self,
-        trainer_config: TrainerConfiguration,
+        trainer_config: AllenNLPTrainerConfiguration,
         find_lr_config: FindLRConfiguration,
         training_data: Dataset,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
@@ -356,7 +356,7 @@ class Pipeline:
         self,
         output: str,
         training: Dataset,
-        trainer: Optional[TrainerConfiguration] = None,
+        trainer: Optional[AllenNLPTrainerConfiguration] = None,
         validation: Optional[Dataset] = None,
         test: Optional[Dataset] = None,
         vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
@@ -366,6 +366,9 @@ class Pipeline:
         quiet: bool = False,
     ) -> TrainingResults:
         """Launches a training run with the specified configurations and data sources
+
+        DEPRECATED: This method is deprecated and will be removed in the next release.
+        Please use the `biome.text.Trainer` instead.
 
         Parameters
         ----------
@@ -400,9 +403,13 @@ class Pipeline:
         training_results
             Training results including the generated model path and the related metrics
         """
+        self._LOGGER.warning(
+            "The `Pipeline.train()` method is deprecated and will be removed in the next release. "
+            "Please use the `biome.text.Trainer` instead."
+        )
         from ._helpers import PipelineTrainer
 
-        trainer = trainer or TrainerConfiguration()
+        trainer = trainer or AllenNLPTrainerConfiguration()
 
         if not restore and os.path.isdir(output):
             shutil.rmtree(output)
@@ -818,7 +825,7 @@ class Pipeline:
         Parameters
         ----------
         tracking_uri
-            The URI of the MLFlow tracking server. MLFlow defaults to './mlruns'.
+            The URI of the MLFlow tracking server, MLFlow defaults to './mlruns'. Default: None
         experiment_id
             ID of the experiment under which to create the logging run. If this argument is unspecified,
             will look for valid experiment in the following order: activated using `mlflow.set_experiment`,
@@ -926,8 +933,8 @@ class Pipeline:
     def create_vocabulary(self, config: VocabularyConfiguration) -> None:
         """Creates the vocabulary for the pipeline from scratch
 
-        DEPRECATED: The vocabulary is now created automatically and this method will be removed in the future.
-        You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default.
+        DEPRECATED: The vocabulary is now created automatically by the `biome.text.Trainer`
+        and this method will be removed in the future.
 
         Parameters
         ----------
@@ -935,26 +942,26 @@ class Pipeline:
             Specifies the sources of the vocabulary and how to extract it
         """
         raise DeprecationWarning(
-            "The vocabulary is created automatically and this method will be removed in the future. "
-            "You can directly pass on a `VocabularyConfiguration` to the `train` method or use its default."
+            "Use `self.create_vocab()` instead. This method will be removed in the next release."
         )
 
     def predict_batch(self, *args, **kwargs):
         """DEPRECATED"""
         raise DeprecationWarning(
-            "Use `self.predict(batch=...)` instead. This method will be removed in the future."
+            "Use `self.predict(batch=...)` instead. This method will be removed in the next release."
         )
 
     def explain(self, *args, **kwargs):
         """DEPRECATED"""
         raise DeprecationWarning(
-            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the future."
+            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the next release."
         )
 
     def explain_batch(self, *args, **kwargs):
         """DEPRECATED"""
         raise DeprecationWarning(
-            "Use `self.predict(batch=..., add_attributions=True)` instead. This method will be removed in the future."
+            "Use `self.predict(batch=..., add_attributions=True)` instead. "
+            "This method will be removed in the next release."
         )
 
 

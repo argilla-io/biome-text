@@ -203,8 +203,8 @@ The `TokenClassification` head accepts as training input pretokenized text toget
 
 ## Trainer
 
-The training in *biome.text* uses AllenNLP's feature rich [`GradientDescentTrainer`](https://docs.allennlp.org/main/api/training/trainer/#gradientdescenttrainer) and is configured via the [`TrainerConfiguration`](../../api/biome/text/configuration.md#trainerconfiguration) class.
-The configuration is directly consumed by the `Pipeline.train` method and covers options for most common use cases.
+The training in *biome.text* uses the amazing [Pytorch Lightning Trainer](https://pytorch-lightning.readthedocs.io/en/latest/common/trainer.html) and is configured via the [`TrainerConfiguration`](../../api/biome/text/configuration.md#trainerconfiguration) class.
+The configuration is directly consumed by the `biome.text.Trainer` class and covers options for most common use cases.
 
 ### AdamW optimizer with linear warm-up and decay
 
@@ -216,25 +216,19 @@ trainer_config = TrainerConfiguration(
         "type": "adamw",
         "lr": 0.001,
     },
-    learning_rate_scheduler={
-        "type": "linear_with_warmup",
-        "num_epochs": 5,
-        "num_steps_per_epoch": 1000,
-        "warmup_steps": 100,
-    },
-    num_epochs=5,
+    warmup_steps=100,
+    lr_decay="linear",
+    max_epochs=5,
     batch_size=8,
-    patience=None,
+    add_early_stopping=False,
 )
 ```
 
 In this example we are using a [AdamW optimizer](https://docs.allennlp.org/main/api/training/optimizers/) with a learning rate of 0.001.
-We combine this optimizer with a [learning rate scheduler](https://docs.allennlp.org/main/api/training/learning_rate_schedulers/learning_rate_scheduler/) that linearly increases the learning rate from 0 to the learning rate specified in the optimizer over 100 steps (*warmup_steps*), and then linearly decreases the learning rate again to 0 until the end of the training.
-In this case the number of epochs in the learning rate scheduler, and the number of epochs in the `TrainerConfiguration` should be the same.
-The `num_steps_per_epoch` parameter should reflect the number of training examples divided by the `batch_size` of the training.
+We combine this optimizer with a [learning rate scheduler](https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate) that linearly increases the learning rate from 0 to the learning rate specified in the optimizer over 100 steps (*warmup_steps*), and then linearly decreases the learning rate again to 0 until the end of the training.
 
-By default, the `patience` of the trainer is set to 2 epochs.
-However, when providing a learning rate scheduler it is advised to set the `patience` to *None* in order not to interfere with the schedule.
+By default, we add an early stopping mechanism.
+However, when providing a learning rate scheduler it is advised to deactivate it by setting `add_early_stopping` to False.
 
 ## Vocabulary
 

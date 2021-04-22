@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 import torch
 
+from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Dataset
 from biome.text import Pipeline
-from biome.text import TrainerConfiguration
 from biome.text import VocabularyConfiguration
 from biome.text.configuration import CharFeatures
 from biome.text.configuration import WordFeatures
@@ -117,7 +117,7 @@ def test_text_classification(
     pl = Pipeline.from_config(pipeline_dict)
     train_ds = train_valid_dataset[0]
     valid_ds = train_valid_dataset[1]
-    trainer = TrainerConfiguration(**trainer_dict)
+    trainer = AllenNLPTrainerConfiguration(**trainer_dict)
     vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
 
     output = tmp_path / "output"
