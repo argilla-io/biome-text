@@ -322,13 +322,17 @@ class TuneExperiment(tune.Experiment):
 
         trainer_config = TrainerConfiguration(**config["trainer_config"])
 
-        tune_callback = TuneReportCallback(metrics=config["metrics"])
-        if trainer_config.callbacks is None:
-            trainer_config.callbacks = [tune_callback]
-        if isinstance(trainer_config.callbacks, Callback):
-            trainer_config.callbacks = [trainer_config.callbacks, tune_callback]
-        elif isinstance(trainer_config.callbacks, list):
-            trainer_config.callbacks.append(tune_callback)
+        callbacks = trainer_config.callbacks
+        if not isinstance(callbacks, list):
+            callbacks = [callbacks]
+        if not any(
+            [isinstance(callback, TuneReportCallback) for callback in callbacks]
+        ):
+            tune_callback = TuneReportCallback(metrics=config["metrics"])
+            if trainer_config.callbacks is None:
+                trainer_config.callbacks = tune_callback
+            else:
+                trainer_config.callbacks = callbacks + [tune_callback]
 
         train_ds = Dataset.load_from_disk(config["train_dataset_path"])
         valid_ds = Dataset.load_from_disk(config["valid_dataset_path"])
