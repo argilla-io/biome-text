@@ -228,7 +228,8 @@ class TokenizerConfiguration(FromParams):
     end_tokens
         A list of token strings to the sequence after tokenized input text.
     use_transformers
-        If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above.
+        If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above
+        (except `max_sequence_length`!).
         If you specify any of the above parameters you want to set this to false.
         If None, we automatically choose the right value based on your feature and head configuration.
     transformers_kwargs

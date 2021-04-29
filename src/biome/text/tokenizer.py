@@ -220,7 +220,9 @@ class TransformersTokenizer(Tokenizer):
         return list(map(self._tokenize, document))
 
     def _tokenize(self, text: str) -> List[Token]:
-        return self.pretrained_tokenizer.tokenize(text)
+        return self.pretrained_tokenizer.tokenize(
+            text[: self._config.max_sequence_length]
+        )
 
     @property
     def nlp(self) -> Language:
