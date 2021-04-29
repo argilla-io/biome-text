@@ -42,7 +42,7 @@ if __name__ == "__main__":
             "numpy",
             "pandas",
             "pytorch-lightning==1.3.0rc1",
-            "ray[tune]~=1.2.0",
+            "ray[tune]~=1.3.0",
             "spacy~=2.3.0",
             "torch",  # the version is defined by allennlp
             "transformers",  # the version is defined by allennlp
