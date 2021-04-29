@@ -1,10 +1,5 @@
 import inspect
-from typing import Any
-from typing import Callable
-from typing import Dict
 from typing import List
-from typing import Optional
-from typing import Tuple
 
 import click
 import uvicorn
@@ -14,6 +9,7 @@ from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import PlainTextResponse
+from pydantic import BaseConfig
 from pydantic import create_model
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -75,7 +71,7 @@ def _serve(pipeline: Pipeline, port: int = 9999, host: str = "0.0.0.0"):
         if par.default != inspect.Parameter.empty and name != "batch"
     }
 
-    class Config:
+    class Config(BaseConfig):
         extra = "forbid"
 
     ModelInput = create_model("ModelInput", **model_parameters, __config__=Config)
