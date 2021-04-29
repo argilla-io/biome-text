@@ -25,6 +25,7 @@ def pipeline_dict(request) -> dict:
 
 
 def test_pipeline_transformers_tokenizer(pipeline_dict):
+    pipeline_dict["tokenizer"] = {"max_sequence_length": 1}
     pl = Pipeline.from_config(pipeline_dict)
 
     assert pl.config.tokenizer_config.transformers_kwargs == {
@@ -37,7 +38,12 @@ def test_pipeline_transformers_tokenizer(pipeline_dict):
     )
     assert type(pl.backbone.tokenizer) is TransformersTokenizer
 
-    prediction = pl.predict("Test this!")
+    # test max_sequence_length, only <s>, t, </s> should survive
+    assert (
+        len(pl.backbone.tokenizer.tokenize_text("this is a multi token text")[0]) == 3
+    )
+
+    assert pl.predict("Test this!")
 
 
 def test_pipeline_default_tokenizer(pipeline_dict):
