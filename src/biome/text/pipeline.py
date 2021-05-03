@@ -417,11 +417,28 @@ class Pipeline:
         try:
             self.__configure_training_logging(output, quiet)
 
+            # check "text" and "label" columns in datasets
+            def check_columns(dataset, name):
+                missing_columns = []
+                if "text" not in dataset.column_names:
+                    missing_columns.append("text")
+                if "label" not in dataset.column_names:
+                    missing_columns.append("label")
+                if missing_columns != []:
+                    raise Exception(
+                        "The following columns don't exist in the {} dataset: {}".format(
+                            name, missing_columns
+                        )
+                    )
+
             # create instances
+            check_columns(training, "training")
             datasets = {"training": training.to_instances(self, lazy=lazy)}
             if validation:
+                check_columns(validation, "validation")
                 datasets["validation"] = validation.to_instances(self, lazy=lazy)
             if test:
+                check_columns(test, "test")
                 datasets["test"] = test.to_instances(self, lazy=lazy)
 
             # create vocab
