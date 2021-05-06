@@ -30,7 +30,6 @@ if __name__ == "__main__":
             "captum~=0.2.0",
             "click~=7.1.0",
             "datasets~=1.2.1",
-            "elasticsearch>=6.8.0,<7.5.0",
             "fastapi~=0.55.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
