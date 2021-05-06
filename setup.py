@@ -46,6 +46,8 @@ if __name__ == "__main__":
             "torch",  # the version is defined by allennlp
             "transformers",  # the version is defined by allennlp
             "tqdm>=4.49.0",
+            "fastapi>=0.63.0",
+            "uvicorn>=0.13.0",
         ],
         extras_require={
             "dev": [
@@ -61,10 +63,6 @@ if __name__ == "__main__":
                 # development
                 "pre-commit~=2.9.0",
                 "GitPython",
-            ],
-            "serve": [
-                "fastapi~=0.63.0",
-                "uvicorn~=0.13.0",
             ],
         },
         package_data={

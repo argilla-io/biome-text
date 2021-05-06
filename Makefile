@@ -2,7 +2,7 @@
 default: help
 
 dev: ## install package in development mode
-	@pip install --upgrade -e .[dev,serve]
+	@pip install --upgrade -e .[dev]
 	@pre-commit install
 
 check: ## applies a code pylint with autopep8 reformating
