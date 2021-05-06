@@ -8,7 +8,6 @@ from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Instance
 from datasets.features import Features
 from datasets.features import Value
-from elasticsearch import Elasticsearch
 
 from biome.text import Dataset
 from biome.text import Pipeline
@@ -129,20 +128,6 @@ def test_from_parquet_file(resources_data_path):
     dataset = Dataset.from_pandas(df)
 
     assert "reviewerID" in dataset.column_names
-
-
-def __wait_for_index_creation__(es_client: Elasticsearch, es_index: str):
-    retries = 0
-    max_retries = 3
-
-    while retries < max_retries and not es_client.count(index=es_index)["count"]:
-        retries += 1
-        time.sleep(retries)
-
-    if retries >= max_retries:
-        raise Exception(
-            f"Max retries reached. Index {es_index} could not be properly created"
-        )
 
 
 def test_fail_using_reserved_words():

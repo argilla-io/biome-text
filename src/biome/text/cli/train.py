@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from elasticsearch import Elasticsearch
 
 from biome.text import Dataset
 from biome.text import Pipeline
@@ -97,14 +96,5 @@ def dataset_from_path(path: str) -> Dataset:
         return Dataset.from_csv(path)
     elif file_extension in [".json", ".jsonl"]:
         return Dataset.from_json(path)
-    # yaml files are used for elasticsearch data
-    elif file_extension in [".yaml", ".yml"]:
-        from_es_kwargs = yaml_to_dict(path)
-        client = Elasticsearch(**from_es_kwargs["client"])
-        return Dataset.from_elasticsearch(
-            client=client,
-            index=from_es_kwargs["index"],
-            query=from_es_kwargs.get("query"),
-        )
     else:
         raise ValueError(f"Could not create a Dataset from '{path}'")
