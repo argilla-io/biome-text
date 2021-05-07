@@ -6,7 +6,7 @@ print_help(){
   echo "  Small bash script to prepare the docs for a _versioned_ build."
   echo ""
   echo "  The environment variable BIOME_TEXT_DOC_VERSION must be set!"
-  echo "  This env variable must match the release tag (for a new release) or 'master'."
+  echo "  This env variable must match the release tag (e.g. v2.2.0 or v2.2.0rc1)."
 }
 
 if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
@@ -23,24 +23,22 @@ fi
 
 echo " - Modifying font urls  ..."
 
-if ! sed -i "s|/biome-text/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" ./docs/.vuepress/theme/styles/fonts.styl; then
+if ! sed -i "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" ./docs/.vuepress/theme/styles/fonts.styl; then
   echo "ERROR: Could not modify 'fonts.styl'!"
   exit 1
 fi
 
 
-if [ "$BIOME_TEXT_DOC_VERSION" != "master" ]; then
-  echo " - Modifying tutorials ..."
+echo " - Modifying tutorials ..."
 
-  modified=$(find ./docs/documentation/tutorials -maxdepth 1 -name "*.ipynb" \
-    -exec sed -i -e "s|pip install -U git+https://github.com/recognai/biome-text.git|pip install -U biome-text|g" \
-      -e "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" \
-      -e "s|/biome-text/blob/master/|/biome-text/blob/$BIOME_TEXT_DOC_VERSION/|g" {} \; \
-    -exec echo {} \; | wc -l)
-  if [ "$modified" -eq 0 ]; then
-    echo "ERROR: No tutorials modified!"
-    exit 1
-  fi
+modified=$(find ./docs/documentation/tutorials -maxdepth 1 -name "*.ipynb" \
+  -exec sed -i -e "s|pip install -U git+https://github.com/recognai/biome-text.git|pip install -U biome-text|g" \
+    -e "s|/biome-text/master/|/biome-text/$BIOME_TEXT_DOC_VERSION/|g" \
+    -e "s|/biome-text/blob/master/|/biome-text/blob/$BIOME_TEXT_DOC_VERSION/|g" {} \; \
+  -exec echo {} \; | wc -l)
+if [ "$modified" -eq 0 ]; then
+  echo "ERROR: No tutorials modified!"
+  exit 1
 fi
 
 

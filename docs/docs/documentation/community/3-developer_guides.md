@@ -85,20 +85,30 @@ make build_docs
 
 ## Make a release
 
-To make a release you simply have to create a new [GitHub release](https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
-The version tags should be `v1.1.0` or for release candidates `v1.1.0rc1`.
-Major and minor releases should always be made against the master branch, bugfix releases against the corresponding minor release tag.
+To make a release you have to follow 4 steps:
 
-After publishing the release, the CI is triggered and if everything goes well the release gets published on PyPi.
-The CI does:
-- run tests & build docs
-- build package
-- upload to testpypi
-- install from testpypi
-- upload to pypi
+1. Run the `prepare_versioned_build.sh` script inside the `docs` folder and commit the changes to the master branch.
+The commit message should say something like: "v2.2.0 release".
+
+2. Create a new [GitHub release](https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
+
+    The version tags should be `v1.1.0` or for release candidates `v1.1.0rc1`.
+    Major and minor releases should always be made against the master branch, bugfix releases against the corresponding minor release tag.
+
+    After publishing the release, the CI is triggered and if everything goes well the release gets published on PyPi.
+    The CI does:
+    - run tests & build docs
+    - build package
+    - upload to testpypi
+    - install from testpypi
+    - upload to pypi
+
+3. Revert the last commit in which you changed the docs, the commit message should read something like:
+"back to master release".
+
+4. **Docs**: In order for the Algolia Search to work, you need to add the new version number of the docs to our
+algolia [config file](https://github.com/algolia/docsearch-configs/blob/master/configs/recogn_biome-text.json) and submit a PR.
+
 
 Under the hood the versioning of our package is managed by [`setuptools_scm`](https://github.com/pypa/setuptools_scm),
 that basically works with the git tags in a repo.
-
-**Docs**: In order for the Algolia Search to work, you need to add the new version number of the docs to our
-algolia [config file](https://github.com/algolia/docsearch-configs/blob/master/configs/recogn_biome-text.json) and submit a PR.
