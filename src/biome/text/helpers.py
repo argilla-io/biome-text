@@ -240,6 +240,23 @@ def sanitize_for_params(x: Any) -> Any:
     return x
 
 
+def sanitize_for_yaml(value: Any):
+    """Sanitizes the value for a simple yaml output, that is classes only built-in types"""
+    if isinstance(value, list):
+        return [sanitize_for_yaml(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(sanitize_for_yaml(v) for v in value)
+    if isinstance(value, dict):
+        return {k: sanitize_for_yaml(v) for k, v in value.items()}
+    try:
+        yaml.dump(value)
+    # we try a string representation
+    except Exception:
+        return str(value)
+    else:
+        return value
+
+
 def span_labels_to_tag_labels(
     labels: List[str], label_encoding: str = "BIO"
 ) -> List[str]:
