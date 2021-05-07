@@ -47,6 +47,7 @@ if __name__ == "__main__":
             "tqdm>=4.49.0",
             "fastapi>=0.63.0",
             "uvicorn>=0.13.0",
+            "pyyaml",
         ],
         extras_require={
             "dev": [

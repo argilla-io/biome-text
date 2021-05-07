@@ -390,6 +390,7 @@ class Trainer:
                 self._pipeline.save(output_dir)
                 with (output_dir / "metrics.json").open("w") as file:
                     json.dump(sanitize(self.trainer.logged_metrics), file)
+                self._trainer_config.to_yaml(output_dir / "trainer_config.yaml")
             if self._wandb_logger is not None:
                 self._wandb_logger.experiment.finish()
 

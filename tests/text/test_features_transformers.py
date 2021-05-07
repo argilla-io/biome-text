@@ -58,7 +58,7 @@ def pipeline_dict() -> dict:
 
 
 @pytest.fixture
-def trainer_config() -> TrainerConfiguration:
+def trainer_config(tmp_path) -> TrainerConfiguration:
     return TrainerConfiguration(
         batch_size=16,
         max_epochs=1,
@@ -67,6 +67,7 @@ def trainer_config() -> TrainerConfiguration:
             "lr": 0.0001,
         },
         gpus=0,
+        default_root_dir=str(tmp_path),
     )
 
 
