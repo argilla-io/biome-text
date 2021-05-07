@@ -29,11 +29,6 @@ def test_text_classifier_tutorial(tmp_path, tutorials_path):
             cell["source"] = re.sub(
                 r"training=train_ds", r"training=valid_ds", cell["source"]
             )
-        if cell["source"].startswith("pl_trained.explore"):
-            cell["source"] = re.sub(
-                r"pl_trained.explore", r"#pl_trained.explore", cell["source"]
-            )
-
     # dump adapted notebook
     mod_notebook_path = tmp_path / notebook_path.name
     with mod_notebook_path.open("w") as file:

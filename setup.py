@@ -30,7 +30,6 @@ if __name__ == "__main__":
             "captum~=0.2.0",
             "click~=7.1.0",
             "datasets~=1.2.1",
-            "elasticsearch>=6.8.0,<7.5.0",
             "flask~=1.1.2",
             "flask-cors~=3.0.8",
             "flatdict~=4.0.0",
@@ -64,12 +63,6 @@ if __name__ == "__main__":
                 "pre-commit~=2.9.0",
                 "GitPython",
             ],
-        },
-        package_data={
-            "biome": [
-                file.replace("src/biome/", "")
-                for file in glob.glob("src/biome/text/ui/webapp/**/*.*", recursive=True)
-            ]
         },
         entry_points={"console_scripts": ["biome=biome.text.cli:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP

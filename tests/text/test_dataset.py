@@ -8,11 +8,9 @@ from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Instance
 from datasets.features import Features
 from datasets.features import Value
-from elasticsearch import Elasticsearch
 
 from biome.text import Dataset
 from biome.text import Pipeline
-from biome.text import explore
 
 
 @pytest.fixture(scope="class")
@@ -130,52 +128,6 @@ def test_from_parquet_file(resources_data_path):
     dataset = Dataset.from_pandas(df)
 
     assert "reviewerID" in dataset.column_names
-
-
-def __wait_for_index_creation__(es_client: Elasticsearch, es_index: str):
-    retries = 0
-    max_retries = 3
-
-    while retries < max_retries and not es_client.count(index=es_index)["count"]:
-        retries += 1
-        time.sleep(retries)
-
-    if retries >= max_retries:
-        raise Exception(
-            f"Max retries reached. Index {es_index} could not be properly created"
-        )
-
-
-def test_from_elasticsearch(dataset, default_pipeline_config):
-    pipeline = Pipeline.from_config(default_pipeline_config)
-    es_index = explore.create(
-        pipeline, dataset, explore_id="test_index", show_explore=False
-    )
-    es_client = Elasticsearch()
-    __wait_for_index_creation__(es_client, es_index)
-    ds = Dataset.from_elasticsearch(
-        es_client, index=es_index, query={"query": {"match_all": {}}}
-    )
-
-    assert len(ds) == len(dataset)
-    for key in ["_id", "_index", "_type", "_score"]:
-        assert key in ds.column_names
-
-    ds = Dataset.from_elasticsearch(
-        es_client,
-        index=es_index,
-        query={"query": {"exists": {"field": "not_found.field"}}},
-    )
-    assert len(ds) == 0
-
-    ds = Dataset.from_elasticsearch(
-        es_client, index=es_index, fields=["label", "text", "_id"]
-    )
-    assert len(ds) == len(dataset)
-    assert "label" in ds.column_names
-    assert "text" in ds.column_names
-    assert "_id" in ds.column_names
-    assert "prediction" not in ds.column_names
 
 
 def test_fail_using_reserved_words():

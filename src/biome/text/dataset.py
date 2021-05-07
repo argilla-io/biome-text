@@ -19,13 +19,10 @@ from allennlp.data import AllennlpDataset
 from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Instance
 from datasets.fingerprint import Hasher
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import scan
 from spacy import __version__ as spacy__version__
 from tqdm.auto import tqdm
 
 from biome.text import __version__ as biome__version__
-from biome.text import helpers
 from biome.text.featurizer import FeaturizeError
 from biome.text.helpers import copy_sign_and_docs
 
@@ -131,57 +128,6 @@ class Dataset:
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_dict
         """
         return cls(datasets.Dataset.from_dict(*args, **kwargs))
-
-    @classmethod
-    def from_elasticsearch(
-        cls,
-        client: Elasticsearch,
-        index: str,
-        query: Optional[dict] = None,
-        fields: List[str] = None,
-    ):
-        """Create a Dataset from scanned query records in an elasticsearch index
-
-        Parameters
-        ----------
-        client
-            The elasticsearch client instance
-        index
-            The index, index pattern or alias to fetch documents
-        query
-            The es query body
-        fields
-            Select fields to extract as ds features
-
-        Returns
-        -------
-        dataset
-        """
-
-        def __clean_document__(document: Dict, _fields: List[str] = None) -> Dict:
-            source = {
-                **{
-                    k: document.get(k)
-                    for k in ["_id", "_type", "_index", "_score"]
-                    if k in document
-                },
-                **document.get("source", {}),
-            }
-            if _fields:
-                source = {k: source.get(k) for k in _fields}
-            return helpers.stringify(source)
-
-        es_query = query or {}
-
-        scanned_docs = [
-            __clean_document__(doc, fields)
-            for doc in scan(client=client, query=es_query, index=index)
-        ]
-        if len(scanned_docs) <= 0:  # prevent empty results
-            return cls.from_dict({})
-
-        data_dict = {k: [doc.get(k) for doc in scanned_docs] for k in scanned_docs[0]}
-        return cls.from_dict(data_dict)
 
     @classmethod
     def from_datasets(cls, dataset_list: List["Dataset"]) -> "Dataset":

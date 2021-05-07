@@ -242,27 +242,6 @@ Following will add an `attributions` key in the prediction dictionary:
 pipeline.predict(subject='Hi!', body='Hi, hope you are well..', add_attributions=True)
 ```
 
-### Explore
-In order to support users with fine-grained error analysis and empower them to improve their models with informed decisions, the [biome.text.explore](../api/biome/text/explore.md) methods can launch an UI (inside your notebook if you are using Jupyter).
-
-```python
-from biome.text import explore
-
-explore.create(pipeline, train_ds, attributions=True)
-```
-
-This search-based UI can help:
-
- - to quickly identify difficult examples in the training, validation, test or any other data set.
- - to inform users about corner cases and which labels need more examples.
- - to find the values for confidence thresholds to use the model in production.
- - to help domain experts understand the strengths and limitations of the model.
- - in summary, get a sense of how the model interacts with your data.
-
-:::tip Tip
-For the UI to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance. We recommend installing [Elasticsearch with docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode).
-:::
-
 ### Training and transfer learning
 
 After loading a pipeline, you can continue the training for the same task with new data:
