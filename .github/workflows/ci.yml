@@ -53,55 +53,55 @@ jobs:
           name: docs_build_output
           path: docs_build_output.tar.gz
 
-#  deploy_docs:
-#    name: Deploy Docs
-#    runs-on: ubuntu-latest
-#    needs: tests_docs
-#    if: ${{ github.event_name == 'push' || github.event_name == 'release' }}
-#    env:
-#      BIOME_TEXT_DOC_VERSION: master
-#    # make sure commands run in a bash shell
-#    defaults:
-#      run:
-#        shell: bash -l {0}
-#    steps:
-#      - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
-#        if: ${{ github.event_name == 'release' }}
-#        run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
-#      - name: Checkout Code 🛎
-#        # Recommended and required by JamesIves/github-pages-deploy-action
-#        uses: actions/checkout@v2
-#        with:
-#          persist-credentials: false
-#      - name: Download Build Output 🧀
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: docs_build_output
-#      - name: Extract Build Output 🍗
-#        run: tar -xzf docs_build_output.tar.gz
-#      - name: Deploy Docs 🚀
-#        uses: JamesIves/github-pages-deploy-action@3.7.1
-#        with:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          BRANCH: gh-pages # The branch the action should deploy to.
-#          FOLDER: docs/site # The folder the action should deploy.
-#          TARGET_FOLDER: /${{ env.BIOME_TEXT_DOC_VERSION }}/
-#          CLEAN: true # Automatically remove deleted files from the deploy branch
-#      - name: Checkout gh-pages for Release 🛎
-#        if: ${{ github.event_name == 'release' }}
-#        uses: actions/checkout@v2
-#        with:
-#          ref: gh-pages
-#      - name: Update Versions and Index for Release 🍗
-#        if: ${{ github.event_name == 'release' }}
-#        run: |
-#          sed -i 's/master/master\n${{ env.BIOME_TEXT_DOC_VERSION }}/' versions.txt
-#          sed -i 's/biome-text\/.*\//biome-text\/${{ env.BIOME_TEXT_DOC_VERSION }}\//' index.html
-#          git config user.name github-actions
-#          git config user.email github-actions@github.com
-#          git add versions.txt index.html
-#          git commit -m "Update versions.txt and index.html due to new release"
-#          git push
+  deploy_docs:
+    name: Deploy Docs
+    runs-on: ubuntu-latest
+    needs: tests_docs
+    if: ${{ github.event_name == 'push' || github.event_name == 'release' }}
+    env:
+      BIOME_TEXT_DOC_VERSION: master
+    # make sure commands run in a bash shell
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - name: Set BIOME_TEXT_DOC_VERSION for Release 🥦
+        if: ${{ github.event_name == 'release' }}
+        run: echo BIOME_TEXT_DOC_VERSION=${{ github.event.release.tag_name }} >> $GITHUB_ENV
+      - name: Checkout Code 🛎
+        # Recommended and required by JamesIves/github-pages-deploy-action
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Download Build Output 🧀
+        uses: actions/download-artifact@v2
+        with:
+          name: docs_build_output
+      - name: Extract Build Output 🍗
+        run: tar -xzf docs_build_output.tar.gz
+      - name: Deploy Docs 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: docs/site # The folder the action should deploy.
+          TARGET_FOLDER: /${{ env.BIOME_TEXT_DOC_VERSION }}/
+          CLEAN: true # Automatically remove deleted files from the deploy branch
+      - name: Checkout gh-pages for Release 🛎
+        if: ${{ github.event_name == 'release' }}
+        uses: actions/checkout@v2
+        with:
+          ref: gh-pages
+      - name: Update Versions and Index for Release 🍗
+        if: ${{ github.event_name == 'release' }}
+        run: |
+          sed -i 's/master/master\n${{ env.BIOME_TEXT_DOC_VERSION }}/' versions.txt
+          sed -i 's/biome-text\/.*\//biome-text\/${{ env.BIOME_TEXT_DOC_VERSION }}\//' index.html
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add versions.txt index.html
+          git commit -m "Update versions.txt and index.html due to new release"
+          git push
 
   deploy_release:
     name: Deploy Release
