@@ -29,9 +29,7 @@
 ## Features
 * State-of-the-art and not so state-of-the-art models trained with **your own data** with simple workflows.
 
-* **Exploration UI** for error analysis with interpretations.
-
-* **Efficient data reading** for (large) datasets in multiple formats and sources (CSV, Parquet, JSON, Elasticsearch, etc.).
+* **Efficient data reading** for (large) datasets in multiple formats and sources (CSV, Parquet, JSON, etc.).
 
 * **Modular configuration and extensibility** of models, datasets and training runs programmatically or via config files.
 
@@ -59,13 +57,6 @@ After installing *biome.text*, the best way to test your installation is by runn
 ```shell script
 biome --help
 ```
-
-For the UI component to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance.
-We recommend running [Elasticsearch via docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode):
-
-````shell script
-docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.3.2
-````
 
 ## Get started
 

@@ -23,13 +23,6 @@ After installing *biome.text*, the best way to test your installation is by runn
 biome --help
 ```
 
-For the UI component to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance.
-We recommend running [Elasticsearch via docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode):
-
-````shell script
-docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.3.2
-````
-
 ## Master branch
 
 The *master branch* contains the latest features, but is less well tested.
@@ -38,6 +31,3 @@ If you are looking for a specific feature that has not been released yet, you ca
 ````shell script
 pip install -U git+https://github.com/recognai/biome-text.git
 ````
-
-Be aware that the UI components will not work when installing the package this way.
-Check out the [developer guides](community/3-developer_guides.md#setting-up-for-development) on how to build the UI components manually.

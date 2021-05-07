@@ -35,27 +35,6 @@ After installing *biome.text*, the best way to test your installation is by runn
 biome --help
 ```
 
-### Building the UI components
-
-For the UI to work you need to build the static web resources:
-
-````shell script
-make build_ui
-````
-
-If you are working on the UI and want to quickly check out the results you can serve it with:
-
-```shell script
-make ui
-```
-
-Keep in mind that for the UI component to work you need a running [Elasticsearch](https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html) instance.
-We recommend running [Elasticsearch via docker](https://www.elastic.co/guide/en/elasticsearch/reference/7.7/docker.html#docker-cli-run-dev-mode):
-
-````shell script
-docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:7.3.2
-````
-
 ### Running tests locally
 
 *Biome.text* uses [pytest](https://docs.pytest.org/en/latest/) for its unit and integration tests.
