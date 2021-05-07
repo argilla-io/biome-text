@@ -16,8 +16,6 @@ from biome.text.helpers import yaml_to_dict
     "pipeline_path",
     type=click.Path(exists=True),
     required=True,
-    help="Either the path to a pretrained pipeline (model.tar.gz file), "
-    "or the path to a pipeline configuration (YAML file).",
 )
 @click.option(
     "--output",
