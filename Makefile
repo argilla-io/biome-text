@@ -13,19 +13,13 @@ test: ## launch package tests
 	@python -m pytest
 	@python -m pytest --doctest-modules src/biome/text
 
-ui: ## serve the UI for development
-	@cd ui && npm install && npm run serve
-
-build_ui: ## build the ui pages
-	@cd ui && npm install && npm run build
-
 docs: ## serve the documentation for development
 	@cd docs && npm install && npm run dev:site
 
 build_docs: ## build the documentation
 	@cd docs && npm install && npm run build:site
 
-dist: build_ui ## build a package distribution
+dist: ## build a package distribution
 	@python setup.py sdist bdist_wheel
 
 
