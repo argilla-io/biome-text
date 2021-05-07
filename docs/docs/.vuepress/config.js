@@ -5,7 +5,7 @@ const glob = require("glob");
 // It must be the same as the release tag or 'master', that is e.g. "v2.0.0" or "v2.1.0rc1" or "master"
 const basePath = process.env.BIOME_TEXT_DOC_VERSION
     ? `/biome-text/${process.env.BIOME_TEXT_DOC_VERSION}/`
-    : "/biome-text/"
+    : "/biome-text/master/"
 
 function getSidebarChildren(location, replacement) {
     if (!replacement) {
