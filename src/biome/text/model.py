@@ -437,7 +437,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         #     on_epoch=False,
         # )
 
-        metrics = self.get_metrics()
+        # metrics = self.get_metrics()
         # for key, val in metrics.items():
         #     self.log(
         #         ("training" if key.startswith("_") else "training_") + key,
