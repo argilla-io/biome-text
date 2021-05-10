@@ -227,10 +227,11 @@ class RecordPairClassification(ClassificationHead):
         # TODO: An optimized implementation would be to calculate the attributions directly in the forward method
         #  and provide a practical switch, maybe: `with head.turn_attributions_on(): self.forward_on_instances()`
         #  In this way we would calculate the attributions batch wise and on on GPU if available.
-        output["field_encoded_record1"] = field_encoded_record1
-        output["record_mask_record1"] = record_mask_record1
-        output["field_encoded_record2"] = field_encoded_record2
-        output["record_mask_record2"] = record_mask_record2
+        if not self.training:
+            output["field_encoded_record1"] = field_encoded_record1
+            output["record_mask_record1"] = record_mask_record1
+            output["field_encoded_record2"] = field_encoded_record2
+            output["record_mask_record2"] = record_mask_record2
 
         return output
 
