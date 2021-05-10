@@ -144,14 +144,14 @@ class Trainer:
             self._trainer_config.gpus = 1
 
         # create optimizer, has to come AFTER creating the vocab!
-        self._pipeline.model.optimizer = Optimizer.from_params(
-            Params(
-                {
-                    "model_parameters": self._pipeline.model.named_parameters(),
-                    **self._trainer_config.optimizer,
-                }
-            )
-        )
+        # self._pipeline.model.optimizer = Optimizer.from_params(
+        #     Params(
+        #         {
+        #             "model_parameters": self._pipeline.model.named_parameters(),
+        #             **self._trainer_config.optimizer,
+        #         }
+        #     )
+        # )
 
         # create lr scheduler, has to come AFTER creating the optimizer!
         if not (

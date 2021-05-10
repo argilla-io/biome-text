@@ -22,6 +22,7 @@ from allennlp.common.util import sanitize
 from allennlp.data import Instance
 from allennlp.data import Vocabulary
 from allennlp.models.archival import CONFIG_NAME
+from allennlp.training.optimizers import Optimizer
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
@@ -526,9 +527,18 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         )
 
     def configure_optimizers(self):
-        if self.lr_scheduler is None:
-            return self.optimizer
-        return [self.optimizer], [self.lr_scheduler]
+        return Optimizer.from_params(
+            Params(
+                {
+                    "type": "adam",
+                    "model_parameters": self.named_parameters(),
+                    "lr": 5e-5,
+                }
+            )
+        )
+        # if self.lr_scheduler is None:
+        #     return self.optimizer
+        # return [self.optimizer], [self.lr_scheduler]
 
 
 allennlp.models.Model.register(PipelineModel.__name__, exist_ok=True)(PipelineModel)
