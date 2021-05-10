@@ -105,7 +105,7 @@ class TextClassification(ClassificationHead):
         # TODO: An optimized implementation would be to calculate the attributions directly in the forward method
         #  and provide a practical switch, maybe: `with head.turn_attributions_on(): self.forward_on_instances()`
         #  In this way we would calculate the attributions batch wise and on on GPU if available.
-        # output["embeddings"], output["mask"] = embeddings, mask
+        output["embeddings"], output["mask"] = embeddings, mask
 
         return output
 
