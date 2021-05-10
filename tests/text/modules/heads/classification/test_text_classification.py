@@ -40,7 +40,8 @@ def test_make_task_prediction(pipeline):
 
 def test_compute_attributions(pipeline):
     instance = pipeline.head.featurize("test this sentence")
-    forward_output = pipeline._model.forward_on_instances([instance])
+    pipeline.model.eval()
+    forward_output = pipeline.model.forward_on_instances([instance])
 
     attributions = pipeline.head._compute_attributions(
         forward_output[0], instance, n_steps=1

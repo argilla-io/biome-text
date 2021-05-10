@@ -169,7 +169,8 @@ def test_attributions(pipeline_dict, training_dataset):
     instance = pipeline.head.featurize(
         training_dataset["record1"][0], training_dataset["record2"][0]
     )
-    forward_output = pipeline._model.forward_on_instances([instance])
+    pipeline.model.eval()
+    forward_output = pipeline.model.forward_on_instances([instance])
 
     attributions = pipeline.head._compute_attributions(forward_output[0], instance)
 
