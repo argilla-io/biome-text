@@ -75,8 +75,8 @@ class ClassificationHead(TaskHead):
             self._metrics = Metrics(
                 accuracy={"type": "categorical_accuracy"},
                 micro={"type": "fbeta", "average": "micro"},
-                macro={"type": "fbeta", "average": "macro"},
-                per_label={"type": "fbeta", "labels": [i for i in range(len(labels))]},
+                # macro={"type": "fbeta", "average": "macro"},
+                # per_label={"type": "fbeta", "labels": [i for i in range(len(labels))]},
             )
 
     def _add_label(
