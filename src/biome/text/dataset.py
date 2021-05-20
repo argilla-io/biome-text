@@ -7,6 +7,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -15,11 +16,14 @@ from typing import cast
 
 import datasets
 from allennlp import __version__ as allennlp__version__
-from allennlp.data import AllennlpDataset
-from allennlp.data import AllennlpLazyDataset
+from allennlp.data import Batch
 from allennlp.data import Instance
+from allennlp.data import Vocabulary
+from allennlp.data.data_loaders import TensorDict
 from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
+from torch.utils.data import Dataset as TorchDataset
+from torch.utils.data import IterableDataset as TorchIterableDataset
 from tqdm.auto import tqdm
 
 from biome.text import __version__ as biome__version__
@@ -30,6 +34,78 @@ if TYPE_CHECKING:
     import pandas
 
     from biome.text.pipeline import Pipeline
+
+
+class AllennlpDataset(TorchDataset):
+    """
+    An `AllennlpDataset` is created by calling `.read()` on a non-lazy `DatasetReader`.
+    It's essentially just a thin wrapper around a list of instances.
+    """
+
+    def __init__(self, instances: List[Instance], vocab: Vocabulary = None):
+        self.instances = instances
+        self.vocab = vocab
+
+    def __getitem__(self, idx) -> Instance:
+        if self.vocab is not None:
+            self.instances[idx].index_fields(self.vocab)
+        return self.instances[idx]
+
+    def __len__(self):
+        return len(self.instances)
+
+    def __iter__(self) -> Iterator[Instance]:
+        """
+        Even though it's not necessary to implement this because Python can infer
+        this method from `__len__` and `__getitem__`, this helps with type-checking
+        since `AllennlpDataset` can be considered an `Iterable[Instance]`.
+        """
+        yield from self.instances
+
+    def index_with(self, vocab: Vocabulary):
+        self.vocab = vocab
+
+
+class AllennlpLazyDataset(TorchIterableDataset):
+    """
+    An `AllennlpLazyDataset` is created by calling `.read()` on a lazy `DatasetReader`.
+
+    Parameters
+    ----------
+    instance_generator : `Callable[[str], Iterable[Instance]]`
+        A factory function that creates an iterable of `Instance`s from a file path.
+        This is usually just `DatasetReader._instance_iterator`.
+    file_path : `str`
+        The path to pass to the `instance_generator` function.
+    vocab : `Vocab`, optional (default = `None`)
+        An optional vocab. This can also be set later with the `.index_with` method.
+    """
+
+    def __init__(
+        self,
+        instance_generator: Callable[[str], Iterable[Instance]],
+        file_path: str,
+        vocab: Vocabulary = None,
+    ) -> None:
+        super().__init__()
+        self._instance_generator = instance_generator
+        self._file_path = file_path
+        self.vocab = vocab
+
+    def __iter__(self) -> Iterator[Instance]:
+        for instance in self._instance_generator(self._file_path):
+            if self.vocab is not None:
+                instance.index_fields(self.vocab)
+            yield instance
+
+    def index_with(self, vocab: Vocabulary):
+        self.vocab = vocab
+
+
+def allennlp_collate(instances: List[Instance]) -> TensorDict:
+    batch = Batch(instances)
+    return batch.as_tensor_dict(batch.get_padding_lengths())
+
 
 InstanceDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
