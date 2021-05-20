@@ -15,7 +15,6 @@ import pytorch_lightning as pl
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import PyTorchDataLoader
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
@@ -27,6 +26,7 @@ from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.cloud_io import load as pl_load
+from torch.utils.data import DataLoader
 from torch.utils.data import IterableDataset
 from transformers.optimization import get_constant_schedule_with_warmup
 from transformers.optimization import get_cosine_schedule_with_warmup
@@ -36,6 +36,7 @@ from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
+from biome.text.dataset import allennlp_collate
 
 if TYPE_CHECKING:
     from biome.text.model import PipelineModel
@@ -350,7 +351,7 @@ class Trainer:
         """
         if self._train_instances is None:
             _LOGGER.error(
-                "You need training data to fit your model, please provide it on `self.__init__`."
+                "You need training data to fit your model, please provide it on `Trainer.__init__`."
             )
             return
 
@@ -478,7 +479,7 @@ def create_dataloader(
     batch_size: int = 16,
     data_bucketing: bool = False,
     num_workers: int = 0,
-) -> PyTorchDataLoader:
+) -> DataLoader:
     """Returns a pytorch DataLoader for AllenNLP instances
 
     Parameters
@@ -504,7 +505,7 @@ def create_dataloader(
         )
         data_bucketing = False
 
-    return PyTorchDataLoader(
+    return DataLoader(
         instance_dataset,
         batch_size=1 if data_bucketing else batch_size,
         batch_sampler=BucketBatchSampler(
@@ -514,4 +515,5 @@ def create_dataloader(
         if data_bucketing
         else None,
         num_workers=num_workers,
+        collate_fn=allennlp_collate,
     )
