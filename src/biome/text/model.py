@@ -87,6 +87,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
     PREDICTION_FILE_NAME = "predictions.json"
     TRAINING_METRICS_PREFIX = "training"
     VALIDATION_METRICS_PREFIX = "validation"
+    TEST_METRICS_PREFIX = "test"
     _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, config: Dict, vocab: Optional[Vocabulary] = None):
@@ -524,6 +525,33 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             prog_bar=False,
             on_epoch=True,
         )
+
+    def test_step(self, *args, **kwargs) -> Dict:
+        return self.validation_step(*args, **kwargs)
+
+    def test_epoch_end(self, outputs: List[Any]) -> None:
+        averaged_epoch_loss = sum([output["loss"] for output in outputs]) / len(outputs)
+        self.log(
+            f"{self.TEST_METRICS_PREFIX}_loss",
+            averaged_epoch_loss,
+            on_step=False,
+            prog_bar=True,
+            on_epoch=True,
+        )
+
+        metrics = self.get_metrics(reset=True)
+        for key, val in metrics.items():
+            if key.startswith("_"):
+                metric_name = self.TEST_METRICS_PREFIX + key
+            else:
+                metric_name = self.TEST_METRICS_PREFIX + "_" + key
+            self.log(
+                metric_name,
+                val,
+                on_step=False,
+                prog_bar=not key.startswith("_"),
+                on_epoch=True,
+            )
 
     def configure_optimizers(self):
         if self.lr_scheduler is None:
