@@ -5,6 +5,7 @@ import os
 from dataclasses import asdict
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -35,10 +36,10 @@ from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
-from biome.text.pipeline import Pipeline
 
 if TYPE_CHECKING:
     from biome.text.model import PipelineModel
+    from biome.text.pipeline import Pipeline
 
 # We do not require wandb
 _HAS_WANDB = False
@@ -55,7 +56,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Trainer:
-    """A class for training a `biome.text.Pipeline`.
+    """Class for training and testing a `biome.text.Pipeline`.
 
     It is basically a light wrapper around the awesome Pytorch Lightning Trainer to define custom defaults and
     facilitate the interaction with our pipelines.
@@ -65,7 +66,7 @@ class Trainer:
     pipeline
         Pipeline to train
     train_dataset
-        The training dataset
+        The training dataset. Default: `None`.
     valid_dataset
         The validation dataset. Default: `None`.
     trainer_config
@@ -81,8 +82,8 @@ class Trainer:
 
     def __init__(
         self,
-        pipeline: Pipeline,
-        train_dataset: Union[Dataset, InstanceDataset],
+        pipeline: "Pipeline",
+        train_dataset: Optional[Union[Dataset, InstanceDataset]] = None,
         valid_dataset: Optional[Union[Dataset, InstanceDataset]] = None,
         trainer_config: Optional[TrainerConfiguration] = None,
         vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
@@ -95,6 +96,11 @@ class Trainer:
             if trainer_config is not None
             else TrainerConfiguration()
         )
+
+        # Use GPU by default if available
+        if self._trainer_config.gpus is None and torch.cuda.is_available():
+            self._trainer_config.gpus = 1
+
         self._vocab_config: Optional[VocabularyConfiguration] = (
             VocabularyConfiguration() if vocab_config == "default" else vocab_config
         )
@@ -117,31 +123,32 @@ class Trainer:
         else:
             self._valid_instances = valid_dataset
 
+        # Maybe we just want to call `self.test`
+        if self._train_instances is not None:
+            self._setup_for_training()
+
+        self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
+
+    def _setup_for_training(self):
+        """Create vocab, configure default loggers/callbacks, create optimizer/lr scheduler, setup best metrics"""
         # create vocab
-        vocab_config = (
-            VocabularyConfiguration()
-            if self._vocab_config == "default"
-            else self._vocab_config
-        )
-        if vocab_config is not None:
+        if self._vocab_config is not None:
             vocab_datasets = [self._train_instances]
             if (
                 self._valid_instances is not None
                 and self._vocab_config.include_valid_data
             ):
                 vocab_datasets += [self._valid_instances]
-            self._pipeline.create_vocab(vocab_datasets, config=vocab_config)
+            self._pipeline.create_vocab(vocab_datasets, config=self._vocab_config)
 
         # we give some special attention to these loggers/callbacks
         self._wandb_logger: Optional[WandbLogger] = None
         self._model_checkpoint: Optional[ModelCheckpoint] = None
 
-        # add default callbacks/loggers/gpu
+        # add default callbacks/loggers
         self._trainer_config.callbacks = self._add_default_callbacks()
         if self._trainer_config.logger is not False:
             self._trainer_config.logger = self._add_default_loggers()
-        if self._trainer_config.gpus is None and torch.cuda.is_available():
-            self._trainer_config.gpus = 1
 
         # create optimizer, has to come AFTER creating the vocab!
         self._pipeline.model.optimizer = Optimizer.from_params(
@@ -165,8 +172,6 @@ class Trainer:
         # set monitor and mode for best validation metrics
         self._pipeline.model.monitor = self._trainer_config.monitor
         self._pipeline.model.monitor_mode = self._trainer_config.monitor_mode
-
-        self.trainer = pl.Trainer(**self._trainer_config.lightning_params)
 
     def _add_default_loggers(self) -> List[LightningLoggerBase]:
         """Adds optional default loggers and returns the extended list
@@ -343,6 +348,12 @@ class Trainer:
         exist_ok
             If True, overwrite the content of `output_dir`. Default: False.
         """
+        if self._train_instances is None:
+            _LOGGER.error(
+                "You need training data to fit your model, please provide it on `self.__init__`."
+            )
+            return
+
         try:
             output_dir = Path(output_dir)
         except TypeError:
@@ -403,6 +414,53 @@ class Trainer:
                 checkpoint_path, map_location=lambda storage, loc: storage
             )
             self._pipeline.model.load_state_dict(checkpoint["state_dict"])
+
+    def test(
+        self,
+        test_dataset: Union[Dataset, InstanceDataset],
+        batch_size: Optional[int] = None,
+        output_dir: Optional[Union[str, Path]] = None,
+    ) -> Dict[str, Any]:
+        """Evaluate your model on a test dataset
+
+        Parameters
+        ----------
+        test_dataset
+            The test data set.
+        batch_size
+            The batch size. If None (default), we will use the batch size specified in the `TrainerConfiguration`.
+        output_dir
+            Save a `metrics.json` to this output directory. Default: None.
+
+        Returns
+        -------
+        Dict[str, Any]
+            A dictionary with the metrics
+        """
+        # load instances
+        if isinstance(test_dataset, Dataset):
+            self._train_instances = test_dataset.to_instances(
+                self._pipeline, lazy=self._lazy, tqdm_desc="Loading test instances"
+            )
+        else:
+            self._train_instances = test_dataset
+
+        # create dataloader
+        test_dataloader = create_dataloader(
+            self._train_instances,
+            batch_size=batch_size or self._trainer_config.batch_size,
+            num_workers=self._trainer_config.num_workers_for_dataloader,
+        )
+
+        metrics = self.trainer.test(
+            self._pipeline.model, test_dataloaders=test_dataloader
+        )[0]
+
+        if output_dir:
+            with (output_dir / "metrics.json").open("w") as file:
+                json.dump(sanitize(metrics), file)
+
+        return metrics
 
 
 class ModelCheckpointWithVocab(ModelCheckpoint):
