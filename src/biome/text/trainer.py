@@ -306,8 +306,8 @@ class Trainer:
         except TypeError:
             training_steps = (
                 self._trainer_config.max_steps
-                or self._trainer_config.max_epochs * steps_per_epoch
-                or 1000 * steps_per_epoch  # default of the lightning trainer
+                # 1000 is the default of the lightning trainer
+                or (self._trainer_config.max_epochs or 1000) * steps_per_epoch
             )
 
         if self._trainer_config.lr_decay == "linear":
