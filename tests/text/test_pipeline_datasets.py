@@ -4,10 +4,11 @@ import os
 import pytest
 import torch
 
-from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import PipelineConfiguration
+from biome.text import Trainer
+from biome.text import TrainerConfiguration
 from biome.text.backbone import ModelBackbone
 from biome.text.modules.heads import TextClassification
 from biome.text.modules.heads import TextClassificationConfiguration
@@ -42,43 +43,40 @@ def pipeline() -> Pipeline:
     return Pipeline.from_config(config)
 
 
-def test_training_with_data_bucketing(
-    pipeline: Pipeline, dataset: Dataset, tmp_path: str
-):
-    configuration = AllenNLPTrainerConfiguration(
-        data_bucketing=True, batch_size=2, num_epochs=5, cuda_device=-1
+def test_training_with_data_bucketing(pipeline, dataset, tmp_path):
+    trainer_config = TrainerConfiguration(
+        data_bucketing=True, batch_size=2, max_epochs=5, gpus=0
     )
 
-    pipeline.copy().train(
-        output=os.path.join(tmp_path, "output"),
-        trainer=configuration,
-        training=dataset,
-        validation=dataset,
-        lazy=False,
-    )
-
-    pipeline.copy().train(
-        output=os.path.join(tmp_path, "output"),
-        trainer=configuration,
-        training=dataset,
-        validation=dataset,
+    trainer = Trainer(
+        pipeline,
+        train_dataset=dataset,
+        valid_dataset=dataset,
+        trainer_config=trainer_config,
         lazy=True,
     )
+    trainer.fit(tmp_path / "output")
+
+    trainer = Trainer(
+        pipeline,
+        train_dataset=dataset,
+        valid_dataset=dataset,
+        trainer_config=trainer_config,
+        lazy=False,
+    )
+    trainer.fit(tmp_path / "output", exist_ok=True)
 
 
-def test_training_from_pretrained_with_head_replace(
-    pipeline: Pipeline, dataset: Dataset, tmp_path: str
-):
-    configuration = AllenNLPTrainerConfiguration(
+def test_training_from_pretrained_with_head_replace(pipeline, dataset, tmp_path):
+    trainer_config = TrainerConfiguration(
         data_bucketing=True,
         batch_size=2,
-        num_epochs=5,
-        cuda_device=-1,
+        max_epochs=5,
+        gpus=0,
     )
-    output_dir = os.path.join(tmp_path, "output")
-    pipeline.train(
-        output=output_dir, trainer=configuration, training=dataset, quiet=True
-    )
+
+    trainer = Trainer(pipeline, train_dataset=dataset, trainer_config=trainer_config)
+    trainer.fit(tmp_path / "output")
 
     pipeline.set_head(TestHead)
     pipeline.config.tokenizer_config.max_nr_of_sentences = 3
@@ -92,21 +90,3 @@ def test_training_from_pretrained_with_head_replace(
         if "backbone" in key:
             assert torch.all(torch.eq(value, original_model_state[key]))
     assert copied.backbone.featurizer.tokenizer.config.max_nr_of_sentences == 3
-
-
-def test_training_with_logging(pipeline: Pipeline, dataset: Dataset, tmp_path: str):
-    configuration = AllenNLPTrainerConfiguration(
-        data_bucketing=True, batch_size=2, num_epochs=5, cuda_device=-1
-    )
-    output_dir = os.path.join(tmp_path, "output")
-    pipeline.train(
-        output=output_dir, trainer=configuration, training=dataset, quiet=True
-    )
-
-    assert os.path.exists(os.path.join(output_dir, "train.log"))
-    with open(os.path.join(output_dir, "train.log")) as train_log:
-        for line in train_log.readlines()[4:]:
-            assert "allennlp" in line
-
-    assert logging.getLogger("allennlp").level == logging.ERROR
-    assert logging.getLogger("biome").level == logging.INFO

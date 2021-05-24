@@ -1,16 +1,15 @@
-import time
 from pathlib import Path
 
 import pandas as pd
 import pytest
-from allennlp.data import AllennlpDataset
-from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Instance
 from datasets.features import Features
 from datasets.features import Value
 
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text.dataset import AllennlpDataset
+from biome.text.dataset import AllennlpLazyDataset
 
 
 @pytest.fixture(scope="class")

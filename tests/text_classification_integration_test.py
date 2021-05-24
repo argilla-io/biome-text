@@ -120,7 +120,7 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     evaluation = trainer.test(valid_ds, batch_size=16)
 
     # Reminder: the value depends on the batch_size!
-    assert evaluation["test_loss"] == pytest.approx(0.8479013895988464, abs=0.003)
+    assert evaluation["test_loss"] == pytest.approx(0.7404146790504456, abs=0.003)
 
     Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 

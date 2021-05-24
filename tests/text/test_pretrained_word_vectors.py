@@ -70,20 +70,15 @@ def test_create_pipeline_with_weights_file(pipeline_config, dataset, tmp_path):
 
 
 def test_extending_vocab_with_weights_file(
-    pipeline_config, dataset, dataset2, deactivate_pipeline_trainer, capsys
+    pipeline_config, dataset, dataset2, capsys, caplog
 ):
     pipeline = Pipeline.from_config(pipeline_config)
     # create vocab
-    pipeline.train(
-        output="dummy",
-        training=dataset,
-    )
+    pipeline.create_vocab([dataset.to_instances(pipeline)])
 
     # extending the vocab with the weights file available should apply the pretrained weights
-    pipeline.train(
-        output="dummy",
-        training=dataset2,
-    )
+    pipeline.create_vocab([dataset2.to_instances(pipeline)])
+
     instance = pipeline.head.featurize("this")
     instance.index_fields(pipeline.vocab)
 
@@ -94,26 +89,21 @@ def test_extending_vocab_with_weights_file(
 
     # extending the vocab with the weights file deleted should trigger a warning
     Path(pipeline_config["features"]["word"]["weights_file"]).unlink()
-    pipeline.train(
-        output="dummy",
-        training=Dataset.from_dict({"text": ["that"], "label": ["good"]}),
-    )
-    captured_output = capsys.readouterr()
+    ds = Dataset.from_dict({"text": ["that"], "label": ["good"]})
+    pipeline.create_vocab([ds.to_instances(pipeline)])
+
+    assert caplog.record_tuples[-1][0] == "allennlp.modules.token_embedders.embedding"
+    assert caplog.record_tuples[-1][1] == 30
     assert (
-        "WARNING - Embedding at model_path, "
+        "Embedding at model_path, "
         "_head.backbone.embedder.token_embedder_word cannot locate the pretrained_file."
-        in captured_output.err
+        in caplog.record_tuples[-1][2]
     )
 
 
-def test_raise_filenotfound_error(
-    pipeline_config, deactivate_pipeline_trainer, dataset
-):
+def test_raise_filenotfound_error(pipeline_config, dataset):
     Path(pipeline_config["features"]["word"]["weights_file"]).unlink()
     pipeline = Pipeline.from_config(pipeline_config)
 
     with pytest.raises(FileNotFoundError):
-        pipeline.train(
-            output="dummy",
-            training=dataset,
-        )
+        pipeline.create_vocab([dataset.to_instances(pipeline)])
