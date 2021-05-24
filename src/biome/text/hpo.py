@@ -16,21 +16,15 @@ from typing import Union
 
 import mlflow
 from allennlp.data import Vocabulary
-from pytorch_lightning import Callback
 from ray import tune
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 
-from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text import TrainerConfiguration
-from biome.text import helpers
 from biome.text.dataset import Dataset
 from biome.text.errors import ValidationError
 from biome.text.loggers import BaseTrainLogger
-from biome.text.loggers import MlflowLogger
-from biome.text.loggers import WandBLogger
-from biome.text.loggers import is_wandb_installed_and_logged_in
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -128,7 +122,7 @@ class TuneExperiment(tune.Experiment):
     def __init__(
         self,
         pipeline_config: dict,
-        trainer_config: Union[dict, TrainerConfiguration],
+        trainer_config: TrainerConfiguration,
         train_dataset: Dataset,
         valid_dataset: Dataset,
         metrics: Union[None, str, List[str], Dict[str, str]] = None,
@@ -156,16 +150,8 @@ class TuneExperiment(tune.Experiment):
         self._valid_dataset_path = self._save_dataset_to_disk(valid_dataset)
 
         self._pipeline_config = pipeline_config
-        if isinstance(trainer_config, dict):
-            _LOGGER.warning(
-                "Training with the AllenNLP trainer will be removed in the next version, "
-                "please use a `biome.text.TrainerConfiguration` in the `trainer_config`."
-            )
-            self._trainer_config = trainer_config or {}
-            self.trainable = trainable or self._allennlp_trainable
-        else:
-            self._trainer_config = asdict(trainer_config)
-            self.trainable = trainable or self._default_trainable
+        self._trainer_config = asdict(trainer_config)
+        self.trainable = trainable or self._default_trainable
 
         self._vocab_path = (
             self._save_vocab_to_disk(vocab) if vocab is not None else None
@@ -261,51 +247,6 @@ class TuneExperiment(tune.Experiment):
             "name": self._name,
             "metrics": self._metrics,
         }
-
-    @staticmethod
-    def _allennlp_trainable(config, reporter, checkpoint_dir=None):
-        """A default trainable function used by `tune.run`
-
-        It performs the most straight forward training loop with the provided `config`:
-        - Create the pipeline (optionally with a provided vocab)
-        - Set up a MLFlow and WandB logger
-        - Set up a TuneMetrics logger that reports all metrics back to ray tune after each epoch
-        - Execute the training
-        """
-        pipeline = Pipeline.from_config(
-            config["pipeline_config"], vocab_path=config["vocab_path"]
-        )
-
-        trainer_config = AllenNLPTrainerConfiguration(
-            **helpers.sanitize_for_params(config["trainer_config"])
-        )
-
-        train_ds = Dataset.load_from_disk(config["train_dataset_path"])
-        valid_ds = Dataset.load_from_disk(config["valid_dataset_path"])
-
-        train_loggers = [TuneMetricsLogger()]
-        if config["mlflow"]:
-            mlflow_tracking_uri = config["mlflow_tracking_uri"]
-            mlflow.set_tracking_uri(mlflow_tracking_uri)
-            train_loggers = [
-                MlflowLogger(
-                    experiment_name=config["name"],
-                    run_name=reporter.trial_name,
-                    ray_trial_id=reporter.trial_id,
-                    ray_logdir=reporter.logdir,
-                )
-            ] + train_loggers
-        if config["wandb"] and is_wandb_installed_and_logged_in():
-            train_loggers = [WandBLogger(project_name=config["name"])] + train_loggers
-
-        pipeline.train(
-            output="output",
-            training=train_ds,
-            validation=valid_ds,
-            trainer=trainer_config,
-            loggers=train_loggers,
-            vocab_config=None if config["vocab_path"] else "default",
-        )
 
     @staticmethod
     def _default_trainable(config, checkpoint_dir=None):
