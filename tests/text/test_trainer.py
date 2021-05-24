@@ -1,11 +1,8 @@
 import os
-import random
 import tempfile
 from typing import Tuple
 
-import numpy as np
 import pytest
-import torch
 from pytorch_lightning.loggers import CSVLogger
 from pytorch_lightning.loggers import LoggerCollection
 from pytorch_lightning.loggers import MLFlowLogger
@@ -15,10 +12,7 @@ from pytorch_lightning.loggers import WandbLogger
 from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import Trainer
-from biome.text import VocabularyConfiguration
-from biome.text.configuration import CharFeatures
 from biome.text.configuration import TrainerConfiguration
-from biome.text.configuration import WordFeatures
 
 
 @pytest.fixture
@@ -92,49 +86,6 @@ def pipeline_dict() -> dict:
             },
         },
     }
-
-
-def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
-    """Apart from a well specified training, this also tests the vocab creation!"""
-
-    random.seed(43)
-    np.random.seed(43)
-    torch.manual_seed(43)
-
-    pl = Pipeline.from_config(pipeline_dict)
-    train_ds = train_valid_dataset[0]
-    valid_ds = train_valid_dataset[1]
-
-    vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
-    trainer_config = TrainerConfiguration(
-        batch_size=64,
-        optimizer={"type": "adam", "lr": 0.01},
-        max_epochs=5,
-        default_root_dir=str(tmp_path),
-        gpus=0,  # turn off gpus even if available
-    )
-
-    trainer = Trainer(
-        pipeline=pl,
-        train_dataset=train_ds,
-        valid_dataset=valid_ds,
-        trainer_config=trainer_config,
-        vocab_config=vocab_config,
-    )
-
-    trainer.fit(tmp_path / "output")
-
-    assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
-    assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
-
-    assert pl.num_trainable_parameters == 22070
-
-    evaluation = trainer.test(valid_ds, batch_size=16)
-
-    # Reminder: the value depends on the batch_size!
-    assert evaluation["test_loss"] == pytest.approx(0.8479013895988464, abs=0.003)
-
-    Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 
 
 def test_default_root_dir(
