@@ -420,6 +420,7 @@ class Trainer:
         test_dataset: Union[Dataset, InstanceDataset],
         batch_size: Optional[int] = None,
         output_dir: Optional[Union[str, Path]] = None,
+        verbose: bool = True,
     ) -> Dict[str, Any]:
         """Evaluate your model on a test dataset
 
@@ -431,6 +432,8 @@ class Trainer:
             The batch size. If None (default), we will use the batch size specified in the `TrainerConfiguration`.
         output_dir
             Save a `metrics.json` to this output directory. Default: None.
+        verbose
+            If True, prints the test results. Default: True.
 
         Returns
         -------
@@ -453,7 +456,7 @@ class Trainer:
         )
 
         metrics = self.trainer.test(
-            self._pipeline.model, test_dataloaders=test_dataloader
+            self._pipeline.model, test_dataloaders=test_dataloader, verbose=verbose
         )[0]
 
         if output_dir:

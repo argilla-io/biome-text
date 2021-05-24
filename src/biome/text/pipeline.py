@@ -671,6 +671,7 @@ class Pipeline:
         batch_size: int = 16,
         lazy: bool = False,
         output_dir: Optional[Union[str, Path]] = None,
+        verbose: bool = True,
     ) -> Dict[str, Any]:
         """Evaluate your model on a test dataset
 
@@ -685,6 +686,8 @@ class Pipeline:
             Ignored when `test_dataset` is a `InstanceDataset`. Default: False.
         output_dir
             Save a `metrics.json` to this output directory. Default: None.
+        verbose
+            If True, prints the test results. Default: True.
 
         Returns
         -------
@@ -693,7 +696,9 @@ class Pipeline:
         """
         trainer = Trainer(self, lazy=lazy)
 
-        return trainer.test(test_dataset, batch_size=batch_size, output_dir=output_dir)
+        return trainer.test(
+            test_dataset, batch_size=batch_size, output_dir=output_dir, verbose=verbose
+        )
 
     def set_head(self, type: Type[TaskHead], **kwargs):
         """Sets a new task head for the pipeline
