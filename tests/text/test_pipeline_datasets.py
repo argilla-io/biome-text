@@ -43,33 +43,8 @@ def pipeline() -> Pipeline:
     return Pipeline.from_config(config)
 
 
-def test_training_with_data_bucketing(pipeline, dataset, tmp_path):
-    trainer_config = TrainerConfiguration(
-        data_bucketing=True, batch_size=2, max_epochs=5, gpus=0
-    )
-
-    trainer = Trainer(
-        pipeline,
-        train_dataset=dataset,
-        valid_dataset=dataset,
-        trainer_config=trainer_config,
-        lazy=True,
-    )
-    trainer.fit(tmp_path / "output")
-
-    trainer = Trainer(
-        pipeline,
-        train_dataset=dataset,
-        valid_dataset=dataset,
-        trainer_config=trainer_config,
-        lazy=False,
-    )
-    trainer.fit(tmp_path / "output", exist_ok=True)
-
-
 def test_training_from_pretrained_with_head_replace(pipeline, dataset, tmp_path):
     trainer_config = TrainerConfiguration(
-        data_bucketing=True,
         batch_size=2,
         max_epochs=5,
         gpus=0,

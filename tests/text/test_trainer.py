@@ -155,10 +155,3 @@ def test_pipeline_test(pipeline_dict, dataset, tmp_path):
     assert pl.evaluate(dataset)["test_loss"] == pytest.approx(
         first_metrics["test_loss"]
     )
-
-
-def test_create_dataloader(pipeline_dict, dataset, caplog):
-    pl = Pipeline.from_config(pipeline_dict)
-    create_dataloader(dataset.to_instances(pl, lazy=True), data_bucketing=True)
-    assert len(caplog.record_tuples) == 1
-    assert "'data_bucketing'" in caplog.record_tuples[0][2]

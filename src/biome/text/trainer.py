@@ -17,7 +17,7 @@ from allennlp.common import Params
 from allennlp.common.util import sanitize
 from allennlp.data import Batch
 from allennlp.data import Instance
-from allennlp.data.dataloader import TensorDict
+from allennlp.data.data_loaders import TensorDict
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
@@ -378,14 +378,12 @@ class Trainer:
         train_dataloader = create_dataloader(
             self._train_instances,
             batch_size=self._trainer_config.batch_size,
-            data_bucketing=self._trainer_config.data_bucketing,
             num_workers=self._trainer_config.num_workers_for_dataloader,
         )
         valid_dataloader = (
             create_dataloader(
                 self._valid_instances,
                 batch_size=self._trainer_config.batch_size,
-                data_bucketing=self._trainer_config.data_bucketing,
                 num_workers=self._trainer_config.num_workers_for_dataloader,
             )
             if self._valid_instances is not None
@@ -489,7 +487,6 @@ class ModelCheckpointWithVocab(ModelCheckpoint):
 def create_dataloader(
     instance_dataset: InstanceDataset,
     batch_size: int = 16,
-    data_bucketing: bool = False,
     num_workers: int = 0,
 ) -> DataLoader:
     """Returns a pytorch DataLoader for AllenNLP instances
@@ -500,9 +497,6 @@ def create_dataloader(
         The dataset of instances for the DataLoader
     batch_size
         Batch size
-    data_bucketing
-        If True, tries to sort batches with respect to the maximum input lengths per batch.
-        Not supported for lazily loaded data!
     num_workers
         How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
         Default: 0
@@ -511,21 +505,9 @@ def create_dataloader(
     -------
     data_loader
     """
-    if data_bucketing and isinstance(instance_dataset, IterableDataset):
-        _LOGGER.warning(
-            "'data_bucketing' is not supported for lazily loaded data. We will deactivate it."
-        )
-        data_bucketing = False
-
     return DataLoader(
         instance_dataset,
-        batch_size=1 if data_bucketing else batch_size,
-        batch_sampler=BucketBatchSampler(
-            data_source=instance_dataset,
-            batch_size=batch_size,
-        )
-        if data_bucketing
-        else None,
+        batch_size=batch_size,
         num_workers=num_workers,
         collate_fn=allennlp_collate,
     )

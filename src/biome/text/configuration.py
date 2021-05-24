@@ -568,9 +568,6 @@ class TrainerConfiguration:
     check_val_every_n_epoch
         Check val every n train epochs.
 
-    data_bucketing
-        If enabled, try to apply data bucketing over training batches.
-
     default_root_dir
         Default path for logs and weights when no logger/ckpt_callback passed.
         Can be remote file paths such as 's3://mybucket/path' or 'hdfs://path/'
@@ -754,7 +751,6 @@ class TrainerConfiguration:
     add_tensorboard_logger: bool = True
     add_wandb_logger: bool = True
     batch_size: int = 16
-    data_bucketing: bool = False
     lr_decay: Optional[str] = None
     monitor: str = "validation_loss"
     monitor_mode: str = "min"
@@ -792,7 +788,6 @@ class TrainerConfiguration:
             "add_tensorboard_logger",
             "add_wandb_logger",
             "batch_size",
-            "data_bucketing",
             "lr_decay",
             "monitor",
             "monitor_mode",
