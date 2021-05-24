@@ -24,36 +24,8 @@ from biome.text import Trainer
 from biome.text import TrainerConfiguration
 from biome.text.dataset import Dataset
 from biome.text.errors import ValidationError
-from biome.text.loggers import BaseTrainLogger
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class TuneMetricsLogger(BaseTrainLogger):
-    """
-    A trainer logger defined for sending validation metrics to ray tune system. Normally, those
-    metrics will be used by schedulers for trial experiments stop.
-    """
-
-    @staticmethod
-    def _metric_should_be_reported(metric_name: str) -> bool:
-        """Determines if a metric should be reported"""
-        return (
-            not metric_name.startswith("validation__")
-            and metric_name.startswith("validation_")
-        ) or (
-            not metric_name.startswith("best_validation__")
-            and metric_name.startswith("best_validation_")
-        )
-
-    def log_epoch_metrics(self, epoch, metrics):
-        # fmt: off
-        tune.report(**{
-            k: v
-            for k, v in metrics.items()
-            if self._metric_should_be_reported(k)
-        })
-        # fmt: on
 
 
 class TuneExperiment(tune.Experiment):
