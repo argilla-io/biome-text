@@ -4,9 +4,8 @@ import pickle
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import Dict
-from typing import Iterable
+from typing import Generator
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -37,12 +36,17 @@ if TYPE_CHECKING:
 
 
 class AllennlpDataset(TorchDataset):
-    """
-    An `AllennlpDataset` is created by calling `.read()` on a non-lazy `DatasetReader`.
-    It's essentially just a thin wrapper around a list of instances.
+    """A thin wrapper around a list of instances.
+
+    Parameters
+    ----------
+    instances
+        List of instances
+    vocab
+        An optional vocab. This can also be set later with the `.index_with` method.
     """
 
-    def __init__(self, instances: List[Instance], vocab: Vocabulary = None):
+    def __init__(self, instances: List[Instance], vocab: Optional[Vocabulary] = None):
         self.instances = instances
         self.vocab = vocab
 
@@ -67,33 +71,27 @@ class AllennlpDataset(TorchDataset):
 
 
 class AllennlpLazyDataset(TorchIterableDataset):
-    """
-    An `AllennlpLazyDataset` is created by calling `.read()` on a lazy `DatasetReader`.
+    """A thin wrapper around a generator of instances.
 
     Parameters
     ----------
-    instance_generator : `Callable[[str], Iterable[Instance]]`
-        A factory function that creates an iterable of `Instance`s from a file path.
-        This is usually just `DatasetReader._instance_iterator`.
-    file_path : `str`
-        The path to pass to the `instance_generator` function.
-    vocab : `Vocab`, optional (default = `None`)
+    instance_generator
+        A generator that yields instances.
+    vocab
         An optional vocab. This can also be set later with the `.index_with` method.
     """
 
     def __init__(
         self,
-        instance_generator: Callable[[str], Iterable[Instance]],
-        file_path: str,
+        instance_generator: Generator[Instance],
         vocab: Vocabulary = None,
     ) -> None:
         super().__init__()
         self._instance_generator = instance_generator
-        self._file_path = file_path
         self.vocab = vocab
 
     def __iter__(self) -> Iterator[Instance]:
-        for instance in self._instance_generator(self._file_path):
+        for instance in self._instance_generator:
             if self.vocab is not None:
                 instance.index_fields(self.vocab)
             yield instance
@@ -394,7 +392,6 @@ class Dataset:
                 instance_generator=self._build_instance_generator(
                     pipeline, self.dataset, input_columns
                 ),
-                file_path="dummy",
                 vocab=pipeline.vocab,
             )
 
@@ -403,7 +400,7 @@ class Dataset:
         if instance_list is None:
             instance_generator = self._build_instance_generator(
                 pipeline, self.dataset, input_columns
-            )("dummy")
+            )
             tqdm_prog = tqdm(
                 instance_generator,
                 desc=tqdm_desc,
@@ -420,7 +417,7 @@ class Dataset:
         pipeline: "Pipeline",
         dataset: datasets.Dataset,
         input_columns: List[Tuple[str, bool]],
-    ) -> Callable[[str], Iterable[Instance]]:
+    ) -> Generator[Instance]:
         """Build the instance generator
 
         Parameters
@@ -434,10 +431,10 @@ class Dataset:
 
         Returns
         -------
-        instance_generator
+        Generator[Instance]
         """
-        # we need a dummy str to comply with AllennlpLazyDataset API
-        def instance_generator(dummy: str) -> Iterable[Instance]:
+
+        def instance_generator() -> Generator[Instance]:
             for row in dataset:
                 try:
                     instance = pipeline.head.featurize(
@@ -451,7 +448,7 @@ class Dataset:
                 else:
                     yield instance
 
-        return instance_generator
+        return instance_generator()
 
     def _create_fingerprint_for_instance_list(self, pipeline: "Pipeline") -> str:
         """Create a fingerprint for the instance list
