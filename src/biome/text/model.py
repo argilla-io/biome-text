@@ -371,11 +371,6 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             Contains configurations for the prediction
         """
         if self.training:
-            warnings.warn(
-                "Training mode enabled."
-                "Disabling training mode automatically. You can manually disable it: "
-                "self.eval() or self.train(False)"
-            )
             self.eval()
 
         instances = [self.text_to_instance(**input_dict) for input_dict in batch]
