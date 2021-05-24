@@ -45,21 +45,6 @@ def yaml_to_dict(filepath: str) -> Dict[str, Any]:
     return config
 
 
-def get_env_cuda_device() -> int:
-    """Gets the cuda device from an environment variable.
-
-    This is necessary to activate a GPU if available
-
-    Returns
-    -------
-    cuda_device
-        The integer number of the CUDA device
-    """
-    cuda_device = int(os.getenv(environment.CUDA_DEVICE, "-1"))
-
-    return cuda_device
-
-
 def update_method_signature(
     signature: inspect.Signature, to_method: Callable
 ) -> Callable:
