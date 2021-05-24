@@ -15,6 +15,9 @@ import pytorch_lightning as pl
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
+from allennlp.data import Batch
+from allennlp.data import Instance
+from allennlp.data.dataloader import TensorDict
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
@@ -36,7 +39,6 @@ from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
-from biome.text.dataset import allennlp_collate
 
 if TYPE_CHECKING:
     from biome.text.model import PipelineModel
@@ -517,3 +519,8 @@ def create_dataloader(
         num_workers=num_workers,
         collate_fn=allennlp_collate,
     )
+
+
+def allennlp_collate(instances: List[Instance]) -> TensorDict:
+    batch = Batch(instances)
+    return batch.as_tensor_dict(batch.get_padding_lengths())

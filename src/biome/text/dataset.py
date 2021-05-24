@@ -15,10 +15,8 @@ from typing import cast
 
 import datasets
 from allennlp import __version__ as allennlp__version__
-from allennlp.data import Batch
 from allennlp.data import Instance
 from allennlp.data import Vocabulary
-from allennlp.data.data_loaders import TensorDict
 from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
 from torch.utils.data import Dataset as TorchDataset
@@ -98,11 +96,6 @@ class AllennlpLazyDataset(TorchIterableDataset):
 
     def index_with(self, vocab: Vocabulary):
         self.vocab = vocab
-
-
-def allennlp_collate(instances: List[Instance]) -> TensorDict:
-    batch = Batch(instances)
-    return batch.as_tensor_dict(batch.get_padding_lengths())
 
 
 InstanceDataset = Union[AllennlpDataset, AllennlpLazyDataset]
