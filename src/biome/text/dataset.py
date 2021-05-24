@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
-from typing import Generator
+from typing import Iterable
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -83,7 +83,7 @@ class AllennlpLazyDataset(TorchIterableDataset):
 
     def __init__(
         self,
-        instance_generator: Generator[Instance],
+        instance_generator: Iterable[Instance],
         vocab: Vocabulary = None,
     ) -> None:
         super().__init__()
@@ -417,7 +417,7 @@ class Dataset:
         pipeline: "Pipeline",
         dataset: datasets.Dataset,
         input_columns: List[Tuple[str, bool]],
-    ) -> Generator[Instance]:
+    ) -> Iterable[Instance]:
         """Build the instance generator
 
         Parameters
@@ -431,10 +431,10 @@ class Dataset:
 
         Returns
         -------
-        Generator[Instance]
+        Iterable[Instance]
         """
 
-        def instance_generator() -> Generator[Instance]:
+        def instance_generator() -> Iterable[Instance]:
             for row in dataset:
                 try:
                     instance = pipeline.head.featurize(
