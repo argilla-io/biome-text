@@ -767,13 +767,6 @@ class TrainerConfiguration:
     warmup_steps: int = 0
     extra_lightning_params: Dict[str, Any] = field(default_factory=dict)
 
-    _LOGGER.warning(
-        "The former `TrainerConfiguration` class is now called `AllenNLPTrainerConfiguration` and is deprecated. "
-        "The current `TrainerConfiguration` is for configuring the new `biome.text.Trainer`. If you are still using "
-        "the `Pipeline.train()` method (deprecated), please use the `biome.text.AllenNLPTrainerConfiguration` to "
-        "configure it."
-    )
-
     def as_dict(self) -> Dict:
         """Returns the dataclass as dict without a deepcopy, in contrast to `dataclasses.asdict`"""
         return {fld.name: getattr(self, fld.name) for fld in fields(self)}
