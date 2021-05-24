@@ -35,10 +35,12 @@ from transformers.optimization import get_constant_schedule_with_warmup
 from transformers.optimization import get_cosine_schedule_with_warmup
 from transformers.optimization import get_linear_schedule_with_warmup
 
+from biome.text import vocabulary
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
+from biome.text.errors import EmptyVocabError
 
 if TYPE_CHECKING:
     from biome.text.model import PipelineModel
@@ -143,6 +145,14 @@ class Trainer:
             ):
                 vocab_datasets += [self._valid_instances]
             self._pipeline.create_vocab(vocab_datasets, config=self._vocab_config)
+
+        # Check for an empty vocab
+        if vocabulary.is_empty(
+            self._pipeline.vocab, self._pipeline.config.features.configured_namespaces
+        ):
+            raise EmptyVocabError(
+                "All your features need a non-empty vocabulary for a training!"
+            )
 
         # we give some special attention to these loggers/callbacks
         self._wandb_logger: Optional[WandbLogger] = None
