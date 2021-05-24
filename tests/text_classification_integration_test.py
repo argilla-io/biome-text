@@ -1,16 +1,14 @@
-import json
-import random
 from typing import Tuple
 
-import numpy as np
 import pytest
-import torch
+from pytorch_lightning import seed_everything
 
-from biome.text import AllenNLPTrainerConfiguration
 from biome.text import Dataset
 from biome.text import Pipeline
+from biome.text import Trainer
 from biome.text import VocabularyConfiguration
 from biome.text.configuration import CharFeatures
+from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import WordFeatures
 
 
@@ -30,9 +28,7 @@ def train_valid_dataset(resources_data_path) -> Tuple[Dataset, Dataset]:
 
 @pytest.fixture
 def pipeline_dict() -> dict:
-    """Pipeline config dict. You need to update the labels!"""
-
-    pipeline_dictionary = {
+    return {
         "name": "german_business_names",
         "features": {
             "word": {"embedding_dim": 16, "lowercase_tokens": True},
@@ -88,64 +84,45 @@ def pipeline_dict() -> dict:
         },
     }
 
-    return pipeline_dictionary
 
-
-@pytest.fixture
-def trainer_dict() -> dict:
-    """Returns the trainer dictionary"""
-
-    return {
-        "batch_size": 64,
-        "num_epochs": 5,
-        "optimizer": {"type": "adam", "lr": 0.01},
-        "cuda_device": -1,
-    }
-
-
-def test_text_classification(
-    tmp_path, pipeline_dict, trainer_dict, train_valid_dataset
-):
+def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
     """Apart from a well specified training, this also tests the vocab creation!"""
-
-    random.seed(42)
-    np.random.seed(422)
-    torch.manual_seed(4222)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(4222)
+    seed_everything(43)
 
     pl = Pipeline.from_config(pipeline_dict)
     train_ds = train_valid_dataset[0]
     valid_ds = train_valid_dataset[1]
-    trainer = AllenNLPTrainerConfiguration(**trainer_dict)
+
     vocab_config = VocabularyConfiguration(max_vocab_size={"word": 50})
+    trainer_config = TrainerConfiguration(
+        batch_size=64,
+        optimizer={"type": "adam", "lr": 0.01},
+        max_epochs=5,
+        default_root_dir=str(tmp_path),
+        gpus=0,  # turn off gpus even if available
+    )
 
-    output = tmp_path / "output"
-
-    pl.train(
-        output=str(output),
-        trainer=trainer,
-        training=train_ds,
-        validation=valid_ds,
+    trainer = Trainer(
+        pipeline=pl,
+        train_dataset=train_ds,
+        valid_dataset=valid_ds,
+        trainer_config=trainer_config,
         vocab_config=vocab_config,
     )
 
-    evaluation = pl.evaluate(valid_ds)
-    assert evaluation["test_loss"] == pytest.approx(0.873307535648346, abs=0.003)
+    trainer.fit(tmp_path / "output")
 
     assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
     assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
 
     assert pl.num_trainable_parameters == 22070
 
-    with (output / "metrics.json").open() as file:
-        metrics = json.load(file)
+    evaluation = trainer.test(valid_ds, batch_size=16)
 
-    # It may fail in some systems
-    assert metrics["training_loss"] == pytest.approx(0.684, abs=0.003)
+    # Reminder: the value depends on the batch_size!
+    assert evaluation["test_loss"] == pytest.approx(0.8479013895988464, abs=0.003)
 
-    # Test vocab from a pretrained file
-    pl = Pipeline.from_pretrained(str(output / "model.tar.gz"))
+    Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 
     assert pl.vocab.get_vocab_size(WordFeatures.namespace) == 52
     assert pl.vocab.get_vocab_size(CharFeatures.namespace) == 83
