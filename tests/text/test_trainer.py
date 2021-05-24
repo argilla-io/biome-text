@@ -129,9 +129,10 @@ def test_text_classification(tmp_path, pipeline_dict, train_valid_dataset):
 
     assert pl.num_trainable_parameters == 22070
 
-    evaluation = pl.evaluate(valid_ds)
+    evaluation = trainer.test(valid_ds, batch_size=16)
 
-    assert evaluation["loss"] == pytest.approx(0.8479013895988464, abs=0.003)
+    # Reminder: the value depends on the batch_size!
+    assert evaluation["test_loss"] == pytest.approx(0.8479013895988464, abs=0.003)
 
     Pipeline.from_pretrained(str(tmp_path / "output" / "model.tar.gz"))
 
@@ -219,3 +220,22 @@ def test_add_default_loggers(
             assert (tmp_path / "wandb").is_dir()
         if logger == "mlflow":
             assert loggers_include(MLFlowLogger)
+
+
+def test_pipeline_test(pipeline_dict, train_valid_dataset, tmp_path):
+    import json
+
+    pl = Pipeline.from_config(pipeline_dict)
+    trainer = Trainer(pl)
+    first_metrics = trainer.test(
+        train_valid_dataset[1], output_dir=tmp_path, batch_size=16
+    )
+    assert "test_loss" in first_metrics
+
+    assert (tmp_path / "metrics.json").is_file()
+    with (tmp_path / "metrics.json").open() as file:
+        assert "test_loss" in json.load(file)
+
+    assert pl.evaluate(train_valid_dataset[1])["test_loss"] == pytest.approx(
+        first_metrics["test_loss"]
+    )

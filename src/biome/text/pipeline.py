@@ -27,7 +27,6 @@ from allennlp.data import Vocabulary
 from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.models.archival import archive_model
-from allennlp.training.util import evaluate
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
@@ -48,6 +47,7 @@ from biome.text.mlflow_model import BiomeTextModel
 from biome.text.model import PipelineModel
 from biome.text.modules.heads import TaskHead
 from biome.text.modules.heads import TaskHeadConfiguration
+from biome.text.trainer import Trainer
 from biome.text.training_results import TrainingResults
 
 
@@ -667,70 +667,38 @@ class Pipeline:
 
     def evaluate(
         self,
-        dataset: Dataset,
+        test_dataset: Union[Dataset, InstanceDataset],
         batch_size: int = 16,
         lazy: bool = False,
-        cuda_device: int = None,
-        predictions_output_file: Optional[str] = None,
-        metrics_output_file: Optional[str] = None,
+        output_dir: Optional[Union[str, Path]] = None,
+        verbose: bool = True,
     ) -> Dict[str, Any]:
-        """Evaluates the pipeline on a given dataset
+        """Evaluate your model on a test dataset
 
         Parameters
         ----------
-        dataset
-            The dataset to use for the evaluation
+        test_dataset
+            The test data set.
         batch_size
-            Batch size used during the evaluation
+            The batch size. Default: 16.
         lazy
-            If true, instances from the dataset are lazily loaded from disk, otherwise they are loaded into memory.
-        cuda_device
-            If you want to use a specific CUDA device for the evaluation, specify it here. Pass on -1 for the CPU.
-            By default we will use a CUDA device if one is available.
-        predictions_output_file
-            Optional path to write the predictions to.
-        metrics_output_file
-            Optional path to write the final metrics to.
+            If True, instances are lazily loaded from disk, otherwise they are loaded into memory.
+            Ignored when `test_dataset` is a `InstanceDataset`. Default: False.
+        output_dir
+            Save a `metrics.json` to this output directory. Default: None.
+        verbose
+            If True, prints the test results. Default: True.
 
         Returns
         -------
-        metrics
-            Metrics defined in the TaskHead
+        Dict[str, Any]
+            A dictionary with the metrics
         """
-        from biome.text._helpers import create_dataloader
+        trainer = Trainer(self, lazy=lazy)
 
-        # move model to cuda device
-        if cuda_device is None:
-            from torch import cuda
-
-            if cuda.device_count() > 0:
-                cuda_device = 0
-            else:
-                cuda_device = -1
-        prior_device = next(self._model.parameters()).get_device()
-        self._model.to(cuda_device if cuda_device >= 0 else "cpu")
-
-        if not any(
-            label_column in dataset.column_names for label_column in self.output
-        ):
-            raise ValueError(
-                f"Your dataset needs one of the label columns for an evaluation: {self.output}"
-            )
-
-        instances = dataset.to_instances(self, lazy=lazy)
-        instances.index_with(self.backbone.vocab)
-        data_loader = create_dataloader(instances, batch_size=batch_size)
-
-        try:
-            return evaluate(
-                self._model,
-                data_loader,
-                cuda_device=cuda_device,
-                predictions_output_file=predictions_output_file,
-                output_file=metrics_output_file,
-            )
-        finally:
-            self._model.to(prior_device if prior_device >= 0 else "cpu")
+        return trainer.test(
+            test_dataset, batch_size=batch_size, output_dir=output_dir, verbose=verbose
+        )
 
     def set_head(self, type: Type[TaskHead], **kwargs):
         """Sets a new task head for the pipeline
