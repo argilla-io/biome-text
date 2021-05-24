@@ -23,8 +23,6 @@ from allennlp.data.dataset_readers.dataset_utils import to_bioul
 from spacy.tokens import Token as SpacyToken
 from spacy.tokens.doc import Doc
 
-from biome.text import environment
-
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
 
