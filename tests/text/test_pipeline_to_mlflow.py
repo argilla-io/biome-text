@@ -1,9 +1,13 @@
+from pathlib import Path
+
 import mlflow
 import pandas as pd
 import pytest
+import yaml
 from numpy.testing import assert_allclose
 
 from biome.text import Pipeline
+from biome.text import __version__
 
 
 @pytest.fixture
@@ -38,3 +42,14 @@ def test_to_mlflow(pipeline, tmp_path):
     assert_allclose(
         expected_prediction["probabilities"], prediction["probabilities"][0]
     )
+    with (Path(model_uri) / "conda.yaml").open() as file:
+        conda_env = yaml.load(file)
+        assert conda_env == {
+            "name": "mlflow-dev",
+            "channels": ["defaults", "conda-forge"],
+            "dependencies": [
+                "python=3.7.9",
+                "pip>=20.3.0",
+                {"pip": [f"biome-text=={__version__}"]},
+            ],
+        }

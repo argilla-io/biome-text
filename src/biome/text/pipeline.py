@@ -26,6 +26,7 @@ from allennlp.models import load_archive
 from allennlp.models.archival import Archive
 from allennlp.models.archival import archive_model
 
+from biome.text import __version__
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
 from biome.text.configuration import PipelineConfiguration
@@ -561,7 +562,7 @@ class Pipeline:
             conda_env = {
                 "name": "mlflow-dev",
                 "channels": ["defaults", "conda-forge"],
-                "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
+                "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text=={__version__}"]}],
             }
 
         Returns
@@ -588,7 +589,11 @@ class Pipeline:
         conda_env = conda_env or {
             "name": "mlflow-dev",
             "channels": ["defaults", "conda-forge"],
-            "dependencies": ["python=3.7.9", "pip>=20.3.0", {"pip": ["biome-text"]}],
+            "dependencies": [
+                "python=3.7.9",
+                "pip>=20.3.0",
+                {"pip": [f"biome-text=={__version__}"]},
+            ],
         }
 
         with tempfile.TemporaryDirectory() as tmpdir_name:
