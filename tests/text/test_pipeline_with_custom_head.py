@@ -35,7 +35,7 @@ def training_dataset() -> Dataset:
     return training_ds
 
 
-def test_load_pipeline_with_custom_head(training_dataset):
+def test_load_pipeline_with_custom_head(training_dataset, tmp_path):
     """Testing a model training inserting a class as custom heard"""
 
     # Pipeline configuration dict with custom head
@@ -59,12 +59,12 @@ def test_load_pipeline_with_custom_head(training_dataset):
     pipeline = Pipeline.from_config(config)
     assert isinstance(pipeline.head, MyCustomHead)
 
-    # Training the model and saving it to output
-    output = mkdtemp()
-    pipeline.train(output=output, training=training_dataset)
+    # Saving the pipeline to output
+    output = tmp_path / "pipeline"
+    pipeline.save(output)
 
     # Loading model from output
-    trained_pl = Pipeline.from_pretrained(os.path.join(output, "model.tar.gz"))
+    trained_pl = Pipeline.from_pretrained(os.path.join(str(output), "model.tar.gz"))
     trained_pl.predict("Oh yeah")
 
     # Asserting that the pipeline head is recognized as `MyCustomHead` instance after loading from a model.tar.gz

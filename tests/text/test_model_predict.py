@@ -17,9 +17,9 @@ def model() -> PipelineModel:
     return pipeline._model
 
 
-def test_training_mode_warning(model):
-    with pytest.warns(UserWarning):
-        model.predict([{"text": "test"}], PredictionConfiguration)
+def test_activate_eval_mode(model):
+    model.train()
+    model.predict([{"text": "test"}], PredictionConfiguration)
     assert model.training is False
 
 

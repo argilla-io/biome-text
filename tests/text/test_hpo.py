@@ -25,22 +25,17 @@ def pipeline_config():
 
 
 @pytest.fixture
-def trainer_config() -> dict:
-    return {
-        "optimizer": {"type": "adam", "lr": 0.01},
-        "num_epochs": 1,
-        "batch_size": 2,
-    }
+def trainer_config() -> TrainerConfiguration:
+    return TrainerConfiguration(
+        optimizer={"type": "adam", "lr": 0.01}, max_epochs=1, batch_size=2
+    )
 
 
 def test_tune_exp_default_trainable(
     dataset, pipeline_config, trainer_config, monkeypatch
 ):
-    # avoid logging to wandb
-    monkeypatch.setenv("WANDB_MODE", "offline")
-
     pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
-    trainer_config["optimizer"]["lr"] = tune.loguniform(0.001, 0.01)
+    trainer_config.optimizer["lr"] = tune.loguniform(0.001, 0.01)
 
     my_exp = TuneExperiment(
         pipeline_config=pipeline_config,
@@ -52,13 +47,10 @@ def test_tune_exp_default_trainable(
 
     assert my_exp._name.startswith("HPO on")
     assert my_exp.name == my_exp._name
-    assert my_exp._run_identifier == "_allennlp_trainable"
+    assert my_exp._run_identifier == "_default_trainable"
 
     analysis = tune.run(my_exp)
     assert len(analysis.trials) == 1
-
-    mlflow.set_tracking_uri(mlflow.get_tracking_uri())
-    assert mlflow.get_experiment_by_name(my_exp._name)
 
 
 def test_tune_exp_save_dataset_and_vocab(
@@ -106,26 +98,3 @@ def test_tune_exp_custom_trainable(
     assert my_exp.name == "custom trainable"
     assert my_exp.trainable == my_trainable
     assert my_exp._run_identifier == "my_trainable"
-
-
-def test_tune_experiment_lightning_trainable(dataset, pipeline_config, monkeypatch):
-    # avoid logging to wandb
-    monkeypatch.setenv("WANDB_MODE", "disabled")
-
-    pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
-    trainer_config = TrainerConfiguration(
-        batch_size=2,
-        max_epochs=1,
-        optimizer={"type": "adamw", "lr": tune.loguniform(0.001, 0.01)},
-    )
-
-    my_exp = TuneExperiment(
-        pipeline_config=pipeline_config,
-        trainer_config=trainer_config,
-        train_dataset=dataset,
-        valid_dataset=dataset,
-        num_samples=1,
-    )
-
-    analysis = tune.run(my_exp)
-    assert len(analysis.trials) == 1

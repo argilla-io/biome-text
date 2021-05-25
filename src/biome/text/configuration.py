@@ -450,129 +450,6 @@ class PipelineConfiguration(FromParams):
 
 
 @dataclass
-class AllenNLPTrainerConfiguration:
-    """Configures the training of a pipeline with the AllenNLP Trainer
-
-    It is passed on to the `Pipeline.train` method. Doc strings mainly provided by
-    [AllenNLP](https://docs.allennlp.org/master/api/training/trainer/#gradientdescenttrainer-objects)
-
-    Attributes
-    ----------
-    optimizer
-        [Pytorch optimizers](https://pytorch.org/docs/stable/optim.html)
-        that can be constructed via the AllenNLP configuration framework
-    validation_metric
-        Validation metric to measure for whether to stop training using patience
-        and whether to serialize an is_best model each epoch.
-        The metric name must be prepended with either "+" or "-",
-        which specifies whether the metric is an increasing or decreasing function.
-    patience
-        Number of epochs to be patient before early stopping:
-        the training is stopped after `patience` epochs with no improvement.
-        If given, it must be > 0. If `None`, early stopping is disabled.
-    num_epochs
-        Number of training epochs
-    cuda_device
-        An integer specifying the CUDA device to use for this process. If -1, the CPU is used.
-        By default (None) we will automatically use a CUDA device if one is available.
-    grad_norm
-        If provided, gradient norms will be rescaled to have a maximum of this value.
-    grad_clipping
-        If provided, gradients will be clipped during the backward pass to have an (absolute) maximum of this value.
-        If you are getting `NaN`s in your gradients during training that are not solved by using grad_norm,
-        you may need this.
-    learning_rate_scheduler
-        If specified, the learning rate will be decayed with respect to this schedule at the end of each epoch
-        (or batch, if the scheduler implements the step_batch method).
-        If you use `torch.optim.lr_scheduler.ReduceLROnPlateau`, this will use the `validation_metric` provided
-        to determine if learning has plateaued.
-    warmup_steps
-        The number of warmup steps. This parameter is ignored if a `learning_rate_scheduler` is provided.
-    linear_decay
-        If true, linearly decrease the learning rate to 0 until the end of the training. See also `training_size` below!
-        This parameter is ignored if a `learning_rate_scheduler` is provided.
-    training_size
-        If you set `linear_decay` to true and work with lazily loaded training data,
-        you need to provide the number of examples in your training data.
-    momentum_scheduler
-        If specified, the momentum will be updated at the end of each batch or epoch according to the schedule.
-    moving_average
-        If provided, we will maintain moving averages for all parameters.
-        During training, we employ a shadow variable for each parameter, which maintains the moving average.
-        During evaluation, we backup the original parameters and assign the moving averages to corresponding parameters.
-        Be careful that when saving the checkpoint, we will save the moving averages of parameters.
-        This is necessary because we want the saved model to perform as well as the validated model if we load it later.
-    batch_size
-        Size of the batch.
-    data_bucketing
-        If enabled, try to apply data bucketing over training batches.
-    batches_per_epoch
-        Determines the number of batches after which a training epoch ends.
-        If the number is smaller than the total amount of batches in your training data,
-        the second "epoch" will take off where the first "epoch" ended.
-        If this is `None`, then an epoch is set to be one full pass through your training data.
-        This is useful if you want to evaluate your data more frequently on your validation data set during training.
-    random_seed
-        Seed for the underlying random number generators.
-        If None, we take the random seeds provided by AllenNLP's `prepare_environment` method.
-    use_amp
-        If `True`, we'll train using [Automatic Mixed Precision](https://pytorch.org/docs/stable/amp.html).
-    num_serialized_models_to_keep
-        Number of previous model checkpoints to retain.  Default is to keep 1 checkpoint.
-        A value of None or -1 means all checkpoints will be kept.
-    """
-
-    optimizer: Dict[str, Any] = field(default_factory=lambda: {"type": "adam"})
-    validation_metric: str = "-loss"
-    patience: Optional[int] = 2
-    num_epochs: int = 20
-    cuda_device: Optional[int] = None
-    grad_norm: Optional[float] = None
-    grad_clipping: Optional[float] = None
-    learning_rate_scheduler: Optional[Dict[str, Any]] = None
-    warmup_steps: int = 0
-    linear_decay: bool = False
-    training_size: Optional[int] = None
-    momentum_scheduler: Optional[Dict[str, Any]] = None
-    moving_average: Optional[Dict[str, Any]] = None
-    use_amp: bool = False
-    num_serialized_models_to_keep: int = 1
-    # Data loader parameters
-    batch_size: Optional[int] = 16
-    data_bucketing: bool = False
-    batches_per_epoch: Optional[int] = None
-    # prepare_environment
-    random_seed: Optional[int] = None
-
-    def to_allennlp_trainer(self) -> Dict[str, Any]:
-        """Returns a configuration dict formatted for AllenNLP's trainer
-
-        Returns
-        -------
-        allennlp_trainer_config
-        """
-        # config for AllenNLP's GradientDescentTrainer
-        allennlp_trainer_config = {
-            "optimizer": self.optimizer,
-            "patience": self.patience,
-            "validation_metric": self.validation_metric,
-            "num_epochs": self.num_epochs,
-            "checkpointer": {
-                "num_serialized_models_to_keep": self.num_serialized_models_to_keep
-            },
-            "cuda_device": self.cuda_device,
-            "grad_norm": self.grad_norm,
-            "grad_clipping": self.grad_clipping,
-            "learning_rate_scheduler": self.learning_rate_scheduler,
-            "tensorboard_writer": {"should_log_learning_rate": True},
-            "moving_average": self.moving_average,
-            "use_amp": self.use_amp,
-        }
-
-        return allennlp_trainer_config
-
-
-@dataclass
 class VocabularyConfiguration:
     """Configurations for creating the vocabulary
 
@@ -615,34 +492,6 @@ class VocabularyConfiguration:
     only_include_pretrained_words: bool = False
     pretrained_files: Optional[Dict[str, str]] = None
     tokens_to_add: Dict[str, List[str]] = None
-
-
-@dataclass
-class FindLRConfiguration:
-    """A configuration for finding the learning rate via `Pipeline.find_lr()`.
-
-    The `Pipeline.find_lr()` method increases the learning rate from `start_lr` to `end_lr` recording the losses.
-
-    Parameters
-    ----------
-    start_lr
-        The learning rate to start the search.
-    end_lr
-        The learning rate upto which search is done.
-    num_batches
-        Number of batches to run the learning rate finder.
-    linear_steps
-        Increase learning rate linearly if False exponentially.
-    stopping_factor
-        Stop the search when the current loss exceeds the best loss recorded by
-        multiple of stopping factor. If `None` search proceeds till the `end_lr`
-    """
-
-    start_lr: float = 1e-5
-    end_lr: float = 10
-    num_batches: int = 100
-    linear_steps: bool = False
-    stopping_factor: Optional[float] = None
 
 
 # We need this to be hashable for the prediction cache -> frozen=True
@@ -718,9 +567,6 @@ class TrainerConfiguration:
 
     check_val_every_n_epoch
         Check val every n train epochs.
-
-    data_bucketing
-        If enabled, try to apply data bucketing over training batches.
 
     default_root_dir
         Default path for logs and weights when no logger/ckpt_callback passed.
@@ -905,7 +751,6 @@ class TrainerConfiguration:
     add_tensorboard_logger: bool = True
     add_wandb_logger: bool = True
     batch_size: int = 16
-    data_bucketing: bool = False
     lr_decay: Optional[str] = None
     monitor: str = "validation_loss"
     monitor_mode: str = "min"
@@ -917,13 +762,6 @@ class TrainerConfiguration:
     save_top_k_checkpoints: int = 1
     warmup_steps: int = 0
     extra_lightning_params: Dict[str, Any] = field(default_factory=dict)
-
-    _LOGGER.warning(
-        "The former `TrainerConfiguration` class is now called `AllenNLPTrainerConfiguration` and is deprecated. "
-        "The current `TrainerConfiguration` is for configuring the new `biome.text.Trainer`. If you are still using "
-        "the `Pipeline.train()` method (deprecated), please use the `biome.text.AllenNLPTrainerConfiguration` to "
-        "configure it."
-    )
 
     def as_dict(self) -> Dict:
         """Returns the dataclass as dict without a deepcopy, in contrast to `dataclasses.asdict`"""
@@ -950,7 +788,6 @@ class TrainerConfiguration:
             "add_tensorboard_logger",
             "add_wandb_logger",
             "batch_size",
-            "data_bucketing",
             "lr_decay",
             "monitor",
             "monitor_mode",

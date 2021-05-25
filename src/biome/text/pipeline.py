@@ -3,7 +3,6 @@ import inspect
 import json
 import logging
 import os
-import shutil
 import tempfile
 from inspect import Parameter
 from pathlib import Path
@@ -21,7 +20,6 @@ from typing import cast
 import mlflow
 import numpy
 import torch
-from allennlp.commands.find_learning_rate import search_learning_rate
 from allennlp.common.file_utils import is_url_or_existing_file
 from allennlp.data import Vocabulary
 from allennlp.models import load_archive
@@ -30,25 +28,19 @@ from allennlp.models.archival import archive_model
 
 from biome.text import vocabulary
 from biome.text.backbone import ModelBackbone
-from biome.text.configuration import AllenNLPTrainerConfiguration
-from biome.text.configuration import FindLRConfiguration
 from biome.text.configuration import PipelineConfiguration
 from biome.text.configuration import PredictionConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
-from biome.text.errors import EmptyVocabError
 from biome.text.features import TransformersFeatures
 from biome.text.features import WordFeatures
 from biome.text.helpers import update_method_signature
-from biome.text.loggers import BaseTrainLogger
-from biome.text.loggers import add_default_wandb_logger_if_needed
 from biome.text.mlflow_model import BiomeTextModel
 from biome.text.model import PipelineModel
 from biome.text.modules.heads import TaskHead
 from biome.text.modules.heads import TaskHeadConfiguration
 from biome.text.trainer import Trainer
-from biome.text.training_results import TrainingResults
 
 
 class Pipeline:
@@ -275,194 +267,6 @@ class Pipeline:
         """
         self._model.init_prediction_cache(max_size)
 
-    def find_lr(
-        self,
-        trainer_config: AllenNLPTrainerConfiguration,
-        find_lr_config: FindLRConfiguration,
-        training_data: Dataset,
-        vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
-        lazy: bool = False,
-    ):
-        """Returns a learning rate scan on the model.
-
-        It increases the learning rate step by step while recording the losses.
-        For a guide on how to select the learning rate please refer to this excellent
-        [blog post](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)
-
-        Parameters
-        ----------
-        trainer_config
-            A trainer configuration
-        find_lr_config
-            A configuration for finding the learning rate
-        training_data
-            The training data
-        vocab_config
-            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
-            If 'default' (str), we will use the default configuration `VocabularyConfiguration()`.
-            If None, we will leave the pipeline's vocabulary untouched. Default: 'default'.
-        lazy
-            If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
-
-        Returns
-        -------
-        (learning_rates, losses)
-            Returns a list of learning rates and corresponding losses.
-            Note: The losses are recorded before applying the corresponding learning rate
-        """
-        from biome.text._helpers import create_trainer_for_finding_lr
-
-        training_data = training_data.to_instances(pipeline=self, lazy=lazy)
-
-        # create vocab
-        if vocab_config is not None:
-            self.create_vocab(
-                [training_data],
-                config=vocab_config if vocab_config != "default" else None,
-            )
-        if vocabulary.is_empty(self.vocab, self.config.features.configured_namespaces):
-            raise EmptyVocabError(
-                "All your features need a non-empty vocabulary for a learning rate scan!"
-            )
-
-        training_data.index_with(self._model.vocab)
-
-        trainer = create_trainer_for_finding_lr(
-            model=self._model,
-            trainer_config=trainer_config,
-            training_data=training_data,
-        )
-
-        # restore the state after the lr search is done
-        tmp_state_path = (
-            Path(tempfile.gettempdir()) / f"model_state_before_findlr_{id(self)}.pth"
-        )
-        torch.save(self._model.state_dict(), tmp_state_path)
-        try:
-            learning_rates, losses = search_learning_rate(
-                trainer=trainer,
-                start_lr=find_lr_config.start_lr,
-                end_lr=find_lr_config.end_lr,
-                num_batches=find_lr_config.num_batches,
-                linear_steps=find_lr_config.linear_steps,
-                stopping_factor=find_lr_config.stopping_factor,
-            )
-        finally:
-            self._model.load_state_dict(torch.load(tmp_state_path))
-
-        return learning_rates, losses
-
-    def train(
-        self,
-        output: str,
-        training: Dataset,
-        trainer: Optional[AllenNLPTrainerConfiguration] = None,
-        validation: Optional[Dataset] = None,
-        test: Optional[Dataset] = None,
-        vocab_config: Optional[Union[VocabularyConfiguration, str]] = "default",
-        loggers: List[BaseTrainLogger] = None,
-        lazy: bool = False,
-        restore: bool = False,
-        quiet: bool = False,
-    ) -> TrainingResults:
-        """Launches a training run with the specified configurations and data sources
-
-        DEPRECATED: This method is deprecated and will be removed in the next release.
-        Please use the `biome.text.Trainer` instead.
-
-        Parameters
-        ----------
-        output
-            The experiment output path
-        training
-            The training Dataset
-        trainer
-            The trainer file path
-        validation
-            The validation Dataset (optional)
-        test
-            The test Dataset (optional)
-        vocab_config
-            A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
-            If 'default' (str), we will use the default configuration `VocabularyConfiguration()`.
-            If None, we will leave the pipeline's vocabulary untouched. Default: 'default'.
-        loggers
-            A list of loggers that execute a callback before the training, after each epoch,
-            and at the end of the training (see `biome.text.logger.MlflowLogger`, for example)
-        lazy
-            If true, dataset instances are lazily loaded from disk, otherwise they are loaded and kept in memory.
-        restore
-            If enabled, tries to read previous training status from the `output` folder and
-            continues the training process
-        quiet
-            If enabled, disables most logging messages keeping only warning and error messages.
-            In any case, all logging info will be stored into a file at ${output}/train.log
-
-        Returns
-        -------
-        training_results
-            Training results including the generated model path and the related metrics
-        """
-        self._LOGGER.warning(
-            "The `Pipeline.train()` method is deprecated and will be removed in the next release. "
-            "Please use the `biome.text.Trainer` instead."
-        )
-        from ._helpers import PipelineTrainer
-
-        trainer = trainer or AllenNLPTrainerConfiguration()
-
-        if not restore and os.path.isdir(output):
-            shutil.rmtree(output)
-
-        try:
-            self.__configure_training_logging(output, quiet)
-
-            # create instances
-            datasets = {"training": training.to_instances(self, lazy=lazy)}
-            if validation:
-                datasets["validation"] = validation.to_instances(self, lazy=lazy)
-            if test:
-                datasets["test"] = test.to_instances(self, lazy=lazy)
-
-            # create vocab
-            if restore:
-                self._restore_vocab(os.path.join(output, "vocabulary"))
-            elif vocab_config is not None:
-                vocab_config = (
-                    VocabularyConfiguration()
-                    if vocab_config == "default"
-                    else vocab_config
-                )
-                vocab_datasets = [datasets["training"]]
-                if datasets.get("validation") and vocab_config.include_valid_data:
-                    vocab_datasets += [datasets["validation"]]
-                self.create_vocab(vocab_datasets, config=vocab_config)
-            if vocabulary.is_empty(
-                self.vocab, self.config.features.configured_namespaces
-            ):
-                raise EmptyVocabError(
-                    "All your features need a non-empty vocabulary for a training!"
-                )
-
-            loggers = loggers or []
-            loggers = add_default_wandb_logger_if_needed(loggers)
-
-            pipeline_trainer = PipelineTrainer(
-                self,
-                trainer_config=trainer,
-                output_dir=output,
-                epoch_callbacks=loggers,
-                **datasets,
-            )
-
-            training_results = pipeline_trainer.train()
-            self._model.file_path = training_results.model_path
-
-            return training_results
-
-        finally:
-            self.__restore_training_logging()
-
     def create_vocab(
         self,
         instance_datasets: Iterable[InstanceDataset],
@@ -545,58 +349,6 @@ class Pipeline:
         self._model.extend_vocabulary(vocab)
 
         return vocab
-
-    @staticmethod
-    def __restore_training_logging():
-        """Restore the training logging. This method should be called after a training process"""
-
-        try:
-            import tqdm
-
-            tqdm.tqdm.disable = False
-        except ModuleNotFoundError:
-            pass
-
-        for logger_name, level in [
-            ("allennlp", logging.ERROR),
-            ("biome", logging.INFO),
-        ]:
-            logger = logging.getLogger(logger_name)
-            logger.setLevel(level)
-            logger.propagate = True
-            logger.handlers = []
-
-    @staticmethod
-    def __configure_training_logging(output_dir: str, quiet: bool = False) -> None:
-        """Configures training logging"""
-        try:
-            import tqdm
-
-            tqdm.tqdm.disable = quiet
-        except ModuleNotFoundError:
-            pass
-
-        os.makedirs(output_dir, exist_ok=True)
-
-        # create file handler which logs even debug messages
-        file_handler = logging.FileHandler(os.path.join(output_dir, "train.log"))
-        file_handler.setLevel(logging.INFO)
-        # create console handler with a higher log level
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.WARNING if quiet else logging.INFO)
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        file_handler.setFormatter(formatter)
-        console_handler.setFormatter(formatter)
-        # add the handlers to the referred loggers
-        for logger_name in ["allennlp", "biome"]:
-            logger = logging.getLogger(logger_name)
-            logger.propagate = False
-            logger.setLevel(logging.INFO)
-            logger.addHandler(file_handler)
-            logger.addHandler(console_handler)
 
     def predict(
         self,
@@ -895,42 +647,6 @@ class Pipeline:
     def _config_from_archive(archive: Archive) -> PipelineConfiguration:
         config = archive.config["model"]["config"]
         return PipelineConfiguration.from_params(config)
-
-    # deprecated methods:
-
-    def create_vocabulary(self, config: VocabularyConfiguration) -> None:
-        """Creates the vocabulary for the pipeline from scratch
-
-        DEPRECATED: The vocabulary is now created automatically by the `biome.text.Trainer`
-        and this method will be removed in the future.
-
-        Parameters
-        ----------
-        config
-            Specifies the sources of the vocabulary and how to extract it
-        """
-        raise DeprecationWarning(
-            "Use `self.create_vocab()` instead. This method will be removed in the next release."
-        )
-
-    def predict_batch(self, *args, **kwargs):
-        """DEPRECATED"""
-        raise DeprecationWarning(
-            "Use `self.predict(batch=...)` instead. This method will be removed in the next release."
-        )
-
-    def explain(self, *args, **kwargs):
-        """DEPRECATED"""
-        raise DeprecationWarning(
-            "Use `self.predict(..., add_attributions=True)` instead. This method will be removed in the next release."
-        )
-
-    def explain_batch(self, *args, **kwargs):
-        """DEPRECATED"""
-        raise DeprecationWarning(
-            "Use `self.predict(batch=..., add_attributions=True)` instead. "
-            "This method will be removed in the next release."
-        )
 
 
 class PredictionError(Exception):

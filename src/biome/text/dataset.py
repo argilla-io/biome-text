@@ -4,9 +4,9 @@ import pickle
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import Iterable
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -15,11 +15,12 @@ from typing import cast
 
 import datasets
 from allennlp import __version__ as allennlp__version__
-from allennlp.data import AllennlpDataset
-from allennlp.data import AllennlpLazyDataset
 from allennlp.data import Instance
+from allennlp.data import Vocabulary
 from datasets.fingerprint import Hasher
 from spacy import __version__ as spacy__version__
+from torch.utils.data import Dataset as TorchDataset
+from torch.utils.data import IterableDataset as TorchIterableDataset
 from tqdm.auto import tqdm
 
 from biome.text import __version__ as biome__version__
@@ -30,6 +31,72 @@ if TYPE_CHECKING:
     import pandas
 
     from biome.text.pipeline import Pipeline
+
+
+class AllennlpDataset(TorchDataset):
+    """A thin wrapper around a list of instances.
+
+    Parameters
+    ----------
+    instances
+        List of instances
+    vocab
+        An optional vocab. This can also be set later with the `.index_with` method.
+    """
+
+    def __init__(self, instances: List[Instance], vocab: Optional[Vocabulary] = None):
+        self.instances = instances
+        self.vocab = vocab
+
+    def __getitem__(self, idx) -> Instance:
+        if self.vocab is not None:
+            self.instances[idx].index_fields(self.vocab)
+        return self.instances[idx]
+
+    def __len__(self):
+        return len(self.instances)
+
+    def __iter__(self) -> Iterator[Instance]:
+        """
+        Even though it's not necessary to implement this because Python can infer
+        this method from `__len__` and `__getitem__`, this helps with type-checking
+        since `AllennlpDataset` can be considered an `Iterable[Instance]`.
+        """
+        yield from self.instances
+
+    def index_with(self, vocab: Vocabulary):
+        self.vocab = vocab
+
+
+class AllennlpLazyDataset(TorchIterableDataset):
+    """A thin wrapper around a generator of instances.
+
+    Parameters
+    ----------
+    instance_generator
+        A generator that yields instances.
+    vocab
+        An optional vocab. This can also be set later with the `.index_with` method.
+    """
+
+    def __init__(
+        self,
+        instance_generator: Iterable[Instance],
+        vocab: Vocabulary = None,
+    ) -> None:
+        super().__init__()
+        self._instance_generator = instance_generator
+        self.vocab = vocab
+
+    def __iter__(self) -> Iterator[Instance]:
+        for instance in self._instance_generator:
+            if self.vocab is not None:
+                instance.index_fields(self.vocab)
+            yield instance
+
+    def index_with(self, vocab: Vocabulary):
+        self.vocab = vocab
+
 
 InstanceDataset = Union[AllennlpDataset, AllennlpLazyDataset]
 
@@ -318,7 +385,6 @@ class Dataset:
                 instance_generator=self._build_instance_generator(
                     pipeline, self.dataset, input_columns
                 ),
-                file_path="dummy",
                 vocab=pipeline.vocab,
             )
 
@@ -327,7 +393,7 @@ class Dataset:
         if instance_list is None:
             instance_generator = self._build_instance_generator(
                 pipeline, self.dataset, input_columns
-            )("dummy")
+            )
             tqdm_prog = tqdm(
                 instance_generator,
                 desc=tqdm_desc,
@@ -344,7 +410,7 @@ class Dataset:
         pipeline: "Pipeline",
         dataset: datasets.Dataset,
         input_columns: List[Tuple[str, bool]],
-    ) -> Callable[[str], Iterable[Instance]]:
+    ) -> Iterable[Instance]:
         """Build the instance generator
 
         Parameters
@@ -358,10 +424,10 @@ class Dataset:
 
         Returns
         -------
-        instance_generator
+        Iterable[Instance]
         """
-        # we need a dummy str to comply with AllennlpLazyDataset API
-        def instance_generator(dummy: str) -> Iterable[Instance]:
+
+        def instance_generator() -> Iterable[Instance]:
             for row in dataset:
                 try:
                     instance = pipeline.head.featurize(
@@ -375,7 +441,7 @@ class Dataset:
                 else:
                     yield instance
 
-        return instance_generator
+        return instance_generator()
 
     def _create_fingerprint_for_instance_list(self, pipeline: "Pipeline") -> str:
         """Create a fingerprint for the instance list

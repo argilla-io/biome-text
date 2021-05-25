@@ -23,8 +23,6 @@ from allennlp.data.dataset_readers.dataset_utils import to_bioul
 from spacy.tokens import Token as SpacyToken
 from spacy.tokens.doc import Doc
 
-from biome.text import environment
-
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
 
@@ -43,21 +41,6 @@ def yaml_to_dict(filepath: str) -> Dict[str, Any]:
     with open(filepath) as yaml_content:
         config = yaml.safe_load(yaml_content)
     return config
-
-
-def get_env_cuda_device() -> int:
-    """Gets the cuda device from an environment variable.
-
-    This is necessary to activate a GPU if available
-
-    Returns
-    -------
-    cuda_device
-        The integer number of the CUDA device
-    """
-    cuda_device = int(os.getenv(environment.CUDA_DEVICE, "-1"))
-
-    return cuda_device
 
 
 def update_method_signature(

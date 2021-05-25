@@ -15,7 +15,9 @@ import pytorch_lightning as pl
 import torch
 from allennlp.common import Params
 from allennlp.common.util import sanitize
-from allennlp.data import PyTorchDataLoader
+from allennlp.data import Batch
+from allennlp.data import Instance
+from allennlp.data.data_loaders import TensorDict
 from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
@@ -27,15 +29,18 @@ from pytorch_lightning.loggers import LightningLoggerBase
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.cloud_io import load as pl_load
+from torch.utils.data import DataLoader
 from torch.utils.data import IterableDataset
 from transformers.optimization import get_constant_schedule_with_warmup
 from transformers.optimization import get_cosine_schedule_with_warmup
 from transformers.optimization import get_linear_schedule_with_warmup
 
+from biome.text import vocabulary
 from biome.text.configuration import TrainerConfiguration
 from biome.text.configuration import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.dataset import InstanceDataset
+from biome.text.errors import EmptyVocabError
 
 if TYPE_CHECKING:
     from biome.text.model import PipelineModel
@@ -140,6 +145,14 @@ class Trainer:
             ):
                 vocab_datasets += [self._valid_instances]
             self._pipeline.create_vocab(vocab_datasets, config=self._vocab_config)
+
+        # Check for an empty vocab
+        if vocabulary.is_empty(
+            self._pipeline.vocab, self._pipeline.config.features.configured_namespaces
+        ):
+            raise EmptyVocabError(
+                "All your features need a non-empty vocabulary for a training!"
+            )
 
         # we give some special attention to these loggers/callbacks
         self._wandb_logger: Optional[WandbLogger] = None
@@ -350,7 +363,7 @@ class Trainer:
         """
         if self._train_instances is None:
             _LOGGER.error(
-                "You need training data to fit your model, please provide it on `self.__init__`."
+                "You need training data to fit your model, please provide it on `Trainer.__init__`."
             )
             return
 
@@ -365,14 +378,12 @@ class Trainer:
         train_dataloader = create_dataloader(
             self._train_instances,
             batch_size=self._trainer_config.batch_size,
-            data_bucketing=self._trainer_config.data_bucketing,
             num_workers=self._trainer_config.num_workers_for_dataloader,
         )
         valid_dataloader = (
             create_dataloader(
                 self._valid_instances,
                 batch_size=self._trainer_config.batch_size,
-                data_bucketing=self._trainer_config.data_bucketing,
                 num_workers=self._trainer_config.num_workers_for_dataloader,
             )
             if self._valid_instances is not None
@@ -476,9 +487,8 @@ class ModelCheckpointWithVocab(ModelCheckpoint):
 def create_dataloader(
     instance_dataset: InstanceDataset,
     batch_size: int = 16,
-    data_bucketing: bool = False,
     num_workers: int = 0,
-) -> PyTorchDataLoader:
+) -> DataLoader:
     """Returns a pytorch DataLoader for AllenNLP instances
 
     Parameters
@@ -487,9 +497,6 @@ def create_dataloader(
         The dataset of instances for the DataLoader
     batch_size
         Batch size
-    data_bucketing
-        If True, tries to sort batches with respect to the maximum input lengths per batch.
-        Not supported for lazily loaded data!
     num_workers
         How many subprocesses to use for data loading. 0 means that the data will be loaded in the main process.
         Default: 0
@@ -498,20 +505,14 @@ def create_dataloader(
     -------
     data_loader
     """
-    if data_bucketing and isinstance(instance_dataset, IterableDataset):
-        _LOGGER.warning(
-            "'data_bucketing' is not supported for lazily loaded data. We will deactivate it."
-        )
-        data_bucketing = False
-
-    return PyTorchDataLoader(
+    return DataLoader(
         instance_dataset,
-        batch_size=1 if data_bucketing else batch_size,
-        batch_sampler=BucketBatchSampler(
-            data_source=instance_dataset,
-            batch_size=batch_size,
-        )
-        if data_bucketing
-        else None,
+        batch_size=batch_size,
         num_workers=num_workers,
+        collate_fn=allennlp_collate,
     )
+
+
+def allennlp_collate(instances: List[Instance]) -> TensorDict:
+    batch = Batch(instances)
+    return batch.as_tensor_dict(batch.get_padding_lengths())

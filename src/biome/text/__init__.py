@@ -21,7 +21,6 @@ _ALLENNLP_LOGGER = logging.getLogger("allennlp")
 _ALLENNLP_LOGGER.addHandler(_handler)
 _ALLENNLP_LOGGER.setLevel("WARNING")
 
-from .configuration import AllenNLPTrainerConfiguration
 from .configuration import PipelineConfiguration
 from .configuration import TrainerConfiguration
 from .configuration import VocabularyConfiguration
