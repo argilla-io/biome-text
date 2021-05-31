@@ -14,14 +14,14 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 
-import spacy
-import spacy.gold
 import yaml
 from allennlp.common import util
 from allennlp.data import Token as AllenNLPToken
 from allennlp.data.dataset_readers.dataset_utils import to_bioul
 from spacy.tokens import Token as SpacyToken
 from spacy.tokens.doc import Doc
+from spacy.training import biluo_tags_to_offsets
+from spacy.training import offsets_to_biluo_tags
 
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 
@@ -243,7 +243,7 @@ def sanitize_for_yaml(value: Any):
 def span_labels_to_tag_labels(
     labels: List[str], label_encoding: str = "BIO"
 ) -> List[str]:
-    """Converts a list of span labels to tag labels following `spacy.gold.biluo_tags_from_offsets`
+    """Converts a list of span labels to tag labels following `spacy.training.offsets_to_biluo_tags`
 
     Parameters
     ----------
@@ -292,7 +292,7 @@ def tags_from_offsets(
     offsets: List[Dict],
     label_encoding: Optional[str] = "BIOUL",
 ) -> List[str]:
-    """Converts offsets to BIOUL or BIO tags using spacy's `gold.biluo_tags_from_offsets`.
+    """Converts offsets to BIOUL or BIO tags using spacy's `offsets_to_biluo_tags`.
 
     Parameters
     ----------
@@ -308,7 +308,7 @@ def tags_from_offsets(
     -------
     tags (BIOUL or BIO)
     """
-    tags = spacy.gold.biluo_tags_from_offsets(
+    tags = offsets_to_biluo_tags(
         doc, [(offset["start"], offset["end"], offset["label"]) for offset in offsets]
     )
     if label_encoding == "BIO":
@@ -341,7 +341,7 @@ def offsets_from_tags(
         A list of dicts with start and end character/token index with respect to the doc and the span label:
         `{"start": int, "end": int, "start_token": int, "end_token": int, "label": str}`
     """
-    # spacy.gold.offsets_from_biluo_tags surprisingly does not check this ...
+    # spacy's biluo_tags_to_offsets surprisingly does not check this ...
     if len(doc) != len(tags):
         raise ValueError(
             f"Number of tokens and tags must be the same, "
@@ -352,7 +352,7 @@ def offsets_from_tags(
         tags = to_bioul(tags, encoding="BIO")
 
     offsets = []
-    for start, end, label in spacy.gold.offsets_from_biluo_tags(doc, tags):
+    for start, end, label in biluo_tags_to_offsets(doc, tags):
         span = doc.char_span(start, end)
         data = {
             "start_token": span.start,
