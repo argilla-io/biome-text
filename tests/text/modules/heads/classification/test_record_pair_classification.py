@@ -146,7 +146,9 @@ def pipeline_dict() -> Dict:
 @pytest.fixture
 def trainer_config() -> TrainerConfiguration:
     return TrainerConfiguration(
-        max_epochs=1, optimizer={"type": "adam", "amsgrad": True, "lr": 0.002}
+        max_epochs=1,
+        optimizer={"type": "adam", "amsgrad": True, "lr": 0.002},
+        gpus=0,
     )
 
 
