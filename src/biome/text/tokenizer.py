@@ -53,8 +53,7 @@ class Tokenizer:
         if config.segment_sentences and not self.__nlp__.has_pipe(
             self.__SPACY_SENTENCIZER__
         ):
-            sentencizer = self.__nlp__.create_pipe(self.__SPACY_SENTENCIZER__)
-            self.__nlp__.add_pipe(sentencizer)
+            self.__nlp__.add_pipe(self.__SPACY_SENTENCIZER__)
 
         if config.text_cleaning is None:
             self.text_cleaning = TextCleaning()
@@ -130,7 +129,7 @@ class Tokenizer:
         if not self.config.segment_sentences:
             return list(map(self._tokenize, texts[: self.config.max_nr_of_sentences]))
         sentences = [
-            sentence.string.strip()
+            sentence.text.strip()
             for doc in self.__nlp__.pipe(texts)
             for sentence in doc.sents
         ]
