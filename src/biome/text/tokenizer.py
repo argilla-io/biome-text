@@ -39,7 +39,6 @@ class Tokenizer:
     __SPACY_SENTENCIZER__ = "sentencizer"
 
     def __init__(self, config: "TokenizerConfiguration"):
-        _fetch_spacy_model(config.lang)
         self._config = config
 
         self._end_tokens = config.end_tokens or []
@@ -49,13 +48,12 @@ class Tokenizer:
         self._start_tokens.reverse()
 
         self.__nlp__ = get_spacy_model(
-            self.config.lang, pos_tags=True, ner=False, parse=False
+            self.config.spacy_model, pos_tags=True, ner=False, parse=False
         )
         if config.segment_sentences and not self.__nlp__.has_pipe(
             self.__SPACY_SENTENCIZER__
         ):
-            sentencizer = self.__nlp__.create_pipe(self.__SPACY_SENTENCIZER__)
-            self.__nlp__.add_pipe(sentencizer)
+            self.__nlp__.add_pipe(self.__SPACY_SENTENCIZER__)
 
         if config.text_cleaning is None:
             self.text_cleaning = TextCleaning()
@@ -131,7 +129,7 @@ class Tokenizer:
         if not self.config.segment_sentences:
             return list(map(self._tokenize, texts[: self.config.max_nr_of_sentences]))
         sentences = [
-            sentence.string.strip()
+            sentence.text.strip()
             for doc in self.__nlp__.pipe(texts)
             for sentence in doc.sents
         ]
@@ -227,16 +225,3 @@ class TransformersTokenizer(Tokenizer):
     @property
     def nlp(self) -> Language:
         raise NotImplementedError("For the TransformerTokenizer we have no spaCy nlp")
-
-
-def _fetch_spacy_model(lang: str):
-    # Allennlp get_spacy_model method works only for fully named models (en_core_web_sm) but no
-    # for already linked named (en, es)
-    # This is a workaround for mitigate those kind of errors. Just loading one more time, it's ok.
-    # See https://github.com/allenai/allennlp/issues/4201
-    import spacy
-
-    try:
-        spacy.load(lang, disable=["vectors", "textcat", "tagger" "parser" "ner"])
-    except OSError:
-        spacy.cli.download(lang)

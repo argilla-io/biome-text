@@ -209,9 +209,8 @@ class TokenizerConfiguration(FromParams):
 
     Parameters
     ----------
-    lang
-        The [spaCy model used](https://spacy.io/api/tokenizer) for tokenization is language dependent.
-        For optimal performance, specify the language of your input data (default: "en").
+    spacy_model
+        The [spaCy model](https://spacy.io/models) used for the tokenization. Default: "en_core_web_sm".
     max_sequence_length
         Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
     max_nr_of_sentences
@@ -241,7 +240,7 @@ class TokenizerConfiguration(FromParams):
     # note: It's important that it inherits from FromParas so that `Pipeline.from_pretrained()` works!
     def __init__(
         self,
-        lang: str = "en",
+        spacy_model: str = "en_core_web_sm",
         max_sequence_length: int = None,
         max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
@@ -253,7 +252,7 @@ class TokenizerConfiguration(FromParams):
         use_transformers: Optional[bool] = None,
         transformers_kwargs: Optional[Dict] = None,
     ):
-        self.lang = lang
+        self.spacy_model = spacy_model
         self.max_sequence_length = max_sequence_length
         self.max_nr_of_sentences = max_nr_of_sentences
         self.segment_sentences = segment_sentences

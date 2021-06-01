@@ -58,6 +58,7 @@ def trainer_config() -> TrainerConfiguration:
     return TrainerConfiguration(
         max_epochs=2,
         optimizer={"type": "adam", "amsgrad": True, "lr": 0.002},
+        gpus=0,
     )
 
 
