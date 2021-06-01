@@ -30,8 +30,6 @@ if __name__ == "__main__":
             "captum~=0.2.0",
             "click~=7.1.0",
             "datasets~=1.2.1",
-            "flask~=1.1.2",
-            "flask-cors~=3.0.8",
             "flatdict~=4.0.0",
             "gevent~=20.9.0",
             "ipywidgets~=7.5.1",
@@ -45,7 +43,7 @@ if __name__ == "__main__":
             "torch",  # the version is defined by allennlp
             "transformers",  # the version is defined by allennlp
             "tqdm>=4.49.0",
-            "fastapi>=0.63.0",
+            "fastapi~=0.63.0",  # newer versions brings pydantic conflicts with spaCy 3.0.x
             "uvicorn>=0.13.0",
             "pyyaml",
         ],
