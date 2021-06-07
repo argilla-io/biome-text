@@ -211,13 +211,17 @@ class TokenClassification(TaskHead):
             embedded_text = self._feedforward(embedded_text)
 
         logits = self._label_projection_layer(embedded_text)
+        # `self._crf.viterbi_tags` can return invalid tag sequences when logits are nan
+        viterbi_logits = torch.where(
+            torch.isnan(logits), torch.zeros_like(logits), logits
+        )
         # dims are: batch, top_k, (tag_sequence, viterbi_score)
         viterbi_paths: List[List[Tuple[List[int], float]]] = self._crf.viterbi_tags(
-            logits, mask, top_k=self.top_k
+            viterbi_logits, mask, top_k=self.top_k
         )
         # We just keep the best path for every instance
         predicted_tags: List[List[int]] = [paths[0][0] for paths in viterbi_paths]
-        class_probabilities = logits * 0.0
+        class_probabilities = torch.zeros_like(logits)
 
         for i, instance_tags in enumerate(predicted_tags):
             for j, tag_id in enumerate(instance_tags):
