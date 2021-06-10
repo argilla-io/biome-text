@@ -11,7 +11,7 @@
         <img alt="GitHub" src="https://img.shields.io/github/license/recognai/biome-text.svg?color=blue">
     </a>
     <a href="https://www.recogn.ai/biome-text/">
-        <img alt="Documentation" src="https://img.shields.io/website/http/www.recogn.ai/biome-text/index.html.svg?down_color=red&down_message=offline&up_message=online">
+        <img alt="Documentation" src="https://img.shields.io/website/http/recognai.github.io/biome-text/index.html.svg?down_color=red&down_message=offline&up_message=online">
     </a>
     <a href="https://github.com/recognai/biome-text/releases">
         <img alt="GitHub release" src="https://img.shields.io/github/release/recognai/biome-text.svg">
@@ -23,7 +23,7 @@
 </h3>
 
 ## Quick Links
-- [Documentation](https://www.recogn.ai/biome-text/)
+- [Documentation](https://recognai.github.io/biome-text/)
 
 
 ## Features
@@ -60,9 +60,9 @@ biome --help
 
 ## Get started
 
-The best way to see how *biome.text* works is to go through our [first tutorial](https://www.recogn.ai/biome-text/master/documentation/tutorials/1-Training_a_text_classifier.html).
+The best way to see how *biome.text* works is to go through our [first tutorial](https://recognai.github.io/biome-text/master/documentation/tutorials/1-Training_a_text_classifier.html).
 
-Please refer to our [documentation](https://www.recogn.ai/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://www.recogn.ai/biome-text/v2.0.0/documentation/community/1-contributing.html) to *biome.text*.
+Please refer to our [documentation](https://recognai.github.io/biome-text) for more tutorials, detailed user guides and how you can [contribute](https://recognai.github.io/biome-text/master/documentation/community/1-contributing.html) to *biome.text*.
 
 ## Licensing
 
