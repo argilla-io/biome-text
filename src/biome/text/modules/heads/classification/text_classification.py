@@ -36,6 +36,8 @@ class TextClassification(ClassificationHead):
         A list of labels for your classification task.
     pooler
         The pooler of the output sequence from the backbone model. Default: `BagOfEmbeddingsEncoder`.
+    dropout
+        A dropout applied after the backbone and after the pooler
     feedforward
         An optional feedforward layer applied to the output of the pooler. Default: None.
     multilabel
@@ -54,6 +56,7 @@ class TextClassification(ClassificationHead):
         backbone: ModelBackbone,
         labels: List[str],
         pooler: Optional[Seq2VecEncoderConfiguration] = None,
+        dropout: float = 0.0,
         feedforward: Optional[FeedForwardConfiguration] = None,
         multilabel: bool = False,
         label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
@@ -66,6 +69,7 @@ class TextClassification(ClassificationHead):
             if pooler
             else BagOfEmbeddingsEncoder(self.backbone.encoder.get_output_dim())
         )
+        self.dropout = torch.nn.Dropout(dropout)
         self.feedforward = (
             None
             if not feedforward
@@ -96,7 +100,7 @@ class TextClassification(ClassificationHead):
     ) -> Dict[str, Any]:
 
         mask = get_text_field_mask(text)
-        embeddings = self.backbone.embedder(text)
+        embeddings = self.dropout(self.backbone.embedder(text))
         logits = self._encoder_and_head_forward(embeddings, mask)
 
         output = self._make_forward_output(logits, label)
@@ -114,8 +118,8 @@ class TextClassification(ClassificationHead):
         self, embeddings: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
         """We reuse this method for the computation of the attributions"""
-        encoded_text = self.pooler(
-            self.backbone.encoder(embeddings, mask=mask), mask=mask
+        encoded_text = self.dropout(
+            self.pooler(self.backbone.encoder(embeddings, mask=mask), mask=mask)
         )
         if self.feedforward:
             encoded_text = self.feedforward(encoded_text)
