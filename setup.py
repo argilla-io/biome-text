@@ -31,7 +31,6 @@ if __name__ == "__main__":
             "click~=7.1.0",
             "datasets~=1.2.1",
             "flatdict~=4.0.0",
-            "gevent~=20.9.0",
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
             "mlflow~=1.13.1",
@@ -60,7 +59,7 @@ if __name__ == "__main__":
                 "pdoc3~=0.8.1",
                 # development
                 "pre-commit~=2.9.0",
-                "GitPython",
+                # "GitPython",
             ],
         },
         entry_points={"console_scripts": ["biome=biome.text.cli:main"]},
