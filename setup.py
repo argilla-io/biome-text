@@ -25,7 +25,7 @@ if __name__ == "__main__":
         packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=2.4.0",
+            "allennlp~=2.5.0",
             "beautifulsoup4~=4.9.0",
             "captum~=0.2.0",
             "click~=7.1.0",
