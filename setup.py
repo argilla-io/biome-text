@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "beautifulsoup4~=4.9.0",
             "captum~=0.2.0",
             "click~=7.1.0",
-            "datasets~=1.2.1",
+            "datasets~=1.8.0",
             "flatdict~=4.0.0",
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
