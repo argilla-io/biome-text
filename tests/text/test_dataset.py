@@ -129,30 +129,6 @@ def test_from_parquet_file(resources_data_path):
     assert "reviewerID" in dataset.column_names
 
 
-def test_fail_using_reserved_words():
-    # This issue was reported and maybe gets resolved: https://github.com/huggingface/datasets/issues/1110
-
-    ds = Dataset.from_dict(
-        {
-            "a": [{"a": 1, "b": "two"} for _ in range(0, 100)],
-            "_type": ["whatever" for _ in range(0, 100)],
-        }
-    )
-    split = ds.train_test_split()
-    new_ds = Dataset.from_datasets(split.values())
-
-    assert len(new_ds) == len(ds)
-
-    ds = ds.map(
-        lambda example: {
-            "new_field": {"c": str(example["a"]["a"]), "d": f"this {example['a']['b']}"}
-        }
-    )
-    split = ds.train_test_split()
-    with pytest.raises(TypeError):
-        Dataset.from_datasets(split.values())
-
-
 def test_to_instances(dataset, default_pipeline_config):
     pl = Pipeline.from_config(default_pipeline_config)
 
