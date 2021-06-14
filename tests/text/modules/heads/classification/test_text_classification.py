@@ -13,7 +13,7 @@ def pipeline() -> Pipeline:
     return Pipeline.from_config(
         {
             "name": "test_text_classification",
-            "head": {"type": "TextClassification", "labels": labels},
+            "head": {"type": "TextClassification", "labels": labels, "dropout": 0.1},
         }
     )
 
