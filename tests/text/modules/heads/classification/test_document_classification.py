@@ -13,7 +13,11 @@ def pipeline() -> Pipeline:
         {
             "name": "test_document_classification",
             "tokenizer": {"segment_sentences": False},
-            "head": {"type": "DocumentClassification", "labels": labels},
+            "head": {
+                "type": "DocumentClassification",
+                "labels": labels,
+                "dropout": 0.1,
+            },
         }
     )
 
@@ -29,7 +33,7 @@ def pipeline() -> Pipeline:
         (True, {"one": "one sentence. two sentence", "two": "test"}, (3, 3)),
     ],
 )
-def test_tokenization_of_different_input(pipeline, segment_sentences, input, output):
+def test_tokenization_of_different_input(segment_sentences, input, output):
     pipeline = Pipeline.from_config(
         {
             "name": "test_document_classification",
@@ -46,7 +50,7 @@ def test_tokenization_of_different_input(pipeline, segment_sentences, input, out
 
 def test_make_task_prediction(pipeline):
     instance = pipeline.head.featurize("test this sentence")
-    forward_output = pipeline._model.forward_on_instances([instance])
+    forward_output = pipeline.model.forward_on_instances([instance])
 
     prediction = pipeline.head._make_task_prediction(forward_output[0], None)
 
