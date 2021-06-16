@@ -37,7 +37,7 @@ class TextClassification(ClassificationHead):
     pooler
         The pooler of the output sequence from the backbone model. Default: `BagOfEmbeddingsEncoder`.
     dropout
-        A dropout applied after the backbone and after the pooler
+        A dropout applied after the backbone and after the pooler. Default: 0.
     feedforward
         An optional feedforward layer applied to the output of the pooler. Default: None.
     multilabel
