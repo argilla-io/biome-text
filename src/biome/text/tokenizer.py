@@ -105,7 +105,7 @@ class Tokenizer:
         tokens: `List[Token]`
 
         """
-        tokens = self.nlp(text[: self.config.max_sequence_length])
+        tokens = list(self.nlp(text))
         if self.config.remove_space_tokens:
             tokens = [token for token in tokens if not token.is_space]
 
@@ -125,7 +125,10 @@ class Tokenizer:
         -------
         tokens: `List[List[Token]]`
         """
-        texts = [self.text_cleaning(text) for text in document]
+        texts = [
+            self.text_cleaning(text)[: self.config.max_sequence_length]
+            for text in document
+        ]
         if not self.config.segment_sentences:
             return list(map(self._tokenize, texts[: self.config.max_nr_of_sentences]))
         sentences = [
