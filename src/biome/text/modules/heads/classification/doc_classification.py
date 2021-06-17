@@ -46,6 +46,8 @@ class DocumentClassification(ClassificationHead):
         The pooler at sentence level to provide a vector for the document. Default: `BagOfEmbeddingsEncoder`.
     feedforward
         An optional feedforward layer applied to the output of the sentence pooler. Default: None.
+    dropout
+        A dropout applied after the backbone, the token_pooler, the sentence_encoder and sentence_pooler. Default: 0.
     multilabel
         Is this a multi label classification task? Default: False
     label_weights
@@ -64,6 +66,7 @@ class DocumentClassification(ClassificationHead):
         sentence_encoder: Optional[Seq2SeqEncoderConfiguration] = None,
         sentence_pooler: Seq2VecEncoderConfiguration = None,
         feedforward: Optional[FeedForwardConfiguration] = None,
+        dropout: float = 0.0,
         multilabel: bool = False,
         label_weights: Optional[Union[List[float], Dict[str, float]]] = None,
     ) -> None:
@@ -104,6 +107,7 @@ class DocumentClassification(ClassificationHead):
             if not feedforward
             else feedforward.input_dim(self.sentence_pooler.get_output_dim()).compile()
         )
+        self.dropout = torch.nn.Dropout(dropout)
 
         self._classification_layer = torch.nn.Linear(
             (self.feedforward or self.sentence_pooler).get_output_dim(),
@@ -125,7 +129,7 @@ class DocumentClassification(ClassificationHead):
         self, text: TextFieldTensors, label: torch.IntTensor = None
     ) -> Dict[str, Any]:
         mask = get_text_field_mask(text, num_wrapping_dims=1)
-        embeddings = self.backbone.embedder(text, num_wrapping_dims=1)
+        embeddings = self.dropout(self.backbone.embedder(text, num_wrapping_dims=1))
         logits = self._encoder_and_head_forward(embeddings, mask)
 
         output = self._make_forward_output(logits, label)
@@ -143,16 +147,14 @@ class DocumentClassification(ClassificationHead):
         self, embeddings: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
         """We reuse this method for the computation of the attributions"""
-        encoded_text = self.token_pooler(
-            self.backbone.encoder(embeddings, mask=mask), mask=mask
-        )
+        encoded_text = self.dropout(self.backbone.encoder(embeddings, mask=mask))
+        encoded_text = self.dropout(self.token_pooler(encoded_text, mask=mask))
 
         # Here we need to mask the TextFields that only contain the padding token -> last dimension only contains False
         # Those fields were added to possibly equalize the batch.
         mask = torch.sum(mask, -1) > 0
-        encoded_text = self.sentence_pooler(
-            self.sentence_encoder(encoded_text, mask=mask), mask=mask
-        )
+        encoded_text = self.dropout(self.sentence_encoder(encoded_text, mask=mask))
+        encoded_text = self.dropout(self.sentence_pooler(encoded_text, mask=mask))
 
         if self.feedforward is not None:
             encoded_text = self.feedforward(encoded_text)
