@@ -227,6 +227,12 @@ class TokenizerConfiguration(FromParams):
         A list of token strings to the sequence before tokenized input text.
     end_tokens
         A list of token strings to the sequence after tokenized input text.
+    min_sentence_length
+        When setting `segment_sentences` to True, this defines the minimum length of the sentence to be included.
+        Default: 0.
+    max_sentence_length
+        When setting `segment_sentences` to True, this defines the maximum length of the sentence to be included.
+        Default: 1e5.
     use_transformers
         If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above
         (except `max_sequence_length`!).
@@ -249,6 +255,8 @@ class TokenizerConfiguration(FromParams):
         remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
+        min_sentence_length: int = 0,
+        max_sentence_length: int = 1e5,
         use_transformers: Optional[bool] = None,
         transformers_kwargs: Optional[Dict] = None,
     ):
@@ -261,6 +269,8 @@ class TokenizerConfiguration(FromParams):
         self.end_tokens = end_tokens
         self.use_spacy_tokens = use_spacy_tokens
         self.remove_space_tokens = remove_space_tokens
+        self.min_sentence_length = min_sentence_length
+        self.max_sentence_length = max_sentence_length
         self.use_transformers = use_transformers
         self.transformers_kwargs = transformers_kwargs or {}
 
