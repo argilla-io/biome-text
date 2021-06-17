@@ -256,7 +256,7 @@ class TokenizerConfiguration(FromParams):
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
         min_sentence_length: int = 0,
-        max_sentence_length: int = 1e5,
+        max_sentence_length: int = 100000,
         use_transformers: Optional[bool] = None,
         transformers_kwargs: Optional[Dict] = None,
     ):
