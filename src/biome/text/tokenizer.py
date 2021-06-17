@@ -126,13 +126,12 @@ class Tokenizer:
         tokens: `List[List[Token]]`
         """
         texts = [
-            self.text_cleaning(text)[: self.config.max_sequence_length]
-            for text in document
+            self.text_cleaning(text)[: self.config.truncate_input] for text in document
         ]
         if not self.config.segment_sentences:
             return list(map(self._tokenize, texts[: self.config.max_nr_of_sentences]))
         sentences = [
-            sentence.text.strip()
+            sentence.text.strip()[: self.config.truncate_sentence]
             for doc in self.__nlp__.pipe(texts)
             for sentence in doc.sents
             if (
@@ -226,9 +225,7 @@ class TransformersTokenizer(Tokenizer):
         return list(map(self._tokenize, document))
 
     def _tokenize(self, text: str) -> List[Token]:
-        return self.pretrained_tokenizer.tokenize(
-            text[: self._config.max_sequence_length]
-        )
+        return self.pretrained_tokenizer.tokenize(text[: self._config.truncate_input])
 
     @property
     def nlp(self) -> Language:
