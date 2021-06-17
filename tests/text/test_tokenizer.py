@@ -90,3 +90,15 @@ def test_set_sentence_segmentation_with_max_number_of_sentences():
         ]
     )
     assert len(tokenized) == 2
+
+
+def test_min_max_sentence_length():
+    tokenizer = Tokenizer(
+        TokenizerConfiguration(
+            segment_sentences=True, min_sentence_length=10, max_sentence_length=15
+        )
+    )
+    tokenized = tokenizer.tokenize_text("short. A very long sentence. This is fine")
+
+    assert len(tokenized) == 1
+    assert len(tokenized[0]) == 3
