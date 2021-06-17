@@ -197,7 +197,7 @@ class TestInstanceCaching:
         if self.uses_cached_instances(default_pipeline_config):
             pytest.fail("Incompatible pipelines did reuse the cached instances!")
 
-        default_pipeline_config["tokenizer"] = {"max_sequence_length": 10}
+        default_pipeline_config["tokenizer"] = {"truncate_input": 10}
         if self.uses_cached_instances(default_pipeline_config):
             pytest.fail("Incompatible pipelines did reuse the cached instances!")
 

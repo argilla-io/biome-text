@@ -36,7 +36,7 @@ def test_text_cleaning_with_sentence_segmentation():
 def test_text_cleaning_with_sentence_segmentation_and_max_sequence():
     tokenizer = Tokenizer(
         TokenizerConfiguration(
-            max_sequence_length=8,
+            truncate_sentence=8,
             text_cleaning={"rules": ["html_to_text", "strip_spaces"]},
             segment_sentences=True,
         )
