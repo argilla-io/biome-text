@@ -212,13 +212,24 @@ class TokenizerConfiguration(FromParams):
     spacy_model
         The [spaCy model](https://spacy.io/models) used for the tokenization. Default: "en_core_web_sm".
     max_sequence_length
-        Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
-    max_nr_of_sentences
-        Maximum number of sentences to keep when using `segment_sentences` truncated with `[:max_sequence_length]`.
+        Truncate the input after the text cleaning via `[:max_sequence_length]`. If the input is a list or a dict,
+        this limit is applied to each element or dict value, respectively.
+        Default: None
     text_cleaning
         A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
     segment_sentences
-        Whether to segment input texts into sentences.
+        Whether to segment input texts into sentences. The segmentation into sentences happens
+        after the truncation with `[:max_sequence_length]`. Default: None.
+    min_sentence_length
+        When setting `segment_sentences` to True, this defines the minimum length of the sentence,
+        for the sentence to be included. Default: 0.
+    max_sentence_length
+        When setting `segment_sentences` to True, this defines the maximum length of the sentence,
+        for the sentence to be included. Default: 1e5.
+    max_nr_of_sentences
+        Maximum number of sentences to keep when using `segment_sentences` (after the min/max_sentence_length filter).
+        When `segment_sentences` is set to False and the input is a list of strings, this defines the maximum number of
+        elements of the list to keep. Default: None.
     use_spacy_tokens
         If True, the tokenized token list contains spacy tokens instead of allennlp tokens
     remove_space_tokens
@@ -227,12 +238,6 @@ class TokenizerConfiguration(FromParams):
         A list of token strings to the sequence before tokenized input text.
     end_tokens
         A list of token strings to the sequence after tokenized input text.
-    min_sentence_length
-        When setting `segment_sentences` to True, this defines the minimum length of the sentence to be included.
-        Default: 0.
-    max_sentence_length
-        When setting `segment_sentences` to True, this defines the maximum length of the sentence to be included.
-        Default: 1e5.
     use_transformers
         If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above
         (except `max_sequence_length`!).
@@ -248,29 +253,29 @@ class TokenizerConfiguration(FromParams):
         self,
         spacy_model: str = "en_core_web_sm",
         max_sequence_length: int = None,
-        max_nr_of_sentences: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
         segment_sentences: bool = False,
+        min_sentence_length: int = 0,
+        max_sentence_length: int = 100000,
+        max_nr_of_sentences: int = None,
         use_spacy_tokens: bool = False,
         remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
         end_tokens: Optional[List[str]] = None,
-        min_sentence_length: int = 0,
-        max_sentence_length: int = 100000,
         use_transformers: Optional[bool] = None,
         transformers_kwargs: Optional[Dict] = None,
     ):
         self.spacy_model = spacy_model
         self.max_sequence_length = max_sequence_length
-        self.max_nr_of_sentences = max_nr_of_sentences
-        self.segment_sentences = segment_sentences
         self.text_cleaning = text_cleaning
+        self.segment_sentences = segment_sentences
+        self.min_sentence_length = min_sentence_length
+        self.max_sentence_length = max_sentence_length
+        self.max_nr_of_sentences = max_nr_of_sentences
         self.start_tokens = start_tokens
         self.end_tokens = end_tokens
         self.use_spacy_tokens = use_spacy_tokens
         self.remove_space_tokens = remove_space_tokens
-        self.min_sentence_length = min_sentence_length
-        self.max_sentence_length = max_sentence_length
         self.use_transformers = use_transformers
         self.transformers_kwargs = transformers_kwargs or {}
 
