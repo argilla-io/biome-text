@@ -132,9 +132,11 @@ class Tokenizer:
             sentence.text.strip()
             for doc in self.__nlp__.pipe(texts)
             for sentence in doc.sents
-            if self.config.min_sentence_length
-            < len(sentence)
-            < self.config.max_sentence_length
+            if (
+                self.config.min_sentence_length
+                < len(sentence.text.strip())
+                < self.config.max_sentence_length
+            )
         ]
         return list(map(self._tokenize, sentences[: self.config.max_nr_of_sentences]))
 
