@@ -7,6 +7,9 @@
     <a href="https://github.com/recognai/biome-text/actions">
         <img alt="CI" src="https://github.com/recognai/biome-text/workflows/CI/badge.svg?branch=master&event=push">
     </a>
+    <a href="https://codecov.io/gh/recognai/biome-text">
+        <img src="https://codecov.io/gh/recognai/biome-text/branch/master/graph/badge.svg?token=943463Z6F7"/>
+    </a>
     <a href="https://github.com/recognai/biome-text/blob/master/LICENSE.txt">
         <img alt="GitHub" src="https://img.shields.io/github/license/recognai/biome-text.svg?color=blue">
     </a>
