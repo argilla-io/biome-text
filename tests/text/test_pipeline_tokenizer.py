@@ -25,7 +25,7 @@ def pipeline_dict(request) -> dict:
 
 
 def test_pipeline_transformers_tokenizer(pipeline_dict):
-    pipeline_dict["tokenizer"] = {"max_sequence_length": 1}
+    pipeline_dict["tokenizer"] = {"truncate_input": 1}
     pl = Pipeline.from_config(pipeline_dict)
 
     assert pl.config.tokenizer_config.transformers_kwargs == {

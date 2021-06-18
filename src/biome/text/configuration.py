@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+import warnings
 from dataclasses import dataclass
 from dataclasses import field
 from dataclasses import fields
@@ -212,13 +213,29 @@ class TokenizerConfiguration(FromParams):
     spacy_model
         The [spaCy model](https://spacy.io/models) used for the tokenization. Default: "en_core_web_sm".
     max_sequence_length
-        Maximum length in characters for input texts truncated with `[:max_sequence_length]` after `TextCleaning`.
-    max_nr_of_sentences
-        Maximum number of sentences to keep when using `segment_sentences` truncated with `[:max_sequence_length]`.
+        DEPRECATED, use `truncate_input` instead.
+    truncate_input
+        Char index at which to truncate the input after the text cleaning via `[:truncate_input]`.
+        If the input is a list or a dict, this truncation is applied to each element or dict value, respectively.
+        Default: None
     text_cleaning
         A `TextCleaning` configuration with pre-processing rules for cleaning up and transforming raw input text.
     segment_sentences
-        Whether to segment input texts into sentences.
+        Whether to segment input texts into sentences. The segmentation into sentences happens
+        after the truncation with `truncate_input`. Default: None.
+    min_sentence_length
+        When setting `segment_sentences` to True, this defines the minimum length of the sentence,
+        for the sentence to be included. Default: 0.
+    max_sentence_length
+        When setting `segment_sentences` to True, this defines the maximum length of the sentence,
+        for the sentence to be included. Default: 1e5.
+    max_nr_of_sentences
+        Maximum number of sentences to keep when using `segment_sentences` (after the min/max_sentence_length filter).
+        When `segment_sentences` is set to False and the input is a list of strings, this defines the maximum number of
+        elements of the list to keep. Default: None.
+    truncate_sentence
+        Char index at which to truncate each sentence via `[:truncate_sentence]`, if `segment_sentences` is set to True.
+        Applied after the `min/max_sentence_length` filter. Default: None.
     use_spacy_tokens
         If True, the tokenized token list contains spacy tokens instead of allennlp tokens
     remove_space_tokens
@@ -229,7 +246,7 @@ class TokenizerConfiguration(FromParams):
         A list of token strings to the sequence after tokenized input text.
     use_transformers
         If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above
-        (except `max_sequence_length`!).
+        (except `truncate_input`!).
         If you specify any of the above parameters you want to set this to false.
         If None, we automatically choose the right value based on your feature and head configuration.
     transformers_kwargs
@@ -242,9 +259,13 @@ class TokenizerConfiguration(FromParams):
         self,
         spacy_model: str = "en_core_web_sm",
         max_sequence_length: int = None,
-        max_nr_of_sentences: int = None,
+        truncate_input: int = None,
         text_cleaning: Optional[Dict[str, Any]] = None,
         segment_sentences: bool = False,
+        min_sentence_length: int = 0,
+        max_sentence_length: int = 100000,
+        max_nr_of_sentences: int = None,
+        truncate_sentence: int = None,
         use_spacy_tokens: bool = False,
         remove_space_tokens: bool = True,
         start_tokens: Optional[List[str]] = None,
@@ -252,11 +273,23 @@ class TokenizerConfiguration(FromParams):
         use_transformers: Optional[bool] = None,
         transformers_kwargs: Optional[Dict] = None,
     ):
+        if max_sequence_length is not None:
+            warnings.warn(
+                "'max_sequence_length' is deprecated and will be removed in future versions. "
+                "Use `truncate_input` instead.",
+                category=FutureWarning,
+            )
+            self.truncate_input = max_sequence_length
+        else:
+            self.truncate_input = truncate_input
+
         self.spacy_model = spacy_model
-        self.max_sequence_length = max_sequence_length
-        self.max_nr_of_sentences = max_nr_of_sentences
-        self.segment_sentences = segment_sentences
         self.text_cleaning = text_cleaning
+        self.segment_sentences = segment_sentences
+        self.min_sentence_length = min_sentence_length
+        self.max_sentence_length = max_sentence_length
+        self.max_nr_of_sentences = max_nr_of_sentences
+        self.truncate_sentence = truncate_sentence
         self.start_tokens = start_tokens
         self.end_tokens = end_tokens
         self.use_spacy_tokens = use_spacy_tokens
