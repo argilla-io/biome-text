@@ -255,11 +255,11 @@ class Dataset:
         self.dataset.flatten_(*args, **kwargs)
 
     @copy_sign_and_docs(datasets.Dataset.flatten)
-    def flatten(self, *args, **kwargs):
+    def flatten(self, *args, **kwargs) -> "Dataset":
         """
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.flatten
         """
-        self.dataset.flatten(*args, **kwargs)
+        return Dataset(self.dataset.flatten(*args, **kwargs))
 
     @copy_sign_and_docs(datasets.Dataset.rename_column_)
     def rename_column_(self, *args, **kwargs):
@@ -269,11 +269,11 @@ class Dataset:
         self.dataset.rename_column_(*args, **kwargs)
 
     @copy_sign_and_docs(datasets.Dataset.rename_column)
-    def rename_column(self, *args, **kwargs):
+    def rename_column(self, *args, **kwargs) -> "Dataset":
         """
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.rename_column
         """
-        self.dataset.rename_column(*args, **kwargs)
+        return Dataset(self.dataset.rename_column(*args, **kwargs))
 
     @copy_sign_and_docs(datasets.Dataset.remove_columns_)
     def remove_columns_(self, *args, **kwargs):
@@ -283,11 +283,11 @@ class Dataset:
         self.dataset.remove_columns_(*args, **kwargs)
 
     @copy_sign_and_docs(datasets.Dataset.remove_columns)
-    def remove_columns(self, *args, **kwargs):
+    def remove_columns(self, *args, **kwargs) -> "Dataset":
         """
         https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.remove_columns
         """
-        self.dataset.remove_columns(*args, **kwargs)
+        return Dataset(self.dataset.remove_columns(*args, **kwargs))
 
     @copy_sign_and_docs(datasets.Dataset.shuffle)
     def shuffle(self, *args, **kwargs) -> "Dataset":
