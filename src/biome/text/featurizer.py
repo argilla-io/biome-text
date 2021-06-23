@@ -83,7 +83,7 @@ class InputFeaturizer:
 
         if self._contains_empty_strings(record_tokens):
             raise FeaturizeError(
-                f"Empty tokens are produced for the provided input data: {data}"
+                f"None or empty tokens are produced for the provided input data: {data}"
             )
 
         return Instance({to_field: self._tokens_to_field(record_tokens, aggregate)})

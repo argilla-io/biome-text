@@ -384,12 +384,7 @@ class Pipeline:
         -------
         predictions
             A dictionary or a list of dictionaries containing the predictions and additional information.
-            If a prediction fails for a single input in the batch, its return value will be `None`.
-
-        Raises
-        ------
-        PredictionError
-            Failed to predict the single input or the whole batch
+            If a prediction fails, its return value will be `None`.
         """
         if args or kwargs:
             batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
@@ -401,8 +396,6 @@ class Pipeline:
         )
 
         predictions = self._model.predict(batch, prediction_config)
-        if not any(predictions):
-            raise PredictionError(f"Failed to make predictions for {batch}")
 
         predictions_dict = [
             prediction.as_dict() if prediction is not None else None
@@ -652,11 +645,3 @@ class Pipeline:
     def _config_from_archive(archive: Archive) -> PipelineConfiguration:
         config = archive.config["model"]["config"]
         return PipelineConfiguration.from_params(config)
-
-
-class PredictionError(Exception):
-    """Exception for a failed prediction of a single input or a whole batch"""
-
-    # For now this is the only Error in this module. If you want to add further Errors
-    # define a base class as recommended in https://docs.python.org/3/tutorial/errors.html#user-defined-exceptions
-    pass

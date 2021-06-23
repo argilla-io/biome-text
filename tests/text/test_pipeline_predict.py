@@ -2,7 +2,6 @@ import pytest
 
 from biome.text import Pipeline
 from biome.text.modules.heads.task_prediction import TextClassificationPrediction
-from biome.text.pipeline import PredictionError
 
 
 @pytest.fixture
@@ -15,12 +14,9 @@ def pipeline() -> Pipeline:
     )
 
 
-def test_raise_Prediction_error(pipeline):
-    with pytest.raises(PredictionError):
-        pipeline.predict("")
-
-    with pytest.raises(PredictionError):
-        pipeline.predict(batch=[{"text": ""}, {"text": ""}])
+def test_return_none_for_failed_prediction(pipeline):
+    assert pipeline.predict("") is None
+    assert pipeline.predict(batch=[{"text": ""}, {"text": ""}]) == [None, None]
 
 
 def test_batch_parameter_gets_ignored(pipeline):
