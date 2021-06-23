@@ -216,16 +216,32 @@ class TransformersTokenizer(Tokenizer):
     """
 
     def __init__(self, config):
+        super().__init__(config)
         self.pretrained_tokenizer = PretrainedTransformerTokenizer(
             **config.transformers_kwargs
         )
-        self._config = config
 
     def tokenize_document(self, document: List[str]) -> List[List[Token]]:
-        return list(map(self._tokenize, document))
+        texts = [
+            self.text_cleaning(text)[: self.config.truncate_input] for text in document
+        ]
+        if not self.config.segment_sentences:
+            return list(map(self._tokenize, texts))
+
+        sentences = [
+            sentence.text.strip()[: self.config.truncate_sentence]
+            for doc in self.__nlp__.pipe(texts)
+            for sentence in doc.sents
+            if (
+                self.config.min_sentence_length
+                < len(sentence.text.strip())
+                < self.config.max_sentence_length
+            )
+        ]
+        return list(map(self._tokenize, sentences[: self.config.max_nr_of_sentences]))
 
     def _tokenize(self, text: str) -> List[Token]:
-        return self.pretrained_tokenizer.tokenize(text[: self._config.truncate_input])
+        return self.pretrained_tokenizer.tokenize(text)
 
     @property
     def nlp(self) -> Language:
