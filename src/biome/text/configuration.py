@@ -245,9 +245,9 @@ class TokenizerConfiguration(FromParams):
     end_tokens
         A list of token strings to the sequence after tokenized input text.
     use_transformers
-        If true, we will use a transformers tokenizer from HuggingFace and disregard all other parameters above
-        (except `truncate_input`!).
-        If you specify any of the above parameters you want to set this to false.
+        If true, we will use a transformers tokenizer from HuggingFace.
+        If True, following parameters of this config will be ignored:
+        `use_spacy_tokens`, `remove_space_tokens`, `start_tokens`, `end_tokens`.
         If None, we automatically choose the right value based on your feature and head configuration.
     transformers_kwargs
         This dict is passed on to AllenNLP's `PretrainedTransformerTokenizer`.
