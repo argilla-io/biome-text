@@ -129,7 +129,7 @@ class Tokenizer:
             self.text_cleaning(text)[: self.config.truncate_input] for text in document
         ]
         if not self.config.segment_sentences:
-            return list(map(self._tokenize, texts[: self.config.max_nr_of_sentences]))
+            return list(map(self._tokenize, texts))
         sentences = [
             sentence.text.strip()[: self.config.truncate_sentence]
             for doc in self.__nlp__.pipe(texts)
