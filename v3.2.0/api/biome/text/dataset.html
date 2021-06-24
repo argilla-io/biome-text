@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>biome.text.dataset | biome.text</title>
+    <meta name="generator" content="VuePress 1.8.2">
+    <link rel="shortcut icon" href="/biome-text/v3.2.0/favicon.ico">
+    <meta name="description" content="biome.text practical NLP open source library.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:image" content="https://www.recogn.ai/images/biome_og.png">
+    
+    <link rel="preload" href="/biome-text/v3.2.0/assets/css/0.styles.52e7329d.css" as="style"><link rel="preload" href="/biome-text/v3.2.0/assets/js/app.5cdfdc2a.js" as="script"><link rel="preload" href="/biome-text/v3.2.0/assets/js/4.c5985828.js" as="script"><link rel="preload" href="/biome-text/v3.2.0/assets/js/3.6fa7191e.js" as="script"><link rel="preload" href="/biome-text/v3.2.0/assets/js/21.8a044c40.js" as="script"><link rel="preload" href="/biome-text/v3.2.0/assets/js/6.c2d33e8a.js" as="script"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/10.516b1e72.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/11.0fc37003.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/12.2b0bd017.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/13.8ec086a9.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/14.d639d27b.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/15.d64b3c6e.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/16.bdf1b88c.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/17.fd53d0f0.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/18.61a830a9.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/19.43b8574e.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/20.a672be9c.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/22.990d89f8.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/23.9bea5e18.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/24.21939af6.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/25.35c95410.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/26.5e89dba3.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/27.9ac66420.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/28.56f609e5.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/29.8cdae6c4.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/30.164dae59.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/31.6c75bcba.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/32.716cdb1c.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/33.0281d516.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/34.c122bc6d.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/35.51563e42.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/36.3f9c70be.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/37.da207674.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/38.c131ffe1.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/39.666da2b9.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/40.662bc82d.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/41.4b5a8481.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/42.c58a1c8f.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/43.b4a965c3.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/44.9e0bf58c.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/45.6f320b04.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/46.0598bd08.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/47.6584f3a9.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/48.ba21a985.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/49.e4ccbb6c.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/5.19ac77d0.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/50.1cac3b46.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/51.c62d5853.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/52.dacb41d5.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/53.c897db32.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/54.64fdf384.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/55.24eadc16.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/56.5f444fd6.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/57.52499d51.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/58.4516a819.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/59.206f93e3.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/60.291a8f36.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/61.9972556b.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/62.c35839af.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/63.d3221138.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/7.9d9a68f7.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/8.5f8b022a.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/9.2747246f.js"><link rel="prefetch" href="/biome-text/v3.2.0/assets/js/vendors~docsearch.d5a001a3.js">
+    <link rel="stylesheet" href="/biome-text/v3.2.0/assets/css/0.styles.52e7329d.css">
+  </head>
+  <body>
+    <div id="app" data-server-rendered="true"><div class="theme-container" data-v-348088ed><header class="navbar" data-v-348088ed><div class="sidebar-button"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" viewBox="0 0 448 512" class="icon"><path fill="currentColor" d="M436 124H12c-6.627 0-12-5.373-12-12V80c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12zm0 160H12c-6.627 0-12-5.373-12-12v-32c0-6.627 5.373-12 12-12h424c6.627 0 12 5.373 12 12v32c0 6.627-5.373 12-12 12z"></path></svg></div> <a href="/biome-text/v3.2.0/" class="home-link router-link-active"><!----> <span class="site-name">biome<span>.text</span></span></a> <div class="links"><form id="search-form" role="search" class="algolia-search-wrapper search-box"><input id="algolia-search-input" class="search-query"></form> <nav class="nav-links can-hide"><div class="nav-item"><a href="/biome-text/v3.2.0/api/" class="nav-link router-link-active">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/v3.2.0/documentation/" class="nav-link">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav></div></header> <div class="sidebar-mask" data-v-348088ed></div> <aside class="sidebar" data-v-348088ed><div class="sidebar__link"><a href="/biome-text/v3.2.0/"><img src="/biome-text/v3.2.0/assets/img/biome.svg" class="sidebar__img"></a></div> <!----> <nav class="nav-links"><div class="nav-item"><a href="/biome-text/v3.2.0/api/" class="nav-link router-link-active">
+  API
+</a></div><div class="nav-item"><a href="/biome-text/v3.2.0/documentation/" class="nav-link">
+  Documentation
+</a></div><div class="nav-item"><a href="https://github.com/recognai/biome-text" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Github
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div><div class="nav-item"><a href="https://recogn.ai" target="_blank" rel="noopener noreferrer" class="nav-link external">
+  Recognai
+  <span class="external__icon"><vp-icon color="#4A4A4A" name="blank" size="12px"></vp-icon></span></a></div> <!----></nav>  <ul class="sidebar-links"><li><section class="sidebar-group depth-0"><p class="sidebar-heading open"><span>API</span> <!----></p> <ul class="sidebar-links sidebar-group-items"><li><a href="/biome-text/v3.2.0/api/biome/text/backbone.html" class="sidebar-link">biome.text.backbone</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/cli/cli.html" class="sidebar-link">biome.text.cli.cli</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/cli/evaluate.html" class="sidebar-link">biome.text.cli.evaluate</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/cli/serve.html" class="sidebar-link">biome.text.cli.serve</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/cli/train.html" class="sidebar-link">biome.text.cli.train</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/commons.html" class="sidebar-link">biome.text.commons</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/configuration.html" class="sidebar-link">biome.text.configuration</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/dataset.html" aria-current="page" class="active sidebar-link">biome.text.dataset</a><ul class="sidebar-sub-headers"><li class="sidebar-sub-header"><a href="/biome-text/v3.2.0/api/biome/text/dataset.html#allennlpdataset" class="sidebar-link">AllennlpDataset</a></li><li class="sidebar-sub-header"><a href="/biome-text/v3.2.0/api/biome/text/dataset.html#allennlplazydataset" class="sidebar-link">AllennlpLazyDataset</a></li><li class="sidebar-sub-header"><a href="/biome-text/v3.2.0/api/biome/text/dataset.html#dataset" class="sidebar-link">Dataset</a></li></ul></li><li><a href="/biome-text/v3.2.0/api/biome/text/errors.html" class="sidebar-link">biome.text.errors</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/features.html" class="sidebar-link">biome.text.features</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/featurizer.html" class="sidebar-link">biome.text.featurizer</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/helpers.html" class="sidebar-link">biome.text.helpers</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/hpo.html" class="sidebar-link">biome.text.hpo</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/metrics.html" class="sidebar-link">biome.text.metrics</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/mlflow_model.html" class="sidebar-link">biome.text.mlflow_model</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/model.html" class="sidebar-link">biome.text.model</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/configuration/allennlp_configuration.html" class="sidebar-link">biome.text.modules.configuration.allennlp_configuration</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/configuration/defs.html" class="sidebar-link">biome.text.modules.configuration.defs</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/encoders/time_distributed_encoder.html" class="sidebar-link">biome.text.modules.encoders.timedistributedencoder</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/classification/classification.html" class="sidebar-link">biome.text.modules.heads.classification.classification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/classification/doc_classification.html" class="sidebar-link">biome.text.modules.heads.classification.doc_classification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/classification/record_classification.html" class="sidebar-link">biome.text.modules.heads.classification.record_classification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/classification/record_pair_classification.html" class="sidebar-link">biome.text.modules.heads.classification.recordpairclassification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/classification/relation_classification.html" class="sidebar-link">biome.text.modules.heads.classification.relation_classification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/classification/text_classification.html" class="sidebar-link">biome.text.modules.heads.classification.text_classification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/language_modelling.html" class="sidebar-link">biome.text.modules.heads.language_modelling</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/task_head.html" class="sidebar-link">biome.text.modules.heads.task_head</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/task_prediction.html" class="sidebar-link">biome.text.modules.heads.task_prediction</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/modules/heads/token_classification.html" class="sidebar-link">biome.text.modules.heads.token_classification</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/pipeline.html" class="sidebar-link">biome.text.pipeline</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/text_cleaning.html" class="sidebar-link">biome.text.text_cleaning</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/tokenizer.html" class="sidebar-link">biome.text.tokenizer</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/trainer.html" class="sidebar-link">biome.text.trainer</a></li><li><a href="/biome-text/v3.2.0/api/biome/text/vocabulary.html" class="sidebar-link">biome.text.vocabulary</a></li></ul></section></li></ul> </aside> <main class="page" data-v-348088ed> <div class="theme-default-content content__default"><h1 id="biome-text-dataset"><a href="#biome-text-dataset" class="header-anchor">#</a> biome.text.dataset <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Module</span></h1> <div></div> <div></div> <pre class="title"><h2 id="allennlpdataset"><a href="#allennlpdataset" class="header-anchor">#</a> AllennlpDataset <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">AllennlpDataset</span> (*args, **kwds)
+</code>
+</pre> <p>A thin wrapper around a list of instances.</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>instances</code></strong></dt> <dd>List of instances</dd> <dt><strong><code>vocab</code></strong></dt> <dd>An optional vocab. This can also be set later with the <code>.index_with</code> method.</dd></dl> <pre class="title"><h3 id="ancestors"><a href="#ancestors" class="header-anchor">#</a> Ancestors</h3>
+</pre> <ul class="hlist"><li>torch.utils.data.dataset.Dataset</li> <li>typing.Generic</li></ul> <dl><pre class="title"><h3 id="index-with"><a href="#index-with" class="header-anchor">#</a> index_with <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">index_with</span> (
+  self,
+  vocab: allennlp.data.vocabulary.Vocabulary,
+) 
+</code>
+</pre></div></dt> <dd></dd></dl> <div></div> <pre class="title"><h2 id="allennlplazydataset"><a href="#allennlplazydataset" class="header-anchor">#</a> AllennlpLazyDataset <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">AllennlpLazyDataset</span> (*args, **kwds)
+</code>
+</pre> <p>A thin wrapper around a generator of instances.</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>instance_generator</code></strong></dt> <dd>A generator that yields instances.</dd> <dt><strong><code>vocab</code></strong></dt> <dd>An optional vocab. This can also be set later with the <code>.index_with</code> method.</dd></dl> <pre class="title"><h3 id="ancestors-2"><a href="#ancestors-2" class="header-anchor">#</a> Ancestors</h3>
+</pre> <ul class="hlist"><li>torch.utils.data.dataset.IterableDataset</li> <li>torch.utils.data.dataset.Dataset</li> <li>typing.Generic</li></ul> <dl><pre class="title"><h3 id="index-with-2"><a href="#index-with-2" class="header-anchor">#</a> index_with <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">index_with</span> (
+  self,
+  vocab: allennlp.data.vocabulary.Vocabulary,
+) 
+</code>
+</pre></div></dt> <dd></dd></dl> <div></div> <pre class="title"><h2 id="dataset"><a href="#dataset" class="header-anchor">#</a> Dataset <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Class</span></h2>
+</pre> <pre class="language-python"><code>
+<span class="token keyword">class</span> <span class="ident">Dataset</span> (dataset: datasets.arrow_dataset.Dataset)
+</code>
+</pre> <p>A dataset to be used with biome.text Pipelines</p> <p>Is is a very light wrapper around HuggingFace's awesome <code>datasets.Dataset</code>,
+only including a biome.text specific <code>to_instances</code> method.</p> <p>Most of the <code>datasets.Dataset</code> API is exposed and can be looked up in detail here:
+<a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset</a></p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>dataset</code></strong></dt> <dd>A HuggingFace <code>datasets.Dataset</code></dd></dl> <h2 id="attributes">Attributes</h2> <dl><dt><strong><code>dataset</code></strong></dt> <dd>The underlying HuggingFace <code>datasets.Dataset</code></dd></dl> <dl><pre class="title"><h3 id="load-dataset"><a href="#load-dataset" class="header-anchor">#</a> load_dataset <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">load_dataset</span> (
+  *args,
+  split,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p>Load a dataset using Huggingface's <code>datasets.load_dataset</code> method.</p> <p>See <a href="https://huggingface.co/docs/datasets/loading_datasets.html">https://huggingface.co/docs/datasets/loading_datasets.html</a></p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>split</code></strong></dt> <dd>See <a href="https://huggingface.co/docs/datasets/splits.html">https://huggingface.co/docs/datasets/splits.html</a></dd></dl> <p><em>args/</em>*kwargs
+Passed on to the <code>datasets.load_dataset</code> method</p> <h2 id="returns">Returns</h2> <dl><dt><code>dataset</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="from-json"><a href="#from-json" class="header-anchor">#</a> from_json <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_json</span> (
+  paths: Union[str, List[str]],
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p>Create a Dataset from a json file</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>paths</code></strong></dt> <dd>One or several paths to json files</dd> <dt><strong><code>**kwargs</code></strong></dt> <dd>Passed on to the <code>load_dataset</code> method</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>dataset</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="from-csv"><a href="#from-csv" class="header-anchor">#</a> from_csv <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_csv</span> (
+  paths: Union[str, List[str]],
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p>Create a Dataset from a csv file</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>paths</code></strong></dt> <dd>One or several paths to csv files</dd> <dt><strong><code>**kwargs</code></strong></dt> <dd>Passed on to the <code>load_dataset</code> method</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>dataset</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="from-pandas"><a href="#from-pandas" class="header-anchor">#</a> from_pandas <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_pandas</span> (
+  cls,
+  *args,
+  **kwargs,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_pandas">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_pandas</a></p></dd> <pre class="title"><h3 id="from-dict"><a href="#from-dict" class="header-anchor">#</a> from_dict <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_dict</span> (
+  cls,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_dict">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.from_dict</a></p></dd> <pre class="title"><h3 id="from-datasets"><a href="#from-datasets" class="header-anchor">#</a> from_datasets <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">from_datasets</span>(<span>dataset_list: List[ForwardRef('<a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>')]) -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a></span>
+</code>
+</pre></div></dt> <dd><p>Create a single Dataset by concatenating a list of datasets</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>dataset_list</code></strong></dt> <dd>Datasets to be concatenated. They must have the same column types.</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>dataset</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="load-from-disk"><a href="#load-from-disk" class="header-anchor">#</a> load_from_disk <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Static method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">load_from_disk</span> (
+  cls,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.load_from_disk">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.load_from_disk</a></p></dd></dl> <pre class="title"><h3 id="instance-variables"><a href="#instance-variables" class="header-anchor">#</a> Instance variables</h3>
+</pre> <dl><dt id="biome.text.dataset.Dataset.column_names"><code class="name">var <span class="ident">column_names</span> : List[str]</code></dt> <dd><p>Names of the columns in the dataset</p></dd> <dt id="biome.text.dataset.Dataset.shape"><code class="name">var <span class="ident">shape</span> : Tuple[int]</code></dt> <dd><p>Shape of the dataset (number of columns, number of rows)</p></dd> <dt id="biome.text.dataset.Dataset.num_columns"><code class="name">var <span class="ident">num_columns</span> : int</code></dt> <dd><p>Number of columns in the dataset</p></dd> <dt id="biome.text.dataset.Dataset.num_rows"><code class="name">var <span class="ident">num_rows</span> : int</code></dt> <dd><p>Number of rows in the dataset (same as <code>len(dataset)</code>)</p></dd> <dt id="biome.text.dataset.Dataset.format"><code class="name">var <span class="ident">format</span> : dict</code></dt> <dd></dd></dl> <dl><pre class="title"><h3 id="save-to-disk"><a href="#save-to-disk" class="header-anchor">#</a> save_to_disk <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">save_to_disk</span> (
+  self,
+  dataset_path: str,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.save_to_disk">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.save_to_disk</a></p></dd> <pre class="title"><h3 id="select"><a href="#select" class="header-anchor">#</a> select <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">select</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.select">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.select</a></p></dd> <pre class="title"><h3 id="map"><a href="#map" class="header-anchor">#</a> map <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">map</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.map">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.map</a></p></dd> <pre class="title"><h3 id="filter"><a href="#filter" class="header-anchor">#</a> filter <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">filter</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.filter">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.filter</a></p></dd> <pre class="title"><h3 id="flatten"><a href="#flatten" class="header-anchor">#</a> flatten_ <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">flatten_</span> (
+  self,
+  *args,
+  **kwargs,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.flatten_">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.flatten_</a></p></dd> <pre class="title"><h3 id="flatten-2"><a href="#flatten-2" class="header-anchor">#</a> flatten <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">flatten</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.flatten">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.flatten</a></p></dd> <pre class="title"><h3 id="rename-column"><a href="#rename-column" class="header-anchor">#</a> rename_column_ <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">rename_column_</span> (
+  self,
+  *args,
+  **kwargs,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.rename_column_">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.rename_column_</a></p></dd> <pre class="title"><h3 id="rename-column-2"><a href="#rename-column-2" class="header-anchor">#</a> rename_column <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">rename_column</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.rename_column">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.rename_column</a></p></dd> <pre class="title"><h3 id="remove-columns"><a href="#remove-columns" class="header-anchor">#</a> remove_columns_ <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">remove_columns_</span> (
+  self,
+  *args,
+  **kwargs,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.remove_columns_">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.remove_columns_</a></p></dd> <pre class="title"><h3 id="remove-columns-2"><a href="#remove-columns-2" class="header-anchor">#</a> remove_columns <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">remove_columns</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.remove_columns">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.remove_columns</a></p></dd> <pre class="title"><h3 id="shuffle"><a href="#shuffle" class="header-anchor">#</a> shuffle <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">shuffle</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.shuffle">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.shuffle</a></p></dd> <pre class="title"><h3 id="sort"><a href="#sort" class="header-anchor">#</a> sort <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">sort</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.sort">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.sort</a></p></dd> <pre class="title"><h3 id="train-test-split"><a href="#train-test-split" class="header-anchor">#</a> train_test_split <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">train_test_split</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; Dict[str, <a title="biome.text.dataset.Dataset" href="#biome.text.dataset.Dataset">Dataset</a>]
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.train_test_split">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.train_test_split</a></p></dd> <pre class="title"><h3 id="unique"><a href="#unique" class="header-anchor">#</a> unique <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">unique</span> (
+  self,
+  *args,
+  **kwargs,
+)  -&gt; List[Any]
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.unique">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.unique</a></p></dd> <pre class="title"><h3 id="set-format"><a href="#set-format" class="header-anchor">#</a> set_format <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">set_format</span> (
+  self,
+  *args,
+  **kwargs,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.set_format">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.set_format</a></p></dd> <pre class="title"><h3 id="reset-format"><a href="#reset-format" class="header-anchor">#</a> reset_format <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">reset_format</span>(<span>self)</span>
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.reset_format">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.Dataset.reset_format</a></p></dd> <pre class="title"><h3 id="formatted-as"><a href="#formatted-as" class="header-anchor">#</a> formatted_as <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">formatted_as</span> (
+  self,
+  *args,
+  **kwargs,
+) 
+</code>
+</pre></div></dt> <dd><p><a href="https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.DatasetDict.formatted_as">https://huggingface.co/docs/datasets/master/package_reference/main_classes.html#datasets.DatasetDict.formatted_as</a></p></dd> <pre class="title"><h3 id="to-instances"><a href="#to-instances" class="header-anchor">#</a> to_instances <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">to_instances</span> (
+  self,
+  pipeline: Pipeline,
+  lazy: bool = False,
+  use_cache: bool = True,
+  tqdm_desc: Union[str, NoneType] = 'Loading instances',
+  disable_tqdm: bool = False,
+)  -&gt; Union[<a title="biome.text.dataset.AllennlpDataset" href="#biome.text.dataset.AllennlpDataset">AllennlpDataset</a>, <a title="biome.text.dataset.AllennlpLazyDataset" href="#biome.text.dataset.AllennlpLazyDataset">AllennlpLazyDataset</a>]
+</code>
+</pre></div></dt> <dd><p>Convert input to instances for the pipeline</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>pipeline</code></strong></dt> <dd>The pipeline for which to create the instances.</dd> <dt><strong><code>lazy</code></strong></dt> <dd>If True, instances are lazily loaded from disk, otherwise they are loaded into memory.</dd> <dt><strong><code>use_cache</code></strong></dt> <dd>If True, we will try to reuse cached instances. Ignored when <code>lazy=True</code>.</dd> <dt><strong><code>tqdm_desc</code></strong></dt> <dd>Description for the tqdm progress bar. Default: &quot;Loading instances&quot;.</dd> <dt><strong><code>disable_tqdm</code></strong></dt> <dd>If True, disable the tqdm progress bar. Default: False</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>instance_dataset</code></dt> <dd> </dd></dl></dd> <pre class="title"><h3 id="cleanup-cache-files"><a href="#cleanup-cache-files" class="header-anchor">#</a> cleanup_cache_files <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">cleanup_cache_files</span>(<span>self)</span>
+</code>
+</pre></div></dt> <dd></dd> <pre class="title"><h3 id="head"><a href="#head" class="header-anchor">#</a> head <span class="badge tip" style="vertical-align:top;" data-v-15b7b770>Method</span></h3>
+</pre> <dt><div class="language-python extra-class"><pre class="language-python"><code>
+<span class="token keyword">def</span> <span class="ident">head</span> (
+  self,
+  n: Union[int, NoneType] = 10,
+)  -&gt; 'pandas.DataFrame'
+</code>
+</pre></div></dt> <dd><p>Return the first n rows of the dataset as a pandas.DataFrame</p> <h2 id="parameters">Parameters</h2> <dl><dt><strong><code>n</code></strong></dt> <dd>Number of rows. If None, return the whole dataset as a pandas DataFrame</dd></dl> <h2 id="returns">Returns</h2> <dl><dt><code>dataframe</code></dt> <dd> </dd></dl></dd></dl></div> <footer class="page-edit"><!----> <!----></footer> <div class="page-nav"><p class="inner"><span class="page-nav__button prev"><a href="/biome-text/v3.2.0/api/biome/text/configuration.html" class="prev"><span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-left" size="18px"></vp-icon></span> <span class="page-nav__button__text">
+          biome.text.configuration
+        </span></a></span> <span class="page-nav__button next"><a href="/biome-text/v3.2.0/api/biome/text/errors.html"><span class="page-nav__button__text">
+          biome.text.errors
+        </span> <span class="page-nav__button__icon"><vp-icon color="#4A4A4A" name="chev-right" size="18px"></vp-icon></span></a></span></p></div> <footer class="footer" data-v-348088ed><div data-v-348088ed>
+          Maintained by
+          <a href="https://www.recogn.ai/" target="_blank" data-v-348088ed><img width="70px" src="/biome-text/v3.2.0/assets/img/recognai.png" class="footer__img" data-v-348088ed></a></div></footer> </main></div><div class="global-ui"><!----></div></div>
+    <script src="/biome-text/v3.2.0/assets/js/app.5cdfdc2a.js" defer></script><script src="/biome-text/v3.2.0/assets/js/4.c5985828.js" defer></script><script src="/biome-text/v3.2.0/assets/js/3.6fa7191e.js" defer></script><script src="/biome-text/v3.2.0/assets/js/21.8a044c40.js" defer></script><script src="/biome-text/v3.2.0/assets/js/6.c2d33e8a.js" defer></script>
+  </body>
+</html>
