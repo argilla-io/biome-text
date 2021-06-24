@@ -78,15 +78,13 @@ class Pipeline:
         )
 
     @classmethod
-    def from_yaml(cls, path: str, vocab_path: Optional[str] = None) -> "Pipeline":
+    def from_yaml(cls, path: str) -> "Pipeline":
         """Creates a pipeline from a config yaml file
 
         Parameters
         ----------
         path
             The path to a YAML configuration file
-        vocab_path
-            If provided, the pipeline vocab will be loaded from this path
 
         Returns
         -------
@@ -95,13 +93,12 @@ class Pipeline:
         """
         pipeline_configuration = PipelineConfiguration.from_yaml(path)
 
-        return cls.from_config(pipeline_configuration, vocab_path=vocab_path)
+        return cls.from_config(pipeline_configuration)
 
     @classmethod
     def from_config(
         cls,
         config: Union[PipelineConfiguration, dict],
-        vocab_path: Optional[str] = None,
     ) -> "Pipeline":
         """Creates a pipeline from a `PipelineConfiguration` object or a configuration dictionary
 
@@ -109,8 +106,6 @@ class Pipeline:
         ----------
         config
             A `PipelineConfiguration` object or a configuration dict
-        vocab_path
-            If provided, the pipeline vocabulary will be loaded from this path
 
         Returns
         -------
@@ -120,10 +115,7 @@ class Pipeline:
         if isinstance(config, PipelineConfiguration):
             config = config.as_dict()
 
-        model = PipelineModel(
-            config=config,
-            vocab=Vocabulary.from_files(vocab_path) if vocab_path is not None else None,
-        )
+        model = PipelineModel(config=config)
 
         if not isinstance(model, PipelineModel):
             raise TypeError(f"Cannot load model. Wrong format of {model}")

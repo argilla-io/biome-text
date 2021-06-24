@@ -47,8 +47,6 @@ class TuneExperiment(tune.Experiment):
         and it will be reported under the same name to Tune. If this is a dict, each key will be the name reported to
         Tune and the respective value will be the metric key reported to PyTorch Lightning.
         By default (None), all metrics from Pytorch Lightnint will be reported to Tune with the same name.
-    vocab
-        If you want to share the same vocabulary between the trials you can provide it here
     name
         Used as project name for the WandB logger and for the experiment name in the MLFlow logger.
         By default we construct following string: 'HPO on %date (%time)'
@@ -98,7 +96,6 @@ class TuneExperiment(tune.Experiment):
         train_dataset: Dataset,
         valid_dataset: Dataset,
         metrics: Union[None, str, List[str], Dict[str, str]] = None,
-        vocab: Optional[Vocabulary] = None,
         name: Optional[str] = None,
         trainable: Optional[Callable] = None,
         mlflow: bool = True,
@@ -125,9 +122,6 @@ class TuneExperiment(tune.Experiment):
         self._trainer_config = asdict(trainer_config)
         self.trainable = trainable or self._default_trainable
 
-        self._vocab_path = (
-            self._save_vocab_to_disk(vocab) if vocab is not None else None
-        )
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
         if not os.environ.get("WANDB_PROJECT"):
             os.environ["WANDB_PROJECT"] = self._name
@@ -176,34 +170,6 @@ class TuneExperiment(tune.Experiment):
 
         return dataset_path
 
-    def _save_vocab_to_disk(self, vocab: Vocabulary) -> str:
-        """Saves the vocab to disk to reuse it between the trials
-
-        Parameters
-        ----------
-        vocab
-            Vocabulary to be saved to disk
-
-        Returns
-        -------
-        vocab_path
-            Path to the vocabulary, that is a directory
-        """
-        tmp_dir = tempfile.TemporaryDirectory()
-        self._created_tmp_dirs.append(tmp_dir)
-        vocab_path = tmp_dir.name
-        vocab.save_to_files(vocab_path)
-
-        # Make sure that we can load the vocab successfully
-        try:
-            Vocabulary.from_files(vocab_path)
-        except Exception as exception:
-            raise ValidationError(
-                f"Could not load vocab saved in '{vocab_path}'"
-            ) from exception
-
-        return vocab_path
-
     @property
     def config(self) -> dict:
         """The config dictionary used by the `TuneExperiment.trainable` function"""
@@ -215,7 +181,6 @@ class TuneExperiment(tune.Experiment):
             "mlflow": self._mlflow,
             "mlflow_tracking_uri": mlflow.get_tracking_uri(),
             "wandb": self._wandb,
-            "vocab_path": self._vocab_path,
             "name": self._name,
             "metrics": self._metrics,
         }
@@ -229,9 +194,7 @@ class TuneExperiment(tune.Experiment):
         - Set up a TuneMetrics logger that reports all metrics back to ray tune after each epoch
         - Execute the training
         """
-        pipeline = Pipeline.from_config(
-            config["pipeline_config"], vocab_path=config["vocab_path"]
-        )
+        pipeline = Pipeline.from_config(config["pipeline_config"])
 
         trainer_config = TrainerConfiguration(**config["trainer_config"])
 
@@ -257,7 +220,6 @@ class TuneExperiment(tune.Experiment):
             train_dataset=train_instances,
             valid_dataset=valid_instances,
             trainer_config=trainer_config,
-            vocab_config=None if config["vocab_path"] else "default",
         )
         trainer.fit()
 
