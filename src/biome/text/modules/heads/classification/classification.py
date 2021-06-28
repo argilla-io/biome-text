@@ -21,7 +21,6 @@ from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
 from biome.text.modules.heads.task_prediction import Attribution
 from biome.text.modules.heads.task_prediction import TaskPrediction
-from biome.text.modules.heads.task_prediction import TextClassificationPrediction
 
 
 class ClassificationHead(TaskHead):
