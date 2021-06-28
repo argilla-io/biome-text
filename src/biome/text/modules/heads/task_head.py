@@ -98,6 +98,10 @@ class TaskHead(torch.nn.Module, Registrable):
         """Metrics dictionary for training task"""
         raise NotImplementedError
 
+    def fallback_prediction(self):
+        """The fallback task prediction output when an  unexpected error occurs at inference"""
+        return None  # This implements be de actual behaviour
+
     def featurize(self, *args, **kwargs) -> Instance:
         """Converts incoming data into an Allennlp `Instance`, used for pyTorch tensors generation
 
