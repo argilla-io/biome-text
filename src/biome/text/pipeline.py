@@ -351,7 +351,7 @@ class Pipeline:
         add_attributions: bool = False,
         attributions_kwargs: Optional[Dict] = None,
         **kwargs,
-    ) -> Union[Dict[str, numpy.ndarray], List[Optional[Dict[str, numpy.ndarray]]]]:
+    ) -> Union[Dict[str, numpy.ndarray], List[Dict[str, numpy.ndarray]]]:
         """Returns a prediction given some input data based on the current state of the model
 
         The accepted input is dynamically calculated and can be checked via the `self.inputs` attribute
@@ -376,7 +376,6 @@ class Pipeline:
         -------
         predictions
             A dictionary or a list of dictionaries containing the predictions and additional information.
-            If a prediction fails, its return value will be `None`.
         """
         if args or kwargs:
             batch = [self._map_args_kwargs_to_input(*args, **kwargs)]
@@ -389,10 +388,7 @@ class Pipeline:
 
         predictions = self._model.predict(batch, prediction_config)
 
-        predictions_dict = [
-            prediction.as_dict() if prediction is not None else None
-            for prediction in predictions
-        ]
+        predictions_dict = [prediction.as_dict() for prediction in predictions]
 
         return predictions_dict[0] if (args or kwargs) else predictions_dict
 
