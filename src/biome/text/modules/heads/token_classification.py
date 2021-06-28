@@ -71,6 +71,10 @@ class TokenClassification(TaskHead):
     ) -> None:
         super().__init__(backbone)
 
+        self._empty_prediction = TokenClassificationPrediction(
+            tags=[[]], entities=[[]], scores=[]
+        )
+
         if label_encoding not in ["BIOUL", "BIO"]:
             raise WrongValueError(
                 f"Label encoding {label_encoding} not supported. Allowed values are {['BIOUL', 'BIO']}"
@@ -128,9 +132,6 @@ class TokenClassification(TaskHead):
     @property
     def span_labels(self) -> List[str]:
         return self._span_labels
-
-    def fallback_prediction(self) -> TaskPrediction:
-        return TokenClassificationPrediction(tags=[[]], entities=[[]], scores=[])
 
     def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """loss is calculated as -log_likelihood from crf"""

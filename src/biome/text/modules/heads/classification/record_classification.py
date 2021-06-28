@@ -67,6 +67,10 @@ class RecordClassification(DocumentClassification):
             label_weights=label_weights,
         )
 
+        self._empty_prediction = RecordClassificationPrediction(
+            labels=[], probabilities=[]
+        )
+
         self._inputs = record_keys
 
     def inputs(self) -> Optional[List[str]]:

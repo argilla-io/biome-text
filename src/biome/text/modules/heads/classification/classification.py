@@ -132,9 +132,6 @@ class ClassificationHead(TaskHead):
 
         return instance
 
-    def fallback_prediction(self) -> TaskPrediction:
-        return TextClassificationPrediction(labels=[], probabilities=[])
-
     def _make_forward_output(
         self, logits: torch.Tensor, label: Optional[torch.IntTensor]
     ) -> Dict[str, Any]:

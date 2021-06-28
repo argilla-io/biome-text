@@ -39,6 +39,10 @@ class LanguageModelling(TaskHead):
     ) -> None:
         super(LanguageModelling, self).__init__(backbone)
 
+        self._empty_prediction = LanguageModellingPrediction(
+            lm_embeddings=numpy.array([]), mask=numpy.array([])
+        )
+
         self.bidirectional = bidirectional
 
         if not backbone.featurizer.has_word_features:
@@ -187,11 +191,6 @@ class LanguageModelling(TaskHead):
         ).view(-1, self._forward_dim)
 
         return self._loss(non_masked_embeddings, non_masked_targets)
-
-    def fallback_prediction(self) -> LanguageModellingPrediction:
-        return LanguageModellingPrediction(
-            lm_embeddings=numpy.array([]), mask=numpy.array([])
-        )
 
     def _make_task_prediction(
         self,

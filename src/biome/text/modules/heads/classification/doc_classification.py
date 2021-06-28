@@ -78,6 +78,10 @@ class DocumentClassification(ClassificationHead):
             label_weights=label_weights,
         )
 
+        self._empty_prediction = DocumentClassificationPrediction(
+            labels=[], probabilities=[]
+        )
+
         self.backbone.encoder = TimeDistributedEncoder(backbone.encoder)
 
         # layers

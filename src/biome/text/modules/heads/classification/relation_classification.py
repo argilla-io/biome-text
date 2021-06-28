@@ -78,6 +78,10 @@ class RelationClassification(ClassificationHead):
             label_weights=label_weights,
         )
 
+        self._empty_prediction = RelationClassificationPrediction(
+            labels=[], probabilities=[]
+        )
+
         self._label_encoding = entity_encoding
         self._entity_tags_namespace = "entities"
 
@@ -167,9 +171,6 @@ class RelationClassification(ClassificationHead):
         logits = self._classification_layer(embedded_text)
 
         return self._make_forward_output(logits=logits, label=label)
-
-    def fallback_prediction(self) -> TaskPrediction:
-        return RelationClassificationPrediction(labels=[], probabilities=[])
 
     def _make_task_prediction(
         self,

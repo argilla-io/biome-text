@@ -64,6 +64,10 @@ class TextClassification(ClassificationHead):
 
         super().__init__(backbone, labels, multilabel, label_weights=label_weights)
 
+        self._empty_prediction = TextClassificationPrediction(
+            labels=[], probabilities=[]
+        )
+
         self.pooler = (
             pooler.input_dim(self.backbone.encoder.get_output_dim()).compile()
             if pooler
