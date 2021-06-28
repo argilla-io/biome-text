@@ -188,6 +188,11 @@ class LanguageModelling(TaskHead):
 
         return self._loss(non_masked_embeddings, non_masked_targets)
 
+    def fallback_prediction(self) -> LanguageModellingPrediction:
+        return LanguageModellingPrediction(
+            lm_embeddings=numpy.array([]), mask=numpy.array([])
+        )
+
     def _make_task_prediction(
         self,
         single_forward_output: Dict[str, numpy.ndarray],

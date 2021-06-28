@@ -35,6 +35,7 @@ from biome.text.modules.configuration import FeedForwardConfiguration
 from biome.text.modules.heads.task_head import TaskHead
 from biome.text.modules.heads.task_head import TaskName
 from biome.text.modules.heads.task_prediction import Entity
+from biome.text.modules.heads.task_prediction import TaskPrediction
 from biome.text.modules.heads.task_prediction import TokenClassificationPrediction
 
 
@@ -127,6 +128,9 @@ class TokenClassification(TaskHead):
     @property
     def span_labels(self) -> List[str]:
         return self._span_labels
+
+    def fallback_prediction(self) -> TaskPrediction:
+        return TokenClassificationPrediction(tags=[[]], entities=[[]], scores=[])
 
     def _loss(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """loss is calculated as -log_likelihood from crf"""
