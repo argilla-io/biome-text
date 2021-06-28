@@ -374,6 +374,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             self.eval()
 
         instances = [self.text_to_instance(**input_dict) for input_dict in batch]
+        fallback_prediction = self.head.fallback_prediction()
         # Filter out None instances, that is when the head could not create an instance out of the input
         none_indices, not_none_instances = [], []
         for i, instance in enumerate(instances):
@@ -383,6 +384,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
                 not_none_instances.append(instance)
 
         try:
+            # TODO(dcfidalgo): better handling when no instances at all
             forward_outputs = self.forward_on_instances(not_none_instances)
         except Exception as error:
             input_examples = [
@@ -392,7 +394,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             self._LOGGER.warning(
                 f"Failed to make a forward pass for '{input_examples}'"
             )
-            return [None] * len(batch)
+            return [fallback_prediction] * len(batch)
 
         predictions = []
         for forward_output, instance in zip(forward_outputs, not_none_instances):
@@ -407,11 +409,11 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
                 self._LOGGER.warning(
                     f"Failed to make a task prediction for '{forward_output, instance}'"
                 )
-                predictions.append(None)
+                predictions.append(fallback_prediction)
 
         # Add None for the none instances
         for index in none_indices:
-            predictions.insert(index, None)
+            predictions.insert(index, fallback_prediction)
 
         # Log predictions if the prediction logger was initialized
         if hasattr(self, "_prediction_logger"):
