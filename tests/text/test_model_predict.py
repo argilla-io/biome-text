@@ -37,7 +37,7 @@ def test_forward_pass_error(model, monkeypatch, caplog):
         [{"text": "Some value that breaks the forward pass"}], PredictionConfiguration
     )
 
-    assert predictions == [None]
+    assert predictions == [model.head.fallback_prediction()]
     assert len(caplog.record_tuples) == 2
     assert caplog.record_tuples[0] == ("biome.text.model", 40, "mock Exception")
     assert caplog.record_tuples[1] == (

@@ -14,9 +14,10 @@ def pipeline() -> Pipeline:
     )
 
 
-def test_return_none_for_failed_prediction(pipeline):
-    assert pipeline.predict("") is None
-    assert pipeline.predict(batch=[{"text": ""}, {"text": ""}]) == [None, None]
+def test_return_empty_prediction_for_failed_prediction(pipeline):
+    fallback_pred = {"labels": [], "probabilities": []}
+    assert pipeline.predict("") == fallback_pred
+    assert pipeline.predict(batch=[{"text": ""}, {"text": ""}]) == [fallback_pred] * 2
 
 
 def test_batch_parameter_gets_ignored(pipeline):
