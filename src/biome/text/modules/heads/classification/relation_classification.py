@@ -26,7 +26,6 @@ from biome.text.modules.heads.classification.classification import Classificatio
 
 # from biome.text.modules.encoders.multi_head_self_attention_encoder import MultiheadSelfAttentionEncoder
 from biome.text.modules.heads.task_prediction import RelationClassificationPrediction
-from biome.text.modules.heads.task_prediction import TaskPrediction
 
 
 class RelationClassification(ClassificationHead):
