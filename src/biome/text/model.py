@@ -356,7 +356,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
         self,
         batch: List[Dict[str, Union[str, List[str], Dict[str, str]]]],
         prediction_config: PredictionConfiguration,
-    ) -> List[Optional[TaskPrediction]]:
+    ) -> List[TaskPrediction]:
         """Returns predictions given some input data based on the current state of the model
 
         The keys of the input dicts in the batch must coincide with the `self.inputs` attribute.
@@ -369,6 +369,10 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             The dictionary keys must comply with the `self.inputs` attribute.
         prediction_config
             Contains configurations for the prediction
+
+        Returns
+        -------
+        List of task predictions
         """
         if self.training:
             self.eval()
@@ -382,6 +386,9 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             else:
                 not_none_instances.append(instance)
 
+        if not not_none_instances:
+            return [self.head.empty_prediction] * len(batch)
+
         try:
             forward_outputs = self.forward_on_instances(not_none_instances)
         except Exception as error:
@@ -392,7 +399,7 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
             self._LOGGER.warning(
                 f"Failed to make a forward pass for '{input_examples}'"
             )
-            return [None] * len(batch)
+            return [self.head.empty_prediction] * len(batch)
 
         predictions = []
         for forward_output, instance in zip(forward_outputs, not_none_instances):
@@ -407,11 +414,11 @@ class PipelineModel(allennlp.models.Model, pl.LightningModule):
                 self._LOGGER.warning(
                     f"Failed to make a task prediction for '{forward_output, instance}'"
                 )
-                predictions.append(None)
+                predictions.append(self.head.empty_prediction)
 
         # Add None for the none instances
         for index in none_indices:
-            predictions.insert(index, None)
+            predictions.insert(index, self.head.empty_prediction)
 
         # Log predictions if the prediction logger was initialized
         if hasattr(self, "_prediction_logger"):

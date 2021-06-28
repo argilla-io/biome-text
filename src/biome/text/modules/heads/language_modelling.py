@@ -39,6 +39,10 @@ class LanguageModelling(TaskHead):
     ) -> None:
         super(LanguageModelling, self).__init__(backbone)
 
+        self._empty_prediction = LanguageModellingPrediction(
+            lm_embeddings=numpy.array([]), mask=numpy.array([])
+        )
+
         self.bidirectional = bidirectional
 
         if not backbone.featurizer.has_word_features:

@@ -77,6 +77,10 @@ class RelationClassification(ClassificationHead):
             label_weights=label_weights,
         )
 
+        self._empty_prediction = RelationClassificationPrediction(
+            labels=[], probabilities=[]
+        )
+
         self._label_encoding = entity_encoding
         self._entity_tags_namespace = "entities"
 

@@ -50,6 +50,8 @@ class TaskHead(torch.nn.Module, Registrable):
     def __init__(self, backbone: ModelBackbone):
         super(TaskHead, self).__init__()
         self.backbone = backbone
+        # Ideally the child class should overwrite this and provide its proper empty TaskPrediction
+        self._empty_prediction = TaskPrediction()
 
     def on_vocab_update(self):
         """
@@ -73,6 +75,11 @@ class TaskHead(torch.nn.Module, Registrable):
     def num_labels(self):
         """The number of vocab labels"""
         return len(self.labels)
+
+    @property
+    def empty_prediction(self) -> TaskPrediction:
+        """An empty task prediction that is returned when an unexpected error occurs during inference."""
+        return self._empty_prediction
 
     def extend_labels(self, labels: List[str]):
         """Extends the number of labels"""
@@ -219,7 +226,9 @@ class TaskHead(torch.nn.Module, Registrable):
 
     @staticmethod
     def _get_token_end(token: Union[AllenNLPToken, SpacyToken]) -> Optional[int]:
-        """While AllenNLP tokens have an idx_end, spacy Tokens do not"""
+        """Helper function for `self._extract_tokens_from_text_field`.
+        While AllenNLP tokens have an idx_end, spacy Tokens do not.
+        """
         try:
             return token.idx_end
         except AttributeError:

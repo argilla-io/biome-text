@@ -70,6 +70,10 @@ class TokenClassification(TaskHead):
     ) -> None:
         super().__init__(backbone)
 
+        self._empty_prediction = TokenClassificationPrediction(
+            tags=[[]], entities=[[]], scores=[]
+        )
+
         if label_encoding not in ["BIOUL", "BIO"]:
             raise WrongValueError(
                 f"Label encoding {label_encoding} not supported. Allowed values are {['BIOUL', 'BIO']}"

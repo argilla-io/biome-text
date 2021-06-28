@@ -14,9 +14,12 @@ def pipeline() -> Pipeline:
     )
 
 
-def test_return_none_for_failed_prediction(pipeline):
-    assert pipeline.predict("") is None
-    assert pipeline.predict(batch=[{"text": ""}, {"text": ""}]) == [None, None]
+def test_return_empty_prediction_for_failed_prediction(pipeline):
+    empty_prediction = {"labels": [], "probabilities": []}
+    assert pipeline.predict("") == empty_prediction
+    assert (
+        pipeline.predict(batch=[{"text": ""}, {"text": ""}]) == [empty_prediction] * 2
+    )
 
 
 def test_batch_parameter_gets_ignored(pipeline):
@@ -54,7 +57,7 @@ def test_return_single_or_list(pipeline, monkeypatch):
         return [
             TextClassificationPrediction(labels=["a"], probabilities=[1])
             if i % 2 == 0
-            else None
+            else pipeline.head.empty_prediction
             for i, _ in enumerate(batch)
         ]
 
@@ -70,4 +73,7 @@ def test_return_single_or_list(pipeline, monkeypatch):
         batch=[{"text": "test"}, {"text": "no instance for this input"}]
     )
     assert isinstance(batch_prediction, list) and len(batch_prediction) == 2
-    assert isinstance(batch_prediction[0], dict) and batch_prediction[1] is None
+    assert (
+        isinstance(batch_prediction[0], dict)
+        and batch_prediction[1] == pipeline.head.empty_prediction.as_dict()
+    )

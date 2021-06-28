@@ -89,6 +89,10 @@ class RecordPairClassification(ClassificationHead):
     ):
         super().__init__(backbone, labels, label_weights=label_weights)
 
+        self._empty_prediction = RecordPairClassificationPrediction(
+            labels=[], probabilities=[]
+        )
+
         # This is needed for the TrainerConfig to choose the right 'sorting_keys'
         self.backbone.encoder = TimeDistributedEncoder(self.backbone.encoder)
 
