@@ -372,7 +372,7 @@ class Trainer:
         except TypeError:
             output_dir = None
         else:
-            output_dir.mkdir(exist_ok=exist_ok)
+            output_dir.mkdir(exist_ok=exist_ok, parents=True)
 
         # create dataloaders
         train_dataloader = create_dataloader(
