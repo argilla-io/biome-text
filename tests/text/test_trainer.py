@@ -12,7 +12,6 @@ from biome.text import Dataset
 from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text.configuration import TrainerConfiguration
-from biome.text.trainer import create_dataloader
 
 
 @pytest.fixture
@@ -155,3 +154,16 @@ def test_pipeline_test(pipeline_dict, dataset, tmp_path):
     assert pl.evaluate(dataset)["test_loss"] == pytest.approx(
         first_metrics["test_loss"]
     )
+
+
+def test_create_output_dir(pipeline_dict, dataset, tmp_path):
+    config = TrainerConfiguration(
+        logger=False, fast_dev_run=True, batch_size=1, max_epochs=1, gpus=0
+    )
+    pipeline = Pipeline.from_config(pipeline_dict)
+    trainer = Trainer(pipeline, train_dataset=dataset, trainer_config=config)
+
+    output_dir = tmp_path / "test_this_non_existing_parent_dir" / "output"
+    trainer.fit(output_dir=output_dir)
+
+    assert output_dir.is_dir()
