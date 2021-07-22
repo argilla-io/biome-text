@@ -104,22 +104,6 @@ def test_from_dict():
     assert len(ds) == 3
 
 
-def test_from_excel_file(resources_data_path):
-    """This only shows an example of how one could read in an excel file"""
-    str_value = Value("string")
-    int_value = Value("int64")
-    features = Features(
-        Notification=int_value, Type=str_value, Plant=int_value, Serial=str_value
-    )
-
-    file_path = resources_data_path / "test.xlsx"
-    df = pd.read_excel(file_path)
-
-    dataset = Dataset.from_pandas(df, features=features)
-
-    assert len(dataset) > 0
-
-
 def test_from_parquet_file(resources_data_path):
     """This only shows an example of how one could read in a parquet file"""
     file_path = resources_data_path / "test.parquet"
