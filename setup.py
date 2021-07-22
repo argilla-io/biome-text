@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "flatdict~=4.0.0",
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
-            "mlflow~=1.13.1",
+            "mlflow>=1.13.1,<=1.19.0",
             "numpy",
             "pandas<=1.3.0",
             "pytorch-lightning~=1.3.0",
