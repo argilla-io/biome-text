@@ -25,7 +25,7 @@ if __name__ == "__main__":
         packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=2.5.0",
+            "allennlp~=2.6.0",
             "beautifulsoup4~=4.9.0",
             "captum~=0.2.0",
             "click~=7.1.0",
@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "flatdict~=4.0.0",
             "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
-            "mlflow~=1.13.1",
+            "mlflow>=1.13.1,<=1.19.0",
             "numpy",
             "pandas<=1.3.0",
             "pytorch-lightning~=1.3.0",
