@@ -14,14 +14,13 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-import mlflow
-from allennlp.data import Vocabulary
 from ray import tune
 from ray.tune.integration.pytorch_lightning import TuneReportCallback
 
 from biome.text import Pipeline
 from biome.text import Trainer
 from biome.text import TrainerConfiguration
+from biome.text import VocabularyConfiguration
 from biome.text.dataset import Dataset
 from biome.text.errors import ValidationError
 
@@ -46,16 +45,18 @@ class TuneExperiment(tune.Experiment):
         Metrics to report to Tune. If this is a list, each item describes the metric key reported to PyTorch Lightning,
         and it will be reported under the same name to Tune. If this is a dict, each key will be the name reported to
         Tune and the respective value will be the metric key reported to PyTorch Lightning.
-        By default (None), all metrics from Pytorch Lightnint will be reported to Tune with the same name.
+        By default (None), all metrics from Pytorch Lightning will be reported to Tune with the same name.
+    vocab_config
+        A `VocabularyConfiguration` to create/extend the pipeline's vocabulary.
+        If `"default"` (str), we will use the default configuration `VocabularyConfiguration()`.
+        If None, we will leave the pipeline's vocabulary untouched. Default: `"default"`.
     name
         Used as project name for the WandB logger and for the experiment name in the MLFlow logger.
         By default we construct following string: 'HPO on %date (%time)'
     trainable
         A custom trainable function that takes as input the `TuneExperiment.config` dict.
-    mlflow
-        If True (default), logs HPO to MLFlow.
-    wandb
-        If True (default), logs HPO to WandB.
+    silence
+        If True, silence the biome.text logger. Default: False.
     **kwargs
         The rest of the kwargs are passed on to `tune.Experiment.__init__`.
         They must not contain the 'name', 'run' or the 'config' key,
@@ -95,11 +96,11 @@ class TuneExperiment(tune.Experiment):
         trainer_config: TrainerConfiguration,
         train_dataset: Dataset,
         valid_dataset: Dataset,
+        vocab_config: Optional[Union[str, VocabularyConfiguration]] = "default",
         metrics: Union[None, str, List[str], Dict[str, str]] = None,
         name: Optional[str] = None,
         trainable: Optional[Callable] = None,
-        mlflow: bool = True,
-        wandb: bool = True,
+        silence: bool = False,
         **kwargs,
     ):
         if (
@@ -120,14 +121,21 @@ class TuneExperiment(tune.Experiment):
 
         self._pipeline_config = pipeline_config
         self._trainer_config = asdict(trainer_config)
+        vocab_config: Optional[VocabularyConfiguration] = (
+            VocabularyConfiguration() if vocab_config == "default" else vocab_config
+        )
+        self._vocab_config: Optional[Dict] = (
+            asdict(vocab_config) if vocab_config else vocab_config
+        )
+
         self.trainable = trainable or self._default_trainable
+
+        self._silence = silence
 
         self._name = name or f"HPO on {datetime.now().strftime('%Y-%m-%d (%I-%M)')}"
         if not os.environ.get("WANDB_PROJECT"):
             os.environ["WANDB_PROJECT"] = self._name
 
-        self._mlflow = mlflow
-        self._wandb = wandb
         self._metrics = metrics
 
         super().__init__(
@@ -178,9 +186,8 @@ class TuneExperiment(tune.Experiment):
             "trainer_config": self._trainer_config,
             "train_dataset_path": self._train_dataset_path,
             "valid_dataset_path": self._valid_dataset_path,
-            "mlflow": self._mlflow,
-            "mlflow_tracking_uri": mlflow.get_tracking_uri(),
-            "wandb": self._wandb,
+            "vocab_config": self._vocab_config,
+            "silence": self._silence,
             "name": self._name,
             "metrics": self._metrics,
         }
@@ -194,9 +201,16 @@ class TuneExperiment(tune.Experiment):
         - Set up a TuneMetrics logger that reports all metrics back to ray tune after each epoch
         - Execute the training
         """
+        if config["silence"]:
+            logging.getLogger("biome.text").setLevel(logging.ERROR)
+
         pipeline = Pipeline.from_config(config["pipeline_config"])
 
         trainer_config = TrainerConfiguration(**config["trainer_config"])
+
+        vocab_config = config["vocab_config"]
+        if vocab_config:
+            vocab_config = VocabularyConfiguration(**vocab_config)
 
         callbacks = trainer_config.callbacks
         if not isinstance(callbacks, list):
@@ -220,6 +234,7 @@ class TuneExperiment(tune.Experiment):
             train_dataset=train_instances,
             valid_dataset=valid_instances,
             trainer_config=trainer_config,
+            vocab_config=vocab_config,
         )
         trainer.fit()
 
