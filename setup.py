@@ -35,7 +35,7 @@ if __name__ == "__main__":
             "lxml~=4.6.2",
             "mlflow~=1.13.1",
             "numpy",
-            "pandas~=1.3.0",
+            "pandas<=1.3.0",
             "pytorch-lightning~=1.3.0",
             "ray[tune]~=1.3.0",
             "spacy~=3.0.0",
