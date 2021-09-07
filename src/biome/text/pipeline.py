@@ -573,7 +573,7 @@ class Pipeline:
             "dependencies": [
                 "python=3.7.9",
                 "pip>=20.3.0",
-                {"pip": [f"biome-text=={__version__}"]},
+                {"pip": ["mlflow", f"biome-text=={__version__}"]},
             ],
         }
 
