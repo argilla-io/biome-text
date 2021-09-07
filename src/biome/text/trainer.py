@@ -18,7 +18,6 @@ from allennlp.common.util import sanitize
 from allennlp.data import Batch
 from allennlp.data import Instance
 from allennlp.data.data_loaders import TensorDict
-from allennlp.data.samplers import BucketBatchSampler
 from allennlp.training.optimizers import Optimizer
 from pytorch_lightning import Callback
 from pytorch_lightning.callbacks import EarlyStopping
@@ -30,7 +29,6 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.cloud_io import load as pl_load
 from torch.utils.data import DataLoader
-from torch.utils.data import IterableDataset
 from transformers.optimization import get_constant_schedule_with_warmup
 from transformers.optimization import get_cosine_schedule_with_warmup
 from transformers.optimization import get_linear_schedule_with_warmup
@@ -165,12 +163,8 @@ class Trainer:
 
         # create optimizer, has to come AFTER creating the vocab!
         self._pipeline.model.optimizer = Optimizer.from_params(
-            Params(
-                {
-                    "model_parameters": self._pipeline.model.named_parameters(),
-                    **self._trainer_config.optimizer,
-                }
-            )
+            model_parameters=self._pipeline.model.named_parameters(),
+            params=Params({**self._trainer_config.optimizer}),
         )
 
         # create lr scheduler, has to come AFTER creating the optimizer!
@@ -266,7 +260,7 @@ class Trainer:
             save_top_k = (
                 self._trainer_config.save_top_k_checkpoints
                 if self._valid_instances
-                else None
+                else 0
             )
             self._model_checkpoint = ModelCheckpointWithVocab(
                 save_top_k=save_top_k, monitor=monitor, mode=mode
