@@ -46,22 +46,6 @@ if __name__ == "__main__":
             "uvicorn>=0.13.0",
             "pyyaml",
         ],
-        extras_require={
-            "dev": [
-                # testing
-                "pytest>=6.2.0",
-                "pytest-cov>=2.10.0",
-                "pytest-pylint>=0.14.0",
-                "pytest-notebook~=0.6.0",
-                "wandb>=0.10.12",
-                "xlrd~=1.2.0",
-                # documentation
-                "pdoc3~=0.8.1",
-                # development
-                "pre-commit~=2.9.0",
-                # "GitPython",
-            ],
-        },
         entry_points={"console_scripts": ["biome=biome.text.cli:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,

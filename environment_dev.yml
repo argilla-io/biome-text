@@ -1,4 +1,4 @@
-name: biome
+name: biometext
 
 channels:
 - conda-forge
@@ -6,5 +6,17 @@ channels:
 dependencies:
 - python~=3.7.0
 - pip>=20.3.0
-# for building the ui and the docs
+# for building the docs
 - nodejs==14.15.1
+- pip:
+  # testing
+  - pytest>=6.2.0
+  - pytest-cov>=2.10.0
+  - pytest-pylint>=0.14.0
+  - pytest-notebook~=0.6.0
+  - wandb>=0.10.12
+  - xlrd~=1.2.0
+  # documentation
+  - pdoc3~=0.8.1
+  # development
+  - pre-commit~=2.9.0
