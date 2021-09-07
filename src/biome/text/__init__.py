@@ -21,6 +21,11 @@ _ALLENNLP_LOGGER = logging.getLogger("allennlp")
 _ALLENNLP_LOGGER.addHandler(_handler)
 _ALLENNLP_LOGGER.setLevel("WARNING")
 
+# TODO: Remove this hack when allennlp 1.8.0 is out
+import transformers
+
+transformers.__spec__ = ""
+
 from .configuration import PipelineConfiguration
 from .configuration import TrainerConfiguration
 from .configuration import VocabularyConfiguration
