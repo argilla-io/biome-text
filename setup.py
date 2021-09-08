@@ -25,20 +25,19 @@ if __name__ == "__main__":
         packages=find_namespace_packages("src"),
         package_dir={"": "src"},
         install_requires=[
-            "allennlp~=2.6.0",
+            "allennlp~=2.7.0",
             "beautifulsoup4~=4.9.0",
             "captum~=0.2.0",
             "click~=7.1.0",
-            "datasets~=1.10.0",
+            "datasets>=1.10.0,<1.12.0",
             "flatdict~=4.0.0",
-            "ipywidgets~=7.5.1",
             "lxml~=4.6.2",
-            "mlflow>=1.13.1,<=1.19.0",
+            "mlflow>=1.13.1,<1.21.0",
             "numpy",
-            "pandas<=1.3.0",
-            "pytorch-lightning~=1.3.0",
-            "ray[tune]~=1.3.0",
-            "spacy~=3.0.0",
+            "pandas",
+            "pytorch-lightning~=1.4.0",
+            "ray[tune]>=1.3.0,<1.7.0",
+            "spacy>=2.3.0,<3.2.0",
             "torch",  # the version is defined by allennlp
             "transformers",  # the version is defined by allennlp
             "tqdm>=4.49.0",
@@ -46,22 +45,6 @@ if __name__ == "__main__":
             "uvicorn>=0.13.0",
             "pyyaml",
         ],
-        extras_require={
-            "dev": [
-                # testing
-                "pytest>=6.2.0",
-                "pytest-cov>=2.10.0",
-                "pytest-pylint>=0.14.0",
-                "pytest-notebook~=0.6.0",
-                "wandb>=0.10.12",
-                "xlrd~=1.2.0",
-                # documentation
-                "pdoc3~=0.8.1",
-                # development
-                "pre-commit~=2.9.0",
-                # "GitPython",
-            ],
-        },
         entry_points={"console_scripts": ["biome=biome.text.cli:main"]},
         python_requires=">=3.6.1",  # taken from AllenNLP
         zip_safe=False,

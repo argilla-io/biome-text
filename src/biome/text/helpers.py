@@ -14,14 +14,20 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 
+import spacy
 import yaml
 from allennlp.common import util
 from allennlp.data import Token as AllenNLPToken
 from allennlp.data.dataset_readers.dataset_utils import to_bioul
 from spacy.tokens import Token as SpacyToken
 from spacy.tokens.doc import Doc
-from spacy.training import biluo_tags_to_offsets
-from spacy.training import offsets_to_biluo_tags
+
+try:
+    from spacy.training import biluo_tags_to_offsets
+    from spacy.training import offsets_to_biluo_tags
+except ImportError:
+    biluo_tags_to_offsets = spacy.gold.offsets_from_biluo_tags
+    offsets_to_biluo_tags = spacy.gold.biluo_tags_from_offsets
 
 _INVALID_TAG_CHARACTERS = re.compile(r"[^-/\w\.]")
 

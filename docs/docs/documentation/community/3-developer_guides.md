@@ -19,7 +19,7 @@ Now go ahead and create a new conda environment in which the development will ta
 
 ````shell script
 conda env create -f environment_dev.yml
-conda activate biome
+conda activate biometext
 ````
 
 Once you activated the conda environment, it is time to install *biome.text* in editable mode with all its development dependencies.

@@ -53,7 +53,13 @@ class Tokenizer:
         if config.segment_sentences and not self.__nlp__.has_pipe(
             self.__SPACY_SENTENCIZER__
         ):
-            self.__nlp__.add_pipe(self.__SPACY_SENTENCIZER__)
+            try:
+                self.__nlp__.add_pipe(self.__SPACY_SENTENCIZER__)
+            # spacy < 3.0.0
+            except ValueError:
+                self.__nlp__.add_pipe(
+                    self.__nlp__.create_pipe(self.__SPACY_SENTENCIZER__)
+                )
 
         if config.text_cleaning is None:
             self.text_cleaning = TextCleaning()

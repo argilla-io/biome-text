@@ -35,9 +35,7 @@ def trainer_config() -> TrainerConfiguration:
     )
 
 
-def test_tune_exp_default_trainable(
-    tmp_path, dataset, pipeline_config, trainer_config, monkeypatch
-):
+def test_tune_exp_default_trainable(tmp_path, dataset, pipeline_config, trainer_config):
     pipeline_config["features"]["word"]["embedding_dim"] = tune.choice([2, 4])
     trainer_config.optimizer["lr"] = tune.loguniform(0.001, 0.01)
 

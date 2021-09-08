@@ -50,6 +50,6 @@ def test_to_mlflow(pipeline, tmp_path):
             "dependencies": [
                 "python=3.7.9",
                 "pip>=20.3.0",
-                {"pip": [f"biome-text=={__version__}"]},
+                {"pip": ["mlflow", f"biome-text=={__version__}"]},
             ],
         }
